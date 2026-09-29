@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@test/harness": "../../../plugins/omnishell/test/harness.ts",
+    "linkedom": "npm:linkedom@0.18.4"
+  },
+  "nodeModulesDir": "none"
+}

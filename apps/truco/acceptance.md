@@ -1,0 +1,52 @@
+# Acceptance
+
+- [ ] Opening the app lands on a dealt table: three cards in hand, the vira face up, and a first move available without signing in. {#accept-instant-table}
+- [ ] Every hand deals three cards to each seat from a forty-card deck, and two consecutive hands are not the same deal. {#accept-fresh-shuffle}
+- [ ] In Paulista the manilha is the rank above the vira, wrapping from 3 back to 4, and the four manilhas are named on the table. {#accept-paulista-manilha}
+- [ ] In Mineiro the manilhas are the four fixed cards — 4♣, 7♥, A♠, 7♦ — whatever the vira shows. {#accept-mineiro-manilha}
+- [ ] Between two manilhas the order the table names decides: in Mineiro 4♣ beats 7♥ beats A♠ beats 7♦. {#accept-manilha-order}
+- [ ] The envido count is two cards of one suit plus twenty, else the highest card, and a tie is won by the mão. {#accept-envido-count}
+- [ ] Envido is called in the first rodada, pays the moment it resolves whoever wins the hand, and a refusal shows no cards. {#accept-envido-pays-now}
+- [ ] Envido pays 2, real envido 3 more, and falta envido whatever the leading side still needs; refusing pays what stood before the call. {#accept-envido-ladder}
+- [ ] A flor is three of one suit, pays 3 where the table deals it, and cancels the envido for that hand. {#accept-flor-cancels}
+- [ ] Gaúcho turns no card up, deals the four fixed manilhas, climbs truco / retruco / vale quatro, and plays envido and flor. {#accept-gaucho-river}
+- [ ] Gaúcho runs two voltas: 18 points head to head, 24 in pairs. {#accept-gaucho-voltas}
+- [ ] At a Río de la Plata table A♠ beats A♣ beats 7♠ beats 7♦, and the two swords do not tie. {#accept-shared-suit-order}
+- [ ] A table that names no manilhas turns nothing up, and every card is worth the rank it shows. {#accept-no-manilha}
+- [ ] Outside the manilhas power runs 4 < 5 < 6 < 7 < Q < J < K < A < 2 < 3 and suit means nothing. {#accept-card-order}
+- [ ] Tapping a card in your hand plays it to the mat and it leaves your hand. {#accept-play-card}
+- [ ] The house answers a played card with its lowest winning card, or with its lowest card when it cannot win. {#accept-house-answers}
+- [ ] The strongest card on the mat takes the vaza, the mat clears, and the winner leads the next one. {#accept-vaza-winner}
+- [ ] Two cards of equal power tie the vaza, and the hand is decided by the rule the table states for that tie. {#accept-vaza-tie}
+- [ ] The first side to take two vazas wins the hand and banks the stake as it stands. {#accept-hand-winner}
+- [ ] The phase tracker names where the hand is — dealt, first, second, third vaza, result — and advances as the hand is played. {#accept-phase-tracker}
+- [ ] Calling truco raises the stake to the variant's first raise and the other side answers before any card is played. {#accept-truco-call}
+- [ ] Raises climb the variant's ladder to twelve and no further, and each answer may accept, run, or raise again. {#accept-raise-ladder}
+- [ ] The side that called cannot call the next rung: after its raise is accepted, only the other side may climb, and the table says so. {#accept-no-self-raise}
+- [ ] Played cards stay on the table until the hand ends — each closed trick keeps its cards, marked with who took it. {#accept-table-memory}
+- [ ] Reloading sits back down at the table it left, mid-match, rather than opening a second one. {#accept-same-table}
+- [ ] The table's words follow the rules in force: vaza and partida under Paulista, rodada and jogo under Mineiro, on the table and on the rules screen alike; and the players talk in the game's own voice — Catalan at truc, Minas at mineiro, the Pampa at gaúcho — whatever the page's language. {#accept-variant-words}
+- [ ] The table says which position you hold — mão when you lead the hand, pé when you play last — and the mão passes one seat every hand. {#accept-mao-and-pe}
+- [ ] Running from a raise ends the hand and gives the other side the stake as it stood before that raise. {#accept-run-scores}
+- [ ] The stake badge always shows what the hand is worth, and it is unmissable while the hand is raised. {#accept-stake-badge}
+- [ ] Winning a hand adds its stake to that side's score, and the first side to twelve wins the match. {#accept-match-to-twelve}
+- [ ] One hand short of twelve — 11 in Paulista, 10 in Mineiro — the side there sees its partner's cards and decides before any card: play the hand for 3 (Mineiro 4) or run and give the first rung; nobody calls truco in it, and both sides there play it face down for the first rung. {#accept-mao-de-dez}
+- [ ] A resolved hand is followed by a freshly shuffled one without asking. {#accept-next-hand}
+- [ ] A finished match says who won and offers another, from zero. {#accept-match-over}
+- [ ] Switching between 1v1 and 2v2 reseats the table — one opponent, or a partner and two of the house. {#accept-seat-modes}
+- [ ] In 2v2 the partner plays for your side, and a vaza your partner takes is your side's. {#accept-partner-plays}
+- [ ] Switching variant between Paulista and Mineiro restarts the match under the new rules, and the table says which rules are in force. {#accept-variant-switch}
+- [ ] Every picker on the table — variant, seats, theme — is the app's own dropdown; no operating-system popup ever appears. {#accept-custom-dropdown}
+- [ ] Picking a theme retints the whole table at once, and the pick survives moving between screens. {#accept-theme-switch}
+- [ ] The profile bar shows who is at the table, the title earned, and whether the seat is a guest. {#accept-profile-bar}
+- [ ] The scoreboard says NÓS and ELES — never "a casa" — names whoever is sitting across the table, and keeps the score in markers beside the number — feijão, tampinha or palito, one per tento. {#accept-nos-eles}
+- [ ] Each opponent gives a tell a beat before they call, in their own words. {#accept-persona-tell}
+- [ ] The hand's plays are recorded and readable as a log — who played what, in which vaza. {#accept-play-log}
+- [ ] After the first load the app makes no network request: a table dealt with the network cut plays to the end. {#accept-offline}
+- [ ] Joining via a match room link seats the player at that active table. {#accept-multiplayer-room}
+- [ ] Opponent cards in the synced store remain masked as card backs until played to the mat. {#accept-fog-of-war}
+- [ ] Played cards animate from their specific physical slot in the hand fan (0, 1, or 2). {#accept-slot-tracking}
+- [ ] Active turns display a countdown timer; moves before the backend deadline (including grace window) are accepted, and expired turns allow timeout resolution. {#accept-turn-clock}
+- [ ] The rules screen explains both variants, the card order, and the raise ladder, in the app's own Portuguese. {#accept-rules-screen}
+- [ ] Every screen renders correctly in both light and dark appearance. {#accept-dark-twin}
+- [ ] Nothing on the table is smaller than a thumb, and every animation collapses under reduced motion. {#accept-touch-and-motion}

@@ -1,0 +1,55 @@
+# generated from bayt.cue — do not edit
+services:
+  apps_truco-integrate:
+    build:
+      additional_contexts:
+        apps_truco-launch: service:apps_truco-launch
+        root: ../../..
+      context: ..
+      dockerfile: .bayt/Dockerfile.integrate
+      target: integrate
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    command:
+    - deno
+    - run
+    - --node-modules-dir=auto
+    - --allow-read
+    - --allow-write
+    - --allow-net
+    - --allow-env
+    - --allow-run
+    - --allow-sys
+    - /omnishell/check-visual.ts
+    - '.'
+    depends_on:
+      apps_truco-launch:
+        condition: service_healthy
+        restart: true
+    environment:
+      APP_URL: http://caddy:8080
+    image: bayt-apps_truco-integrate:${BAYT_IMAGE_TAG:-latest}
+    scale: 0
+  apps_truco-integrate_bayt:
+    build:
+      additional_contexts:
+        apps_truco-launch_bayt: service:apps_truco-launch_bayt
+      context: ..
+      dockerfile: .bayt/Dockerfile.integrate
+      target: integrate_bayt
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: bayt-apps_truco-integrate_bayt:latest
+    scale: 0
+  apps_truco-integrate_srcs:
+    build:
+      context: ..
+      dockerfile: .bayt/Dockerfile.integrate
+      target: integrate_srcs
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: bayt-apps_truco-integrate_srcs:latest
+    scale: 0

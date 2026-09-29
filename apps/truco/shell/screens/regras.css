@@ -1,0 +1,250 @@
+@import url("shared/table.css");
+
+/* The rules, at the table: the same frame and felt as the arena, because a
+   player reads this mid-hand and should not feel they left the room. Nested
+   under the screen's own selector for the same reason the arena is — an
+   injected stylesheet outlives its screen. Five blocks, two columns where
+   there is room, so the whole thing is one screenful on a desktop and one
+   short scroll on a phone. */
+
+.screen[data-screen="regras"] {
+  box-sizing: border-box;
+  display: grid;
+  gap: var(--sp-sm);
+  align-content: start;
+  max-inline-size: 62rem;
+  margin-inline: auto;
+  padding: var(--sp-sm) var(--sp-sm) var(--sp-lg);
+
+  & *, & *::before, & *::after { box-sizing: border-box; }
+
+  & .rules-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: var(--sp-sm);
+  }
+
+  & .rules-head h1 {
+    margin: 0;
+    font: 800 clamp(1.25rem, 4vw, 1.75rem)/1.15 ui-sans-serif, system-ui, sans-serif;
+  }
+
+  & .rules-head .now { margin: 2px 0 0; font-size: 0.875rem; color: var(--secondary); }
+  & .rules-head .back { grid-column: 2; grid-row: 1 / span 2; text-decoration: none; }
+
+  /* Every block sits on a page off the pad. The cloth is the room, not the
+     paper: prose set straight on gingham has no contrast anybody can compute,
+     which is the rule the arena's instruments already follow. */
+  /* Columns rather than a grid: five blocks of unequal height in two grid
+     tracks leave a hole beside the shortest row, and multicol balances them
+     instead. Nothing here is a table, so nothing needs the rows to line up. */
+  & .mat { padding: clamp(10px, 2vw, 20px); }
+
+  & .rule-block {
+    margin: 0 0 clamp(10px, 1.8vw, 18px);
+    padding: clamp(10px, 1.6vw, 16px) clamp(12px, 1.8vw, 18px);
+    color: var(--pad-ink);
+    break-inside: avoid;
+  }
+
+  & .rule-block:last-child { margin-block-end: 0; }
+
+  & .rule-block h2 { margin: 0 0 8px; color: var(--pad-dim); }
+  & .rule-block p { margin: 6px 0 0; font-size: clamp(0.8125rem, 1.6vw, 0.9375rem); line-height: 1.45; }
+  & .rule-block b { color: var(--ink-red); }
+
+  & .order {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .order > li {
+    min-inline-size: 26px;
+    padding: 4px 3px;
+    border: 1px solid var(--pad-line);
+    border-radius: var(--r-sm);
+    background: color-mix(in oklch, var(--pad-ink) 6%, transparent);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    text-align: center;
+  }
+
+  /* The 3 tops the order, so it is the one that is lit. */
+  & .order > li:last-child {
+    border-color: var(--rim);
+    background: color-mix(in oklch, var(--rim) 22%, transparent);
+  }
+
+  & .manilhas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(8px, 2vw, 14px);
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .manilhas > li {
+    display: grid;
+    justify-items: center;
+    gap: 5px;
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--pad-dim);
+  }
+
+  /* The manilha cards are reference, not a hand: fixed and small, so this
+     block never grows with the viewport the way the table's cards do. All
+     three measures are restated, because the card's height and corner radius
+     are computed where they are declared — overriding the width alone leaves a
+     44px card the height of a hand-sized one. */
+  & .manilhas .card {
+    --card-w: 44px;
+    --card-h: calc(44px * 1.46);
+    --card-r: calc(44px * 0.12);
+    pointer-events: none;
+  }
+
+  & .ladder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A rung is a chip: what it pays, and what it is called at this table. */
+  & .ladder > li {
+    display: grid;
+    justify-items: center;
+    gap: 1px;
+    padding: 5px 10px;
+    border: 1px solid var(--rim);
+    border-radius: var(--r-sm);
+    background: linear-gradient(180deg,
+      color-mix(in oklch, var(--lamp) 26%, var(--wood)) 0%, var(--wood-deep) 100%);
+    line-height: 1.1;
+  }
+
+  & .ladder > li b { color: var(--rim-hi); font-size: 0.9375rem; }
+  & .ladder > li span {
+    color: var(--lamp);
+    font-size: 0.5625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* The mão is not a call — it is what the hand is worth before anybody says
+     anything, so it is paper rather than brass. */
+  & .ladder > li[data-rung="base"] {
+    border-color: var(--pad-line);
+    background: var(--pad-2);
+  }
+  & .ladder > li[data-rung="base"] b { color: var(--pad-ink); }
+  & .ladder > li[data-rung="base"] span { color: var(--pad-dim); }
+
+  /* The table's own words, by FAMILY: gaúcho speaks paulista's (vaza/partida,
+     the same word in force whether the label above reads "Paulista" or
+     "Gaúcho"), and the three Rio de la Plata variants speak one Spanish
+     vocabulary of their own (baza/partida) regardless of which of the three
+     is in force. Mineiro does not say vaza — a trick is a rodada and the
+     whole thing is a jogo. All three sets are real text and the two not in
+     force are removed, because a sentence assembled out of ::before is a
+     sentence nobody can select, search or hear. Paulista's shows until the
+     binding names a variant outside its family. */
+  & .term i { font-style: normal; }
+  /* Which four to draw, and which sentence about them is true: a turned-up
+     rank is ordered by suit, a named list is ordered by the list. A table with
+     no manilhas at all is shown neither. */
+  & .manilhas.by-name, & p.by-name { display: none; }
+  /* Minas at three pairs is a section of its own, and only those two tables
+     are dealt it. What it says about provenance is the point of it. */
+  & .rule-block.dourado { display: none; }
+  &:has([data-variant="douradinha"], [data-variant="douradao"]) .rule-block.dourado { display: block; }
+  & .rule-block.brink { display: none; }
+  &:has([data-variant="paulista"], [data-variant="mineiro"]) .rule-block.brink { display: block; }
+  & .provenance { font-size: var(--font-size-0); color: var(--secondary); }
+  & .provenance.invented { border-inline-start: var(--border-size-2) solid var(--attention); padding-inline-start: var(--size-3); }
+  &:has([data-variant="gaucho"], [data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .manilhas.by-suit,
+  &:has([data-variant="gaucho"], [data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) p.by-suit { display: none; }
+  &:has([data-variant="gaucho"], [data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .manilhas.by-name { display: flex; }
+  &:has([data-variant="gaucho"], [data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) p.by-name { display: block; }
+  &:has([data-variant="truc"]) .manilhas, &:has([data-variant="truc"]) p.by-suit, &:has([data-variant="truc"]) p.by-name { display: none; }
+  & .term i[data-t="mineiro"],
+  & .term i[data-t="truc"],
+  & .term i[data-t="rioplatense"] { display: none; }
+  /* Catalonia is a family of its own: no turn-up, no fixed set, a basa rather
+     than a vaza. It shares nothing with the two above but the shape of a bet. */
+  &:has([data-variant="truc"]) .term i[data-t="paulista"] { display: none; }
+  &:has([data-variant="truc"]) .term i[data-t="truc"] { display: inline; }
+  &:has([data-variant="mineiro"]) .term i[data-t="paulista"] { display: none; }
+  &:has([data-variant="mineiro"]) .term i[data-t="mineiro"] { display: inline; }
+  &:has([data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .term i[data-t="paulista"] { display: none; }
+  &:has([data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .term i[data-t="rioplatense"] { display: inline; }
+
+  /* Strictly one variant's own name or note, never a family: the "Truco
+     Gaúcho" chip above and the argentino/uruguayo/paraguayo flor notes below
+     each read for their own variant alone, so every value but the one in
+     force is hidden and none defaults to visible the way a family's does. */
+  & .by-variant i { font-style: normal; display: none; }
+  &:has([data-variant="paulista"]) .by-variant i[data-t="paulista"],
+  &:has([data-variant="mineiro"]) .by-variant i[data-t="mineiro"],
+  &:has([data-variant="gaucho"]) .by-variant i[data-t="gaucho"],
+  &:has([data-variant="argentino"]) .by-variant i[data-t="argentino"],
+  &:has([data-variant="uruguayo"]) .by-variant i[data-t="uruguayo"],
+  &:has([data-variant="paraguayo"]) .by-variant i[data-t="paraguayo"],
+  &:has([data-variant="truc"]) .by-variant i[data-t="truc"] { display: inline; }
+
+  /* The ladders differ in rungs, not just in the first value, so each family
+     is written out and the two not in force are removed — same reason as the
+     words above. Gaúcho climbs paulista's five rungs; argentino, uruguayo and
+     paraguayo climb one shared four-rung ladder of their own. Paulista's
+     shows until the binding names a variant outside its family. */
+  & .ladder > li[data-v="mineiro"],
+  & .ladder > li[data-v="truc"],
+  & .ladder > li[data-v="rioplatense"] { display: none; }
+  &:has([data-variant="truc"]) .ladder > li[data-v="paulista"] { display: none; }
+  &:has([data-variant="truc"]) .ladder > li[data-v="truc"] { display: grid; }
+  &:has([data-variant="mineiro"]) .ladder > li[data-v="paulista"] { display: none; }
+  &:has([data-variant="mineiro"]) .ladder > li[data-v="mineiro"] { display: grid; }
+  &:has([data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .ladder > li[data-v="paulista"] { display: none; }
+  &:has([data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .ladder > li[data-v="rioplatense"] { display: grid; }
+  /* Gaúcho climbs the river's four rungs and names them in Portuguese, so it
+     shows its own row and not the one that ends in Spanish. */
+  & .ladder > li[data-v="gaucho"] { display: none; }
+  &:has([data-variant="gaucho"]) .ladder > li[data-v="paulista"] { display: none; }
+  &:has([data-variant="gaucho"]) .ladder > li[data-v="gaucho"] { display: grid; }
+
+  /* The game's own length is a fact of the ladder family, not of the ladder
+     markup itself — one sentence, two point counts — so it gets its own
+     small values ("12"/"30") rather than reusing data-v's variant names. */
+  & .up-to[data-v="18"],
+  & .up-to[data-v="24"],
+  & .up-to[data-v="30"] { display: none; }
+  /* Gaúcho runs two voltas rather than a single race, and how long each is
+     depends on how many are at the table — the only variant whose goal two
+     tables read differently. */
+  &:has([data-variant="gaucho"]) .up-to[data-v="12"] { display: none; }
+  &:has([data-variant="gaucho"][data-seats="1v1"]) .up-to[data-v="18"] { display: inline; }
+  &:has([data-variant="gaucho"][data-seats="2v2"]) .up-to[data-v="24"] { display: inline; }
+  &:has([data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .up-to[data-v="12"] { display: none; }
+  &:has([data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .up-to[data-v="30"] { display: inline; }
+
+  /* Envido and flor exist only in the Rio de la Plata family: the whole
+     block is a fourth rule-block, gated the way a ladder rung is, and absent
+     — not merely empty — for the three Brazilian variants. */
+  & .rule-block[data-v="rioplatense"] { display: none; }
+  &:has([data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .rule-block[data-v="rioplatense"] { display: block; }
+
+  @media (min-width: 46rem) {
+    & .mat { columns: 2; column-gap: clamp(10px, 1.8vw, 18px); }
+  }
+}

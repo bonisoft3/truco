@@ -1,0 +1,60 @@
+# generated from bayt.cue — do not edit
+services:
+  apps_truco-launch:
+    build:
+      additional_contexts:
+        apps_truco-caddy: service:apps_truco-caddy
+        apps_truco-database: service:apps_truco-database
+        apps_truco-crud: service:apps_truco-crud
+        apps_truco-electric: service:apps_truco-electric
+        apps_truco-auth: service:apps_truco-auth
+      context: ..
+      dockerfile: .bayt/Dockerfile.launch
+      target: launch
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    depends_on:
+      apps_truco-caddy:
+        condition: service_healthy
+        restart: true
+      apps_truco-database:
+        condition: service_healthy
+        restart: true
+      apps_truco-crud:
+        condition: service_healthy
+        restart: true
+      apps_truco-electric:
+        condition: service_healthy
+        restart: true
+      apps_truco-auth:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD
+      - echo
+      - truco is healthy
+      interval: 5s
+      timeout: 2s
+      retries: 3
+    image: bayt-apps_truco-launch:${BAYT_IMAGE_TAG:-latest}
+    networks:
+      default:
+        aliases:
+        - launch
+  apps_truco-launch_bayt:
+    build:
+      additional_contexts:
+        apps_truco-caddy_bayt: service:apps_truco-caddy_bayt
+        apps_truco-database_bayt: service:apps_truco-database_bayt
+        apps_truco-crud_bayt: service:apps_truco-crud_bayt
+        apps_truco-electric_bayt: service:apps_truco-electric_bayt
+        apps_truco-auth_bayt: service:apps_truco-auth_bayt
+      context: ..
+      dockerfile: .bayt/Dockerfile.launch
+      target: launch_bayt
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: bayt-apps_truco-launch_bayt:latest
+    scale: 0

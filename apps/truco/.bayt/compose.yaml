@@ -1,0 +1,66 @@
+# generated from bayt.cue — do not edit
+include:
+- path: ./compose.bayt.yaml
+  required: false
+services:
+  setup:
+    extends:
+      file: ./compose.setup.yaml
+      service: apps_truco-setup
+    profiles:
+    - setup
+  build:
+    extends:
+      file: ./compose.build.yaml
+      service: apps_truco-build
+    profiles:
+    - build
+  launch:
+    extends:
+      file: ./compose.launch.yaml
+      service: apps_truco-launch
+    profiles:
+    - launch
+    scale: 1
+  integrate:
+    extends:
+      file: ./compose.integrate.yaml
+      service: apps_truco-integrate
+    profiles:
+    - integrate
+    scale: 1
+  database:
+    extends:
+      file: ./compose.database.yaml
+      service: apps_truco-database
+    profiles:
+    - database
+    scale: 1
+  crud:
+    extends:
+      file: ./compose.crud.yaml
+      service: apps_truco-crud
+    profiles:
+    - crud
+    scale: 1
+  auth:
+    extends:
+      file: ./compose.auth.yaml
+      service: apps_truco-auth
+    profiles:
+    - auth
+    scale: 1
+  caddy:
+    extends:
+      file: ./compose.caddy.yaml
+      service: apps_truco-caddy
+    profiles:
+    - caddy
+    scale: 1
+  electric:
+    extends:
+      file: ./compose.electric.yaml
+      service: apps_truco-electric
+    profiles:
+    - electric
+    scale: 1

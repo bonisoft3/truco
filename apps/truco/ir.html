@@ -1,0 +1,2077 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truco — IR</title>
+<meta name="pronto-ir-version" content="alpha">
+<meta name="pronto-source" content="brief.md">
+<meta name="pronto-brief-sha256" content="bc7e0748fa4b4012322319edf182c419a39e3ac296f3f3b6c4120d1f796b4e34">
+<meta name="pronto-generated" content="2026-08-14">
+<meta name="pronto-compiler" content="claude-opus-5">
+<meta name="pronto-team" content="studio (plugins/pronto/teams/studio.md)">
+<meta name="pronto-cluster" content="mecha (plugins/pronto/clusters/mecha.cue)">
+<meta name="pronto-terminal" content="omnishell (plugins/pronto/terminals/omnishell.cue)">
+<meta name="pronto-loop" content="sayt (plugins/pronto/loops/sayt.cue)">
+<meta name="pronto-build" content="bayt (plugins/pronto/builders/bayt.cue)">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
+  integrity="sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
+  crossorigin="anonymous"></script>
+<script>mermaid.initialize({startOnLoad: true, theme: "neutral"});</script>
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 60rem; margin: 2rem auto; padding: 0 1rem;
+         font: 15px/1.55 -apple-system, "Segoe UI", sans-serif; }
+  h1, h2, h3 { line-height: 1.2; }
+  table { border-collapse: collapse; margin: 0.7rem 0; }
+  th, td { border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+           padding: 0.25rem 0.6rem; text-align: left; vertical-align: top; }
+  code.cel { font: 0.85em/1.4 ui-monospace, monospace; padding: 0.05em 0.3em;
+             border-radius: 4px;
+             background: color-mix(in srgb, currentColor 8%, transparent); }
+  figure { margin: 1rem 0; }
+  figure svg { border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+               border-radius: 6px; }
+  figcaption { font-size: 0.8rem; opacity: 0.75; max-width: 240px; }
+  .storyboard { display: flex; flex-wrap: wrap; gap: 1rem; }
+  p[data-kind="test"] { border-left: 3px solid color-mix(in srgb, currentColor 30%, transparent);
+                        padding-left: 0.8rem; }
+  section[data-kind="review"] { border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+                        border-radius: 6px; padding: 0.2rem 1rem; margin: 1rem 0; }
+  .verdict { font-weight: 700; }
+
+  /* Frame palette. The table is a material, so the frames carry the felt and
+     the wood rather than the page: light values are DESIGN.md's day palette
+     with Felt Emerald on the mat, and .dark restyles by class alone so a dark
+     twin is a literal clone of its light frame. The four themes differ only in
+     the felt and rim classes — one frame per theme would review nothing new. */
+  .frames text { font: 10px ui-sans-serif, sans-serif; fill: #241A12; }
+  .frames .h { font-size: 13px; font-weight: 700; }
+  .frames .big { font-size: 19px; font-weight: 700; }
+  .frames .huge { font-size: 26px; font-weight: 800; }
+  .frames .sect { font-size: 8px; font-weight: 700; letter-spacing: 0.09em; fill: #6B573D; }
+  .frames .muted { fill: #6B573D; }
+  .frames .gold { fill: #A8791C; }
+  .frames .danger { fill: #9E2B25; }
+  .frames .ember { fill: #C1651B; }
+  .frames .onfelt { fill: #F4E9D2; }
+  .frames .mid { text-anchor: middle; }
+  .frames .end { text-anchor: end; }
+  .frames rect.page { fill: #EDE1CB; }
+  .frames rect.wood { fill: #4B3924; }
+  .frames rect.woodlip { fill: #6B573D; }
+  .frames rect.felt { fill: #1F5B45; }
+  .frames rect.card { fill: #FBF5E8; stroke: #C2A97C; }
+  .frames rect.back { fill: #3A2B1B; stroke: #A8791C; }
+  .frames rect.badge { fill: #C1651B; }
+  .frames rect.badge-hot { fill: #9E2B25; }
+  .frames rect.chip { fill: #DFD0B2; }
+  .frames rect.menu { fill: #2A2119; stroke: #A8791C; }
+  .frames rect.trigger { fill: #3A2B1B; stroke: #A8791C; }
+  .frames rect.btn { fill: #A8791C; }
+  .frames rect.btn-ghost { fill: none; stroke: #A8791C; }
+  .frames .rule { stroke: #C2A97C; stroke-width: 1; }
+  .frames .spine { stroke: #A8791C; stroke-width: 1; }
+  .frames circle.node { fill: #EDE1CB; stroke: #A8791C; }
+  .frames circle.node-on { fill: #A8791C; stroke: #A8791C; }
+  .frames circle.avatar { fill: #4B3924; }
+  .frames .dark text { fill: #F4E9D2; }
+  .frames .dark .sect, .frames .dark .muted { fill: #B39B77; }
+  .frames .dark .gold { fill: #D4AF37; }
+  .frames .dark .danger { fill: #E05548; }
+  .frames .dark .ember { fill: #E8913A; }
+  .frames .dark rect.page { fill: #120E0A; }
+  .frames .dark rect.wood { fill: #2A2119; }
+  .frames .dark rect.woodlip { fill: #4B3924; }
+  .frames .dark rect.card { fill: #F4E9D2; stroke: #4B3924; }
+  .frames .dark rect.chip { fill: #2A2119; }
+  .frames .dark rect.btn { fill: #D4AF37; }
+  .frames .dark rect.btn-ghost { stroke: #D4AF37; }
+  .frames .dark .rule { stroke: #4B3924; }
+  .frames .dark .spine { stroke: #D4AF37; }
+  .frames .dark circle.node { fill: #1D1712; stroke: #D4AF37; }
+  .frames .dark circle.node-on { fill: #D4AF37; stroke: #D4AF37; }
+  .frames .dark .btn-txt { fill: #120E0A; }
+  .frames .btn-txt { fill: #FBF5E8; }
+</style>
+</head>
+<body>
+
+<h1>Truco — engineering design</h1>
+<p>
+Compiled from <a href="brief.md">brief.md</a> (pinned above) by the
+<a href="../../plugins/pronto/teams/studio.md">studio</a> team, onto the mecha
+cluster, the omnishell terminal, the sayt loop and the bayt build graph.
+</p>
+
+<h2 id="overview">Overview</h2>
+<p>
+Truco is a single-table card game with no server side. Every entity takes the
+<code>tab</code> data path: rows live in the terminal's in-memory collections,
+survive navigation between the two screens, and die with the tab. Nothing is
+published, no policy is written, no migration is emitted for them — durability
+is the axis the brief chose, and it chose the cheapest rung
+(<a href="#decision-01">decision-01</a>).
+</p>
+<p>
+The unusual part of this compile is <strong>where the rules live</strong>. A
+card game is neither a query nor a form: shuffling, manilha resolution, the
+house's counter-play and the vaza arithmetic are a step function over state the
+store cannot express. Pronto's declarative surface covers the record — the
+score, the hand, the log — but not the referee. So the arena screen carries one
+app-owned module, <a href="#dealer">the dealer</a>, and every mutation it
+decides is still written through the screen's own emitted forms. The store
+stays the single source of truth, the regions stay reactive, and the escape is
+one auditable box rather than a second data path
+(<a href="#decision-02">decision-02</a>, <a href="#decision-03">decision-03</a>).
+</p>
+
+<div class="mermaid">
+graph TD
+  dealer["dealer (engine: deck, manilhas, house AI, vaza arithmetic)"]
+  arena["arena (screen: /)"]
+  regras["regras (screen: /regras)"]
+  Match["Match (device)"]
+  Round["Round (tab)"]
+  Play["Play (tab)"]
+  Held["Held (tab)"]
+  AppUser["AppUser (live)"]
+
+  arena -->|hosts| dealer
+  dealer -->|submits forms| arena
+  arena -->|create/update| Match
+  arena -->|create/update| Round
+  arena -->|create| Play
+  Match -->|live region| arena
+  Round -->|live region| arena
+  Play -->|live region| arena
+  Match -->|live region| regras
+</div>
+
+<p>
+No pipeline exists in this program. A pipeline consumes CDC events off the
+cluster's WAL, and a <code>tab</code> entity has no table to publish; the
+derivations a pipeline would carry — the score, the vaza tally — are decided by
+the dealer at the moment of play and written as ordinary fields
+(<a href="#decision-04">decision-04</a>). No escape hatch of the container kind
+exists either (<a href="#decision-14">decision-14</a>).
+</p>
+
+<h2 id="entities">Entities</h2>
+
+<section id="Match" data-kind="entity" data-durability="offline">
+<h3>Match — offline</h3>
+<p>
+One sitting: the two scores, the rules in force, the seats, the felt, and what
+the current hand is worth. It is the table's own row — the arena reads it as a
+singleton (<code>status=eq.playing</code>) and the pickers write it. The
+score is the dealer's to move (<a href="#score-hand">score-hand</a>); the three
+pickers move nothing else (<a href="#pick-variant">pick-variant</a>,
+<a href="#pick-seats">pick-seats</a>, <a href="#pick-theme">pick-theme</a>).
+A match that reaches twelve is closed by <code>status</code>, not deleted, so
+the result stays on screen until the next one is asked for
+(<a href="#decision-09">decision-09</a>).
+</p>
+<table data-extract="fields">
+<tr><th>field</th><th>type</th><th>constraint</th><th>notes</th></tr>
+<tr><td>id</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>primary key</td></tr>
+<tr><td>variant</td><td>text</td><td><code class="cel">this in ['paulista', 'mineiro']</code></td><td>rules variant in force</td></tr>
+<tr><td>seats</td><td>text</td><td><code class="cel">this in ['1v1', '2v2']</code></td><td>table format</td></tr>
+<tr><td>theme</td><td>text</td><td><code class="cel">this in ['xadrez', 'formica', 'neon', 'madeira']</code></td><td>visual skin of the felt</td></tr>
+<tr><td>us_score</td><td>int</td><td><code class="cel">this &gt;= 0 &amp;&amp; this &lt;= 12</code></td><td>tentos scored by the player's side</td></tr>
+<tr><td>them_score</td><td>int</td><td><code class="cel">this &gt;= 0 &amp;&amp; this &lt;= 12</code></td><td>tentos scored by the house</td></tr>
+<tr><td>stake</td><td>int</td><td><code class="cel">this in [1, 2, 3, 4, 6, 8, 9, 10, 12]</code></td><td>current hand's value in tentos</td></tr>
+<tr><td>hand_no</td><td>int</td><td><code class="cel">this &gt;= 1</code></td><td>1-based counter of hands in this match</td></tr>
+<tr><td>status</td><td>text</td><td><code class="cel">this in ['playing', 'over']</code></td><td>lifecycle state</td></tr>
+<tr><td>winner</td><td>text</td><td><code class="cel">this in ['', 'us', 'them']</code></td><td>set when status becomes 'over'</td></tr>
+<tr><td>opponent</td><td>text</td><td><code class="cel">this in ['nezinho', 'cida', 'tiao', 'ze', 'online']</code></td><td>house opponent persona or online peer</td></tr>
+<tr><td>opponent_name</td><td>text</td><td><code class="cel">this.size() &gt; 0</code></td><td>display name of opponent</td></tr>
+<tr><td>partner_name</td><td>text</td><td><code class="cel">this.size() &gt; 0</code></td><td>display name of partner (2v2)</td></tr>
+<tr><td>seed</td><td>text</td><td><code class="cel">this.size() &lt;= 12</code></td><td>RNG seed for deterministic deals</td></tr>
+<tr><td>current</td><td>text</td><td><code class="cel">this in ['yes', 'no']</code></td><td>singleton witness for live query</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td></td><td>match creation timestamp</td></tr>
+</table>
+</section>
+
+<section id="Round" data-kind="entity" data-durability="offline">
+<h3>Round — offline</h3>
+<p>
+One hand of Truco: the vira, the manilha rank, the three rodadas (vazas), the
+escalation state, and the result. One round is current per match; previous rounds
+are kept for review.
+</p>
+<table data-extract="fields">
+<tr><th>field</th><th>type</th><th>constraint</th><th>notes</th></tr>
+<tr><td>id</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>primary key: {match_id}/s{seed}/h{hand_no}</td></tr>
+<tr><td>match_id</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>foreign reference to Match</td></tr>
+<tr><td>hand_no</td><td>int</td><td><code class="cel">this &gt;= 1</code></td><td>matches <a href="#Match">Match</a>.hand_no at deal time</td></tr>
+<tr><td>vira</td><td>text</td><td><code class="cel">this.size() &gt; 0</code></td><td>turned card code, e.g. '7♦'</td></tr>
+<tr><td>manilha</td><td>text</td><td><code class="cel">this.size() &gt; 0</code></td><td>effective manilha rank (or 'fixas' for Mineiro)</td></tr>
+<tr><td>phase</td><td>text</td><td><code class="cel">this in ['dealt', 'v1', 'v2', 'v3', 'result']</code></td><td>hand lifecycle</td></tr>
+<tr><td>v1</td><td>text</td><td><code class="cel">this in ['', 'us', 'them', 'tie']</code></td><td>winner of first rodada</td></tr>
+<tr><td>v2</td><td>text</td><td><code class="cel">this in ['', 'us', 'them', 'tie']</code></td><td>winner of second rodada</td></tr>
+<tr><td>v3</td><td>text</td><td><code class="cel">this in ['', 'us', 'them', 'tie']</code></td><td>winner of third rodada</td></tr>
+<tr><td>stake</td><td>int</td><td><code class="cel">this in [1, 2, 3, 4, 6, 8, 9, 10, 12]</code></td><td>current value of this hand</td></tr>
+<tr><td>result</td><td>text</td><td><code class="cel">this in ['', 'us', 'them', 'draw']</code></td><td>hand outcome</td></tr>
+<tr><td>leader</td><td>text</td><td><code class="cel">this in ['you', 'parca', 'eles1', 'eles2']</code></td><td>seat that leads the current rodada</td></tr>
+<tr><td>asked</td><td>text</td><td><code class="cel">this in ['', 'you', 'parca', 'eles1', 'eles2']</code></td><td>seat that called Truco/raise, awaiting answer</td></tr>
+<tr><td>raised</td><td>text</td><td><code class="cel">this in ['', 'us', 'them']</code></td><td>side that raised, preventing self-raise</td></tr>
+<tr><td>rung</td><td>int</td><td><code class="cel">this &gt;= 0 &amp;&amp; this &lt;= 12</code></td><td>next stake value on the ladder</td></tr>
+<tr><td>said</td><td>text</td><td><code class="cel">this.size() &lt;= 60</code></td><td>announcement text on the table</td></tr>
+<tr><td>turn_seat</td><td>text</td><td><code class="cel">this in ['', 'you', 'parca', 'eles1', 'eles2']</code></td><td>seat whose turn it is</td></tr>
+<tr><td>ui_deadline</td><td>timestamptz</td><td></td><td>turn countdown target timestamp</td></tr>
+<tr><td>backend_deadline</td><td>timestamptz</td><td></td><td>authoritative backend timeout</td></tr>
+<tr><td>current</td><td>text</td><td><code class="cel">this in ['yes', 'no']</code></td><td>singleton witness</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td></td><td>round creation timestamp</td></tr>
+</table>
+</section>
+
+<section id="Play" data-kind="entity" data-durability="tab">
+<h3>Play — tab</h3>
+<p>
+The append-only log of a hand: every card laid and every word said, in the order
+it happened. It is what makes the table auditable — the log region is how a
+player checks what the house did two vazas ago, and it is the evidence the QA
+seat drives its walks against. Written by
+<a href="#play-card">play-card</a>, <a href="#call-truco">call-truco</a>,
+<a href="#answer-accept">answer-accept</a> and
+<a href="#answer-run">answer-run</a>; never updated, never deleted — a new hand
+simply logs on (<a href="#decision-08">decision-08</a>).
+</p>
+<table data-extract="fields">
+<tr><th>field</th><th>type</th><th>constraint</th><th>notes</th></tr>
+<tr><td>id</td><td>text</td><td></td><td>pk, derived: <code>&lt;round&gt;/v&lt;vaza&gt;/&lt;seat&gt;/&lt;kind&gt;</code>, plus the stake for a call or an answer</td></tr>
+<tr><td>round_id</td><td>text</td><td></td><td>the hand this belongs to</td></tr>
+<tr><td>vaza</td><td>int</td><td><code class="cel">this &gt;= 1 &amp;&amp; this &lt;= 3</code></td><td>which vaza the play landed in</td></tr>
+<tr><td>seat</td><td>text</td><td><code class="cel">this in ['you', 'parca', 'eles1', 'eles2']</code></td><td>who acted; <code>parca</code> and <code>eles2</code> only exist at 2v2. The seats are <em>eles</em>, not a house (<a href="#decision-25">decision-25</a>)</td></tr>
+<tr><td>kind</td><td>text</td><td><code class="cel">this in ['card', 'truco', 'accept', 'run']</code></td><td>a card laid, or a word said</td></tr>
+<tr><td>card</td><td>text</td><td><code class="cel">this.size() &lt;= 4</code></td><td>e.g. <code>4♣</code>; empty for a word</td></tr>
+<tr><td>power</td><td>int</td><td><code class="cel">this &gt;= 0 &amp;&amp; this &lt;= 100</code></td><td>the card's power in this hand's rules; 0 for a word</td></tr>
+<tr><td>said</td><td>text</td><td><code class="cel">this.size() &lt;= 24</code></td><td>the word as the table hears it — "Truco!", "Seis!", "Corri"</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td></td><td>stamped by the form's <code>{now}</code>; the log's order</td></tr>
+</table>
+</section>
+
+<section id="Held" data-kind="entity" data-durability="tab">
+<h3>Held — tab</h3>
+<p>
+The three cards still in your hand this round, one row each. They are rows and
+not engine memory for one reason: the terminal keeps a region's item nodes
+across refreshes, keyed by row id, patching only their bindings — so a card
+that is still in your hand survives every unrelated redraw with its listeners,
+its focus and any transition it is mid-way through. Drawn imperatively instead,
+the whole fan was rebuilt on every store change and replayed its deal, and no
+node lived long enough for a card to be seen leaving the hand
+(<a href="#decision-29">decision-29</a>).
+</p>
+<p>
+The row carries what the card RENDERS with — rank, suit, the face the middle
+shows — rather than only what it is, because the template binds fields and a
+region cannot compute. Every seat's hand is a row, yours included; the screen
+shows only yours because the region reads a seat rather than the table.
+</p>
+<table data-extract="fields">
+<tr><th>field</th><th>type</th><th>constraint</th><th>notes</th></tr>
+<tr><td>id</td><td>text</td><td></td><td>pk, derived: <code>&lt;round&gt;/&lt;seat&gt;/&lt;slot&gt;</code></td></tr>
+<tr><td>round_id</td><td>text</td><td></td><td>the hand it was dealt for</td></tr>
+<tr><td>seat</td><td>text</td><td><code class="cel">this in ['you', 'parca', 'eles1', 'eles2']</code></td><td>whose card it is</td></tr>
+<tr><td>card</td><td>text</td><td><code class="cel">this.size() &lt;= 4</code></td><td>e.g. <code>4♣</code>; the identity the engine plays</td></tr>
+<tr><td>rank</td><td>text</td><td><code class="cel">this.size() &lt;= 2</code></td><td>the corner's letter or number</td></tr>
+<tr><td>suit</td><td>text</td><td><code class="cel">this in ['♠', '♥', '♦', '♣']</code></td><td>the corner's pip, and what colours the card</td></tr>
+<tr><td>face</td><td>text</td><td><code class="cel">this.size() &lt;= 2</code></td><td>what the middle shows: the pip, or the letter of a court card</td></tr>
+<tr><td>power</td><td>int</td><td><code class="cel">this &gt;= 0 &amp;&amp; this &lt;= 100</code></td><td>its power under this hand's rules</td></tr>
+<tr><td>manilha</td><td>text</td><td><code class="cel">this in ['yes', 'no']</code></td><td>whether it wears the star and the foil</td></tr>
+<tr><td>slot</td><td>int</td><td><code class="cel">this &gt;= 0 &amp;&amp; this &lt;= 2</code></td><td>its place in the fan; the region orders on it</td></tr>
+<tr><td>blocked</td><td>text</td><td><code class="cel">this in ['', 'disabled']</code></td><td>whether the card can be played right now, bound straight onto the button's <code>disabled</code></td></tr>
+<tr><td>current</td><td>text</td><td><code class="cel">this in ['yes', 'no']</code></td><td><code>no</code> once it has been played, so the region shows the hand as it stands</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td></td><td>stamped by the form's <code>{now}</code></td></tr>
+</table>
+</section>
+
+<section id="AppUser" data-kind="entity" data-durability="live">
+<h3>AppUser — live</h3>
+<p>
+The identity plane's table, written only by the auth service.
+</p>
+<table data-extract="fields">
+<tr><th>field</th><th>type</th><th>constraint</th><th>notes</th></tr>
+<tr><td>id</td><td>uuid</td><td></td><td>pk</td></tr>
+<tr><td>handle</td><td>text</td><td></td><td>unique handle</td></tr>
+</table>
+</section>
+
+<section id="Lobby" data-kind="entity" data-durability="live">
+<h3>Lobby — live</h3>
+<p>
+Online bar presence: active players available for matches and challenges.
+</p>
+<table data-extract="fields">
+<tr><th>field</th><th>type</th><th>constraint</th><th>notes</th></tr>
+<tr><td>id</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>pk; unique player session ID</td></tr>
+<tr><td>handle</td><td>text</td><td><code class="cel">this.size() &gt; 0 &amp;&amp; this.size() &lt;= 40</code></td><td>player display nickname in the bar</td></tr>
+<tr><td>room_seed</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>current seed of the player table</td></tr>
+<tr><td>status</td><td>text</td><td><code class="cel">this in ['waiting', 'playing']</code></td><td>waiting in lobby or playing</td></tr>
+<tr><td>updated_at</td><td>timestamptz</td><td></td><td>heartbeat timestamp for presence freshness</td></tr>
+</table>
+</section>
+
+<section id="Challenge" data-kind="entity" data-durability="live">
+<h3>Challenge — live</h3>
+<p>
+P2P challenge invitations exchanged between bar players.
+</p>
+<table data-extract="fields">
+<tr><th>field</th><th>type</th><th>constraint</th><th>notes</th></tr>
+<tr><td>id</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>pk</td></tr>
+<tr><td>challenger_id</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>player ID initiating the challenge</td></tr>
+<tr><td>challenger_name</td><td>text</td><td><code class="cel">this.size() &gt; 0 &amp;&amp; this.size() &lt;= 40</code></td><td>initiator handle</td></tr>
+<tr><td>target_id</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>target player ID</td></tr>
+<tr><td>seed</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>shared match seed for table deal synchronization</td></tr>
+<tr><td>status</td><td>text</td><td><code class="cel">this in ['pending', 'accepted', 'declined']</code></td><td>challenge lifecycle status</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td></td><td>timestamp challenge was created</td></tr>
+</table>
+</section>
+
+<section id="RoomAction" data-kind="entity" data-durability="live">
+<h3>RoomAction — live</h3>
+<p>
+Synchronized match event stream: card plays, Truco raises, accepts, runs, and card touches.
+</p>
+<table data-extract="fields">
+<tr><th>field</th><th>type</th><th>constraint</th><th>notes</th></tr>
+<tr><td>id</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>pk deterministic action ID</td></tr>
+<tr><td>room_seed</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>match room seed</td></tr>
+<tr><td>player_id</td><td>text</td><td><code class="cel">this.size() &lt;= 64</code></td><td>player seat or ID</td></tr>
+<tr><td>action</td><td>text</td><td><code class="cel">this in ['play_card', 'truco', 'accept', 'run', 'touch_card']</code></td><td>action type</td></tr>
+<tr><td>card</td><td>text</td><td><code class="cel">this.size() &lt;= 4</code></td><td>card played (e.g. 4♣)</td></tr>
+<tr><td>slot</td><td>int</td><td><code class="cel">this &gt;= 0 &amp;&amp; this &lt;= 12</code></td><td>hand slot index (0..2) or truco stake rung (4..12)</td></tr>
+<tr><td>created_at</td><td>timestamptz</td><td></td><td>timestamp action was dispatched</td></tr>
+</table>
+</section>
+
+<h2 id="screens">Screens</h2>
+<section id="arena" data-kind="screen" data-route="/">
+<h3>arena — the table</h3>
+<p data-extract="reads">Reads: <a href="#Match">Match</a> (singleton, filter
+<code>status=eq.playing</code>) for the scoreboard, the stake badge, the
+pickers' current values and the felt; <a href="#Round">Round</a> (filter
+<code>current=eq.yes</code>, order <code>created_at.desc</code>) for the phase
+spine, the vira and the three vaza ticks; <a href="#Play">Play</a> (filter
+<code>round_id=eq.{id}</code>, order <code>created_at.asc</code>), nested
+inside the round it belongs to, for the hand log. The round read is a list of
+one rather than a singleton for two structural reasons the terminal imposes: a
+singleton region hydrates no nested region, so the log would have no parent to
+take its <code>{id}</code> from, and a singleton drives no screen state, so the
+screen would never leave <code>loading</code>. The cards in hand and on the mat
+are <a href="#dealer">the dealer</a>'s — they are the hand in flight, not a
+record, and the store never holds one
+(<a href="#decision-03">decision-03</a>).</p>
+<p data-extract="mutations">Mutations, none of them forms. Every write this
+screen makes is a fold's — the deal, the cards, the calls, the answers, the
+score, the cloth, and opening a sitting at all. A tap says which control it
+landed on and, for a card, which row of your hand; what follows is read off the
+log (<a href="#decision-32">decision-32</a>). So the store still has exactly one
+write path (<a href="#decision-03">decision-03</a>), and it is now a path
+nothing unconfined can reach. <code>keep: 0</code> — a table is dealt on
+arrival, so a return from the rules screen re-enters a live match rather than
+repainting a stale one (<a href="#decision-12">decision-12</a>).</p>
+<p>
+Every row of the play log — the cards, the calls, the answers — is written by
+the table's fold rather than by a form. A tap says which control it landed on
+and, for a card, which row of your hand; the fold takes it from there
+(<a href="#decision-32">decision-32</a>), so the flows below name a fold and not
+a submission. Nothing that is not the deal reaches the store through a form any
+more.
+</p>
+
+<div class="storyboard frames">
+<figure id="arena-loading" data-kind="state" data-state="loading">
+<svg viewBox="0 0 300 420" width="225">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge onfelt">0</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">0</text>
+<rect class="badge" x="120" y="90" width="60" height="17" rx="9"/><text x="150" y="102" class="mid onfelt">⚡ VALE 1</text>
+<circle class="node-on" cx="40" cy="130" r="4"/>
+<line class="spine" x1="44" x2="91" y1="130" y2="130"/>
+<text x="40" y="144" class="mid gold">MÃO</text>
+<circle class="node" cx="95" cy="130" r="4"/>
+<line class="spine" x1="99" x2="146" y1="130" y2="130"/>
+<text x="95" y="144" class="mid muted">1ª</text>
+<circle class="node" cx="150" cy="130" r="4"/>
+<line class="spine" x1="154" x2="201" y1="130" y2="130"/>
+<text x="150" y="144" class="mid muted">2ª</text>
+<circle class="node" cx="205" cy="130" r="4"/>
+<line class="spine" x1="209" x2="256" y1="130" y2="130"/>
+<text x="205" y="144" class="mid muted">3ª</text>
+<circle class="node" cx="260" cy="130" r="4"/>
+<text x="260" y="144" class="mid muted">RESULTADO</text>
+<text x="150" y="230" class="mid onfelt">Embaralhando…</text>
+<rect class="back" x="126" y="240" width="22" height="32" rx="3"/><rect class="back" x="152" y="240" width="22" height="32" rx="3"/>
+</svg>
+<figcaption>arena-loading — the board is drawn before it holds anything: the frame, the felt and the seat arrive first, so nothing jumps when the hand does</figcaption>
+</figure>
+
+<figure id="arena-empty" data-kind="state" data-state="empty">
+<svg viewBox="0 0 300 420" width="225">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge onfelt">0</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">0</text>
+<rect class="back" x="126" y="180" width="26" height="38" rx="4"/><rect class="back" x="156" y="180" width="26" height="38" rx="4"/>
+<text x="150" y="248" class="mid big onfelt">Mesa vazia</text>
+<text x="150" y="268" class="mid onfelt">O baralho está cortado. Senta que já sai mão.</text>
+<rect class="btn" x="90" y="286" width="120" height="26" rx="6"/><text x="150" y="304" class="mid btn-txt">Começar partida</text>
+</svg>
+<figcaption>arena-empty — the store holds no playing match: a real empty state with words and one action, held for the beat before the first hand lands</figcaption>
+</figure>
+
+<figure id="arena-populated" data-kind="state" data-state="populated">
+<svg viewBox="0 0 300 420" width="225">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge onfelt">4</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">2</text>
+<rect class="badge" x="120" y="90" width="60" height="17" rx="9"/><text x="150" y="102" class="mid onfelt">⚡ VALE 1</text>
+<circle class="node-on" cx="40" cy="130" r="4"/>
+<line class="spine" x1="44" x2="91" y1="130" y2="130"/>
+<text x="40" y="144" class="mid muted">MÃO</text>
+<circle class="node-on" cx="95" cy="130" r="4"/>
+<line class="spine" x1="99" x2="146" y1="130" y2="130"/>
+<text x="95" y="144" class="mid gold">1ª ✓</text>
+<circle class="node-on" cx="150" cy="130" r="4"/>
+<line class="spine" x1="154" x2="201" y1="130" y2="130"/>
+<text x="150" y="144" class="mid gold">2ª</text>
+<circle class="node" cx="205" cy="130" r="4"/>
+<line class="spine" x1="209" x2="256" y1="130" y2="130"/>
+<text x="205" y="144" class="mid muted">3ª</text>
+<circle class="node" cx="260" cy="130" r="4"/>
+<text x="260" y="144" class="mid muted">RESULTADO</text>
+<text x="112" y="164" class="sect onfelt">VIRA</text>
+<rect class="card" x="136" y="153" width="18" height="14" rx="3"/><text x="145" y="164" class="mid">7♦</text>
+<text x="160" y="164" class="onfelt">manilhas: Q</text>
+<rect class="back" x="121" y="176" width="26" height="38" rx="3"/><rect class="back" x="153" y="176" width="26" height="38" rx="3"/>
+<rect class="chip" x="37" y="229" width="46" height="34" rx="4" opacity="0.25"/><rect class="card" x="40" y="232" width="18" height="26" rx="3" stroke-width="2"/><text x="49" y="249" class="mid" font-size="8">4♣</text><rect class="card" x="62" y="232" width="18" height="26" rx="3" opacity="0.65"/><text x="71" y="249" class="mid" font-size="8">7♦</text>
+<rect class="card" x="120" y="224" width="30" height="42" rx="4"/><text x="135" y="250" class="mid danger">Q♥</text>
+<rect class="card" x="158" y="224" width="30" height="42" rx="4"/><text x="173" y="250" class="mid">K♠</text>
+<text x="150" y="288" class="mid onfelt">Sua vez.</text>
+<rect class="card" x="105" y="300" width="30" height="42" rx="4" transform="rotate(-5 120 321)"/><text x="120" y="326" class="mid" transform="rotate(-5 120 321)">4♣</text><rect class="card" x="140" y="300" width="30" height="42" rx="4" transform="rotate(0 155 321)"/><text x="155" y="326" class="mid" transform="rotate(0 155 321)">3♠</text><rect class="card" x="175" y="300" width="30" height="42" rx="4" transform="rotate(5 190 321)"/><text x="190" y="326" class="mid danger" transform="rotate(5 190 321)">5♥</text>
+<rect class="btn" x="105" y="352" width="90" height="24" rx="6"/><text x="150" y="368" class="mid btn-txt">TRUCO!</text>
+<line class="rule" x1="22" x2="278" y1="382" y2="382"/>
+<text x="24" y="394" class="muted">1ª  você  4♣</text>
+<text x="24" y="405" class="muted">1ª  casa  7♦</text>
+</svg>
+<figcaption>arena-populated — your turn in the second trick: the first one is still on the felt with the card that took it lit, the fanned hand is at −5°/0°/+5°, and the board fits the viewport exactly</figcaption>
+</figure>
+
+<figure id="arena-raised" data-kind="state" data-state="raised">
+<svg viewBox="0 0 300 420" width="225">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge onfelt">4</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">2</text>
+<rect class="badge-hot" x="112" y="88" width="76" height="20" rx="10"/><text x="150" y="102" class="mid onfelt">⚡ TRUCO ×3</text>
+<circle class="node-on" cx="40" cy="130" r="4"/>
+<line class="spine" x1="44" x2="91" y1="130" y2="130"/>
+<text x="40" y="144" class="mid muted">MÃO</text>
+<circle class="node-on" cx="95" cy="130" r="4"/>
+<line class="spine" x1="99" x2="146" y1="130" y2="130"/>
+<text x="95" y="144" class="mid gold">1ª</text>
+<circle class="node" cx="150" cy="130" r="4"/>
+<line class="spine" x1="154" x2="201" y1="130" y2="130"/>
+<text x="150" y="144" class="mid muted">2ª</text>
+<circle class="node" cx="205" cy="130" r="4"/>
+<line class="spine" x1="209" x2="256" y1="130" y2="130"/>
+<text x="205" y="144" class="mid muted">3ª</text>
+<circle class="node" cx="260" cy="130" r="4"/>
+<text x="260" y="144" class="mid muted">RESULTADO</text>
+<text x="112" y="164" class="sect onfelt">VIRA</text>
+<rect class="card" x="136" y="153" width="18" height="14" rx="3"/><text x="145" y="164" class="mid">7♦</text>
+<text x="160" y="164" class="onfelt">manilhas: Q</text>
+<rect class="back" x="121" y="176" width="26" height="38" rx="3"/><rect class="back" x="153" y="176" width="26" height="38" rx="3"/>
+<text x="150" y="240" class="mid h onfelt">A CASA PEDIU TRUCO</text>
+<text x="150" y="256" class="mid onfelt">vale 3 · quem corre paga 1</text>
+<rect class="btn" x="34" y="270" width="70" height="26" rx="6"/><text x="69" y="287" class="mid btn-txt">Aceito</text>
+<rect class="btn-ghost" x="112" y="270" width="70" height="26" rx="6"/><text x="147" y="287" class="mid gold">Seis!</text>
+<rect class="btn-ghost" x="190" y="270" width="70" height="26" rx="6"/><text x="225" y="287" class="mid danger">Corro</text>
+<rect class="card" x="105" y="312" width="30" height="42" rx="4" transform="rotate(-5 120 333)"/><text x="120" y="338" class="mid" transform="rotate(-5 120 333)">4♣</text><rect class="card" x="140" y="312" width="30" height="42" rx="4" transform="rotate(0 155 333)"/><text x="155" y="338" class="mid" transform="rotate(0 155 333)">3♠</text><rect class="card" x="175" y="312" width="30" height="42" rx="4" transform="rotate(5 190 333)"/><text x="190" y="338" class="mid danger" transform="rotate(5 190 333)">5♥</text>
+<line class="rule" x1="22" x2="278" y1="382" y2="382"/>
+<text x="24" y="394" class="muted">1ª  você  4♣</text>
+<text x="24" y="405" class="muted">1ª  casa  “Truco!”</text>
+</svg>
+<figcaption>arena-raised — the one hot moment: the badge climbs to danger and pulses, the hand freezes, and the three answers are the only live controls</figcaption>
+</figure>
+
+<figure id="arena-resolved" data-kind="state" data-state="resolved">
+<svg viewBox="0 0 300 420" width="225">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge gold">7</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">2</text>
+<rect class="badge" x="120" y="90" width="60" height="17" rx="9"/><text x="150" y="102" class="mid onfelt">⚡ VALE 1</text>
+<circle class="node-on" cx="40" cy="130" r="4"/>
+<line class="spine" x1="44" x2="91" y1="130" y2="130"/>
+<text x="40" y="144" class="mid muted">MÃO</text>
+<circle class="node-on" cx="95" cy="130" r="4"/>
+<line class="spine" x1="99" x2="146" y1="130" y2="130"/>
+<text x="95" y="144" class="mid gold">1ª ✓</text>
+<circle class="node-on" cx="150" cy="130" r="4"/>
+<line class="spine" x1="154" x2="201" y1="130" y2="130"/>
+<text x="150" y="144" class="mid danger">2ª ✗</text>
+<circle class="node-on" cx="205" cy="130" r="4"/>
+<line class="spine" x1="209" x2="256" y1="130" y2="130"/>
+<text x="205" y="144" class="mid gold">3ª ✓</text>
+<circle class="node-on" cx="260" cy="130" r="4"/>
+<text x="260" y="144" class="mid gold">RESULTADO</text>
+<text x="112" y="164" class="sect onfelt">VIRA</text>
+<rect class="card" x="136" y="153" width="18" height="14" rx="3"/><text x="145" y="164" class="mid">7♦</text>
+<text x="160" y="164" class="onfelt">manilhas: Q</text>
+<rect class="chip" x="27" y="197" width="46" height="34" rx="4" opacity="0.25"/><rect class="card" x="30" y="200" width="18" height="26" rx="3" stroke-width="2"/><text x="39" y="217" class="mid" font-size="8">4♣</text><rect class="card" x="52" y="200" width="18" height="26" rx="3" opacity="0.65"/><text x="61" y="217" class="mid" font-size="8">7♦</text>
+<rect class="chip" x="123" y="197" width="46" height="34" rx="4" opacity="0.25"/><rect class="card" x="126" y="200" width="18" height="26" rx="3" opacity="0.65"/><text x="135" y="217" class="mid" font-size="8">2♠</text><rect class="card" x="148" y="200" width="18" height="26" rx="3" stroke-width="2"/><text x="157" y="217" class="mid" font-size="8">3♥</text>
+<rect class="chip" x="219" y="197" width="46" height="34" rx="4" opacity="0.25"/><rect class="card" x="222" y="200" width="18" height="26" rx="3" stroke-width="2"/><text x="231" y="217" class="mid" font-size="8">K♣</text><rect class="card" x="244" y="200" width="18" height="26" rx="3" opacity="0.65"/><text x="253" y="217" class="mid" font-size="8">Q♦</text>
+<rect class="menu" x="60" y="248" width="180" height="44" rx="7"/>
+<text x="150" y="270" class="mid big gold">Você fez a mão</text>
+<text x="150" y="285" class="mid onfelt">+3 · deu zap na terceira</text>
+<rect class="btn-ghost" x="95" y="352" width="110" height="24" rx="6"/><text x="150" y="368" class="mid gold">Próxima mão</text>
+<line class="rule" x1="22" x2="278" y1="382" y2="382"/>
+<text x="24" y="394" class="muted">3ª  você  4♣</text>
+<text x="24" y="405" class="muted">3ª  casa  2♦</text>
+</svg>
+<figcaption>arena-resolved — the hand's verdict over the felt, the whole hand still readable underneath it, and the score already moved</figcaption>
+</figure>
+
+<figure id="arena-match-over" data-kind="state" data-state="match-over">
+<svg viewBox="0 0 300 420" width="225">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge gold">12</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">8</text>
+<text x="150" y="200" class="mid huge gold">12 × 8</text>
+<text x="150" y="228" class="mid big onfelt">Partida sua</text>
+<text x="150" y="248" class="mid onfelt">nove mãos · duas corridas da casa</text>
+<rect class="btn" x="84" y="266" width="132" height="26" rx="6"/><text x="150" y="284" class="mid btn-txt">Outra partida</text>
+<rect class="btn-ghost" x="84" y="300" width="132" height="24" rx="6"/><text x="150" y="316" class="mid gold">Ver as regras</text>
+</svg>
+<figcaption>arena-match-over — the match closes with its own scoreline; the table stays lit and offers exactly two doors</figcaption>
+</figure>
+
+<figure id="arena-picking" data-kind="state" data-state="picking">
+<svg viewBox="0 0 300 420" width="225">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda ▴</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge onfelt">4</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">2</text>
+<rect class="badge" x="120" y="90" width="60" height="17" rx="9"/><text x="150" y="102" class="mid onfelt">⚡ VALE 1</text>
+<circle class="node-on" cx="40" cy="130" r="4"/>
+<line class="spine" x1="44" x2="91" y1="130" y2="130"/>
+<text x="40" y="144" class="mid muted">MÃO</text>
+<circle class="node-on" cx="95" cy="130" r="4"/>
+<line class="spine" x1="99" x2="146" y1="130" y2="130"/>
+<text x="95" y="144" class="mid gold">1ª</text>
+<circle class="node" cx="150" cy="130" r="4"/>
+<line class="spine" x1="154" x2="201" y1="130" y2="130"/>
+<text x="150" y="144" class="mid muted">2ª</text>
+<circle class="node" cx="205" cy="130" r="4"/>
+<line class="spine" x1="209" x2="256" y1="130" y2="130"/>
+<text x="205" y="144" class="mid muted">3ª</text>
+<circle class="node" cx="260" cy="130" r="4"/>
+<text x="260" y="144" class="mid muted">RESULTADO</text>
+<text x="112" y="164" class="sect onfelt">VIRA</text>
+<rect class="card" x="136" y="153" width="18" height="14" rx="3"/><text x="145" y="164" class="mid">7♦</text>
+<text x="160" y="164" class="onfelt">manilhas: Q</text>
+<rect class="back" x="121" y="176" width="26" height="38" rx="3"/><rect class="back" x="153" y="176" width="26" height="38" rx="3"/>
+<rect class="menu" x="180" y="70" width="104" height="86" rx="6"/>
+<text x="190" y="88" class="onfelt">Feltro Esmeralda</text><text x="276" y="88" class="end gold">✓</text>
+<line class="rule" x1="188" x2="276" y1="96" y2="96"/>
+<text x="190" y="112" class="onfelt">Obsidiana</text>
+<text x="190" y="132" class="onfelt">Ciber Neon</text>
+<text x="190" y="150" class="onfelt">Dragão Rubro</text>
+<text x="150" y="288" class="mid onfelt">Sua vez.</text>
+<rect class="card" x="105" y="300" width="30" height="42" rx="4" transform="rotate(-5 120 321)"/><text x="120" y="326" class="mid" transform="rotate(-5 120 321)">4♣</text><rect class="card" x="140" y="300" width="30" height="42" rx="4" transform="rotate(0 155 321)"/><text x="155" y="326" class="mid" transform="rotate(0 155 321)">3♠</text><rect class="card" x="175" y="300" width="30" height="42" rx="4" transform="rotate(5 190 321)"/><text x="190" y="326" class="mid danger" transform="rotate(5 190 321)">5♥</text>
+</svg>
+<figcaption>arena-picking — the app's own dropdown: mahogany panel, brass hairline, a tick on the active row, and the value shown as text rather than drawn by CSS</figcaption>
+</figure>
+
+<figure id="arena-populated-dark" data-kind="state" data-state="populated-dark">
+<svg viewBox="0 0 300 420" width="225">
+<g class="dark">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge onfelt">4</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">2</text>
+<rect class="badge" x="120" y="90" width="60" height="17" rx="9"/><text x="150" y="102" class="mid onfelt">⚡ VALE 1</text>
+<circle class="node-on" cx="40" cy="130" r="4"/>
+<line class="spine" x1="44" x2="91" y1="130" y2="130"/>
+<text x="40" y="144" class="mid muted">MÃO</text>
+<circle class="node-on" cx="95" cy="130" r="4"/>
+<line class="spine" x1="99" x2="146" y1="130" y2="130"/>
+<text x="95" y="144" class="mid gold">1ª ✓</text>
+<circle class="node-on" cx="150" cy="130" r="4"/>
+<line class="spine" x1="154" x2="201" y1="130" y2="130"/>
+<text x="150" y="144" class="mid gold">2ª</text>
+<circle class="node" cx="205" cy="130" r="4"/>
+<line class="spine" x1="209" x2="256" y1="130" y2="130"/>
+<text x="205" y="144" class="mid muted">3ª</text>
+<circle class="node" cx="260" cy="130" r="4"/>
+<text x="260" y="144" class="mid muted">RESULTADO</text>
+<text x="112" y="164" class="sect onfelt">VIRA</text>
+<rect class="card" x="136" y="153" width="18" height="14" rx="3"/><text x="145" y="164" class="mid">7♦</text>
+<text x="160" y="164" class="onfelt">manilhas: Q</text>
+<rect class="back" x="121" y="176" width="26" height="38" rx="3"/><rect class="back" x="153" y="176" width="26" height="38" rx="3"/>
+<rect class="chip" x="37" y="229" width="46" height="34" rx="4" opacity="0.25"/><rect class="card" x="40" y="232" width="18" height="26" rx="3" stroke-width="2"/><text x="49" y="249" class="mid" font-size="8">4♣</text><rect class="card" x="62" y="232" width="18" height="26" rx="3" opacity="0.65"/><text x="71" y="249" class="mid" font-size="8">7♦</text>
+<rect class="card" x="120" y="224" width="30" height="42" rx="4"/><text x="135" y="250" class="mid danger">Q♥</text>
+<rect class="card" x="158" y="224" width="30" height="42" rx="4"/><text x="173" y="250" class="mid">K♠</text>
+<text x="150" y="288" class="mid onfelt">Sua vez.</text>
+<rect class="card" x="105" y="300" width="30" height="42" rx="4" transform="rotate(-5 120 321)"/><text x="120" y="326" class="mid" transform="rotate(-5 120 321)">4♣</text><rect class="card" x="140" y="300" width="30" height="42" rx="4" transform="rotate(0 155 321)"/><text x="155" y="326" class="mid" transform="rotate(0 155 321)">3♠</text><rect class="card" x="175" y="300" width="30" height="42" rx="4" transform="rotate(5 190 321)"/><text x="190" y="326" class="mid danger" transform="rotate(5 190 321)">5♥</text>
+<rect class="btn" x="105" y="352" width="90" height="24" rx="6"/><text x="150" y="368" class="mid btn-txt">TRUCO!</text>
+<line class="rule" x1="22" x2="278" y1="382" y2="382"/>
+<text x="24" y="394" class="muted">1ª  você  4♣</text>
+<text x="24" y="405" class="muted">1ª  casa  7♦</text>
+</g>
+</svg>
+<figcaption>arena-populated-dark — literal twin: the room darkens to walnut and ember, and the felt is unchanged because a green baize is a material, not a background</figcaption>
+</figure>
+
+<figure id="arena-raised-dark" data-kind="state" data-state="raised-dark">
+<svg viewBox="0 0 300 420" width="225">
+<g class="dark">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge onfelt">4</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">2</text>
+<rect class="badge-hot" x="112" y="88" width="76" height="20" rx="10"/><text x="150" y="102" class="mid onfelt">⚡ TRUCO ×3</text>
+<circle class="node-on" cx="40" cy="130" r="4"/>
+<line class="spine" x1="44" x2="91" y1="130" y2="130"/>
+<text x="40" y="144" class="mid muted">MÃO</text>
+<circle class="node-on" cx="95" cy="130" r="4"/>
+<line class="spine" x1="99" x2="146" y1="130" y2="130"/>
+<text x="95" y="144" class="mid gold">1ª</text>
+<circle class="node" cx="150" cy="130" r="4"/>
+<line class="spine" x1="154" x2="201" y1="130" y2="130"/>
+<text x="150" y="144" class="mid muted">2ª</text>
+<circle class="node" cx="205" cy="130" r="4"/>
+<line class="spine" x1="209" x2="256" y1="130" y2="130"/>
+<text x="205" y="144" class="mid muted">3ª</text>
+<circle class="node" cx="260" cy="130" r="4"/>
+<text x="260" y="144" class="mid muted">RESULTADO</text>
+<text x="112" y="164" class="sect onfelt">VIRA</text>
+<rect class="card" x="136" y="153" width="18" height="14" rx="3"/><text x="145" y="164" class="mid">7♦</text>
+<text x="160" y="164" class="onfelt">manilhas: Q</text>
+<rect class="back" x="121" y="176" width="26" height="38" rx="3"/><rect class="back" x="153" y="176" width="26" height="38" rx="3"/>
+<text x="150" y="240" class="mid h onfelt">A CASA PEDIU TRUCO</text>
+<text x="150" y="256" class="mid onfelt">vale 3 · quem corre paga 1</text>
+<rect class="btn" x="34" y="270" width="70" height="26" rx="6"/><text x="69" y="287" class="mid btn-txt">Aceito</text>
+<rect class="btn-ghost" x="112" y="270" width="70" height="26" rx="6"/><text x="147" y="287" class="mid gold">Seis!</text>
+<rect class="btn-ghost" x="190" y="270" width="70" height="26" rx="6"/><text x="225" y="287" class="mid danger">Corro</text>
+<rect class="card" x="105" y="312" width="30" height="42" rx="4" transform="rotate(-5 120 333)"/><text x="120" y="338" class="mid" transform="rotate(-5 120 333)">4♣</text><rect class="card" x="140" y="312" width="30" height="42" rx="4" transform="rotate(0 155 333)"/><text x="155" y="338" class="mid" transform="rotate(0 155 333)">3♠</text><rect class="card" x="175" y="312" width="30" height="42" rx="4" transform="rotate(5 190 333)"/><text x="190" y="338" class="mid danger" transform="rotate(5 190 333)">5♥</text>
+<line class="rule" x1="22" x2="278" y1="382" y2="382"/>
+<text x="24" y="394" class="muted">1ª  você  4♣</text>
+<text x="24" y="405" class="muted">1ª  casa  “Truco!”</text>
+</g>
+</svg>
+<figcaption>arena-raised-dark — the ember is the only thing that gains by night; every other value is the same token resolved to its twin</figcaption>
+</figure>
+
+<figure id="arena-network-error" data-kind="state" data-state="network-error">
+<svg viewBox="0 0 300 420" width="225">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="muted">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<rect class="wood" x="8" y="34" width="284" height="378" rx="10"/>
+<rect class="felt" x="14" y="40" width="272" height="366" rx="7"/>
+<circle class="avatar" cx="30" cy="58" r="9"/><text x="30" y="61" class="mid onfelt">V</text>
+<text x="44" y="61" class="onfelt">Você</text>
+<rect class="trigger" x="150" y="50" width="42" height="16" rx="4"/><text x="171" y="61" class="mid gold">Paulista</text>
+<rect class="trigger" x="196" y="50" width="32" height="16" rx="4"/><text x="212" y="61" class="mid gold">1v1</text>
+<rect class="trigger" x="232" y="50" width="52" height="16" rx="4"/><text x="258" y="61" class="mid gold">Esmeralda</text>
+<text x="26" y="84" class="sect onfelt">SUA DUPLA</text>
+<text x="26" y="112" class="huge onfelt">4</text>
+<text x="274" y="84" class="sect end onfelt">CASA</text>
+<text x="274" y="112" class="huge end onfelt">2</text>
+<rect class="badge" x="120" y="90" width="60" height="17" rx="9"/><text x="150" y="102" class="mid onfelt">⚡ VALE 1</text>
+<circle class="node-on" cx="40" cy="130" r="4"/>
+<line class="spine" x1="44" x2="91" y1="130" y2="130"/>
+<text x="40" y="144" class="mid muted">MÃO</text>
+<circle class="node-on" cx="95" cy="130" r="4"/>
+<line class="spine" x1="99" x2="146" y1="130" y2="130"/>
+<text x="95" y="144" class="mid gold">1ª ✓</text>
+<circle class="node-on" cx="150" cy="130" r="4"/>
+<line class="spine" x1="154" x2="201" y1="130" y2="130"/>
+<text x="150" y="144" class="mid gold">2ª</text>
+<circle class="node" cx="205" cy="130" r="4"/>
+<line class="spine" x1="209" x2="256" y1="130" y2="130"/>
+<text x="205" y="144" class="mid muted">3ª</text>
+<circle class="node" cx="260" cy="130" r="4"/>
+<text x="260" y="144" class="mid muted">RESULTADO</text>
+<text x="112" y="164" class="sect onfelt">VIRA</text>
+<rect class="card" x="136" y="153" width="18" height="14" rx="3"/><text x="145" y="164" class="mid">7♦</text>
+<text x="160" y="164" class="onfelt">manilhas: Q</text>
+<rect class="back" x="121" y="176" width="26" height="38" rx="3"/><rect class="back" x="153" y="176" width="26" height="38" rx="3"/>
+<rect class="chip" x="37" y="229" width="46" height="34" rx="4" opacity="0.25"/><rect class="card" x="40" y="232" width="18" height="26" rx="3" stroke-width="2"/><text x="49" y="249" class="mid" font-size="8">4♣</text><rect class="card" x="62" y="232" width="18" height="26" rx="3" opacity="0.65"/><text x="71" y="249" class="mid" font-size="8">7♦</text>
+<rect class="card" x="120" y="224" width="30" height="42" rx="4"/><text x="135" y="250" class="mid danger">Q♥</text>
+<rect class="card" x="158" y="224" width="30" height="42" rx="4"/><text x="173" y="250" class="mid">K♠</text>
+<text x="150" y="282" class="mid onfelt">Sua vez.</text>
+<text x="150" y="294" class="mid danger" font-size="8">A mesa não conseguiu registrar a jogada.</text>
+<rect class="card" x="105" y="300" width="30" height="42" rx="4" transform="rotate(-5 120 321)"/><text x="120" y="326" class="mid" transform="rotate(-5 120 321)">4♣</text><rect class="card" x="140" y="300" width="30" height="42" rx="4" transform="rotate(0 155 321)"/><text x="155" y="326" class="mid" transform="rotate(0 155 321)">3♠</text><rect class="card" x="175" y="300" width="30" height="42" rx="4" transform="rotate(5 190 321)"/><text x="190" y="326" class="mid danger" transform="rotate(5 190 321)">5♥</text>
+<rect class="btn" x="105" y="352" width="90" height="24" rx="6"/><text x="150" y="368" class="mid btn-txt">TRUCO!</text>
+<line class="rule" x1="22" x2="278" y1="382" y2="382"/>
+<text x="24" y="394" class="muted">1ª  você  4♣</text>
+<text x="24" y="405" class="muted">1ª  casa  7♦</text>
+</svg>
+<figcaption>arena-network-error — the store refused the write: the table says so in its own words, under the line it was already speaking. The hand is left exactly as it was, because a refusal that cleared the felt would cost you the read on a hand that is still live</figcaption>
+</figure>
+
+</div>
+<script type="application/json" data-kind="paths" data-of="arena">
+{
+  "sit_down": {"states": ["loading", "empty", "populated"], "accepts": ["accept-instant-table", "accept-profile-bar", "accept-offline", "accept-same-table"]},
+  "play_a_vaza": {"states": ["populated", "populated"], "accepts": ["accept-play-card", "accept-house-answers", "accept-vaza-winner", "accept-phase-tracker"]},
+  "raise": {"states": ["populated", "raised"], "accepts": ["accept-truco-call", "accept-stake-badge"]},
+  "hand_ends": {"states": ["raised", "resolved"], "accepts": ["accept-hand-winner", "accept-run-scores", "accept-play-log"]},
+  "next_hand": {"states": ["resolved", "populated"], "accepts": ["accept-next-hand", "accept-fresh-shuffle"]},
+  "match_ends": {"states": ["resolved", "match-over"], "accepts": ["accept-match-over", "accept-match-to-twelve"]},
+  "retint": {"states": ["populated", "picking", "populated"], "accepts": ["accept-custom-dropdown", "accept-theme-switch"]},
+  "reseat": {"states": ["picking", "populated"], "accepts": ["accept-seat-modes", "accept-variant-switch", "accept-partner-plays"]},
+  "night": {"states": ["populated", "populated-dark"], "accepts": ["accept-dark-twin", "accept-touch-and-motion"]},
+  "night_raised": {"states": ["raised", "raised-dark"], "accepts": ["accept-dark-twin"]}
+}
+</script>
+</section>
+
+<section id="regras" data-kind="screen" data-route="/regras">
+<h3>regras — the rules, at the table</h3>
+<p data-extract="reads">Reads: <a href="#Match">Match</a> (singleton, filter
+<code>status=eq.playing</code>) — only so the variant in force is marked, and
+the felt matches the table you came from. Everything else on the screen is
+prose: the card order, the two manilha rules, the raise ladder, the tie rules.
+</p>
+<p data-extract="mutations">Mutations: none. The rules screen changes nothing —
+it is the one place a newcomer can stand still. <code>keep: 1</code>: it is
+read, left, and read again mid-hand, and repainting it each time would lose the
+scroll position exactly when it is being consulted.</p>
+<div class="storyboard frames">
+<figure id="regras-populated" data-kind="state" data-state="populated">
+<svg viewBox="0 0 300 420" width="225">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="gold">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<text x="12" y="52" class="big">Como se joga</text>
+<text x="12" y="70" class="muted">Você está jogando Paulista, 1v1.</text>
+<text x="12" y="96" class="sect">FORÇA DAS CARTAS</text>
+<rect class="chip" x="12" y="104" width="276" height="20" rx="4"/>
+<text x="20" y="118">4 · 5 · 6 · 7 · Q · J · K · A · 2 · 3</text>
+<text x="12" y="140" class="muted">O naipe não conta — fora das manilhas.</text>
+<text x="12" y="166" class="sect">MANILHAS</text>
+<text x="12" y="182">Paulista: a carta seguinte à vira.</text>
+<text x="12" y="198">Mineiro: 4♣ · 7♥ · A♠ · 7♦, sempre.</text>
+<rect class="card" x="12" y="206" width="26" height="36" rx="3"/><text x="25" y="228" class="mid">4♣</text>
+<rect class="card" x="46" y="206" width="26" height="36" rx="3"/><text x="59" y="228" class="mid danger">7♥</text>
+<rect class="card" x="80" y="206" width="26" height="36" rx="3"/><text x="93" y="228" class="mid">A♠</text>
+<rect class="card" x="114" y="206" width="26" height="36" rx="3"/><text x="127" y="228" class="mid danger">7♦</text>
+<text x="150" y="228" class="muted">zap · copas · espadilha · ouros</text>
+<text x="12" y="266" class="sect">A APOSTA</text>
+<circle class="node-on" cx="20" cy="284" r="5"/><text x="34" y="288">1</text>
+<line class="spine" x1="26" x2="60" y1="284" y2="284"/>
+<circle class="node-on" cx="66" cy="284" r="5"/><text x="80" y="288">3 truco</text>
+<line class="spine" x1="72" x2="120" y1="284" y2="284"/>
+<circle class="node" cx="126" cy="284" r="5"/><text x="140" y="288">6 seis</text>
+<line class="spine" x1="132" x2="180" y1="284" y2="284"/>
+<circle class="node" cx="186" cy="284" r="5"/><text x="200" y="288">9 nove</text>
+<line class="spine" x1="192" x2="236" y1="284" y2="284"/>
+<circle class="node" cx="242" cy="284" r="5"/><text x="256" y="288">12</text>
+<text x="12" y="306" class="muted">Correr paga o que valia antes do pedido.</text>
+<text x="12" y="320" class="gold">Quem pede não aumenta — sobe o outro lado.</text>
+<text x="12" y="342" class="sect">EMPATES</text>
+<text x="12" y="356" class="muted">1ª empatada, decide a 2ª. 2ª empatada,</text>
+<text x="12" y="368" class="muted">leva quem fez a 1ª. Tudo empatado, mão nula.</text>
+<text x="12" y="382" class="muted">As cartas ficam na mesa até o fim da mão.</text>
+<rect class="btn" x="12" y="392" width="96" height="22" rx="6"/><text x="60" y="407" class="mid btn-txt">Voltar à mesa</text>
+</svg>
+<figcaption>regras-populated — one screenful, no scroll on a phone: order, manilhas, ladder, ties; the variant in force is named from the store, and its own words are used throughout (vaza/partida here, rodada/jogo under mineiro)</figcaption>
+</figure>
+<figure id="regras-populated-dark" data-kind="state" data-state="populated-dark">
+<svg viewBox="0 0 300 420" width="225">
+<g class="dark">
+<rect class="page" width="300" height="420"/>
+<text x="12" y="18" class="muted">Mesa</text><text x="52" y="18" class="gold">Regras</text>
+<line class="rule" x1="0" x2="300" y1="26" y2="26"/>
+<text x="12" y="52" class="big">Como se joga</text>
+<text x="12" y="70" class="muted">Você está jogando Paulista, 1v1.</text>
+<text x="12" y="96" class="sect">FORÇA DAS CARTAS</text>
+<rect class="chip" x="12" y="104" width="276" height="20" rx="4"/>
+<text x="20" y="118">4 · 5 · 6 · 7 · Q · J · K · A · 2 · 3</text>
+<text x="12" y="140" class="muted">O naipe não conta — fora das manilhas.</text>
+<text x="12" y="166" class="sect">MANILHAS</text>
+<text x="12" y="182">Paulista: a carta seguinte à vira.</text>
+<text x="12" y="198">Mineiro: 4♣ · 7♥ · A♠ · 7♦, sempre.</text>
+<rect class="card" x="12" y="206" width="26" height="36" rx="3"/><text x="25" y="228" class="mid">4♣</text>
+<rect class="card" x="46" y="206" width="26" height="36" rx="3"/><text x="59" y="228" class="mid danger">7♥</text>
+<rect class="card" x="80" y="206" width="26" height="36" rx="3"/><text x="93" y="228" class="mid">A♠</text>
+<rect class="card" x="114" y="206" width="26" height="36" rx="3"/><text x="127" y="228" class="mid danger">7♦</text>
+<text x="150" y="228" class="muted">zap · copas · espadilha · ouros</text>
+<text x="12" y="266" class="sect">A APOSTA</text>
+<circle class="node-on" cx="20" cy="284" r="5"/><text x="34" y="288">1</text>
+<line class="spine" x1="26" x2="60" y1="284" y2="284"/>
+<circle class="node-on" cx="66" cy="284" r="5"/><text x="80" y="288">3 truco</text>
+<line class="spine" x1="72" x2="120" y1="284" y2="284"/>
+<circle class="node" cx="126" cy="284" r="5"/><text x="140" y="288">6 seis</text>
+<line class="spine" x1="132" x2="180" y1="284" y2="284"/>
+<circle class="node" cx="186" cy="284" r="5"/><text x="200" y="288">9 nove</text>
+<line class="spine" x1="192" x2="236" y1="284" y2="284"/>
+<circle class="node" cx="242" cy="284" r="5"/><text x="256" y="288">12</text>
+<text x="12" y="306" class="muted">Correr paga o que valia antes do pedido.</text>
+<text x="12" y="320" class="gold">Quem pede não aumenta — sobe o outro lado.</text>
+<text x="12" y="342" class="sect">EMPATES</text>
+<text x="12" y="356" class="muted">1ª empatada, decide a 2ª. 2ª empatada,</text>
+<text x="12" y="368" class="muted">leva quem fez a 1ª. Tudo empatado, mão nula.</text>
+<text x="12" y="382" class="muted">As cartas ficam na mesa até o fim da mão.</text>
+<rect class="btn" x="12" y="392" width="96" height="22" rx="6"/><text x="60" y="407" class="mid btn-txt">Voltar à mesa</text>
+</g>
+</svg>
+<figcaption>regras-populated-dark — literal twin</figcaption>
+</figure>
+</div>
+<script type="application/json" data-kind="paths" data-of="regras">
+{
+  "read_rules": {"states": ["populated"], "accepts": ["accept-rules-screen"]},
+  "night": {"states": ["populated", "populated-dark"], "accepts": ["accept-dark-twin"]}
+}
+</script>
+</section>
+
+<h2 id="dealer-section">The dealer</h2>
+<section id="dealer">
+<h3>dealer — the app's one module</h3>
+<p>
+The engine the declarative surface cannot hold: the forty-card deck and its
+Fisher-Yates shuffle, the manilha rule per variant, card power, the house's
+counter-play, the vaza and hand arithmetic, and the raise ladder. It runs on
+the arena screen as an app-owned module and it is the only place in the app
+where imperative code exists.
+</p>
+<p>
+What it may do is bounded by construction, and the bound is the point:
+</p>
+<ul>
+<li><strong>It writes nothing directly.</strong> Every consequence it decides —
+a dealt hand, the house's card, a vaza verdict, a score — is submitted through
+the arena's own emitted forms. The store keeps one write path and the regions
+stay the only readers (<a href="#decision-03">decision-03</a>).</li>
+<li><strong>It fetches nothing.</strong> The app makes no network request after
+its own statics load; there is nothing to fetch, which is what makes
+<a href="#accept-offline">the offline promise</a> a property rather than a
+claim.</li>
+<li><strong>It owns only cards in flight.</strong> The hand, the mat and the
+deck live for the length of one hand and never enter the store; every fact that
+outlives a vaza is a row (<a href="#decision-03">decision-03</a>).</li>
+<li><strong>Its rules are testable without it.</strong> Power, manilhas, the
+vaza verdict and the ladder are pure functions of the injected state, which is
+what the invariants below are written against — the same functions the tests
+name.</li>
+</ul>
+<p>
+It is not a Jessie handler: the terminal's handler contract hands a reduce
+function its arguments and takes a description of updates back, and its only
+event source is a drag. A card game's events are taps, and its rendering is the
+table itself. That mismatch is stated rather than worked around
+(<a href="#decision-02">decision-02</a>), and it is the finding the platform
+advisor carries below.
+</p>
+</section>
+
+<h2 id="flows">Flows</h2>
+
+<section id="new-match" data-kind="flow">
+<h3>new-match — sit down</h3>
+<div class="mermaid">
+graph LR
+  A[arrive / Outra partida] --> B[dealer mints a Match]
+  B --> C[new-match form create]
+  C --> D[scoreboard 0 × 0, stake 1]
+  D --> E[deal-hand]
+</div>
+</section>
+
+<section id="deal-hand" data-kind="flow">
+<h3>deal-hand — shuffle and deal</h3>
+<div class="mermaid">
+graph LR
+  A[hand needed] --> B[Fisher-Yates over 40 cards]
+  B --> C[3 per seat, vira turned]
+  C --> D[deal-hand form create Round]
+  D --> E[phase dealt, manilha named]
+</div>
+</section>
+
+<section id="block-held" data-kind="flow">
+<h3>block-held — whose turn it is, said on the cards</h3>
+<div class="mermaid">
+graph LR
+  A[a card is laid, or a rodada closes] --> B[the fold reads the turn out of the log]
+  B --> C[Held blocked, one update per card that changes]
+  C --> D[the button carries disabled from the row]
+</div>
+</section>
+
+<section id="deal-held" data-kind="flow">
+<h3>deal-held — the hand becomes rows</h3>
+<div class="mermaid">
+graph LR
+  A[deal cuts three cards] --> B[deal-held form create Held, one per card]
+  B --> C[region reads Held current=yes, ordered by slot]
+  C --> D[terminal renders the fan and keeps its nodes]
+</div>
+</section>
+
+<section id="spend-held" data-kind="flow">
+<h3>spend-held — the card leaves the hand</h3>
+<div class="mermaid">
+graph LR
+  A[tap a card] --> B[spend-held form update Held current=no]
+  B --> C[region drops that item node]
+  C --> D[play-card form create Play]
+  D --> E[the card arrives on the mat]
+</div>
+</section>
+
+<section id="play-card" data-kind="flow">
+<h3>play-card — a card leaves the hand</h3>
+<div class="mermaid">
+graph LR
+  A[tap a card] --> B[the fold states a Play for the row you tapped]
+  B --> C[the row wakes the fold again]
+  C --> D[eles lay, a beat later]
+  D --> E{rodada complete?}
+  E -->|yes| F[a beat, then the verdict on the round]
+  E -->|no| G[the next seat]
+</div>
+</section>
+
+<section id="call-truco" data-kind="flow">
+<h3>call-truco — raise the hand</h3>
+<div class="mermaid">
+graph LR
+  A[TRUCO! / Seis! / Nove! / Doze!] --> B[the fold states a Play, kind truco]
+  B --> C[the round says who asked and for what]
+  C --> D[eles answer two beats later]
+  D --> E[accept, raise, or run]
+</div>
+</section>
+
+<section id="answer-accept" data-kind="flow">
+<h3>answer-accept — the hand is on</h3>
+<div class="mermaid">
+graph LR
+  A[Aceito] --> B[the fold states a Play, kind accept]
+  B --> C[the round and the match take the new rung]
+  C --> D[play resumes at the same rodada]
+</div>
+</section>
+
+<section id="answer-run" data-kind="flow">
+<h3>answer-run — pay and fold</h3>
+<div class="mermaid">
+graph LR
+  A[Corro] --> B[the fold states a Play, kind run]
+  B --> C[a run in the log ends the hand, whoever ran]
+  C --> D[the other side takes the stake standing before the raise]
+  D --> E[resolved]
+</div>
+</section>
+
+<section id="score-hand" data-kind="flow">
+<h3>score-hand — the score moves</h3>
+<div class="mermaid">
+graph LR
+  A[hand resolves] --> B[score-hand form update Match]
+  B --> C{12 reached?}
+  C -->|yes| D[status over, winner set]
+  C -->|no| E[hand_no + 1, stake back to 1]
+</div>
+</section>
+
+<section id="pick-variant" data-kind="flow">
+<h3>pick-variant — Paulista or Mineiro</h3>
+<div class="mermaid">
+graph LR
+  A[picker machine arrow] --> B[pick-variant writes Match: variant, score to nil, seed respun]
+  B --> C[fold retires the standing hand and deals under the new rules]
+</div>
+</section>
+
+<section id="pick-seats" data-kind="flow">
+<h3>pick-seats — 1v1 or 2v2</h3>
+<div class="mermaid">
+graph LR
+  A[picker machine arrow] --> B[pick-seats writes Match: seats, score to nil, seed respun]
+  B --> C[table reseats: parça and casa2 appear or leave]
+</div>
+</section>
+
+<section id="pick-theme" data-kind="flow">
+<h3>pick-theme — the felt</h3>
+<div class="mermaid">
+graph LR
+  A[picker machine arrow] --> B[pick-theme writes Match.theme]
+  B --> C[data-theme on the screen root]
+  C --> D[felt, frame and card backs retint]
+</div>
+</section>
+
+<h2 id="invariants">Invariants &amp; test pairs</h2>
+
+<p id="test-deal-shuffle" data-kind="test" data-of="Round" data-accepts="accept-fresh-shuffle accept-instant-table">
+A deal takes forty distinct cards, hands three to each seat and turns one vira,
+so a 1v1 deal spends seven of them: <code class="cel">output.deck.size() == 40 &amp;&amp;
+output.hands.all(h, h.size() == 3) &amp;&amp; output.dealt.size() == output.dealt.uniq().size()</code>.
+Two consecutive deals under the injected shuffle differ:
+<code class="cel">output.first != output.second</code>.
+</p>
+
+<p id="test-paulista-manilha" data-kind="test" data-of="Round" data-accepts="accept-paulista-manilha">
+Under paulista the manilha rank is the one after the vira in the power order,
+and the order wraps: a vira of <code class="cel">input.vira == "7"</code> gives
+<code class="cel">output.manilha == "Q"</code>, and a vira of
+<code class="cel">input.wrapVira == "3"</code> gives
+<code class="cel">output.wrapManilha == "4"</code>.
+</p>
+
+<p id="test-mineiro-manilha" data-kind="test" data-of="Round" data-accepts="accept-mineiro-manilha">
+Under mineiro the four manilhas are fixed whatever the vira shows:
+<code class="cel">output.manilhas == ["4♣", "7♥", "A♠", "7♦"]</code> and
+<code class="cel">output.manilha == "fixas"</code>.
+</p>
+
+<p id="test-gaucho-river" data-kind="test" data-of="Match" data-accepts="accept-gaucho-river accept-gaucho-voltas">
+Rio Grande do Sul plays the river's game in Portuguese: no turn-up, the four
+fixed manilhas, truco / retruco / vale quatro, and both the envido and the
+flor. Only the words stay Brazil's, and the race is two voltas:
+<code class="cel">output.vira == "" &amp;&amp; output.manilha == "fixas" &amp;&amp;
+output.rungs == [1, 2, 3, 4] &amp;&amp; output.envido == true &amp;&amp;
+output.flor == true &amp;&amp; output.goal == [18, 24]</code>.
+</p>
+
+<p id="test-envido-count" data-kind="test" data-of="Round" data-accepts="accept-envido-count">
+The envido counts two cards of one suit as twenty and both their pips, and a
+hand with no two suits alike as its best single card; the three face cards
+count nothing:
+<code class="cel">output.suited == 33 &amp;&amp; output.unsuited == 7 &amp;&amp; output.faces == 0</code>.
+Equal counts go to the mano: <code class="cel">output.tieGoesTo == "mano"</code>.
+</p>
+
+<p id="test-envido-ladder" data-kind="test" data-of="Round" data-accepts="accept-envido-ladder">
+The ladder adds two and then three more, and a falta is not a rung at all but
+what the leading side still has to run. Refusing pays what the chain was worth
+before the call being refused, and one when that is nothing:
+<code class="cel">output.envido == 2 &amp;&amp; output.envidoThenReal == 5 &amp;&amp;
+output.falta == 30 &amp;&amp; output.refuseFirst == 1 &amp;&amp; output.refuseReal == 2</code>.
+</p>
+
+<p id="test-flor-cancels" data-kind="test" data-of="Round" data-accepts="accept-flor-cancels">
+A flor is three cards of one suit. Whoever holds one declares it, it pays three
+at a table that deals it, and the envido leaves the hand whether or not one was
+asked for:
+<code class="cel">output.pays == input.pays &amp;&amp; output.envidoGone == true &amp;&amp;
+output.dealtWhere == ["uruguayo", "paraguayo"]</code>.
+</p>
+
+<p id="test-mao-de-dez" data-kind="test" data-of="Round" data-accepts="accept-mao-de-dez">
+A side one hand short of the goal decides the hand before any card is laid: it
+plays it for the brink's worth or runs and gives the first rung, and no truco is
+called in it. Both sides there play it face down for the first rung. Only the
+two Brazilian ladders deal it, and never across a room:
+<code class="cel">output.mineiro == [10, 4, 2] &amp;&amp; output.paulista == [11, 3, 1] &amp;&amp;
+output.trucoInBrink == false &amp;&amp; output.ferroWorth == output.firstRung &amp;&amp;
+output.online == false</code>.
+</p>
+
+<p id="test-envido-pays-now" data-kind="test" data-of="Round" data-accepts="accept-envido-pays-now">
+It is a wager on a different question, settled inside the first rodada and paid
+the moment it resolves rather than when the hand does, and a side that refuses
+shows nothing:
+<code class="cel">output.paidBeforeHandEnds == true &amp;&amp; output.taken == input.taken &amp;&amp;
+output.refused == input.refused &amp;&amp; output.showsCountsOnlyWhenTaken == true</code>.
+</p>
+
+<p id="test-manilha-order" data-kind="test" data-of="Play" data-accepts="accept-manilha-order">
+Between manilhas the order their table names decides, in one strictly
+descending run:
+<code class="cel">output.zap &gt; output.copas &amp;&amp; output.copas &gt; output.espadilha &amp;&amp;
+output.espadilha &gt; output.ouros &amp;&amp; output.ouros &gt; output.highestPlain</code>.
+</p>
+
+<p id="test-shared-suit-order" data-kind="test" data-of="Play" data-accepts="accept-shared-suit-order">
+Two manilhas of one suit are ordered by that list and not by the suit they
+share, so the Río de la Plata four run strictly down and none of them ties:
+<code class="cel">output.espadilha &gt; output.bastilha &amp;&amp;
+output.bastilha &gt; output.sete &amp;&amp; output.sete &gt; output.ouros</code>.
+</p>
+
+<p id="test-no-manilha" data-kind="test" data-of="Round" data-accepts="accept-no-manilha">
+A table naming no manilhas turns nothing up, says so on the round, and ranks
+every card on the rank it shows:
+<code class="cel">output.vira == "" &amp;&amp; output.manilha == "nenhuma" &amp;&amp;
+output.powers == output.ranks</code>.
+</p>
+
+<p id="test-card-order" data-kind="test" data-of="Play" data-accepts="accept-card-order">
+Outside the manilhas power follows the rank order and ignores the suit:
+<code class="cel">output.powers == ["4", "5", "6", "7", "Q", "J", "K", "A", "2", "3"]</code>
+and <code class="cel">output.sameRankDifferentSuits.all(p, p == output.sameRankDifferentSuits[0])</code>.
+</p>
+
+<p id="test-house-answers" data-kind="test" data-of="arena" data-accepts="accept-house-answers">
+The house plays its lowest winning card when it can win the vaza, and its
+lowest card when it cannot:
+<code class="cel">output.winning.power &gt; input.led.power &amp;&amp;
+output.winning.power == input.hand.filter(c, c.power &gt; input.led.power).map(c, c.power).min()</code>,
+and when nothing beats the lead
+<code class="cel">output.losing.power == input.hand.map(c, c.power).min()</code>.
+</p>
+
+<p id="test-vaza-winner" data-kind="test" data-of="Round" data-accepts="accept-vaza-winner accept-play-card">
+The strongest card on the mat takes the vaza, and the card that was played
+leaves the hand: <code class="cel">output.winner == input.mat.filter(p, p.power ==
+input.mat.map(q, q.power).max())[0].side</code> and
+<code class="cel">output.handSize == input.handSize - 1</code>.
+</p>
+
+<p id="test-vaza-tie" data-kind="test" data-of="Round" data-accepts="accept-vaza-tie">
+Equal power ties the vaza, and the stated tie rules decide the hand: a tied
+first is settled by the second — <code class="cel">output.tiedFirst == "them"</code>
+when <code class="cel">input.v1 == "tie" &amp;&amp; input.v2 == "them"</code> — a tied second
+gives the hand to whoever took the first —
+<code class="cel">output.tiedSecond == "us"</code> when
+<code class="cel">input.v1 == "us" &amp;&amp; input.v2 == "tie"</code> — and a hand tied all
+the way through scores nothing:
+<code class="cel">output.allTied == "draw" &amp;&amp; output.points == 0</code>.
+</p>
+
+<p id="test-hand-winner" data-kind="test" data-of="Round" data-accepts="accept-hand-winner">
+The first side with two vazas takes the hand and banks the stake as it stands,
+and the third vaza is not played once it cannot matter:
+<code class="cel">output.result == "us" &amp;&amp; output.points == input.stake &amp;&amp;
+output.vazasPlayed == 2</code> given
+<code class="cel">input.v1 == "us" &amp;&amp; input.v2 == "us"</code>.
+</p>
+
+<p id="test-phase-spine" data-kind="test" data-of="Round" data-accepts="accept-phase-tracker">
+The phase advances with the play and never skips a node:
+<code class="cel">output.phases == ["dealt", "v1", "v2", "v3", "result"]</code>, and
+the node lit is the one the hand is in:
+<code class="cel">output.lit == input.phase</code>.
+</p>
+
+<p id="test-truco-ladder" data-kind="test" data-of="Match" data-accepts="accept-truco-call accept-raise-ladder">
+The ladder is the variant's and it stops at twelve. Paulista counts the mão as
+one and climbs <code class="cel">output.paulista == [1, 3, 6, 9, 12]</code>;
+mineiro counts it as two and climbs
+<code class="cel">output.mineiro == [2, 4, 8, 10, 12]</code> — truco, seis,
+nove, doze — under which a call pays what the variant says rather than what it
+is named: <em>seis</em> pays eight and <em>nove</em> pays ten. Catalonia bets twice and stops:
+<code class="cel">output.truc == [1, 2, 3]</code>. Ga&uacute;cho climbs the
+river's ladder rather than Brazil's and races two voltas rather than one,
+nine each head to head and twelve each in pairs:
+<code class="cel">output.gaucho == output.argentino &amp;&amp;
+output.gameLengthGaucho == [18, 24]</code>. At the top rung no further
+call is offered: <code class="cel">output.callableAtTwelve == false</code>.
+</p>
+
+<p id="test-run-scores" data-kind="test" data-of="Match" data-accepts="accept-run-scores">
+Running pays what the hand was worth <em>before</em> the refused raise: from a
+hand at one, a refused truco gives the caller one, not three —
+<code class="cel">output.them_score == input.them_score + input.stakeBeforeRaise</code>
+with <code class="cel">input.stakeBeforeRaise == 1 &amp;&amp; input.raisedTo == 3</code>,
+and the hand ends at once: <code class="cel">output.result == "them"</code>.
+</p>
+
+<p id="test-stake-badge" data-kind="test" data-of="arena" data-accepts="accept-stake-badge">
+The badge always reads the stake in force, and it is hot exactly while the hand
+is raised: <code class="cel">output.badge == input.match.stake</code> and
+<code class="cel">output.pulsing == (input.match.stake &gt; 1)</code>.
+</p>
+
+<p id="test-match-to-twelve" data-kind="test" data-of="Match" data-accepts="accept-match-to-twelve accept-match-over">
+A hand's points land on the winning side and the match closes at twelve:
+<code class="cel">output.us_score == input.us_score + input.stake</code>, and when
+that reaches twelve <code class="cel">output.status == "over" &amp;&amp;
+output.winner == "us" &amp;&amp; output.us_score == 12</code>. Neither score ever exceeds
+twelve: <code class="cel">output.us_score &lt;= 12 &amp;&amp; output.them_score &lt;= 12</code>.
+</p>
+
+<p id="test-next-hand" data-kind="test" data-of="Round" data-accepts="accept-next-hand">
+A resolved hand is followed by a fresh one with the stake back at one and the
+hand number up: <code class="cel">output.hand_no == input.hand_no + 1 &amp;&amp;
+output.stake == 1 &amp;&amp; output.phase == "dealt"</code>.
+</p>
+
+<p id="test-seat-modes" data-kind="test" data-of="Match" data-accepts="accept-seat-modes accept-partner-plays">
+1v1 seats two and 2v2 seats four, and a vaza the partner takes is your side's:
+<code class="cel">output.seats1v1 == ["you", "casa1"] &amp;&amp;
+output.seats2v2 == ["you", "casa1", "parca", "casa2"]</code> and
+<code class="cel">output.winnerSide == "us"</code> when
+<code class="cel">input.strongest.seat == "parca"</code>.
+</p>
+
+<p id="test-variant-switch" data-kind="test" data-of="Match" data-accepts="accept-variant-switch">
+Switching variant restarts the match under the new rules rather than changing
+them mid-hand: <code class="cel">output.variant == "mineiro" &amp;&amp;
+output.us_score == 0 &amp;&amp; output.them_score == 0 &amp;&amp; output.hand_no == 1</code>.
+</p>
+
+<p id="test-theme-persists" data-kind="test" data-of="Match" data-accepts="accept-theme-switch">
+The felt is a stored field, so it survives leaving the table for the rules and
+coming back: <code class="cel">output.theme == "madeira" &amp;&amp;
+output.themeAfterNavigation == output.theme</code>, and it is one of the four:
+<code class="cel">output.theme in ["xadrez", "formica", "neon", "madeira"]</code>.
+</p>
+
+<p id="test-play-log" data-kind="test" data-of="Play" data-accepts="accept-play-log">
+Every card and every word lands in the log, in the order it happened, and
+nothing is ever rewritten: <code class="cel">output.rows.size() == input.cards +
+input.words</code>, <code class="cel">output.rows.map(r, r.created_at) ==
+output.rows.map(r, r.created_at).sortAsc()</code> and
+<code class="cel">output.updates == 0 &amp;&amp; output.deletes == 0</code>.
+</p>
+
+<p id="test-offline" data-kind="test" data-of="arena" data-accepts="accept-offline">
+After the statics load the app issues no request: a full match driven with the
+network cut completes, and the request count stays where it was —
+<code class="cel">output.requestsDuringMatch == 0 &amp;&amp; output.handsCompleted &gt; 0</code>.
+</p>
+
+<p id="test-touch-and-motion" data-kind="test" data-of="arena" data-accepts="accept-touch-and-motion">
+Everything the hand touches is at least a thumb wide, and every animation is a
+transition on the motion tokens, so reduced motion collapses them all:
+<code class="cel">output.targets.all(t, t.width &gt;= 24 &amp;&amp; t.height &gt;= 24)</code> and
+<code class="cel">output.loopingAnimations == 1 &amp;&amp; output.reducedMotionLoops == 0</code>.
+</p>
+
+<p id="test-no-self-raise" data-kind="test" data-of="Match" data-accepts="accept-no-self-raise">
+The right to climb belongs to the side that accepted, so a side cannot call
+twice in a row: <code class="cel">output.callableBySameSide == false</code> after
+<code class="cel">input.calledBy == "us" &amp;&amp; input.answer == "accept"</code>, while
+<code class="cel">output.callableByOtherSide == true</code>. The ladder is
+unchanged by the rule: <code class="cel">output.stake == input.rung</code>.
+</p>
+
+<p id="test-same-table" data-kind="test" data-of="arena" data-accepts="accept-same-table">
+The match outlives the tab and the dealer does not, so a reload arrives at a
+sitting in progress with no memory of it. It takes up the match on the table
+rather than dealing itself a second one:
+<code class="cel">output.matchId == input.matchId &amp;&amp; output.handNo == input.handNo</code>,
+and <code class="cel">output.playingMatches == 1</code> — because two of them
+leave the arena binding one and the dealer writing to the other, which is a
+table that stops answering with nothing to say why.
+</p>
+
+<p id="test-table-memory" data-kind="test" data-of="Round" data-accepts="accept-table-memory">
+Nothing is collected until the hand ends: after two tricks the felt holds both
+of them and every card played into them —
+<code class="cel">output.tricksOnTable == 2 &amp;&amp; output.cardsOnTable == input.playsSoFar</code>
+— and each closed trick names the card that took it:
+<code class="cel">output.closed.all(t, t.winners == 1)</code>.
+</p>
+
+<p id="test-variant-words" data-kind="test" data-of="arena" data-accepts="accept-variant-words">
+The vocabulary is the variant's: <code class="cel">output.paulista.trick == "vaza"</code>,
+<code class="cel">output.paulista.match == "partida"</code>,
+<code class="cel">output.mineiro.trick == "rodada"</code>,
+<code class="cel">output.mineiro.match == "jogo"</code>, and the rules screen
+carries the same pair the table does:
+<code class="cel">output.rulesScreenWords == output.tableWords</code>. Neither
+variant says <code class="cel">"queda"</code>:
+<code class="cel">!output.anyWords.exists(w, w == "queda")</code>.
+</p>
+
+<p id="test-mao-and-pe" data-kind="test" data-of="Round" data-accepts="accept-mao-and-pe">
+The mão passes one seat per hand and the pé is the seat before it in the
+order: <code class="cel">output.leaders == ["you", "casa1", "you", "casa1"]</code>
+over four 1v1 hands, and at 2v2
+<code class="cel">output.leaders4 == ["you", "casa1", "parca", "casa2"]</code>.
+The position the table shows is the one the order implies:
+<code class="cel">output.shown == (input.leader == "you" ? "mão" : input.last == "you" ? "pé" : "")</code>.
+</p>
+
+<p id="test-nos-eles" data-kind="test" data-of="Match" data-accepts="accept-nos-eles">
+The scoreboard is a truco scoreboard: <code class="cel">output.left == "Nós"</code>,
+<code class="cel">output.right == input.match.opponent_name</code>, the word
+<code class="cel">"casa"</code> appears nowhere —
+<code class="cel">!output.words.exists(w, w.contains("casa"))</code> — and the
+score is counted in markers beside the figure, one per tento:
+<code class="cel">output.markers == input.score</code>.
+</p>
+
+<p id="test-persona-tell" data-kind="test" data-of="arena" data-accepts="accept-persona-tell">
+Every persona says something of their own a beat before they call, and the call
+follows it: <code class="cel">output.tellPrecedesCall == true</code> and
+<code class="cel">output.tell == input.cast[input.opponent].tell</code>. The
+tell is never empty for an opponent:
+<code class="cel">input.cast.all(k, k == "bigode" || input.cast[k].tell.size() > 0)</code>.
+</p>
+
+<p id="test-custom-dropdown" data-kind="test" data-of="arena" data-accepts="accept-custom-dropdown">
+Custom drop-down menus render in-page without operating-system native popups:
+<code class="cel">output.isNativeSelect == false</code>.
+</p>
+
+<p id="test-profile-bar" data-kind="test" data-of="arena" data-accepts="accept-profile-bar">
+Profile bar displays the player's seat name and guest status:
+<code class="cel">output.seat == "you" &amp;&amp; output.guest == true</code>.
+</p>
+
+<p id="test-rules-screen" data-kind="test" data-of="regras" data-accepts="accept-rules-screen">
+The rules screen explains both variants, ranks, and ladders:
+<code class="cel">output.hasPaulista &amp;&amp; output.hasMineiro</code>.
+</p>
+
+<p id="test-dark-twin" data-kind="test" data-of="arena" data-accepts="accept-dark-twin">
+Every screen renders with theme support for dark and light appearance:
+<code class="cel">output.hasContrast == true</code>.
+</p>
+
+<p id="test-multiplayer-room" data-kind="test" data-of="Match" data-accepts="accept-multiplayer-room">
+A multiplayer match has a room code, supports online sync, and pairs two remote seats:
+<code class="cel">output.code == input.code &amp;&amp; output.seats == 2</code>.
+</p>
+
+<p id="test-fog-of-war" data-kind="test" data-of="Held" data-accepts="accept-fog-of-war">
+Replicated cards held by opponents are masked with card back tokens until played:
+<code class="cel">output.card == "back" &amp;&amp; output.rank == null &amp;&amp; output.suit == null</code>.
+</p>
+
+<p id="test-slot-tracking" data-kind="test" data-of="Play" data-accepts="accept-slot-tracking">
+Cards are played from a specific physical hand slot index preserving opponent tells:
+<code class="cel">output.from_slot == 1 &amp;&amp; output.card == "4♣"</code>.
+</p>
+
+<p id="test-turn-clock" data-kind="test" data-of="Round" data-accepts="accept-turn-clock">
+Turns carry an authoritative deadline with grace buffer for network latency:
+<code class="cel">output.backend_deadline &gt; output.ui_deadline</code>.
+</p>
+
+<h2 id="decisions">Decisions</h2>
+
+<p id="decision-01" data-kind="decision"><strong>01 — nothing leaves the
+device, and the sitting outlives the tab.</strong> The brief asks for a game
+that owes the network nothing, and durability is the axis that buys it. The
+hand is <code>tab</code>: a round, its plays and the cards you hold are the
+sitting itself and have no meaning after it. The <em>match</em> is
+<code>device</code>, because a score you were in the middle of is worth
+finding again tomorrow, and that is one word of program rather than a
+different kind of app. Neither rung emits a table, trigger, publication,
+policy or migration; neither syncs. The cost is stated rather than hidden:
+there is still no cross-device anything, and a browser that forgets its
+storage forgets the score. The right cost for a bar game and the wrong one for
+a ledger.</p>
+
+<p id="decision-02" data-kind="decision"><strong>02 — the dealer is the one
+escape, and it is app-owned code.</strong> Pronto's declarative surface has no
+way to express a shuffle, a card's power under a variant, or an opponent's
+choice. The terminal's Jessie handler contract does not fit either: it is a
+pure reduce whose only event source is a drag. So the arena carries an
+app-owned module. This is a genuine hole in the guarantees and it is drawn as
+its own box (<a href="#dealer">dealer</a>) rather than spread through the
+markup.</p>
+
+<p id="decision-03" data-kind="decision"><strong>03 — the dealer writes only
+through forms.</strong> Every mutation it decides goes through the arena's own
+emitted forms, filled and submitted. Two things follow: the store keeps exactly
+one write path, so a row the app holds is a row a region can render; and the
+machine's writes are auditable in the same place as the player's. The cards in
+flight are the deliberate exception — a hand of cards is not a record, and
+persisting one would make the store's contents depend on when you looked.</p>
+
+<p id="decision-04" data-kind="decision"><strong>04 — no pipelines.</strong> A
+pipeline consumes CDC events off the cluster's WAL; a <code>tab</code> entity
+has no table to publish. Every derivation a pipeline would carry — the running
+score, the vaza tally — is decided by the dealer at the moment of play and
+written as an ordinary field. The idempotence argument that a pipeline would
+owe is replaced by a simpler one: each of these writes is a single form
+submission against a row the dealer already holds.</p>
+
+<p id="decision-05" data-kind="decision"><strong>05 — the phase spine is a
+field, not markup state.</strong> <code>Round.phase</code> is one text column
+and the tracker is a region over it. The alternative — the screen keeping its
+own idea of the phase — puts the spine and the hand out of step exactly when a
+vaza resolves, which is the moment the tracker exists for.</p>
+
+<p id="decision-06" data-kind="decision"><strong>06 — switching variant
+restarts the match.</strong> Paulista and Mineiro do not merely differ in
+manilhas; the ladder starts at a different rung, so a score carried across the
+switch would be a score no rulebook produced. Restarting is honest and the
+dropdown says so.</p>
+
+<p id="decision-07" data-kind="decision"><strong>07 — a table turns a card up or
+fixes its manilhas, never both.</strong> Paulista and gaúcho turn a vira and read
+the rank above it. Mineiro and the Río de la Plata tables name four cards in the
+rules and turn nothing, so the round carries no vira and the strip that names one
+is not drawn — a slot showing a card nobody laid is what reads as a bug, and it
+is the reading the fixed-manilha player is most likely to make.</p>
+
+<p id="decision-08" data-kind="decision"><strong>08 — the log is
+append-only.</strong> <code>Play</code> is never updated or deleted, not even
+between hands. It makes the hand auditable during play, gives the QA seat a
+surface it can drive assertions against, and removes a class of bug the store
+would otherwise hold: a rewritten log cannot be told from a misplayed hand.</p>
+
+<p id="decision-09" data-kind="decision"><strong>09 — a finished match is
+closed, not deleted.</strong> <code>status</code> moves to <code>over</code> and
+the arena's singleton read stops matching it, so the closing scoreline stays on
+screen until a new match is asked for. Deleting would take the result off the
+table at the moment it is being read.</p>
+
+<p id="decision-10" data-kind="decision"><strong>10 — every picker is the app's
+own dropdown.</strong> The brief demands no OS popup, and the reason is the
+design's: a native select menu is drawn by the operating system, and an OS menu
+on a felt table breaks the object the whole screen is building. The panel is the graduated
+<code>omnishell--picker</code>: selection is a machine over the match row, and
+hidden-by-default, top layer, light dismiss, Escape and focus return are the
+platform popover's own — what the app still owes is only which option is
+checked, kept by the screen's observer.</p>
+
+<p id="decision-11" data-kind="decision"><strong>11 — the four themes are
+app-private tokens.</strong> Felt Emerald, Midnight Obsidian, Cyber Neon and
+Crimson Dragon retint the mat, frame and card backs through
+<code>[data-theme]</code> scopes over the app's own token names in a shared
+stylesheet. They never redeclare a platform token, so the design system keeps
+its single declaration and the light/dark twin stays orthogonal: a theme is a
+material, an appearance is the room.</p>
+
+<p id="decision-12" data-kind="decision"><strong>12 — keep policy: arena 0,
+regras 1.</strong> The table is dealt on arrival, so holding a stale instance
+would show a hand that no longer exists; the rules screen is consulted mid-hand
+and holding it keeps the scroll position where the reader left it.</p>
+
+<p id="decision-13" data-kind="decision"><strong>13 — no auth block.</strong>
+The terminal offers passkey and guest; this app declares neither, because
+nothing here is per-person and a sign-in gate on a bar game is a toll. The
+profile bar shows the seat — an avatar, the title the score earns, and the word
+<em>convidado</em> — and it is honest about being local.</p>
+
+<p id="decision-14" data-kind="decision"><strong>14 — escape hatches:
+none.</strong> No container, no WASM, no external endpoint, no vendored unit.
+The one hole in the declarative guarantees is the dealer
+(<a href="#decision-02">decision-02</a>), which is app code at the terminal
+tier, not a cluster service; the emitted bayt.cue redeclares the runtime trio
+unchanged.</p>
+
+<p id="decision-15" data-kind="decision"><strong>15 — one looping animation, and
+it is the stake.</strong> Cards lift, the mat settles, ticks stamp, the score
+counts — all transitions on the motion tokens, so reduced motion collapses
+them. The stake badge's pulse is the single loop in the app and it runs only
+while the hand is raised, which is the one state a player must not miss.</p>
+
+<p id="decision-16" data-kind="decision"><strong>16 — the house plays
+correctly, not deviously.</strong> Lowest winning card, else lowest card; it
+accepts a raise when its hand is strong and runs when it is not. Bluffing and
+card counting are declined at this stage: an opponent that lies is only fun
+once the player trusts the table, and trust is built by an opponent whose moves
+can be checked against the rules screen.</p>
+
+<p id="decision-18" data-kind="decision"><strong>18 — the board is a
+fixed viewport object, not a page.</strong> The arena occupies exactly the
+viewport minus the terminal's nav strip and never scrolls: a table you have to
+scroll is a web page, and the felt stops being an object the moment part of it
+is somewhere else. Every size inside is viewport-relative — the card is a
+fraction of the shorter side, the score figures and the spine scale with it —
+so a phone in portrait and a desktop across the room get the same board rather
+than two layouts. On a desktop it stops growing at a table's worth of space and
+sits in the middle of the room; on a phone it fills the screen.</p>
+
+<p id="decision-19" data-kind="decision"><strong>19 — every screen rule is
+nested under its own screen.</strong> The terminal injects a screen's
+stylesheet into the document head and it outlives the screen that brought it,
+so a bare <code>.mat</code> rule reaches every screen that follows. This app
+has two screens sharing a material vocabulary, and the arena's grid tore the
+rules screen apart until both were nested under
+<code>[data-screen]</code>. The shared layer (<code>shell/shared/table.css</code>)
+stays unscoped on purpose: it is the vocabulary both screens speak.</p>
+
+<p id="decision-17" data-kind="decision"><strong>17 — no sound.</strong> The
+brief does not ask for it, the terminal publishes no audio capability, and a
+card game that makes noise in a browser tab is a card game people mute. The
+settle and the pulse carry the feedback instead.</p>
+
+<p id="decision-20" data-kind="decision"><strong>20 — nobody bids against
+themselves.</strong> The side that called truco cannot call the next rung:
+once its raise is accepted the right to climb belongs to the other side, and
+the call button says so rather than going quietly inert. Answering a raise
+with a higher one is still one gesture, and it is recorded as two — the rung
+on the table is accepted, then the next is called — because that is what the
+log has to be able to replay.</p>
+
+<p id="decision-21" data-kind="decision"><strong>21 — the table keeps its
+cards.</strong> Played cards are not collected between tricks; each closed
+trick stays on the felt, smaller and dimmed, with the card that took it still
+lit. A player who looked away can read the whole hand off the table, which is
+what a real table gives free and a screen has to be told to do. It also
+retires the sweep animation an earlier pass had: the cards going somewhere was
+a poor substitute for the cards still being there.</p>
+
+<p id="decision-32" data-kind="decision"><strong>32 — the hand plays itself out
+of its own log.</strong> Everything between the deal and the score is one
+Jessie fold: whose turn it is, what eles lay, when they raise and how they
+answer, which side took each rodada, and what the hand was worth. None of it is
+a decision the log does not already imply, which is why it can run in a
+compartment with nothing endowed — rows in, updates out, no DOM and no clock.
+The deal is there too. A compartment has no randomness, but a sitting needs
+only one draw: the match keeps it, and every shuffle in the match follows from
+that and the hand's number. Which also buys something the dealer's own
+generator never could — a match replays out of its own rows, so a hand that
+broke is a repro rather than a story. Even the draw that opens a sitting is
+asked for rather than taken: the fold says it wants one and is called again
+with it, the way it says it wants to wait. Nothing about the table reaches the
+store through a form any more, and the dealer keeps the screen. What you do reaches the table as a row and
+nothing else, and every consequence of it is the fold's, so there is one writer
+for each fact rather than a model in the dealer running alongside the rows.
+Every value a row carries is written as text, because the dealer's writes
+arrive through form inputs and a region's filter compares a column against the
+text standing in the markup: a number where the rest of the table keeps a
+string is a row the felt cannot see.</p>
+
+<p id="decision-31" data-kind="decision"><strong>31 — whose turn it is is a
+fold over the log.</strong> A card may be tapped exactly when it is your turn
+to lay one, and that follows from the cards already laid: the rodada in play is
+the first without a verdict, its lead is whoever took the one before, and the
+seats fill it in order. So it is folded out of the log and written onto the
+hand, rather than stated by the dealer out of a model only the dealer can see —
+which is what made the screen right for only as long as that model was. Two
+facts no card states are carried instead: the round records who led its first
+rodada, and the match records how many seats are playing.</p>
+
+<p id="decision-30" data-kind="decision"><strong>30 — the fold's clock is the
+terminal's, and it asks.</strong> A handler is evaluated in a compartment with
+nothing endowed and therefore has no clock, so a table that pauses between
+plays cannot time itself: it returns the pause it wants along with its writes,
+and the terminal calls it again when the pause is over. An earlier pass gave it
+a clock the other way round, as a CSS animation on the felt whose end arrived
+as an event; that worked, but it had to be exempted from the reduced-motion
+sweep — which collapses every animation to a millisecond — or the game ran at
+infinite speed for exactly the people who asked for calm. A pause the reduce
+asks for has no such problem, and the felt keeps no clock at all. Which
+animation ended is still carried on the event where one is: every animation
+inside a region bubbles to it, the terminal's own item arrivals included.</p>
+
+<p id="decision-29" data-kind="decision"><strong>29 — the hands and the felt
+are rows, so the terminal can keep its nodes.</strong> The felt is three
+regions over the play log, one per rodada, so a card already down is never
+replaced under the eye and a rodada that closes keeps its own node — which is
+what lets the shrink it takes on be a transition of something already on the
+table rather than an element born small. A played card carries the angle it
+lies at and what it renders with for the same reason a held one does: a
+template binds fields and cannot compute. Every hand at the table is rows —
+one per card, carrying the seat that holds it. Yours is the one with a
+template: the cards persist across every unrelated redraw, and they are the
+only thing on the felt a player touches. The seats across from you are still
+drawn as backs, but from their rows rather than from a count, because an
+engine evaluated in a compartment has no memory between calls and a hand it
+cannot read is a hand it cannot play. So they are a tab-path entity read by a
+region that names a seat, and the terminal's
+keyed reconciliation owns their identity: item nodes persist across refreshes,
+patched rather than replaced. Drawn imperatively they were rebuilt on every
+store change, which replayed the deal animation on every move and left no node
+alive long enough to animate a card out of the hand. The row carries its
+rendered parts (rank, suit, face) because a template binds fields and cannot
+compute one from another.</p>
+
+<p id="decision-22" data-kind="decision"><strong>22 — the table speaks the
+variant's words.</strong> In Paulista a trick is a vaza and the race to twelve
+is a partida; in Minas the trick is a rodada and the race to twelve is a jogo,
+and both call the three-trick deal a mão. <em>Queda</em> is neither, and it is not
+another word for jogo: a jogo is the race to twelve tentos, a queda is the best
+of three jogos — the side that takes two — and it is the tier above the ladder,
+never a rung on it. This app plays a single jogo and keeps no queda tally, so
+it does not use the word at all. The first pass had all three wrong
+(trick as queda, match as jogo) on nothing better than a guess; the owner sent
+it back and the sources settled it. The vocabulary follows the rules in force
+everywhere — the table's line, the rules screen, the log — because a Mineiro
+player reading "vaza" is being told the app learned the game somewhere else.
+Both words ship as real text with the inactive one removed, never as generated
+content: a sentence assembled out of <code>::before</code> is a sentence
+nobody can select, search, or hear.</p>
+
+<p id="decision-23" data-kind="decision"><strong>23 — the mão passes, and the
+pé is a position the table shows.</strong> The player who leads a hand is the
+<em>mão</em>; the last to play is the <em>pé</em>, and the pé has the final
+word on every trick of it — which is why a player wants to know which one they
+are before they choose a card. The lead had been fixed on the player, which is
+not the game: it passes one seat every hand, and the seat bar wears the
+position.</p>
+
+<p id="decision-24" data-kind="decision"><strong>24 — the bot was bought,
+measured, and declined.</strong> Rather than reason out a better opponent, the
+obvious move was to take one off the shelf: <code>npm:mcts</code> (MIT, a
+hundred lines, four methods) wired to these rules, with the hidden hand
+handled by determinization — sample the unseen cards, search that
+perfect-information game, vote. Measured over the same 1,200 deals it
+<em>lost</em>: 44.5% at four samples, 46.3% at sixteen, against the shipped
+heuristic's 50%, at 22ms a hand. The reason is structural rather than a bad
+adapter: a truco hand is three cards, so the tree is too small for search to
+find anything the heuristic misses, while random playouts are noisier than a
+rule that is nearly right. The library stays out. Where a bot could still pay
+is the betting, and that is where the sweep below put its numbers.</p>
+
+<p id="decision-25" data-kind="decision"><strong>25 — eles have names.</strong>
+"A casa" is a poker word: the house, the bank, the institution that cannot be
+beaten. Truco has no house — it has the other pair, who are as beatable as you
+are, which is why a truco scoreboard says <strong>NÓS</strong> and
+<strong>ELES</strong> and never "the house". The seats are renamed to match,
+and the opponents become a small cast (Seu Nezinho, Dona Cida, Tião Pandeiro,
+Zé da Bicicleta, and Bigode as the parça), each a set of betting thresholds
+around the swept centre with a face and a line. Each also has a
+<strong>tell</strong> that lands a beat before their call — the Punch-Out!!
+bargain, where the opponent tells you what is coming and it is your job to be
+looking. It moves the game's tension from chance to attention.</p>
+
+<p id="decision-26" data-kind="decision"><strong>26 — the house's numbers are
+swept, not reasoned.</strong> The first pass rated a hand by mean card power,
+which one manilha dominates: (100, 1, 2) averages 34 and (10, 9, 8) averages 9,
+though the second hand wins far more often. Capping each card at "a card that
+reliably takes a trick" first ranks hands half again as well (r .54 against
+.39 over 30k deals). The thresholds on top of it were then swept rather than
+argued: pot odds say a hand worth 1 raised to 3 is worth taking above 33%,
+which is most hands — and playing it that way lost 0.058 tentos a hand, because
+the odds of a hand as dealt are not its odds against somebody who just raised.
+The swept pair (call at 8.0, take at 7.0) wins 0.016 instead, and the personas
+are that pair moved around.</p>
+
+<p id="decision-27" data-kind="decision"><strong>27 — the app checks its own
+fit.</strong> The platform's visual battery measures tap targets, overlap and
+viewport bounds, and reported zero findings while the call button sat under the
+board and small type measured 1.0 against its background. Neither is a gap in
+its judgment: a control clipped by an <code>overflow: hidden</code> ancestor is
+inside the viewport, and the battery does not compute contrast at all. So the
+app declares <code>tests/fit.ts</code> at integrate — every control's box
+against the board's box, every piece of small type against what is actually
+behind it, across five window shapes and all four tables. It caught both
+regressions the same afternoon they were written, which is the argument for
+app-declared checks in general: the platform's battery is a floor, and an app
+with an unusual surface owes itself the rest.</p>
+
+<p id="decision-33" data-kind="decision"><strong>33 — one rail that shows the
+live call, with the suspended one drawn above it.</strong> With flor, real
+envido and falta envido a first rodada can hold five callable things at once,
+on a phone, over the hand. Three layouts were drawn. Two rails give the second
+wager its own fixed strip in gold above the hand, which never surprises anyone
+and costs height in the one rodada where the hand matters most. Table talk puts
+each call beside whoever said it and keeps one small cluster of buttons, which
+is the truest to a bar table and the least conventional. One rail carries
+whichever call is live and draws the outstanding truco above it as a dashed
+strip that says what it is worth and that it is still waiting.
+
+The one rail wins on the thing the round was built around: a truco answered
+with envido leaves that truco standing, and this is the only one of the three
+where the player can see it standing rather than having to remember it. The
+mechanism and the picture agree. Its cost is real and accepted — the rail means
+different things at different moments, so the rail is labelled with the wager
+it is currently asking about, and the two wagers are told apart by colour
+rather than by position: truco keeps the ink of <code>--primary</code>, the
+envido family takes <code>--accent</code>, and flor takes
+<code>--attention</code>. Colour carries the distinction the fixed positions
+used to.
+</p>
+
+<p id="decision-34" data-kind="decision"><strong>34 — a tie is laid side by
+side, and so is the rodada that breaks it.</strong> Cards played to a rodada land
+across each other, each at its own angle, because that is how they fall on a
+table. A tie is the exception players make by hand: the rodada that settles it
+is played by showing the highest card, and cards being compared are set down
+next to each other, square, rather than on top. Three treatments were shot on
+the real table: only the deciding rodada opened; the deciding rodada and the tie
+it settles both opened; and the deciding rodada stood upright with a lit edge,
+as a card held up to be seen. The second was chosen. Opening the tie as well
+means a finished hand reads off the felt as what happened — a tie, then the
+rodada that broke it — without the phase tracker. Only the look changes: the
+verdict, the order of play and the rules are the same.
+</p>
+
+<p id="decision-28" data-kind="decision"><strong>28 — the card face is two
+corners and one mark, chosen at 53px.</strong> The face shipped as a corner
+rank with one large pip in the middle. Three faces were drawn and rendered at
+the three sizes the table actually uses — 53px (a short window), 69px (a
+phone), 117px (a desk): the shipped one, a real baralho with counted pips and
+lettered courts, and rank-and-suit in both corners with a single central mark.
+The counted pips lose at 53px, where six and seven are the same smudge, so
+they lose outright: one face has to serve every size. The two-corner face wins
+on a functional argument rather than a decorative one — a fanned hand shows
+nothing but the top-left corner, so rank and suit belong there together, and
+the shipped face put the suit in the middle where an overlapped card hides it.
+Court cards keep their letter: a drawn figure at 53px is a smudge too.</p>
+
+<h2 id="reviews">Team reviews</h2>
+
+<section data-kind="review" id="review-backend">
+<h3>backend — the machine</h3>
+<p class="verdict">Verdict: signed, with two conditions carried into the
+program.</p>
+<ul>
+<li>The three entities are the brief's three, and the path assignment is
+uniform and cheap. No access model is written and none is meaningful: a
+<code>tab</code> row is private by construction, and the schema refuses
+<code>access</code> on that path, so the security surface here is genuinely
+empty rather than merely unwritten.</li>
+<li>No pipeline means no idempotence argument and no loop to break — the
+publication-scoping hazard that has bitten every cluster-tier app in this repo
+cannot arise. That is the strongest argument for
+<a href="#decision-01">decision-01</a> and it is worth stating: this app is
+immune to the platform's most expensive bug class because it declined the plane
+it lives on.</li>
+<li><strong>Condition 1:</strong> the dealer writes through forms
+(<a href="#decision-03">decision-03</a>), and a form field's value is a string.
+Integer fields — scores, stake, vaza, power — must be read back as numbers by
+whatever compares them, or the ladder will compare <code>"12"</code> with
+<code>9</code> and get the wrong answer. The program owes an explicit coercion
+at the dealer's read boundary, once, not at each comparison.</li>
+<li><strong>Condition 2:</strong> ids are minted by the dealer rather than
+defaulted by the store, because <code>tab</code> emits no DDL and therefore no
+<code>gen_random_uuid()</code>. Every create form carries an <code>id</code>
+field for that reason; a create that omits it is a bug the store cannot catch
+for us. They are <em>derived</em> rather than drawn: a key is built out of what
+it identifies, so writing the same row twice is writing the same row, and a
+seeded sitting replays down to its ids. The match is the exception and the
+root — nothing stands above it to derive from, so it is the one draw a sitting
+makes.</li>
+<li>Bijection: three entities, two screens, ten states, ten flows, twenty-one tests,
+seventeen decisions, no handler, no hatch. The dealer deliberately carries no
+<code>ir</code> id because no CUE object realizes it — that is a known gap in
+the bijection's coverage, filed by the platform advisor below rather than
+papered over here.</li>
+</ul>
+</section>
+
+<section data-kind="review" id="review-frontend">
+<h3>frontend — the built surface</h3>
+<p class="verdict">Verdict: signed, with three findings to hold at assembly.</p>
+<ul>
+<li>The screen count is right: one table and one reference. The arena carries
+ten forms, which is a lot of markup for one screen, but nine of them are hidden
+field sets with no visible chrome — the visible surface is a hand, three
+buttons and three pickers.</li>
+<li><strong>Finding 1 (open):</strong> the custom dropdown
+(<a href="#decision-10">decision-10</a>) is the app reimplementing a platform
+affordance, which the prelude warns against by name. It is accepted here
+because the brief makes the OS popup a product defect, but the assembly owes
+what the native control gives free: a real <code>button</code> trigger with
+<code>aria-expanded</code>, rows as <code>button</code>s in a list, Escape to
+close, click-outside to close, and focus returning to the trigger. Anything
+less and this is a worse control, not a prettier one.</li>
+<li><strong>Finding 2 (open):</strong> the cards in hand are drawn by the
+dealer, not by a region, so they are the one part of the screen the storybook
+cannot render from fixtures. The frames above are therefore the only review
+surface for the hand's geometry. The assembly must keep card markup
+structurally identical whether the dealer or a fixture wrote it, so the visual
+battery measures the real thing.</li>
+<li><strong>Finding 3 (advisory, still open):</strong> the screen states include five the
+terminal does not drive (<code>dealt</code> collapsed into
+<code>populated</code>, plus <code>raised</code>, <code>resolved</code>,
+<code>match-over</code>, <code>picking</code>). The terminal's own vocabulary —
+<code>form-submit</code>, <code>validation-error</code>,
+<code>network-error</code> — is not reachable in an app whose store is local
+and whose forms never refuse, so those states are styled to the same rest
+appearance rather than left unstyled; an unstyled state is invisible until the
+day it fires.</li>
+<li>CSS spends the design tokens and declares only app-private names for the
+felt, wood, stock and rim (<a href="#decision-11">decision-11</a>) — the shared
+layer keeps its single declaration and <code>check-screens</code> can prove
+it.</li>
+</ul>
+</section>
+
+<section data-kind="review" id="review-designer">
+<h3>designer — the system</h3>
+<p class="verdict">Verdict: signed. DESIGN.md is comparative, the token set is
+complete in both appearances, and the frames hold.</p>
+<ul>
+<li>The identity — Brasa &amp; Feltro — comes from a landscape read of the four
+products the brief names plus the design bar it cites, with what is borrowed
+and what is refused recorded per product. The table-as-object direction won
+over two alternatives that were drawn and rejected: a flat card-grid
+(reads as a settings screen), and a neon-first arcade look (Cyber Neon is one
+theme, not the identity — an identity that is already at maximum has nowhere to
+go when the stake rises).</li>
+<li>Colour carries meaning and nothing else: brass is hardware, ember is the
+stake, red is the refusal. Because gold appears only on metal, the manilha
+crown and the active dropdown row read instantly; because red appears only on
+danger, the twelve rung needs no animation to land.</li>
+<li>Both appearances are first-class and every token has a twin. The felt
+themes are appearance-independent by construction
+(<a href="#decision-11">decision-11</a>), which is what keeps four themes ×two
+appearances from being eight palettes to maintain.</li>
+<li><strong>Frames redrawn (closed).</strong> The board became a fixed
+viewport object mid-build (<a href="#decision-18">decision-18</a>) and the
+sketches went on depicting the page it had been — a storyboard that describes
+something else is worse than none, because it is signed. Every arena frame is
+redrawn against what ships: the HUD row with its pickers, the score pair with
+the stake between them, the spine wearing its verdicts, the vira line, and the
+felt holding the tricks it has kept.</li>
+<li>Frames: the hierarchy holds at 300×420 — score, stake, spine, mat, hand,
+actions — and the unhappy frames (<code>raised</code>,
+<code>match-over</code>) are drawn, not implied. <strong>Finding
+(advisory):</strong> the resolved frame's three vaza chips repeat information
+the spine already carries; at assembly they should differ in kind (verdict, not
+progress) or one of them goes.</li>
+<li>No AI-slop patterns: no gradient-on-everything, no glassmorphism, no
+emoji-as-icon-system, no purple-blue default. The one gradient in the app is
+the mahogany trigger, and it is a material.</li>
+</ul>
+</section>
+
+<section data-kind="review" id="review-ux">
+<h3>ux — the felt experience</h3>
+<p class="verdict">Verdict: signed, with one question answered against the
+brief and one cut.</p>
+<ul>
+<li>The journey is one gesture deep: open, and a hand is dealt with a legal
+move available. No sign-in, no onboarding, no empty state — the first frame is
+a game in progress (<a href="#accept-instant-table">accept-instant-table</a>).
+That is the whole product promise and the screen count protects it.</li>
+<li>Gesture cost per hand: three taps to play a hand out, one more to raise,
+one to answer. Nothing needs two taps that could need one, and the only modal
+moment in the app — a raise awaiting an answer — is the one moment where
+proceeding without answering would be meaningless.</li>
+<li><strong>The question the brief did not answer:</strong> what happens on a
+tie, and what a refused raise pays. Both are now stated in the brief's Behavior
+section and drawn on the rules screen, because a truco table where the rules
+are ambiguous is a table where the loser thinks the app cheated.</li>
+<li><strong>Cut:</strong> a per-hand history screen. The log region on the
+arena answers "what just happened" during the hand, which is when the question
+is asked; a separate screen for finished hands is a place nobody would stand.
+Recorded here so it is a decision rather than an omission.</li>
+<li>Unhappy roads are designed: the match-over frame offers two doors rather
+than a dead end, and a raise the player ignores is not possible — the answer
+buttons are the only live controls in that state.</li>
+<li><strong>Three findings from the product owner, mid-build, all upheld</strong>
+(<a href="#decision-20">decision-20</a>, <a href="#decision-21">21</a>,
+<a href="#decision-22">22</a>): a player could raise their own bet, which no
+rulebook allows; the cards were collected between tricks, so looking away lost
+the hand; and Mineiro was being made to say "vaza". This seat had signed a
+flow set that hid all three — the lesson it takes is that a rules-carrying app
+needs a player of the game at the table before the flows are signed, not after
+the storyboard is drawn.</li>
+<li><strong>Finding (open):</strong> the house answering "within a beat" (the
+brief's words) is a real timing contract and the assembly owes it — a beat long
+enough to read as a decision, short enough that the table never feels stalled.
+It is the one place in the app where a delay is a feature, and it must still
+collapse under reduced motion.</li>
+</ul>
+</section>
+
+<section data-kind="review" id="review-qa">
+<h3>qa — the evidence</h3>
+<p class="verdict">Verdict: signed, and the verify evidence is now on the
+record rather than owed.</p>
+<p class="response"><strong>Evidence, from the loop's own verbs.</strong>
+<code>just lint</code>: bijection <code>[]</code>, <code>cue vet</code> clean,
+<code>check-screens []</code>. <code>just integrate</code> runs both declared
+checks: the visual battery reports <strong>0 critical / 0 advisory</strong>
+across two routes × three viewports, and <code>tests/acceptance.ts</code> —
+declared as an integrate check on the loop seat, so a verb reaches it —
+reports <strong>16/16</strong> against the running cluster with a clean
+console. The storybook renders 9/9 arena frames with posed hands and no
+errors.</p>
+<ul>
+<li>Coverage runs both ways: thirty acceptance ids, every one cited by a test
+or a storyboard path, and every <code>data-accepts</code> value resolves. The
+rules half of the app is the easy half to prove — power, manilhas, verdicts and
+the ladder are pure functions and their CEL is decidable against injected
+bindings.</li>
+<li>Falsifiability: each invariant is written so a plausible wrong
+implementation fails it. <a href="#test-run-scores">test-run-scores</a> pins the
+exact bug a run rule usually has (paying the raised value instead of the
+pre-raise one); <a href="#test-vaza-tie">test-vaza-tie</a> pins all three tie
+branches rather than asserting "ties are handled".</li>
+<li><strong>Finding 1 (closed).</strong>
+<a href="#test-offline">test-offline</a> and
+<a href="#test-touch-and-motion">test-touch-and-motion</a> are properties of the
+running app, not of a pure function. Both are now observed: the driver counts
+every request a full hand makes (zero that are not the terminal's own sync
+plane, which a tab-path app never opens), and the visual battery measures every
+tap target at three viewports. The one regression this caught was ours — a
+compacted nav strip took its links to 21px — which is the argument for
+measuring rather than judging.</li>
+<li><strong>Finding 2 (closed).</strong> Randomness arrives as an input:
+without a seed the table deals from the platform's generator, and
+<code>?seed=</code> replays a table exactly — same deal, same nerve from the
+house, since both draw from the one source. The driver asserts it both ways
+(one seed twice is one hand; two seeds are two), and it earned its keep
+immediately: the hand that froze mid-trick was diagnosed on a seed that
+reproduced it three runs out of three.</li>
+<li><strong>Finding 3 (closed).</strong> The storybook renders from fixtures
+and the hand is dealer-drawn, so the frames would have reviewed the chrome and
+not the cards. The dealer poses instead of playing when it detects the
+storybook, drawing the same card markup the table draws: 9/9 frames render a
+hand, and the review surface covers the part of the screen the store cannot
+describe.</li>
+<li><strong>Finding 5 (closed by a check).</strong> Two regressions shipped
+that every automated surface called clean: the call button pushed under the
+board when the cards grew, and text at 1.0 contrast on the new cloth. The owner
+found both by looking. <code>tests/fit.ts</code> now measures exactly those two
+properties across five window shapes and four tables
+(<a href="#decision-27">decision-27</a>) — and the second one only became
+computable when the instruments moved onto opaque paper, because a translucent
+strip over a gradient stack has no background any checker can name.</li>
+<li><strong>Finding 4 (open, and the sharpest one).</strong> Four of this
+compile's five real bugs were found by the driver or by the product owner, not
+by the invariants: hidden form values leaking between submissions, a screen's
+timers outliving its DOM, two matches claiming to be the playing one, and a
+second tap landing a third card in a two-seat trick. Every one is a property of
+the app <em>in flight</em> — of ordering, lifetime and repetition — and the ir's
+CEL vocabulary can only speak about a single call's input and output. This seat
+does not have a fix to propose; it has a gap to name, because the tests that
+would have caught these are not tests this ir can currently express.</li>
+</ul>
+</section>
+
+<section data-kind="review" id="review-platform-advisor">
+<h3>platform advisor — reading across the five</h3>
+<p class="verdict">Advisory, no gate. Three observations about the seams.</p>
+<ul>
+<li><strong>This app uses the platform by declining most of it.</strong> No
+cluster plane is switched on: no auth, no blobs, no pipelines, no policies, no
+migrations. That is not underuse — <code>tab</code> is a published durability
+rung and the brief chose it — but it does mean the compile exercises the
+terminal almost alone, and the terminal is the half of the platform with nine
+concerns and no substrate. Expect the friction here to be in the shell, not the
+store.</li>
+<li><strong>The dealer is the platform's shape showing through.</strong> The
+terminal's residual-computation story is a pure reduce with one event source
+(drag). A tap-driven engine has no seat at that table, so the app grew one. Two
+honest readings: either the handler contract needs a second event source and a
+way to describe writes as form submissions — which is what the dealer does by
+hand — or apps of this kind are outside pronto's declared scope and the brief
+should have been refused. This seat's read is the former, and it notes that the
+terminal has now grown the mechanism that makes the dealer possible without
+growing the contract that would make it reviewable: it carries no
+<code>ir</code> id, so the bijection — the checker that exists precisely to
+police arbitrary code — cannot see it. That is the single largest gap in this
+compile.</li>
+<li><strong>Measured against its siblings.</strong> Counted from source, this
+app is the outlier in one dimension only: <strong>1,206 lines of assembly per
+screen</strong>, against 308 for xpense, 324 for realworld and 150 for
+thenote. That number is the dealer plus the table's materials — the price of an
+app whose subject the declarative surface does not cover — and it is worth
+knowing that the price is concentrated rather than spread: the entity count (3)
+and the program (633 lines) are the smallest of the four. It is also the only
+app that carries its own tests (627 lines) and the only one with ten declared
+checks; both follow from the same fact.<br>
+Measured at runtime, the tab path delivers what it promises: the table is
+playable <strong>~700ms</strong> after the request and makes
+<strong>zero requests and zero bytes</strong> sitting idle for ten seconds —
+no shape stream, no poll, nothing to keep alive. The comparison against a
+crud-path app could not be completed: xpense would not get past its sign-in
+gate in this harness.</li>
+<li><strong>The siblings do not boot.</strong> Trying to measure one turned up
+a repo-wide fact worth more than the benchmark: xpense's checked-in emission
+predates <code>jessie.js</code> joining the interpreter's file list, so its
+baked image lacks the file, the shell 404s, and the app never mounts.
+Regenerating it (<code>write.ts</code>, one command, no source change) fixes it
+— which means the emitted tree silently rots against the platform between
+compiles, and nothing in the loop notices until somebody launches the app. A
+generated tree that is checked in needs a check that it is still what the
+generator would write.</li>
+<li><strong>Where the seams were used rather than worked around:</strong>
+forms-only mutations survived (<a href="#decision-03">decision-03</a>) even for
+machine writes, which is the difference between an escape hatch and a second
+platform; the design system kept one declaration under four themes
+(<a href="#decision-11">decision-11</a>); and the app declares no capability the
+terminal does not offer. Where it was worked around: the custom dropdown
+reimplements a control the terminal publishes, for a product reason the design
+seat argued and this seat accepts — with the accessibility bill the frontend
+seat has already itemized.</li>
+</ul>
+</section>
+
+
+</body>
+</html>

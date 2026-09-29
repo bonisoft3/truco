@@ -1,0 +1,135 @@
+<section class="screen" data-screen="regras" data-state="populated">
+
+  <!-- The only read: the match in force, so the page names the rules you are
+       actually playing under and wears the same felt you came from. The
+       fallback row keeps the page whole before a match exists. -->
+  <div class="rules-head"
+       data-live="match"
+       data-filter="current=eq.yes"
+       data-empty-row='{"id":"","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":0,"them_score":0,"stake":2,"hand_no":1,"status":"playing","winner":"","opponent":"nezinho","opponent_name":"Seu Nezinho","partner_name":"Bigode","current":"yes"}'
+       data-theme="{theme}"
+       data-variant="{variant}"
+       data-seats="{seats}">
+    <h1 data-text="{msg.rules_how_to_play}">Como se joga</h1>
+    <p class="now">
+      <span data-text="{msg.rules_playing}">Você está jogando</span> <b class="variant-name by-variant"><i data-t="paulista" data-text="{msg.variant_paulista}">Truco Paulista</i><i data-t="mineiro" data-text="{msg.variant_mineiro}">Truco Mineiro</i><i data-t="gaucho" data-text="{msg.variant_gaucho}">Truco Gaúcho</i><i data-t="argentino" data-text="{msg.variant_argentino}">Truco Argentino</i><i data-t="uruguayo" data-text="{msg.variant_uruguayo}">Truco Uruguaio</i><i data-t="paraguayo" data-text="{msg.variant_paraguayo}">Truco Paraguaio</i><i data-t="truc" data-text="{msg.variant_truc}">Truc Catalão</i></b>, <b data-text="{seats}"></b>.
+    </p>
+    <a class="act ghost back" data-route="arena" data-text="{msg.back_to_table}">Voltar à mesa</a>
+  </div>
+
+  <div class="sheet table-frame">
+    <div class="mat">
+
+      <section class="rule-block pad">
+        <h2 class="sect" data-text="{msg.rules_card_strength}">Força das cartas</h2>
+        <ol class="order">
+          <li>4</li><li>5</li><li>6</li><li>7</li><li>Q</li>
+          <li>J</li><li>K</li><li>A</li><li>2</li><li>3</li>
+        </ol>
+        <p><span data-text="{msg.rules_card_strength_desc}">Fora das manilhas, o naipe não conta: um 3 de ouros e um 3 de paus empatam a</span> <span class="term"><i data-t="paulista" data-text="{msg.trick_paulista}">vaza</i><i data-t="mineiro" data-text="{msg.trick_mineiro}">rodada</i><i data-t="rioplatense" data-text="{msg.trick_rioplatense}">baza</i><i data-t="truc" data-text="{msg.trick_truc}">basa</i></span>.</p>
+      </section>
+      <section class="rule-block pad">
+        <h2 class="sect" data-text="{msg.rules_manilhas}">Manilhas</h2>
+        <p><b data-text="{msg.rules_paulista_label}">Paulista:</b> <span data-text="{msg.rules_paulista_desc}">a carta seguinte à vira, e a ordem dá a volta — vira 3, manilha 4.</span></p>
+        <p><b data-text="{msg.rules_mineiro_label}">Mineiro:</b> <span data-text="{msg.rules_mineiro_desc}">sempre as mesmas quatro, seja qual for a vira.</span></p>
+        <!-- Gaúcho deals like Paulista, so it is not a row of its own here;
+             the Rio de la Plata family is, because it deals no vira at all. -->
+        <p><b data-text="{msg.rules_rioplatense_label}">Rio da Prata:</b> <span data-text="{msg.rules_rioplatense_desc}">não há vira — as quatro manilhas são sempre as mesmas, fixadas antes da mão, e não saem de uma carta virada na mesa.</span></p>
+        <p><b data-text="{msg.rules_truc_label}">Truc:</b> <span data-text="{msg.rules_truc_desc}">não há vira nem manilhas — cada carta vale a ordem que mostra, e o naipe nunca decide.</span></p>
+        <ul class="manilhas by-suit">
+          <li><span class="card" data-suit="♣" data-manilha><span class="corner tl"><b>4</b><i>♣</i></span><span class="mark">♣</span><span class="corner br"><b>4</b><i>♣</i></span></span><span data-text="{msg.manilha_zap}">zap</span></li>
+          <li><span class="card" data-suit="♥" data-manilha><span class="corner tl"><b>7</b><i>♥</i></span><span class="mark">♥</span><span class="corner br"><b>7</b><i>♥</i></span></span><span data-text="{msg.manilha_copas}">copas</span></li>
+          <li><span class="card" data-suit="♠" data-manilha><span class="corner tl"><b>A</b><i>♠</i></span><span class="mark">♠</span><span class="corner br"><b>A</b><i>♠</i></span></span><span data-text="{msg.manilha_espadilha}">espadilha</span></li>
+          <li><span class="card" data-suit="♦" data-manilha><span class="corner tl"><b>7</b><i>♦</i></span><span class="mark">♦</span><span class="corner br"><b>7</b><i>♦</i></span></span><span data-text="{msg.manilha_ouros}">ouros</span></li>
+        </ul>
+        <p class="by-suit" data-text="{msg.rules_manilhas_suit_order}">Entre manilhas, quem decide é o naipe, nessa ordem.</p>
+        <!-- Where the manilhas are named rather than turned up, the suit
+             decides nothing: two of these share one, and the order is the one
+             the table says out loud. -->
+        <ul class="manilhas by-name">
+          <li><span class="card" data-suit="♠" data-manilha><span class="corner tl"><b>A</b><i>♠</i></span><span class="mark">♠</span><span class="corner br"><b>A</b><i>♠</i></span></span><span data-text="{msg.manilha_espadilha}">espadilha</span></li>
+          <li><span class="card" data-suit="♣" data-manilha><span class="corner tl"><b>A</b><i>♣</i></span><span class="mark">♣</span><span class="corner br"><b>A</b><i>♣</i></span></span><span data-text="{msg.manilha_bastilha}">bastilha</span></li>
+          <li><span class="card" data-suit="♠" data-manilha><span class="corner tl"><b>7</b><i>♠</i></span><span class="mark">♠</span><span class="corner br"><b>7</b><i>♠</i></span></span><span data-text="{msg.manilha_sete_espadas}">sete de espadas</span></li>
+          <li><span class="card" data-suit="♦" data-manilha><span class="corner tl"><b>7</b><i>♦</i></span><span class="mark">♦</span><span class="corner br"><b>7</b><i>♦</i></span></span><span data-text="{msg.manilha_ouros}">ouros</span></li>
+        </ul>
+        <p class="by-name" data-text="{msg.rules_manilhas_named_order}">Entre manilhas, quem decide é a ordem que a mesa nomeia — o naipe não conta, e duas delas dividem o mesmo.</p>
+      </section>
+      <!-- Minas at three pairs. The cards and the seating are published; what
+           a trucada does with three pairs is not, so the page says which is
+           which rather than letting a reader assume the whole of it is. -->
+      <section class="rule-block pad dourado">
+        <h2 class="sect" data-text="{msg.rules_dourado_label}">Douradinha e Douradão</h2>
+        <p data-text="{msg.rules_dourado_seats}">Seis jogadores em três duplas, com os parceiros em posições alternadas.</p>
+        <p data-text="{msg.rules_dourado_bid}">Quem pede truco desafia as duas outras duplas, e cada uma responde por si. Correr é sair da mão: a dupla que corre não pontua e não paga nada, e a mão segue entre as que ficaram.</p>
+        <p data-text="{msg.rules_dourado_first}">Se as três vazas forem de três duplas diferentes, ninguém fez duas — leva a mão quem fez a primeira.</p>
+        <p class="provenance" data-text="{msg.rules_dourado_sources}">As cartas e o assento vêm das regras publicadas e do I Campeonato Municipal de Douradinha, em Itaguara.</p>
+        <p class="provenance invented" data-text="{msg.rules_dourado_invented}">O que uma trucada faz com três duplas não está escrito em lugar nenhum: as regras de aposta acima são nossas, e estão marcadas como invenção.</p>
+      </section>
+      <section class="rule-block pad">
+        <h2 class="sect" data-text="{msg.rules_hand_and_foot}">Mão e pé</h2>
+        <p><b data-text="{msg.rules_mao_label}">Mão</b> <span data-text="{msg.rules_mao_desc}">é quem joga primeiro;</span> <b data-text="{msg.rules_pe_label}">pé</b> <span data-text="{msg.rules_pe_desc}">é o último — e o pé dá a última palavra em cada</span> <span class="term"><i data-t="paulista" data-text="{msg.trick_paulista}">vaza</i><i data-t="mineiro" data-text="{msg.trick_mineiro}">rodada</i><i data-t="rioplatense" data-text="{msg.trick_rioplatense}">baza</i><i data-t="truc" data-text="{msg.trick_truc}">basa</i></span>. <span data-text="{msg.rules_hand_rotates}">A mão passa de jogador em jogador a cada mão jogada, e a mesa mostra qual posição é a sua.</span></p>
+      </section>
+      <section class="rule-block pad">
+        <h2 class="sect" data-text="{msg.rules_betting}">A aposta</h2>
+        <ol class="ladder">
+          <li data-v="paulista" data-rung="base"><b>1</b><span data-text="{msg.stake_mao}">mão</span></li>
+          <li data-v="paulista"><b>3</b><span data-text="{msg.stake_truco}">truco</span></li>
+          <li data-v="paulista"><b>6</b><span data-text="{msg.stake_seis}">seis</span></li>
+          <li data-v="paulista"><b>9</b><span data-text="{msg.stake_nove}">nove</span></li>
+          <li data-v="paulista"><b>12</b><span data-text="{msg.stake_doze}">doze</span></li>
+          <li data-v="mineiro" data-rung="base"><b>2</b><span data-text="{msg.stake_mao}">mão</span></li>
+          <li data-v="mineiro"><b>4</b><span data-text="{msg.stake_truco}">truco</span></li>
+          <li data-v="mineiro"><b>8</b><span data-text="{msg.stake_seis}">seis</span></li>
+          <li data-v="mineiro"><b>10</b><span data-text="{msg.stake_nove}">nove</span></li>
+          <li data-v="mineiro"><b>12</b><span data-text="{msg.stake_doze}">doze</span></li>
+          <!-- Gaúcho climbs the river's four rungs and shouts them in
+               Portuguese, so it carries its own row rather than borrowing one
+               whose last word is Spanish. -->
+          <li data-v="gaucho" data-rung="base"><b>1</b><span data-text="{msg.stake_mao}">mão</span></li>
+          <li data-v="gaucho"><b>2</b><span data-text="{msg.stake_truco}">truco</span></li>
+          <li data-v="gaucho"><b>3</b><span data-text="{msg.stake_retruco}">retruco</span></li>
+          <li data-v="gaucho"><b>4</b><span data-text="{msg.stake_vale_quatro}">vale quatro</span></li>
+          <li data-v="rioplatense" data-rung="base"><b>1</b><span data-text="{msg.stake_mao}">mão</span></li>
+          <li data-v="rioplatense"><b>2</b><span data-text="{msg.stake_truco}">truco</span></li>
+          <li data-v="rioplatense"><b>3</b><span data-text="{msg.stake_retruco}">retruco</span></li>
+          <li data-v="rioplatense"><b>4</b><span data-text="{msg.stake_vale_cuatro}">vale cuatro</span></li>
+          <li data-v="truc" data-rung="base"><b>1</b><span data-text="{msg.stake_mao}">mão</span></li>
+          <li data-v="truc"><b>2</b><span data-text="{msg.stake_truc}">truc</span></li>
+          <li data-v="truc"><b>3</b><span data-text="{msg.stake_retruc}">retruc</span></li>
+        </ol>
+        <p><span data-text="{msg.rules_truco_response}">Quem pede truco espera resposta: aceitar, aumentar, ou correr.</span> <b data-text="{msg.rules_run_pays_prev}">Correr paga o que a mão valia antes do pedido</b> <span data-text="{msg.rules_run_example}">— recusar um truco numa mão de</span> <span class="term"><i data-t="paulista" data-text="{msg.concede_paulista}">1 entrega 1 ponto, não 3</i><i data-t="mineiro" data-text="{msg.concede_mineiro}">2 entrega 2 pontos, não 4</i><i data-t="rioplatense" data-text="{msg.concede_rioplatense}">1 entrega 1 ponto, não 2</i><i data-t="truc" data-text="{msg.concede_truc}">1 entrega 1 ponto, não 2</i></span>.</p>
+        <p><b data-text="{msg.rules_caller_cant_raise}">Quem pede não aumenta.</b> <span data-text="{msg.rules_caller_cant_raise_desc}">Aceito o pedido, quem pode subir para o próximo degrau é o outro lado — ninguém joga contra a própria aposta.</span></p>
+        <p><span class="term"><i data-t="paulista" data-text="{msg.game_paulista}">A partida</i><i data-t="mineiro" data-text="{msg.game_mineiro}">O jogo</i><i data-t="rioplatense" data-text="{msg.game_rioplatense}">La partida</i><i data-t="truc" data-text="{msg.game_truc}">A partida</i></span> <span class="up-to" data-v="12" data-text="{msg.rules_up_to_12}">vai até 12 pontos.</span><span class="up-to" data-v="18" data-text="{msg.rules_up_to_18}">vai até 18 pontos.</span><span class="up-to" data-v="24" data-text="{msg.rules_up_to_24}">vai até 24 pontos.</span><span class="up-to" data-v="30" data-text="{msg.rules_up_to_30}">vai até 30 pontos.</span></p>
+      </section>
+      <!-- One hand short of the goal. Only paulista and mineiro deal it
+           (table.js PRICE), and each names it for the score it starts at. -->
+      <section class="rule-block pad brink">
+        <h2 class="sect by-variant"><i data-t="paulista" data-text="{msg.rules_brink_paulista_label}">Mão de onze</i><i data-t="mineiro" data-text="{msg.rules_brink_mineiro_label}">Mão de dez</i></h2>
+        <p class="by-variant"><i data-t="paulista" data-text="{msg.rules_brink_paulista_desc}">Quem chega a 11 vê as próprias cartas e as do parceiro e decide antes da primeira carta: jogar a mão valendo 3, ou correr e dar 1 ao outro lado. Nessa mão ninguém pede truco.</i><i data-t="mineiro" data-text="{msg.rules_brink_mineiro_desc}">Quem chega a 10 vê as próprias cartas e as do parceiro e decide antes da primeira carta: jogar a mão valendo 4, ou correr e dar 2 ao outro lado. Nessa mão ninguém pede truco.</i></p>
+        <p class="by-variant"><i data-t="paulista" data-text="{msg.rules_brink_paulista_ferro}">Mão de ferro: os dois lados com 11. Joga-se no escuro, sem ver as cartas, valendo 1 e sem truco.</i><i data-t="mineiro" data-text="{msg.rules_brink_mineiro_ferro}">Mão de ferro: os dois lados com 10. Joga-se no escuro, sem ver as cartas, valendo 2 e sem truco.</i></p>
+        <p class="provenance" data-text="{msg.rules_brink_online}">Não vale na mesa online, onde quem decide é uma pessoa que a mesa não pode substituir, nem com três duplas, para as quais a regra não foi escrita.</p>
+      </section>
+      <section class="rule-block pad" data-v="rioplatense">
+        <h2 class="sect" data-text="{msg.rules_envido_flor}">Envido e flor</h2>
+        <p data-text="{msg.rules_envido_desc}">Antes da primeira carta, cada lado pode cantar envido: soma-se o valor das duas cartas do mesmo naipe na mão, mais vinte — sem par do naipe, vale a carta mais alta sozinha. Quem soma mais leva a aposta do envido, à parte da aposta do truco.</p>
+        <p data-text="{msg.rules_flor_desc}">Flor é ter as três cartas da mão do mesmo naipe — soma-se as três mais vinte. Quem a tem é obrigado a cantá-la antes de qualquer outra fala, e ela vale pontos por si só, sem resposta do outro lado.</p>
+        <p class="by-variant">
+          <i data-t="argentino" data-text="{msg.rules_flor_note_argentino}">Aqui, a flor entra na mesa por acordo prévio entre os lados — muitas mesas jogam sem ela.</i>
+          <i data-t="uruguayo" data-text="{msg.rules_flor_note_uruguayo}">Aqui, a flor está sempre em jogo.</i>
+          <i data-t="paraguayo" data-text="{msg.rules_flor_note_paraguayo}">Como no argentino, com contagem própria para o envido e a flor.</i>
+        </p>
+      </section>
+      <section class="rule-block pad">
+        <h2 class="sect" data-text="{msg.rules_ties}">Empates</h2>
+        <p data-text="{msg.rules_ties_desc}">1ª empatada, decide a 2ª. 2ª empatada, leva quem fez a 1ª. 3ª empatada, também leva quem fez a 1ª. Tudo empatado, mão nula — ninguém pontua e vem mão nova.</p>
+        <p><span data-text="{msg.rules_cards_on_table}">As cartas jogadas ficam na mesa até o fim da mão: dá para conferir cada</span> <span class="term"><i data-t="paulista" data-text="{msg.trick_paulista}">vaza</i><i data-t="mineiro" data-text="{msg.trick_mineiro}">rodada</i><i data-t="rioplatense" data-text="{msg.trick_rioplatense}">baza</i><i data-t="truc" data-text="{msg.trick_truc}">basa</i></span> <span data-text="{msg.rules_at_any_time}">a qualquer momento.</span></p>
+      </section>
+
+
+
+
+
+    </div>
+  </div>
+
+</section>
