@@ -28,11 +28,11 @@ Deno.test("registry bootstrap is terminal-independent, regenerates, and preserve
       return decoder.decode(result.stdout);
     }
     const modules = [
-      ["plugins/bayt", "bayt", "0.52.1"],
-      ["plugins/sayt", "sayt", "0.39.3"],
-      ["libraries/mecha", "mecha", "0.1.4"],
-      ["plugins/omnishell", "omnishell", "0.2.3"],
-      ["plugins/pronto", "pronto", "0.3.2"],
+      ["plugins/bayt", "bayt", "0.58.2"],
+      ["plugins/sayt", "sayt", "0.42.0"],
+      ["libraries/mecha", "mecha", "0.4.0"],
+      ["plugins/omnishell", "omnishell", "0.5.0"],
+      ["plugins/pronto", "pronto", "0.6.0"],
     ];
     async function copy(source: string, target: string): Promise<void> {
       await Deno.mkdir(target, { recursive: true });
@@ -62,7 +62,7 @@ Deno.test("registry bootstrap is terminal-independent, regenerates, and preserve
     const app = join(scratch, "consumer with spaces");
     await Deno.mkdir(app);
     await cue(app, ["mod", "init", "example.com/consumer@v0"]);
-    await cue(app, ["mod", "get", "github.com/bonisoft3/pronto@v0.3.2"]);
+    await cue(app, ["mod", "get", "github.com/bonisoft3/pronto@v0.6.0"]);
     await cue(app, ["cmd", "bootstrap", "github.com/bonisoft3/pronto/bootstrap@v0"]);
     const mise = await Deno.readTextFile(join(app, ".mise.toml"));
     const say = await Deno.readTextFile(join(app, ".say.yaml"));
@@ -91,7 +91,7 @@ Deno.test("registry bootstrap is terminal-independent, regenerates, and preserve
     assert(say === await Deno.readTextFile(join(app, ".say.yaml")), "bootstrap overwrote existing configuration");
     await Deno.writeTextFile(join(app, "pronto/terminal.cue"), 'package prontoproject\nimport terminal "github.com/bonisoft3/pronto/terminals:omnishell"\npronto: terminal.#Project\n');
     await cue(app, ["cmd", "generate", "./pronto"]);
-    assert((await Deno.readTextFile(join(app, ".say.yaml"))).includes("omnishell materialize"), "terminal did not contribute its commands");
+    assert((await Deno.readTextFile(join(app, ".say.yaml"))).includes("omnishell mode"), "terminal did not contribute its commands");
     assert((await Deno.readTextFile(join(app, ".mise.toml"))).includes("github:bonisoft3/omnishell"), "terminal did not contribute its tool");
     // The cluster pins its own tree as the terminal does: the bundler an app
     // outside the monorepo runs finds mecha where mise put it, or not at all.
@@ -107,6 +107,7 @@ Deno.test("registry bootstrap is terminal-independent, regenerates, and preserve
         await cue(app, ["cmd", "generate", "./pronto"]);
         const merged = await projectSay(app, { say: { generate: { rulemap: { pronto: { priority: 1 } } } } }) as {say: {generate: {rulemap: Record<string, {priority: number}>}}};
         assert(merged.say.generate.rulemap["auto-bayt"].priority === 2, "writer dropped builder ordering");
+        assert((await Deno.readTextFile(join(app, ".say.yaml"))).includes("do: auto-bayt"), "builder ordering dropped bayt's generator");
         assert(merged.say.generate.rulemap.custom.priority === 3, "writer dropped the consumer rule");
       }
       const fixture = join(repo, "apps/jsfb");
@@ -131,8 +132,11 @@ Deno.test("registry bootstrap is terminal-independent, regenerates, and preserve
         assert(result.success, decoder.decode(result.stderr));
         return decoder.decode(result.stdout);
       }
+      // The installed omnishell is this tree's, as the monorepo's
+      // mise.local.toml makes it: derive reads markup through its command.
+      await Deno.writeTextFile(join(app, "mise.local.toml"), `[tools]\n"github:bonisoft3/omnishell" = "path:${join(scratch, "omnishell").replaceAll("\\", "/")}"\n`);
+      await $`mise trust -q ${app}`;
       const terminal = join(scratch, "omnishell/runtime/cli.ts");
-      await deno(terminal, ["materialize", "."]);
       await Deno.writeTextFile(join(app, "program_terminal.cue"), await deno(terminal, ["mode", "."]));
       let written = "";
       for (let pass = 0; pass < 2; pass++) {

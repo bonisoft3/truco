@@ -92,3 +92,109 @@ Deno.test("a cluster given a pipeline refuses the change feed off", async () => 
   assert.equal(got.ok, false);
   assert.match(got.stderr, /capabilities\.capture: conflicting values/);
 });
+
+// The shape gate admits subset snapshots on the premise that Electric parses a
+// subset with no subquery (services/auth/main.ts). A feature flag would turn
+// subqueries on, and with them a subset that reads another table as Electric's
+// BYPASSRLS role.
+Deno.test("electric runs with no feature flags", async () => {
+  const got = await exported({}, "surface.targets.electric.compose.environment", { server: true });
+  assert.equal(got.ok, true, got.stderr);
+  assert.equal("ELECTRIC_FEATURE_FLAGS" in got.value, false);
+  assert.equal(typeof got.value.ELECTRIC_SECRET, "string");
+});
+
+// An app that takes mecha's images by name builds on these pins in every
+// checkout, so one that could move under it, without a release version and
+// a digest, is refused.
+async function pinOf(pin: string) {
+  const out = await new Deno.Command("cue", {
+    args: ["export", ".:cluster", "-e", `(#Published & {database: ${JSON.stringify(pin)}}).database`],
+    cwd: MECHA,
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
+  return { ok: out.success, stderr: new TextDecoder().decode(out.stderr) };
+}
+const digest = "sha256:" + "a".repeat(64);
+
+Deno.test("a pin naming a release and a digest is taken", async () => {
+  const got = await pinOf(`bonitao/mecha-database:0.2.0@${digest}`);
+  assert.equal(got.ok, true, got.stderr);
+});
+
+Deno.test("a pin without a digest is refused", async () => {
+  const got = await pinOf("bonitao/mecha-database:0.2.0");
+  assert.equal(got.ok, false);
+  assert.match(got.stderr, /database: invalid value/);
+});
+
+Deno.test("a pin by a tag that is not a release is refused", async () => {
+  const got = await pinOf(`bonitao/mecha-database:latest@${digest}`);
+  assert.equal(got.ok, false);
+  assert.match(got.stderr, /database: invalid value/);
+});
+
+Deno.test("a pin under another service's key is refused", async () => {
+  const got = await pinOf(`bonitao/mecha-auth:0.2.0@${digest}`);
+  assert.equal(got.ok, false);
+  assert.match(got.stderr, /database: invalid value/);
+});
+
+// A release tagged with a prerelease version publishes one.
+Deno.test("a pin naming a prerelease is taken", async () => {
+  const got = await pinOf(`bonitao/mecha-database:0.3.0-rc.1@${digest}`);
+  assert.equal(got.ok, true, got.stderr);
+});
+
+Deno.test("a pin under a key that names no image is refused", async () => {
+  const out = await new Deno.Command("cue", {
+    args: ["export", ".:cluster", "-e", `(#Published & {"mesh-image": "bonitao/mecha-mesh-image:0.2.0@${digest}"})`],
+    cwd: MECHA,
+    stderr: "piped",
+  }).output();
+  assert.equal(out.success, false);
+});
+
+// The release builds what the pins name: one list, read twice.
+Deno.test("the release builds exactly the published images", async () => {
+  const out = await new Deno.Command("cue", { args: ["export", ".:cluster", "-e", "#Images"], cwd: MECHA, stdout: "piped" }).output();
+  assert.equal(out.success, true);
+  const images: string[] = JSON.parse(new TextDecoder().decode(out.stdout));
+  const cd = await Deno.readTextFile(`${MECHA}.github/workflows/cd.yml`);
+  const matrix = cd.match(/^\s+service: (\[.*\])$/m);
+  assert.ok(matrix, "cd.yml lists its services as one inline matrix");
+  assert.deepEqual(matrix[1].slice(1, -1).split(",").map((s) => s.trim()), images);
+});
+
+// The migration runner is the database image run as a runner: pgroll and the
+// script ship there, so one image serves both and one pin names it.
+Deno.test("the migrate runner takes the database image", async () => {
+  const cluster = `#Cluster & {meta: {app: "t", images: [string]: name: "img"}, state: {migrations: [], pipelines: [], schedules: [], pgroll: {"01_a": {operations: []}}}}`;
+  const out = await new Deno.Command("cue", {
+    args: ["export", ".:cluster", "-e", `{from: (${cluster}).surface.targets.migrate.dockerfile.from, entrypoint: (${cluster}).surface.targets.migrate.dockerfile.entrypoint}`],
+    cwd: MECHA, stdout: "piped", stderr: "piped",
+  }).output();
+  assert.equal(out.success, true, new TextDecoder().decode(out.stderr));
+  assert.deepEqual(JSON.parse(new TextDecoder().decode(out.stdout)), { from: { name: "img" }, entrypoint: ["/migrate.sh"] });
+});
+
+// The blob store is rclone's own image: the bucket made and the server
+// started by its entrypoint, no image of mecha's.
+Deno.test("the blob store runs rclone's own image", async () => {
+  const got = await exported({}, "surface.targets[\"rclone-s3\"].dockerfile", { blobs: true });
+  assert.equal(got.ok, true, got.stderr);
+  assert.match(got.value.from.name, /^rclone\/rclone:[0-9.]+@sha256:[0-9a-f]{64}$/);
+  assert.match(got.value.entrypoint.join(" "), /mkdir -p .*RCLONE_LOCAL_BUCKET.* && exec rclone serve s3/);
+});
+
+Deno.test("a cluster takes the published images and no others", async () => {
+  const out = await new Deno.Command("cue", {
+    args: ["export", ".:cluster", "-e", "{images: [for k, _ in #Cluster.meta.images {k}], published: #Images}"],
+    cwd: MECHA, stdout: "piped", stderr: "piped",
+  }).output();
+  assert.equal(out.success, true, new TextDecoder().decode(out.stderr));
+  const { images, published } = JSON.parse(new TextDecoder().decode(out.stdout));
+  assert.deepEqual([...images].sort(), [...published].sort());
+  assert.deepEqual([...published].sort(), ["auth", "clock", "compute", "conduit", "database", "mesh", "ticker"]);
+});

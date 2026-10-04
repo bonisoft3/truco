@@ -12,6 +12,41 @@ export const PLACEHOLDER = /\{([\w.]+(?:\[\w+\])?)\}/;
 /** The same grammar over a whole text. */
 export const PLACEHOLDERS = new RegExp(PLACEHOLDER.source, "g");
 
+/** What `binding` answers for a key the row does not carry: the caller's to
+ * judge, since a pending optimistic row and a seed are allowed to lack one. */
+export const ABSENT = Symbol("absent");
+
+/**
+ * The value a `{param.x}` or row-path placeholder names. A route param the
+ * route does not bind is the markup's mistake. A row path is the whole dotted
+ * key where the row answers it (fixture rows answer every key), else a walk
+ * into embedded objects, where a null embed binds blank: it is how PostgREST
+ * answers when RLS hides the joined row.
+ */
+export function binding(expr, row, params) {
+  if (expr.startsWith("param.")) {
+    const name = expr.slice("param.".length);
+    if (!params || !(name in params)) throw new Error(`unknown route param {${expr}}`);
+    return params[name];
+  }
+  const r = row ?? {};
+  if (expr in r) return r[expr];
+  let v = r;
+  for (const seg of expr.split(".")) {
+    if (v == null) return undefined;
+    if (!(seg in Object(v))) return ABSENT;
+    v = v[seg];
+  }
+  return v;
+}
+
+/** A filter with its placeholders filled by `resolve`. Each value is
+ * URI-encoded because the filter lands in a query string and parseFilter
+ * splits on `&` and decodes. */
+export function fillFilter(template, resolve) {
+  return template.replace(PLACEHOLDERS, (_, expr) => encodeURIComponent(String(resolve(expr) ?? "")));
+}
+
 /**
  * The row cap a filter carries, as a number; undefined when it carries none.
  *
@@ -73,6 +108,40 @@ export function parseFilterSpec(filter) {
 }
 
 /**
+ * How the store serves a read, as far as its markup decides it: "server" for a
+ * fragment PostgREST computes (an fts, an embed-path filter, a select outside
+ * the grammar), "snapshot" for one the client filters but the view engine
+ * cannot state, "whole" for the table itself, and "view" for a read the engine
+ * maintains. The store adds the program's half — who may read the table and
+ * its embeds, and whether the engine orders by the order's columns — and
+ * pronto's derive reads this one to decide which tables a browser can load on
+ * demand, so the two cannot disagree about which reads are views.
+ *
+ * @param {{col: string, op: string, value?: string}[] | null} spec parseFilterSpec's answer
+ * @param {unknown[] | null} embeds parseSelect's answer
+ * @param {number | undefined} limit parseLimit's answer
+ * @returns {"server" | "snapshot" | "whole" | "view"}
+ */
+export function routeOf(spec, embeds, limit) {
+  // null is "server-computed", never "nothing to do" — for both of these.
+  if (spec === null || embeds === null) return "server";
+  // A boolean the schema defaults is absent on an unconfirmed optimistic row,
+  // which the snapshot predicate admits and a column comparison would not.
+  if (spec.some((s) => s.op === "true" || s.op === "false")) return "snapshot";
+  // A cursor reads client-side but is not maintained: the engine's clause
+  // vocabulary has no lt/gt, and an unstatable clause would widen to every
+  // row.
+  if (spec.some((s) => s.op === "lt" || s.op === "lte" || s.op === "gt" || s.op === "gte")) return "snapshot";
+  // A pattern is a predicate the engine's clause vocabulary cannot state, and
+  // an unstatable clause would silently widen to "every row".
+  if (spec.some((s) => s.op === "like" || s.op === "ilike")) return "snapshot";
+  // No predicate, no embed, no cap: the collection already is that set, kept
+  // current by the stream a view would be fed from (data-sync.js maintainedView).
+  if (spec.length === 0 && embeds.length === 0 && limit === undefined) return "whole";
+  return "view";
+}
+
+/**
  * The delete subset of the filter grammar: the descriptors a DELETE's WHERE
  * can state exactly. A limit is refused outright — a DELETE has no ordering
  * to cap against, so honoring the rest of the filter would silently widen the
@@ -124,6 +193,110 @@ export function parseReadSpec(value) {
  */
 export function embedTables(select) {
   return [...(select ?? "").matchAll(/([a-z_][a-z0-9_]*)(?:![a-z_][a-z0-9_]*)*\(/g)].map((m) => m[1]);
+}
+
+/**
+ * A select as PostgREST reads it: columns and embeds, to any depth. An embed
+ * is `alias:rel!hint(...)`, or `...rel!hint(...)` spread into its parent; a
+ * column is `*`, or `alias:name` with JSON path steps (`->k`, `->>0`), an
+ * aggregate (`.sum()`, a bare `count()`) and a cast (`::type`), each kept as
+ * written. Whitespace may surround an item. Null for anything else.
+ *
+ * @returns {{cols: string[], embeds: Embed[]} | null}
+ * @typedef {{alias: string, rel: string, hints: string[], spread: boolean, cols: string[], embeds: Embed[]}} Embed
+ */
+export function parseEmbeds(select) {
+  if (select === undefined) return { cols: [], embeds: [] };
+  let at = 0;
+  const match = (re) => {
+    const m = re.exec(select.slice(at));
+    if (m === null) return null;
+    at += m[0].length;
+    return m[0];
+  };
+  const name = () => match(/^[A-Za-z_][A-Za-z0-9_]*/);
+  const space = () => match(/^\s*/);
+  const take = (token) => {
+    if (!select.startsWith(token, at)) return false;
+    at += token.length;
+    return true;
+  };
+  const embed = (alias, rel, spread) => {
+    const hints = [];
+    while (take("!")) {
+      const hint = name();
+      if (hint === null) return null;
+      hints.push(hint);
+    }
+    if (!take("(")) return null;
+    space();
+    const inner = select[at] === ")" ? { cols: [], embeds: [] } : list();
+    if (inner === null || !take(")")) return null;
+    return { alias, rel, hints, spread, ...inner };
+  };
+  // What may follow a column's name: path steps, an aggregate, a cast.
+  const column = () => {
+    while (select.startsWith("->", at)) {
+      if (!take("->>")) take("->");
+      if (name() === null && match(/^-?\d+/) === null) return false;
+    }
+    if (take(".") && match(/^(count|sum|avg|max|min)\(\)/) === null) return false;
+    return !take("::") || name() !== null;
+  };
+  const list = () => {
+    const cols = [], embeds = [];
+    do {
+      space();
+      const from = at;
+      if (take("*")) cols.push("*");
+      else if (take("...")) {
+        const rel = name();
+        const spread = rel === null ? null : embed(rel, rel, true);
+        if (spread === null) return null;
+        embeds.push(spread);
+      } else {
+        const first = name();
+        if (first === null) return null;
+        const rel = select.startsWith("::", at) || !take(":") ? first : name();
+        if (rel === null) return null;
+        const count = rel === "count" && take("()");
+        if (!count && (select[at] === "!" || select[at] === "(")) {
+          const e = embed(first, rel, false);
+          if (e === null) return null;
+          embeds.push(e);
+        } else {
+          if (!column()) return null;
+          cols.push(select.slice(from, at));
+        }
+      }
+      space();
+    } while (take(","));
+    return { cols, embeds };
+  };
+  const top = list();
+  return top === null || at !== select.length ? null : top;
+}
+
+/**
+ * The tables a select's embeds read, for waking. An embed names a table, or a
+ * foreign-key column of its parent (`home:home_id(name)`), which the schema's
+ * `ref` resolves; each nested embed resolves against the table it hangs under.
+ *
+ * @param {Record<string, {fields: {name: string, ref?: string}[]}>} [schema]
+ */
+export function embedDeps(select, table, schema) {
+  const tree = parseEmbeds(select);
+  if (tree === null) throw new ProgramError(`select outside the grammar: ${select}`);
+  const out = new Set();
+  const walk = (parent, embeds) => {
+    for (const e of embeds) {
+      const target = schema?.[parent]?.fields.find((f) => f.name === e.rel)?.ref ?? e.rel;
+      out.add(target);
+      walk(target, e.embeds);
+    }
+  };
+  walk(table, tree.embeds);
+  return [...out];
 }
 
 /** A LIKE pattern as regex source: metacharacters escaped, wildcards restored. */
@@ -433,6 +606,44 @@ export function directionOf(tag) {
  * guard. */
 export class ProgramError extends Error {}
 
+// A data-order whose closed map is malformed, or whose column named an order
+// the map does not carry.
+export class OrderError extends ProgramError {}
+
+/**
+ * A region's order: either the literal one, or a closed map of them chosen by a
+ * column.
+ *
+ * `data-order="pos.asc"` is the order. `{"by":"{sort}","of":{...}}` states EVERY
+ * order the region can be read in, in the file, and lets a column pick among
+ * them — so a sortable header is a form writing a key, and the reader can still
+ * finish reading what the screen can do. The order itself never interpolates:
+ * a column naming a column is reflection, and the set of reads a screen has
+ * would stop being enumerable.
+ */
+export function parseOrder(spec, table) {
+  // Structural, not a probe: a value that opens a map and fails to parse is a
+  // broken declaration, never quietly the literal order "{...".
+  if (!spec.trimStart().startsWith("{")) return { literal: spec };
+  let declared;
+  try {
+    declared = JSON.parse(spec);
+  } catch {
+    throw new OrderError(`region "${table}": data-order opens a map and is not JSON`);
+  }
+  const { by, of: of_, ...rest } = declared ?? {};
+  if (
+    typeof by !== "string" || of_ === null || typeof of_ !== "object" || Array.isArray(of_) ||
+    Object.keys(rest).length > 0 || Object.keys(of_).length === 0 ||
+    Object.values(of_).some((o) => typeof o !== "string")
+  ) {
+    throw new OrderError(
+      `region "${table}": data-order is ${spec}; a closed order map is {"by": "{column}", "of": {"<key>": "<order>"}}`,
+    );
+  }
+  return { by, of: of_ };
+}
+
 /** A route's pattern in one locale. A route with no translated spellings is
  * the same in every language. */
 export function routePattern(route, locale) {
@@ -521,6 +732,7 @@ export function screenEnv(cfg, over = /** @type {T} */ ({})) {
     i18n: cfg?.i18n,
     schema: cfg?.schema,
     prefix: cfg?.prefix,
+    endowments: cfg?.endowments,
     ...over,
   };
 }

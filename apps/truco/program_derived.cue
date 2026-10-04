@@ -3,11 +3,89 @@ package truco
 
 code: surface: screens: {
 	arena: {
-		reads: [{entity: "Challenge"}, {entity: "Held"}, {entity: "Lobby"}, {entity: "Match"}, {entity: "Play"}, {entity: "RoomAction"}, {entity: "Round"}]
+		reads: [
+			{table: "match", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: []},
+			{table: "match", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: []},
+			{table: "match", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: []},
+			{table: "match", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: []},
+			{table: "match", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: []},
+			{table: "match", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "room_action", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: ["created_at"]},
+			{table: "match", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "room_action", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "live", nested: true, lists: [10], route: "view", clauses: [{"col":"round_id","op":"eq"}], embeds: [], orders: ["seq"]},
+			{table: "match", kind: "reads", nested: true, lists: [10], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "reads", nested: true, lists: [10], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "reads", nested: true, lists: [10], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "reads", nested: true, lists: [10], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "room_action", kind: "reads", nested: true, lists: [10], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"},{"col":"display_seat","op":"eq"}], embeds: [], orders: ["slot"]},
+			{table: "held", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"},{"col":"display_seat","op":"eq"}], embeds: [], orders: ["slot"]},
+			{table: "held", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"},{"col":"display_seat","op":"eq"}], embeds: [], orders: ["slot"]},
+			{table: "held", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"},{"col":"display_seat","op":"eq"}], embeds: [], orders: ["slot"]},
+			{table: "held", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"},{"col":"display_seat","op":"eq"}], embeds: [], orders: ["slot"]},
+			{table: "round", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: ["created_at"]},
+			{table: "play", kind: "live", nested: true, lists: [27], route: "view", clauses: [{"col":"round_id","op":"eq"},{"col":"vaza","op":"eq"},{"col":"kind","op":"eq"}], embeds: [], orders: ["seq"]},
+			{table: "play", kind: "live", nested: true, lists: [27], route: "view", clauses: [{"col":"round_id","op":"eq"},{"col":"vaza","op":"eq"},{"col":"kind","op":"eq"}], embeds: [], orders: ["seq"]},
+			{table: "play", kind: "live", nested: true, lists: [27], route: "view", clauses: [{"col":"round_id","op":"eq"},{"col":"vaza","op":"eq"},{"col":"kind","op":"eq"}], embeds: [], orders: ["seq"]},
+			{table: "round", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: []},
+			{table: "match", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "room_action", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"},{"col":"display_seat","op":"eq"}], embeds: [], orders: ["slot"]},
+			{table: "match", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "room_action", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: []},
+			{table: "match", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "room_action", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "match", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "room_action", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "match", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "room_action", kind: "reads", nested: true, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "lobby", kind: "live", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: ["handle"]},
+			{table: "challenge", kind: "live", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: ["created_at"]},
+			{table: "room_action", kind: "live", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: ["created_at"]},
+			{table: "match", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "round", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "play", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "held", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+			{table: "room_action", kind: "reads", nested: false, lists: [], route: "whole", clauses: [], embeds: [], orders: []},
+		]
+		writes: [
+			{table: "match", op: "reduce"},
+			{table: "round", op: "reduce"},
+			{table: "play", op: "reduce"},
+			{table: "held", op: "reduce"},
+			{table: "room_action", op: "reduce"},
+		]
 		files: {handlers: ["shell/handlers/seats2.js", "shell/handlers/sitting.js", "shell/handlers/spun.js", "shell/handlers/stake0.js", "shell/handlers/table.js", "shell/handlers/variant2.js", "shell/handlers/variant3.js"], adapters: []}
 	}
 	regras: {
-		reads: [{entity: "Match"}]
+		reads: [
+			{table: "match", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: []},
+		]
+		writes: []
 		files: {handlers: [], adapters: []}
 	}
 }

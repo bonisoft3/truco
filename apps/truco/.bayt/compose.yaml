@@ -3,6 +3,19 @@ include:
 - path: ./compose.bayt.yaml
   required: false
 services:
+  browser:
+    extends:
+      file: ./compose.browser.yaml
+      service: apps_truco-browser
+    profiles:
+    - browser
+  replay:
+    extends:
+      file: ./compose.replay.yaml
+      service: apps_truco-replay
+    profiles:
+    - replay
+    scale: 1
   setup:
     extends:
       file: ./compose.setup.yaml
@@ -28,6 +41,27 @@ services:
       service: apps_truco-integrate
     profiles:
     - integrate
+    scale: 1
+  check-acceptance:
+    extends:
+      file: ./compose.check-acceptance.yaml
+      service: apps_truco-check-acceptance
+    profiles:
+    - check-acceptance
+    scale: 1
+  check-fit:
+    extends:
+      file: ./compose.check-fit.yaml
+      service: apps_truco-check-fit
+    profiles:
+    - check-fit
+    scale: 1
+  check-window:
+    extends:
+      file: ./compose.check-window.yaml
+      service: apps_truco-check-window
+    profiles:
+    - check-window
     scale: 1
   database:
     extends:

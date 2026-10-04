@@ -2,11 +2,12 @@ package distribution
 
 import (
 	"encoding/json"
+	"strings"
 	saycfg "bonisoft.org/plugins/sayt:say"
 )
 
-#Version:     "0.3.2"
-#SaytVersion: "0.39.3"
+#Version:     "0.6.0"
+#SaytVersion: "0.42.0"
 
 // The mise tools that carry the three trees a browser bundle reads, for a
 // checkout with no monorepo sibling to read them from.
@@ -68,22 +69,48 @@ import (
 	tools:   #Tools
 	mise: {
 		...
-		settings: {locked: true, lockfile: true}
+		settings: {
+			locked:   true
+			lockfile: true
+			// Releases are not verified against GitHub's attestation API, which
+			// is rate-limited unauthenticated, as in every monorepo app. The
+			// global toggles go alongside the backend-scoped ones, which do not
+			// override them.
+			github_attestations: false
+			slsa:                false
+			github: {slsa: false, github_attestations: false}
+			aqua: {github_attestations: false, cosign: false, slsa: false, minisign: false}
+		}
 		tools: P.tools
 	}
 	_run: #Run & {runtime: "\(P.runtime)"}
 	write: (_run & {args: "run-mise exec -- deno run --config ($pronto | path join deno.json) --allow-read --allow-write=. --allow-run --allow-env ($pronto | path join write.ts) ."}).out
+	// The live tables a pages release fills from the settled container
+	// cluster, and the streams that cluster runs; none where the app runs no
+	// stream and no computation.
+	derived: {
+		tables: *[] | [...string]
+		streams: *[] | [...string]
+	}
+	_derivedOut: "dist/derived.sql"
+	derive: (_run & {args: "run-mise exec -- deno run -A --config ($pronto | path join bundle deno.json) ($pronto | path join bundle derived.ts) . --tables \(strings.Join(P.derived.tables, ","))\([if len(P.derived.streams) > 0 {" --streams \(strings.Join(P.derived.streams, ","))"}, ""][0]) --out \(P._derivedOut)"}).out
 	// The browser tier's artifact: the app bundled into dist/browser/index.html,
 	// under the path prefix `sayt release@pages --base=/<prefix>` names.
-	bundle: (_run & {args: "run-mise exec -- deno run -A --config ($pronto | path join bundle deno.json) ($pronto | path join bundle bundle.ts) . --omnishell \(P._omnishell) --mecha \(P._mecha) --out dist/browser --base ($env.SAY_RELEASE_ARGS_BASE? | default \"\")"}).out
+	bundle: (_run & {args: "run-mise exec -- deno run -A --config ($pronto | path join bundle deno.json) ($pronto | path join bundle bundle.ts) . --omnishell \(P._omnishell) --mecha \(P._mecha) --out dist/browser --base ($env.SAY_RELEASE_ARGS_BASE? | default \"\")\([if len(P.derived.tables) > 0 {" --derived \(P._derivedOut)"}, ""][0])"}).out
 	checks: {
 		derive: (_run & {args: "run-mise exec -- deno run --config ($pronto | path join deno.json) --allow-read=. ($pronto | path join derive.ts) --self-test"}).out
-		types: (_run & {args: "let files = do { cd $pronto; [ ...(glob --no-dir '*.ts') ...(glob --no-dir 'scales/*.ts') ] }; run-mise exec -- deno check --config ($pronto | path join deno.json) ...$files"}).out
+		// An installed pronto has no siblings, which its own tests import.
+		types: (_run & {args: "let files = do { cd $pronto; [ ...(glob --no-dir \([if P.runtime == "" {"--exclude [*_test.ts *.test.ts] "}, ""][0])'*.ts') ...(glob --no-dir 'scales/*.ts') ] }; run-mise exec -- deno check --config ($pronto | path join deno.json) ...$files"}).out
 		identity: (_run & {args: "run-mise exec -- deno run --config ($pronto | path join deno.json) --allow-read --allow-run --allow-env ($pronto | path join identity.ts) check ."}).out
 		facts: (_run & {args: "run-mise exec -- deno run --config ($pronto | path join deno.json) --allow-read --allow-run --allow-env ($pronto | path join check-facts.ts) ."}).out
 		sql: (_run & {args: "run-mise exec -- deno run --config ($pronto | path join deno.json) --allow-read --allow-run --allow-env ($pronto | path join check-sql.ts) ."}).out
 		proto: (_run & {args: "run-mise exec -- deno run --config ($pronto | path join deno.json) --allow-read --allow-run --allow-env ($pronto | path join check-proto.ts) ."}).out
-		replay: (_run & {args: "run-mise exec -- deno run --config ($pronto | path join deno.json) --allow-read --allow-write --allow-run --allow-env ($pronto | path join check-replay.ts) ."}).out
+		// Under the compute service's own pins, as it runs them: queries over
+		// DuckDB, the cage's workers, the wasm.
+		computations: (_run & {args: "run-mise exec -- deno test --config (\(P._mecha) | path join services compute deno.json) --frozen --permit-no-files --unstable-worker-options --allow-read --allow-ffi --allow-env computations"}).out
+		// Each module loaded as the service loads it at startup, so one it
+		// would refuse fails here; the emitter appends the modules' paths.
+		admit: (_run & {args: "run-mise exec -- deno run --config (\(P._mecha) | path join services compute deno.json) --frozen --unstable-worker-options --allow-read --allow-env (\(P._mecha) | path join services compute admit.ts)"}).out
 	}
 	say: say: {
 		...

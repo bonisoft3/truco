@@ -4,7 +4,18 @@
 // orchestrates these per app; the terminal's own tests exercise them here —
 // nothing in this file touches the filesystem or an app.
 
-import { machineCandidates, machineShape, parseFilterSpec, parseReadSpec, PLACEHOLDER, PLACEHOLDERS } from "./fragment.js";
+import {
+  machineCandidates,
+  machineShape,
+  parseFilterSpec,
+  parseLimit,
+  parseOrder,
+  parseReadSpec,
+  parseSelect,
+  PLACEHOLDER,
+  PLACEHOLDERS,
+  routeOf,
+} from "./fragment.js";
 
 type Unique = { name: string; cols: string[]; where?: string };
 export type Entity = {
@@ -59,8 +70,7 @@ export function scanScreen(
   const filters: { table: string; filter: string }[] = [];
   for (const [, closing, , attrText] of strip(html).matchAll(ANY_TAG)) {
     if (closing === "/") continue;
-    const attrs = new Map<string, string>();
-    for (const [, name, dq, sq] of ` ${attrText}`.matchAll(ATTR)) attrs.set(name, decode(dq ?? sq));
+    const attrs = attrMap(attrText);
     for (const [name, value] of attrs) {
       if (name === "data-live") tables.add(value);
       else if (name === "data-reads") {
@@ -71,7 +81,7 @@ export function scanScreen(
         const read = parseReadSpec(value);
         tables.add(read.table);
         if (read.filter !== undefined) filters.push({ table: read.table, filter: read.filter });
-      } else if (name === "data-handler" || name.startsWith("data-on-")) handlers.add(value);
+      } else if (binds(name)) handlers.add(value);
       else if (name === "data-value-adapter") adapters.add(value);
     }
     const filter = attrs.get("data-filter");
@@ -82,6 +92,160 @@ export function scanScreen(
     }
   }
   return { tables: [...tables].sort(), handlers: [...handlers].sort(), adapters: [...adapters].sort(), filters };
+}
+
+/** One read a screen's markup makes, as pronto's #Read states it: the
+ * filter's clauses without their values, the tables its select embeds, and
+ * the columns of every order it can be in. */
+export type ScreenRead = {
+  table: string;
+  /** data-live (a region's own read), data-reads (a whole table a reduce
+   * reads) or data-read-<name> (a reduce's named read). */
+  kind: "live" | "reads" | "named";
+  /** Inside an enclosing data-live region, so its placeholders resolve against
+   * that region's row. */
+  nested: boolean;
+  /** The lists stamping it, as indices into the screen's reads: each region
+   * whose item template it is inside, each naming that template, and the lists
+   * stamping those in turn. It reads once per row of each; empty, it reads
+   * once, as a slot binds one row. */
+  lists: number[];
+  route: "server" | "snapshot" | "whole" | "view";
+  /** Absent, as embeds is, where the server computes the read. */
+  clauses?: { col: string; op: string }[];
+  embeds?: string[];
+  limit?: number;
+  orders: string[];
+};
+
+/** A write a screen's markup states: a form, a chart's effect, or a reduce,
+ * recorded as op `reduce` on its region's table. A reduce is code bound to an
+ * event (data-on-<event>, a drag's data-handler): its updates put, patch and
+ * delete, and its effects upsert and delete by filter, on whatever tables its
+ * module names, which are not the markup's to say. */
+export type ScreenWrite = { table: string; op: string; filter?: string };
+
+/** Whether an attribute binds a reduce: a data-on-<event>, data-on-mutation
+ * among them, or a data-handler, which a region's drag calls. */
+const binds = (name: string) => name === "data-handler" || name.startsWith("data-on-");
+
+/** A read as #Read states it, routed by the function the store routes it by. */
+function readOf(
+  table: string,
+  kind: ScreenRead["kind"],
+  nested: boolean,
+  lists: number[],
+  filter: string | undefined,
+  select: string | undefined,
+  orders: string[],
+): ScreenRead {
+  const spec = parseFilterSpec(filter ?? "") as Spec;
+  const embeds = parseSelect(select) as { table: string }[] | null;
+  const limit = parseLimit(filter) as number | undefined;
+  return {
+    table,
+    kind,
+    nested,
+    lists,
+    route: routeOf(spec, embeds, limit),
+    ...(spec === null ? {} : { clauses: spec.map(({ col, op }) => ({ col, op })) }),
+    ...(embeds === null ? {} : { embeds: embeds.map((e) => e.table) }),
+    ...(limit === undefined ? {} : { limit }),
+    orders: [...new Set(orders.flatMap((o) => o.split(",").filter(Boolean).map((k) => k.split(".")[0])))],
+  };
+}
+
+/** Every order a data-order can be in: the literal, or each a closed map
+ * names. */
+function ordersOf(spec: string | undefined, table: string): string[] {
+  if (spec === undefined) return [];
+  const order = parseOrder(spec, table);
+  return order.literal !== undefined ? [order.literal] : Object.values(order.of as Record<string, string>);
+}
+
+/** Every read and write one screen's markup states, in document order; a
+ * reduce in a named template is recorded last, on each region that stamps it. */
+export function screenAccess(html: string): { reads: ScreenRead[]; writes: ScreenWrite[] } {
+  const reads: ScreenRead[] = [];
+  const writes: ScreenWrite[] = [];
+  const reduced = new Set<string>();
+  const reduce = (table: string) => {
+    if (reduced.has(table)) return;
+    reduced.add(table);
+    writes.push({ table, op: "reduce" });
+  };
+  // A named item template is stamped by each region naming it in
+  // data-template and by the region holding it, as machineRegions reads it.
+  const referrers = new Map<string, string[]>();
+  const refer = (name: string, table: string) => referrers.set(name, [...referrers.get(name) ?? [], table]);
+  const stamped: string[] = [];
+  // The same, as the reads of the lists stamping each item template, filled
+  // once every region naming one has been read.
+  const stampers = new Map<string, number[]>();
+  const stampersOf = (name: string) => stampers.get(name) ?? stampers.set(name, []).get(name) as number[];
+  const stamps: { lists: number[]; templates: number[][] }[] = [];
+  type Open = { tag: string; live?: string; read?: number; named?: string; stampers?: number[] };
+  walkTags<Open>(html, (tag, attrText, stack) => {
+    const attrs = attrMap(attrText);
+    const live = attrs.get("data-live");
+    const enclosing = stack.findLast((f) => f.live !== undefined)?.live;
+    const templates = stack.flatMap((f) => f.stampers === undefined ? [] : [f.stampers]);
+    // A named template outside every region is stamped by the lists naming it.
+    const nested = enclosing !== undefined || templates.length > 0;
+    const stamp = () => {
+      const lists: number[] = [];
+      stamps.push({ lists, templates });
+      return lists;
+    };
+    let read: number | undefined;
+    // The region a reduce here is wired in, or the named template whose
+    // stampers wire it.
+    const near = stack.findLast((f) => f.live !== undefined || f.named !== undefined);
+    if (live !== undefined) {
+      read = reads.length;
+      reads.push(readOf(live, "live", nested, stamp(), attrs.get("data-filter"), attrs.get("data-select"), ordersOf(attrs.get("data-order"), live)));
+      const template = attrs.get("data-template");
+      if (template !== undefined) {
+        refer(template, live);
+        stampersOf(template).push(read);
+      }
+    }
+    if ([...attrs.keys()].some(binds)) {
+      if (live !== undefined || near?.live !== undefined) reduce(live ?? near?.live as string);
+      else if (near?.named !== undefined) stamped.push(near.named);
+    }
+    for (const t of (attrs.get("data-reads") ?? "").split(",")) {
+      if (t.trim() !== "") reads.push(readOf(t.trim(), "reads", nested, stamp(), undefined, undefined, []));
+    }
+    for (const [name, value] of attrs) {
+      if (!name.startsWith("data-read-")) continue;
+      const spec = parseReadSpec(value);
+      reads.push(readOf(spec.table, "named", nested, stamp(), spec.filter, undefined, spec.order === undefined ? [] : [spec.order]));
+    }
+    const action = attrs.get("data-action");
+    const entity = attrs.get("data-entity");
+    if (tag === "form" && action !== undefined && entity !== undefined) {
+      writes.push({ table: entity, op: action, ...(attrs.has("data-filter") ? { filter: attrs.get("data-filter") } : {}) });
+    }
+    if (tag !== "template" || !attrsOf(attrText).has("data-item")) return { tag, live, read };
+    const named = attrs.get("data-name");
+    const holder = stack.findLast((f) => f.tag === "template" || f.live !== undefined);
+    const held = holder?.read === undefined ? [] : [holder.read];
+    if (named !== undefined && holder?.live !== undefined) refer(named, enclosing as string);
+    if (named === undefined) return { tag, live, read, stampers: held };
+    stampersOf(named).push(...held);
+    return { tag, live, read, named, stampers: stampersOf(named) };
+  });
+  for (const name of stamped) for (const table of referrers.get(name) ?? []) reduce(table);
+  // stamps[i] is reads[i]'s. A list stamped by another stamps a read once per
+  // row of both, whether its template is nested in the outer one's or named.
+  const direct = stamps.map(({ templates }) => templates.flat());
+  const closure = (i: number, seen: Set<number>): Set<number> => {
+    for (const j of direct[i]) if (!seen.has(j)) closure(j, seen.add(j));
+    return seen;
+  };
+  stamps.forEach(({ lists }, i) => lists.push(...[...closure(i, new Set())].sort((a, b) => a - b)));
+  return { reads, writes };
 }
 
 /**
@@ -97,6 +261,11 @@ export function unknownColumns(filter: string, fields: string[]): string[] {
   if (spec === null) return [];
   return [...new Set(spec.map((p) => p.col).filter((c) => !fields.includes(c)))];
 }
+
+/** One tag's valued data-* attributes by name, either quoting style,
+ * entities decoded. */
+export const attrMap = (attrText: string): Map<string, string> =>
+  new Map([...` ${attrText}`.matchAll(ATTR)].map(([, name, dq, sq]): [string, string] => [name, decode(dq ?? sq)]));
 
 const QATTR = (name: string) => new RegExp(`\\s${name}=(?:"([^"]*)"|'([^']*)')`);
 
@@ -189,7 +358,14 @@ export type MachineRegion = {
   parallel: string[];
   emptyRow?: string;
   filter?: string;
+  /** Every chain of regions it is stamped under, each innermost first: what
+   * a row-stamped filter is stamped from. A named template contributes one
+   * chain per region that references it by data-template and one for the
+   * region whose own content holds it, and none when no region does either. */
+  enclosing: Enclosing[][];
 };
+
+type Enclosing = { table: string; filter?: string };
 
 /** Every data-machine region in one screen's markup, with the attributes its
  * validity depends on. Single-quoted values are the norm here — a machine is
@@ -198,11 +374,49 @@ export type MachineRegion = {
  * precondition, not a shape this rule may guess at. */
 export function machineRegions(html: string): MachineRegion[] {
   const out: MachineRegion[] = [];
-  for (const [, closing, , attrText] of strip(html).matchAll(ANY_TAG)) {
-    if (closing === "/") continue;
-    const { attr } = attrsOf(attrText);
+  // `named` is a template[data-item][data-name]: a chain stops there and goes
+  // on through each region that stamps it, which `referrers` holds.
+  type Open = { tag: string; table?: string; filter?: string; named?: string };
+  // The lexical regions up to the nearest named template, and that template.
+  const reach = (stack: Open[]): { chain: Enclosing[]; via?: string } => {
+    const chain: Enclosing[] = [];
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const { table, filter, named } = stack[i];
+      if (named !== undefined) return { chain, via: named };
+      if (table !== undefined) chain.push({ table, filter });
+    }
+    return { chain };
+  };
+  const referrers = new Map<string, { chain: Enclosing[]; via?: string }[]>();
+  const refer = (name: string, entry: { chain: Enclosing[]; via?: string }) => {
+    const entries = referrers.get(name);
+    if (entries === undefined) referrers.set(name, [entry]);
+    else entries.push(entry);
+  };
+  // Whether the nearest region holds the open tag in its own content: a
+  // template between them keeps it out of the region's querySelector.
+  const lexical = (stack: Open[]): boolean => {
+    for (let i = stack.length - 1; i >= 0; i--) {
+      if (stack[i].tag === "template") return false;
+      if (stack[i].table !== undefined) return true;
+    }
+    return false;
+  };
+  const found: { region: Omit<MachineRegion, "enclosing">; chain: Enclosing[]; via?: string }[] = [];
+  walkTags<Open>(html, (tag, attrText, stack) => {
+    const { attr, has } = attrsOf(attrText);
+    const { chain, via } = reach(stack);
+    const ref = attr("data-template");
+    if (ref !== undefined && attr("data-live") !== undefined) {
+      refer(ref, { chain: [{ table: attr("data-live") as string, filter: attr("data-filter") }, ...chain], via });
+    }
+    const named = tag === "template" && has("data-item") ? attr("data-name") : undefined;
+    // hydrateRegion takes every item template whose nearest region it is,
+    // named or not, so that region stamps it too.
+    if (named !== undefined && lexical(stack)) refer(named, { chain, via });
+    const frame = { tag, table: attr("data-live"), filter: attr("data-filter"), named };
     const machine = attr("data-machine");
-    if (machine === undefined) continue;
+    if (machine === undefined) return frame;
     const table = attr("data-live");
     if (table === undefined) throw new Error(`data-machine on a tag with no data-live`);
     // A list is several charts on one region, and every rule below is a
@@ -240,9 +454,21 @@ export function machineRegions(html: string): MachineRegion[] {
     }
     const parallel = parallelCharts.map((c) => JSON.stringify(c));
     for (const one of parallel) {
-      out.push({ table, machine: one, parallel, emptyRow: attr("data-empty-row"), filter: attr("data-filter") });
+      found.push({
+        region: { table, machine: one, parallel, emptyRow: attr("data-empty-row"), filter: attr("data-filter") },
+        chain,
+        via,
+      });
     }
-  }
+    return frame;
+  });
+  // A template stamped inside itself is stamped first under whatever stamps
+  // the outermost copy, so a chain revisiting a name adds no way in.
+  const chains = (chain: Enclosing[], via: string | undefined, seen: string[]): Enclosing[][] =>
+    via === undefined ? [chain] : seen.includes(via) ? [] : (referrers.get(via) ?? []).flatMap((r) =>
+      chains(r.chain, r.via, [...seen, via]).map((outer) => [...chain, ...outer])
+    );
+  for (const { region, chain, via } of found) out.push({ ...region, enclosing: chains(chain, via, []) });
   return out;
 }
 
@@ -302,6 +528,32 @@ function implied<T extends { tag: string }>(stack: T[], tag: string): T[] {
   return out;
 }
 
+/** Each start tag of a screen's markup, in document order, with the frames of
+ * the elements open around it as the DOM nests them. `visit` returns the
+ * tag's own frame, pushed unless the element is void or self-closed;
+ * `closed` is handed each frame as its element ends, the document's end
+ * included. */
+function walkTags<F extends { tag: string }>(
+  html: string,
+  visit: (tag: string, attrText: string, stack: F[]) => F,
+  closed: (frame: F) => void = () => {},
+): void {
+  const stack: F[] = [];
+  for (const [, closing, rawTag, attrText] of strip(html).matchAll(ANY_TAG)) {
+    const tag = rawTag.toLowerCase();
+    if (closing === "/") {
+      const at = stack.findLastIndex((f) => f.tag === tag);
+      if (at >= 0) for (const frame of stack.splice(at)) closed(frame);
+      continue;
+    }
+    for (const frame of implied(stack, tag)) closed(frame);
+    const frame = visit(tag, attrText, stack);
+    if (VOID.has(tag) || /\/\s*$/.test(attrText)) closed(frame);
+    else stack.push(frame);
+  }
+  for (const frame of stack) closed(frame);
+}
+
 export type Slot = {
   table: string;
   filter?: string;
@@ -326,23 +578,8 @@ export type Slot = {
 export function slotRegions(html: string): Slot[] {
   const out: Slot[] = [];
   type Open = { tag: string; item: boolean; slot?: Slot; list?: boolean };
-  const stack: Open[] = [];
-  const emit = ({ slot, list }: Open) => {
-    if (slot !== undefined && list !== true) out.push(slot);
-  };
-  for (const m of strip(html).matchAll(ANY_TAG)) {
-    const [, closing, rawTag, attrText] = m;
-    const tag = rawTag.toLowerCase();
-    if (closing === "/") {
-      for (let i = stack.length - 1; i >= 0; i--) {
-        if (stack[i].tag !== tag) continue;
-        for (const open of stack.splice(i)) emit(open);
-        break;
-      }
-      continue;
-    }
+  walkTags<Open>(html, (tag, attrText, stack) => {
     const { attr, has } = attrsOf(attrText);
-    for (const open of implied(stack, tag)) emit(open);
     const item = tag === "template" && has("data-item");
     if (item) {
       for (let i = stack.length - 1; i >= 0 && stack[i].tag !== "template"; i--) {
@@ -362,13 +599,10 @@ export function slotRegions(html: string): Slot[] {
       };
       open.list = attr("data-template") !== undefined;
     }
-    if (VOID.has(tag) || /\/\s*$/.test(attrText)) {
-      emit(open);
-      continue;
-    }
-    stack.push(open);
-  }
-  for (const open of stack) emit(open);
+    return open;
+  }, ({ slot, list }) => {
+    if (slot !== undefined && list !== true) out.push(slot);
+  });
   return out;
 }
 
@@ -396,38 +630,20 @@ export type FormatBinding = {
  * holding it, which is the table the stack already carries. */
 export function formatBindings(html: string): FormatBinding[] {
   const out: FormatBinding[] = [];
-  type Open = { tag: string; table?: string };
-  const stack: Open[] = [];
-  const enclosing = () => {
-    for (let i = stack.length - 1; i >= 0; i--) if (stack[i].table !== undefined) return stack[i].table;
-    return undefined;
-  };
-  for (const m of strip(html).matchAll(ANY_TAG)) {
-    const [, closing, rawTag, attrText] = m;
-    const tag = rawTag.toLowerCase();
-    if (closing === "/") {
-      for (let i = stack.length - 1; i >= 0; i--) {
-        if (stack[i].tag !== tag) continue;
-        stack.splice(i);
-        break;
-      }
-      continue;
-    }
+  walkTags<{ tag: string; table?: string }>(html, (tag, attrText, stack) => {
     const { attr } = attrsOf(attrText);
-    implied(stack, tag);
-    const open: Open = { tag, table: attr("data-live") };
+    const own = attr("data-live");
     const format = attr("data-text-format");
     const text = attr("data-text");
     if (format !== undefined && text !== undefined) {
       // Its own region first, when it is one: the interpreter binds a region's
       // own data-text in that region's context, not its parent's (bindTexts is
       // handed the region as its scope and matches it).
-      const table = open.table ?? enclosing();
+      const table = own ?? stack.findLast((f) => f.table !== undefined)?.table;
       for (const [, expr] of text.matchAll(PLACEHOLDERS)) out.push({ format, expr, table });
     }
-    if (VOID.has(tag) || /\/\s*$/.test(attrText)) continue;
-    stack.push(open);
-  }
+    return { tag, table: own };
+  });
   return out;
 }
 
@@ -461,7 +677,7 @@ export function formatLint(b: FormatBinding, entity: Entity | undefined): string
   return null;
 }
 
-export type KindedRegion = { table: string; whens: (string | undefined)[] };
+export type KindedRegion = { table: string; whens: (string | undefined)[]; projects?: string[] };
 
 /** Every region's item-template data-when list, in document order — only
  * regions owning at least one item template appear; undefined is a default
@@ -503,10 +719,22 @@ export function kindedRegions(html: string): KindedRegion[] {
     }
     const table = attr("data-live");
     const ref = attr("data-template");
+    const project = attr("data-project");
     const open: Open = { tag };
     if (table !== undefined) {
       if (ref !== undefined) refs.push({ table, ref });
-      else open.region = { table, whens: [] };
+      else {
+        let projects: string[] | undefined;
+        if (project !== undefined) {
+          try {
+            const parsed = JSON.parse(project);
+            if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+              projects = Object.keys(parsed);
+            }
+          } catch {}
+        }
+        open.region = projects ? { table, whens: [], projects } : { table, whens: [] };
+      }
     }
     if (VOID.has(tag) || /\/\s*$/.test(attrText)) {
       emit(open.region);
@@ -707,12 +935,10 @@ export function unwitnessedControls(html: string): string[] {
       stampers.set(ref, merge(stampers.get(ref) ?? NONE, cover));
     }
     const type = attr("type")?.toLowerCase();
-    // A control that opens a surface is wired by naming it, whichever gesture
-    // does the opening: `commandfor` on activation, `data-interest` on hover or
-    // focus. Neither writes anything, which is exactly why neither is a handler
-    // this rule could otherwise find.
-    const invoker = has("popovertarget") || attr("commandfor") !== undefined ||
-      attr("data-interest") !== undefined;
+    // A control that opens a surface is wired by naming it: `commandfor` or
+    // `popovertarget`. Neither writes anything, which is exactly why neither
+    // is a handler this rule could otherwise find.
+    const invoker = has("popovertarget") || attr("commandfor") !== undefined;
     if (!invoker && (tag === "button" || (tag === "input" && type !== undefined && CONTROL_INPUT.has(type)))) {
       // A button's default type is submit; type="button" and type="reset"
       // reach no submit listener however deep in a form they sit.
@@ -749,7 +975,7 @@ export type EnumOf = (col: string) => string[] | null;
  * declarable value; and for each such discriminant field, every enum value
  * must be admitted by some template unless a default (no data-when) template
  * exists — the interpreter errors on a row no template admits. */
-export function kindLint(whens: (string | undefined)[], e: Entity, enumOf: EnumOf): string | null {
+export function kindLint(whens: (string | undefined)[], e: Entity, enumOf: EnumOf, projects?: string[]): string | null {
   const eqs: { col: string; value: string }[] = [];
   for (const w of whens) {
     if (w === undefined) continue;
@@ -762,11 +988,13 @@ export function kindLint(whens: (string | undefined)[], e: Entity, enumOf: EnumO
     if (spec === null) return `data-when="${w}" is outside the translatable fragment subset`;
     for (const p of spec) {
       const f = e.fields.find((f) => f.name === p.col);
-      if (f === undefined) return `data-when="${w}" names "${p.col}" — not a field of "${e.table}"`;
+      if (f === undefined && !projects?.includes(p.col)) return `data-when="${w}" names "${p.col}" — not a field of "${e.table}"`;
       if (p.op !== "eq") continue;
-      const kinds = enumOf(p.col);
-      if (kinds !== null && !kinds.includes(p.value as string)) {
-        return `data-when="${w}": "${p.value}" is not a declarable ${p.col} (${kinds.join(", ")})`;
+      if (f !== undefined) {
+        const kinds = enumOf(p.col);
+        if (kinds !== null && !kinds.includes(p.value as string)) {
+          return `data-when="${w}": "${p.value}" is not a declarable ${p.col} (${kinds.join(", ")})`;
+        }
       }
       eqs.push({ col: p.col, value: p.value as string });
     }
@@ -1078,167 +1306,6 @@ const BROWSER_TIERS = new Set(["tab", "device"]);
 // string, a boolean and "true"/"false". Every other type has exactly one, so
 // a non-string written into it is not a second spelling but a second type.
 const TWO_SPELLINGS = new Set(["int", "bigint", "int32", "double", "bool"]);
-
-/** The answers a region's projection supplies, by name. Unparseable is this
- * pass's finding rather than the runtime's: every other reader of the markup
- * would go on to judge the region against a projection it could not read. */
-const clausesOf = (project: string | undefined): string[] => {
-  if (project === undefined) return [];
-  try {
-    return Object.keys(JSON.parse(project));
-  } catch {
-    throw new Error(`data-project is not JSON: ${project}`);
-  }
-};
-
-export type StopRegion =
-  { table: string; columns: string[]; machine?: string; projected: string[]; outer?: string };
-
-/** Every region declaring tabstops or focus targets under `attr`, with the
- * names its members bind, the answers its projection supplies and the chart it
- * runs. A region owns the members under it, so the scan needs the nesting the
- * interpreter's `ownedBy` answers at runtime — the innermost open `data-live`
- * is whose set a member joins, and the elements between are markup.
- *
- * A member sits under whatever the skin wraps it in — a cell, a list item, a
- * group — so the search is for the nearest REGION and never the nearest tag. */
-type OpenStop = {
-  table?: string;
-  machine?: string;
-  columns: string[];
-  projected: string[];
-  outer?: string;
-  template?: string;
-};
-
-// A template the screen keeps by name, for the regions that render through one.
-// Named because their region re-hydrates and a render sweeps every child that
-// is not one of its rows — so the members are declared OUTSIDE the region they
-// belong to, and a scan reading the markup's nesting alone would find none.
-const NAMED_TEMPLATE = /<template\b[^>]*\sdata-name="([^"]*)"[^>]*>([\s\S]*?)<\/template>/g;
-
-export function stopRegions(html: string, attr: "data-rove" | "data-focus"): StopRegion[] {
-  const bare = strip(html);
-  const named = new Map<string, string>();
-  for (const [, name, body] of bare.matchAll(NAMED_TEMPLATE)) named.set(name, body);
-  // Removed before the walk, and reached only through the region that names
-  // one: a named template at the top of a screen belongs to no region where it
-  // is written, and to the region that renders it where it is rendered.
-  return walkStops(bare.replace(NAMED_TEMPLATE, ""), attr, named);
-}
-
-/** `root` is a region already open — the walk of a template body a region
- * renders, whose top-level members are that region's. The caller owns it and
- * emits it; this pass only fills it in. */
-function walkStops(
-  html: string,
-  attr: "data-rove" | "data-focus",
-  named: Map<string, string>,
-  root?: OpenStop,
-): StopRegion[] {
-  const out: StopRegion[] = [];
-  const open: OpenStop[] = root === undefined ? [] : [root];
-  const close = (done: OpenStop) => {
-    if (done.template !== undefined) {
-      const body = named.get(done.template);
-      if (body === undefined) {
-        throw new Error(`data-template names "${done.template}", which no <template data-name> declares`);
-      }
-      out.push(...walkStops(body, attr, named, done));
-    }
-    if (done.table !== undefined && done.columns.length > 0) {
-      out.push({
-        table: done.table,
-        columns: done.columns,
-        machine: done.machine,
-        projected: done.projected,
-        outer: done.outer,
-      });
-    }
-  };
-  for (const [, closing, tag, attrText] of html.matchAll(ANY_TAG)) {
-    if (closing === "/") {
-      const done = open.pop();
-      if (done !== undefined && done !== root) close(done);
-      continue;
-    }
-    const { attr: read } = attrsOf(attrText);
-    const table = read("data-live");
-    const member = read(attr);
-    if (member !== undefined) {
-      const col = /^\{([\w.]+)\}$/.exec(member)?.[1];
-      const held = open.findLast((o) => o.table !== undefined);
-      if (col !== undefined && held !== undefined) held.columns.push(col);
-    }
-    if (VOID.has(tag) || /\/\s*$/.test(attrText)) continue;
-    open.push({
-      table,
-      machine: read("data-machine"),
-      columns: [],
-      projected: clausesOf(read("data-project")),
-      outer: open.findLast((o) => o.table !== undefined)?.table,
-      template: read("data-template"),
-    });
-  }
-  return out;
-}
-
-/** The reason a region's caret is one a second reader could move, or null.
- *
- * The terminal moves focus when the caret MOVES, and a move carries no account
- * of who caused it — deliberately, since a cause the rows do not hold is state
- * no trace records and no snapshot restores. That is exact while the column has
- * one writer, and the reader IS that writer only where the row is theirs: a
- * `tab` or `device` row is the browser's own, while a `crud` or `live` row is
- * one anybody sharing it can write, and their write would land here as this
- * reader's focus jumping. */
-function caretLint(region: StopRegion, e: Entity, outer: Entity | undefined, what: string): string | null {
-  for (const col of region.columns) {
-    if (region.projected.includes(col) || e.fields.some((f) => f.name === col)) continue;
-    return `${what} binds "${col}" — not a field of "${e.table}", and not an answer its projection supplies`;
-  }
-  // A projected caret is one the region computes over the rows it holds, so
-  // nothing writes it — but the projection compares against the row it is
-  // nested in, and THAT row is what moves the caret. So the durability question
-  // is asked of the enclosing region too, and a member set is only as private
-  // as the least private row deciding which of its members is current.
-  const owns = region.columns.some((c) => region.projected.includes(c)) && outer !== undefined
-    ? [e, outer]
-    : [e];
-  for (const held of owns) {
-    if (BROWSER_TIERS.has(held.durability)) continue;
-    return `${what} follows a "${held.durability}" table ("${held.table}"), whose rows another reader can write — ` +
-      `their move would take this reader's focus; a caret follows a ` +
-      `"${[...BROWSER_TIERS].join('" or "')}" row, which is the reader's own`;
-  }
-  return null;
-}
-
-export const roveLint = (region: StopRegion, e: Entity, outer?: Entity): string | null =>
-  caretLint(region, e, outer, "data-rove");
-
-/** As above, and one more: a focus target must hear `focusin`.
- *
- * `data-rove` owns the tab order, so the terminal can tell a move it made from
- * a refresh it did not. `data-focus` owns nothing, so its only reading of "the
- * reader is on the wrong member" is the DOM's own focus — and a reader who
- * Tabbed there would be dragged back on the next refresh, forever, unless their
- * move writes the column too. `focusin` is what writes it, and a chart that
- * does not draw it turns this into a focus-stealing loop. */
-export function focusLint(region: StopRegion, e: Entity, outer?: Entity): string | null {
-  const why = caretLint(region, e, outer, "data-focus");
-  if (why !== null) return why;
-  // Every chart the region runs, since a region may run several and which one
-  // hears the reader is the region's business rather than this rule's.
-  const parsed = region.machine === undefined ? [] : JSON.parse(region.machine);
-  const charts = Array.isArray(parsed) ? parsed : [parsed];
-  if (!charts.some((c) => machineShape(c).handled.includes("focusin"))) {
-    return `data-focus without a chart hearing "focusin": every affordance stays in the Tab sequence, so a ` +
-      `reader can put focus on a member the column does not name, and every refresh would drag them back — ` +
-      `draw the arrow that records where they went`;
-  }
-  return null;
-}
 
 /** Column-spelling consistency over the writes a screen's markup declares:
  * the reason a browser-owned entity's regions write one column in more than one

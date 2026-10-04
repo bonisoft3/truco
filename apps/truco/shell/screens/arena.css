@@ -13,7 +13,7 @@
 
 body:has([data-screen="arena"]) {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   block-size: 100dvh;
   overflow: hidden;
 }
@@ -78,8 +78,16 @@ body:has([data-screen="arena"]) > nav a {
   50% { box-shadow: 0 0 0 7px color-mix(in oklch, var(--attention) 0%, transparent); }
 }
 
-@keyframes talked-a { from { translate: 0 7px; scale: 0.94; opacity: 0; } }
-@keyframes talked-b { from { translate: 0 7px; scale: 0.94; opacity: 0; } }
+@keyframes talked-a {
+  0% { transform: scale(0.96); }
+  60% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+@keyframes talked-b {
+  0% { transform: scale(0.96); }
+  60% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
 
 /* Card flight animations: translation across the table runs on a single continuous
    cubic-bezier curve (0% -> 100%) so lateral velocity is strictly monotonic with zero
@@ -133,7 +141,7 @@ body:has([data-screen="arena"]) > nav a {
     opacity: 1;
   }
   100% {
-    translate: 0 calc(abs(var(--fan, 0)) * 3px);
+    translate: 0 0;
     rotate: calc(var(--fan, 0) * 5deg);
     scale: 1;
     opacity: 1;
@@ -243,6 +251,26 @@ body:has([data-screen="arena"]) > nav a {
   to { scale: 1; opacity: 1; }
 }
 
+@keyframes heroRaisePulse {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(220, 38, 38, 0.6), 0 0 10px rgba(245, 158, 11, 0.45), 0 6px 14px rgba(0,0,0,0.6);
+    translate: 0 -3px;
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(239, 68, 68, 0.85), 0 0 16px rgba(251, 191, 36, 0.75), 0 8px 20px rgba(0,0,0,0.8);
+    translate: 0 -5px;
+  }
+}
+
+@keyframes heroTrucoPulse {
+  0%, 100% {
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.5), 0 6px 14px rgba(0,0,0,0.6);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(251, 191, 36, 0.8), 0 8px 20px rgba(0,0,0,0.75);
+  }
+}
+
 .screen[data-screen="arena"] {
   /* Objects on the table settle slower than chrome reacts. */
   --motion-settle: 460ms;
@@ -253,7 +281,7 @@ body:has([data-screen="arena"]) > nav a {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
   align-items: center;
-  padding: clamp(4px, 1dvh, 10px);
+  padding: clamp(2px, 0.5dvh, 6px);
   overflow: hidden;
 
   & *, & *::before, & *::after { box-sizing: border-box; }
@@ -262,7 +290,7 @@ body:has([data-screen="arena"]) > nav a {
     min-block-size: 0;
     block-size: 100%;
     display: grid;
-    padding: clamp(4px, 0.9dvh, 9px);
+    padding: clamp(2px, 0.5dvh, 6px);
     border-radius: clamp(10px, 1.8dvh, 18px);
   }
 
@@ -283,8 +311,8 @@ body:has([data-screen="arena"]) > nav a {
       "spine"
       "play"
       "log";
-    gap: clamp(3px, 0.9dvh, 10px);
-    padding: clamp(6px, 1.4dvh, 16px);
+    gap: clamp(2px, 0.5dvh, 6px);
+    padding: clamp(3px, 0.7dvh, 8px);
     border-radius: clamp(7px, 1.4dvh, 12px);
   }
 
@@ -398,7 +426,7 @@ body:has([data-screen="arena"]) > nav a {
      the height the pad takes is the height the cards do not get. */
   & .seatbar-links .picker > button {
     min-inline-size: 0;
-    padding-inline: clamp(5px, 0.8vw, 10px);
+    padding-inline: 8px;
     font-size: clamp(0.625rem, 1.3dvh, 0.8125rem);
   }
 
@@ -489,7 +517,7 @@ body:has([data-screen="arena"]) > nav a {
 
   & .score .figure {
     margin: 0;
-    font: 800 clamp(2rem, 7dvh, 3.75rem)/1 ui-sans-serif, system-ui, sans-serif;
+    font: 800 clamp(1.75rem, 5.2dvh, 3.25rem)/1 ui-sans-serif, system-ui, sans-serif;
     font-variant-numeric: tabular-nums;
     color: var(--pad-ink);
     /* Pressed into the paper rather than printed on it. */
@@ -596,7 +624,7 @@ body:has([data-screen="arena"]) > nav a {
   /* One shape for every setting the table has: the caption naming it, the
      value under it, the chevron alongside. The chevron is the component's own
      ::after, so the grid places three things and the markup carries two. */
-  @media (min-width: 56rem) {
+  @media (min-width: 48rem) {
     & .seatbar [data-picker="country"] .pick-label span { display: inline; }
 
     & .seatbar .picker > button {
@@ -606,7 +634,8 @@ body:has([data-screen="arena"]) > nav a {
       column-gap: 8px;
       row-gap: 0;
       text-align: start;
-      padding-block: 3px;
+      padding-block: 4px;
+      min-height: 40px;
     }
     & .seatbar .picker > button::after { grid-column: 2; grid-row: 1 / span 2; }
     & .seatbar .picker > button .sr {
@@ -766,10 +795,32 @@ body:has([data-screen="arena"]) > nav a {
     container-type: size;
     container-name: felt;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto auto;
+    grid-template-areas:
+      "stage"
+      "seats"
+      "mat"
+      "instructions"
+      "encobrir"
+      "hand"
+      "actions"
+      "shouts";
     justify-items: center;
-    align-content: space-evenly;
+    align-content: space-between;
     gap: clamp(2px, 0.6dvh, 8px);
+    overflow: clip;
+  }
+
+  & .opponent-stage { grid-area: stage; }
+  & #seats { grid-area: seats; }
+  & .table-instruction-bar { grid-area: instructions; }
+  & .encobrir-bar { grid-area: encobrir; }
+  & .over { grid-area: hand; }
+  & .wager-controls { grid-area: actions; display: contents; }
+  & #actions { grid-area: actions; }
+  & .boteco-shouts {
+    grid-area: shouts;
+    min-block-size: clamp(26px, 3.5dvh, 34px);
   }
 
   /* Three card rows, a line of talk and a row of buttons have to fit the felt,
@@ -781,12 +832,12 @@ body:has([data-screen="arena"]) > nav a {
      smallest card still worth tapping; below the height that fits three rows
      of it the table has simply run out of room. */
   & .play > * {
-    --card-w: clamp(34px, min(26cqw, 19cqh), 168px);
+    --card-w: clamp(34px, min(24cqw, 11.5cqh), 140px);
     /* Height and radius are re-declared, not inherited. A custom property
        substitutes its var()s where it is DECLARED and then inherits the
        resolved value, so overriding --card-w alone leaves them resolved
        against the screen's, and the card is no longer 1:1.46. */
-    --card-h: calc(var(--card-w) * 1.46);
+    --card-h: round(nearest, calc(var(--card-w) * 1.46), 4px);
     --card-r: calc(var(--card-w) * 0.12);
   }
 
@@ -799,8 +850,9 @@ body:has([data-screen="arena"]) > nav a {
   }
 
   & .seat-row.mine {
-    gap: clamp(6px, 2.2vw, 22px);
-    margin-block-end: clamp(6px, 1.2dvh, 12px);
+    grid-area: hand;
+    gap: clamp(4px, 1.8vw, 18px);
+    margin-block-end: clamp(4px, 1dvh, 10px);
     min-block-size: var(--card-h);
     block-size: var(--card-h);
   }
@@ -813,8 +865,8 @@ body:has([data-screen="arena"]) > nav a {
   & .seat-row.house {
     min-block-size: calc(var(--card-h) * 0.54);
     block-size: calc(var(--card-h) * 0.54);
-    max-block-size: calc(var(--card-h) * 0.54);
-    overflow: hidden;
+    overflow: clip;
+    clip-path: inset(0 0 0 0);
     align-items: start;
     perspective: 700px;
   }
@@ -827,13 +879,16 @@ body:has([data-screen="arena"]) > nav a {
   & .seats[data-tell="tiao"] .seat-row.house[data-seat^="eles"] .card-back { animation: hum 700ms ease-in-out both; }
   & .seats[data-tell="ze"] .seat-row.house[data-seat^="eles"] .card-back { opacity: 0.7; scale: 0.96; }
   & .seats {
+    --card-w: clamp(28px, min(18cqw, 10cqh), 80px);
+    --card-h: round(nearest, calc(var(--card-w) * 1.46), 4px);
+    --card-r: calc(var(--card-w) * 0.12);
     display: flex;
     justify-content: center;
     align-items: start;
     gap: clamp(8px, 3vw, 40px);
     inline-size: 100%;
     box-sizing: border-box;
-    min-block-size: calc(var(--card-h) * 0.85);
+    min-block-size: calc(var(--card-h) * 0.54);
   }
   &:has(.matchbox[data-seats="1v1"]) .seat-row.house:not([data-seat="eles1"]) { display: none !important; }
   &:has(.matchbox[data-seats="2v2"]) .seat-row.house:is([data-seat="eles3"], [data-seat="eles4"]) { display: none !important; }
@@ -843,7 +898,7 @@ body:has([data-screen="arena"]) > nav a {
      clip are both in card units. */
   &:has(.matchbox[data-seats="2v2"]) .seats {
     --card-w: clamp(34px, min(17cqw, 12.5cqh), 110px);
-    --card-h: calc(var(--card-w) * 1.46);
+    --card-h: round(nearest, calc(var(--card-w) * 1.46), 4px);
     --card-r: calc(var(--card-w) * 0.12);
     gap: clamp(6px, 1.5vw, 20px);
     padding-inline: clamp(4px, 1vw, 12px);
@@ -853,7 +908,7 @@ body:has([data-screen="arena"]) > nav a {
      board clips your hand and the mat off its side. */
   &:has(.matchbox[data-seats="2v2v2"]) .seats {
     --card-w: clamp(16px, min(7.5cqw, 7.5cqh), 56px);
-    --card-h: calc(var(--card-w) * 1.46);
+    --card-h: round(nearest, calc(var(--card-w) * 1.46), 4px);
     --card-r: calc(var(--card-w) * 0.12);
     gap: clamp(2px, 0.8vw, 12px);
     padding-inline: clamp(2px, 0.8vw, 8px);
@@ -893,18 +948,22 @@ body:has([data-screen="arena"]) > nav a {
      :first/:last/:only give the same arc for one, two or three cards, and the
      row re-centres itself as cards leave it. */
   & .seat-row.mine .card {
+    transform-origin: 50% 120%;
     rotate: 0deg;
     translate: 0 0;
     cursor: pointer;
+    filter: grayscale(0%);
     transition: translate var(--motion-settle) var(--motion-settle-ease),
                 rotate var(--motion-settle) var(--motion-settle-ease),
                 scale var(--motion-settle) var(--motion-settle-ease),
-                opacity var(--motion-settle) var(--motion-settle-ease),
+                opacity 600ms cubic-bezier(.2, .86, .28, 1),
+                filter 600ms cubic-bezier(.2, .86, .28, 1),
                 box-shadow var(--motion-settle) var(--motion-settle-ease);
   }
 
-  & .seat-row.mine .card:first-child:not(:only-child) { --fan: -1; rotate: -5deg; translate: 0 3px; }
-  & .seat-row.mine .card:last-child:not(:only-child) { --fan: 1; rotate: 5deg; translate: 0 3px; }
+  & .seat-row.mine .card:first-child:not(:only-child) { --fan: -1; rotate: -5deg; }
+  & .seat-row.mine .card:last-child:not(:only-child) { --fan: 1; rotate: 5deg; }
+  & .seat-row.mine .card:nth-child(2):not(:last-child) { --fan: 0; rotate: 0deg; translate: 0 -2px; z-index: 2; }
 
   & .seat-row.mine .card {
     opacity: 0;
@@ -936,16 +995,50 @@ body:has([data-screen="arena"]) > nav a {
 
   & .seat-row.mine .card:not([disabled]):focus-visible { border-color: var(--rim-hi); }
 
+  & .seat-row.mine .card[disabled] {
+    cursor: default;
+  }
+
+  &:has(.hand:not([data-result=""])) .seat-row.mine .card,
+  & .play[data-phase="resolved"] .seat-row.mine .card,
+  & .play[data-phase="over"] .seat-row.mine .card {
+    animation: none;
+    opacity: 0.52;
+    filter: grayscale(45%);
+    cursor: default;
+    pointer-events: none;
+  }
+
+  &:has(.hand:not([data-result=""])) .seat-row.house .card-back,
+  & .play[data-phase="resolved"] .seat-row.house .card-back,
+  & .play[data-phase="over"] .seat-row.house .card-back {
+    animation: none;
+    opacity: 0.52;
+    filter: grayscale(45%);
+  }
+
   & .matcards {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: clamp(4px, 1.5vw, 14px);
     min-block-size: calc(var(--card-h) * 1.15);
+    block-size: calc(var(--card-h) * 1.15);
+    max-block-size: calc(var(--card-h) * 1.15);
     min-inline-size: calc(var(--card-w) * 2.8);
     border: 1px dashed color-mix(in oklch, var(--on-cloth) 14%, transparent);
     border-radius: var(--r-md);
     pointer-events: none;
+    margin-block-end: 0;
+  }
+
+  /* 2v2 and 2v2v2: more players mean 4 to 6 cards on the table per trick.
+     The mat cards scale smoothly and pack together tightly so the tricks fit. */
+  &:has(.matchbox[data-seats="2v2"]) .matcards {
+    --card-w: clamp(30px, min(16cqw, 11cqh), 76px);
+    --card-h: round(nearest, calc(var(--card-w) * 1.46), 4px);
+    --card-r: calc(var(--card-w) * 0.12);
+    gap: clamp(3px, 1vw, 10px);
   }
 
   /* Six cards to a rodada at three pairs: the mat deals them smaller, and a
@@ -953,14 +1046,20 @@ body:has([data-screen="arena"]) > nav a {
      line rather than pushing the felt past the board's edge. */
   &:has(.matchbox[data-seats="2v2v2"]) .matcards {
     --card-w: clamp(28px, min(12.5cqw, 11cqh), 110px);
-    --card-h: calc(var(--card-w) * 1.46);
+    --card-h: round(nearest, calc(var(--card-w) * 1.46), 4px);
     --card-r: calc(var(--card-w) * 0.12);
     flex-wrap: wrap;
     row-gap: clamp(4px, 1dvh, 10px);
   }
 
-  /* The wrapper is the round, and lays nothing out. */
-  & .matwrap { display: contents; }
+  & .matwrap {
+    grid-area: mat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-block-size: calc(var(--card-h) * 1.15);
+    inline-size: 100%;
+  }
 
   /* The three rodadas are always in the markup; one nobody has played to
      takes no room, and the empty felt keeps its dashed outline until the
@@ -985,7 +1084,8 @@ body:has([data-screen="arena"]) > nav a {
     transform: rotateX(6deg) translateZ(var(--z-lift, 1px));
     transform-style: preserve-3d;
     transition: transform var(--motion-settle) var(--motion-settle-ease),
-                rotate var(--motion-settle) var(--motion-settle-ease);
+                rotate var(--motion-settle) var(--motion-settle-ease),
+                margin-inline-start var(--motion-settle) var(--motion-settle-ease);
   }
   & .played:nth-child(1) { z-index: 1; --z-lift: 1px; }
   & .played:nth-child(2) { z-index: 2; --z-lift: 4px; }
@@ -994,6 +1094,11 @@ body:has([data-screen="arena"]) > nav a {
   & .played:nth-child(5) { z-index: 5; --z-lift: 13px; }
   & .played:nth-child(6) { z-index: 6; --z-lift: 16px; }
   & .played + .played { margin-inline-start: calc(var(--card-w) * -0.26); }
+
+  /* 2v2 and 2v2v2 have tighter default overlap so open cards fit side by side */
+  &:has(.matchbox:is([data-seats="2v2"], [data-seats="2v2v2"])) .trick .played + .played {
+    margin-inline-start: calc(var(--card-w) * -0.48);
+  }
 
   & .played[data-seat="you"] {
     --from-y: calc(var(--card-h) * 1.12);
@@ -1052,8 +1157,8 @@ body:has([data-screen="arena"]) > nav a {
   & .trick {
     display: flex;
     align-items: center;
-    gap: clamp(4px, 1vw, 10px);
-    padding: clamp(3px, 0.7dvh, 7px);
+    gap: 0;
+    padding: clamp(2px, 0.5dvh, 6px);
     border: none;
     border-radius: var(--r-md);
     transform-style: preserve-3d;
@@ -1084,12 +1189,42 @@ body:has([data-screen="arena"]) > nav a {
 
       /* Subdued cards dim smoothly into the cloth without alpha bleed or broken outlines */
       & .played:not([data-win="yes"]) .card {
-        opacity: 1;
-        filter: brightness(0.92) contrast(0.96);
+        opacity: 0.9;
+        filter: brightness(0.88) contrast(0.95);
       }
       & .played[data-win="yes"] .card {
         opacity: 1;
-        filter: brightness(1);
+        filter: brightness(1.05);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.75), 0 0 10px rgba(251, 191, 36, 0.4) !important;
+        border-color: rgba(251, 191, 36, 0.7) !important;
+      }
+    }
+
+    /* When a trick is decided (not tied), pack the cards together with the winner
+       on top and only the tips of the beaten cards showing, like real players on tight tables. */
+    &:is([data-v1="us"], [data-v1="them"]) .trick[data-t="1"],
+    &:is([data-v2="us"], [data-v2="them"]) .trick[data-t="2"],
+    &:is([data-v3="us"], [data-v3="them"]) .trick[data-t="3"] {
+      & .played + .played {
+        margin-inline-start: calc(var(--card-w) * -0.80);
+      }
+      & .played[data-win="yes"] {
+        z-index: 15 !important;
+        --z-lift: 18px !important;
+        transform: rotateX(4deg) translateZ(18px) scale(1.02);
+      }
+      & .played:not([data-win="yes"]) {
+        z-index: 2;
+        --z-lift: 2px;
+      }
+    }
+
+    /* 2v2 and 2v2v2 pack even tighter so 4 to 6 cards never overflow */
+    &:has(.matchbox:is([data-seats="2v2"], [data-seats="2v2v2"])) {
+      &:is([data-v1="us"], [data-v1="them"]) .trick[data-t="1"] .played + .played,
+      &:is([data-v2="us"], [data-v2="them"]) .trick[data-t="2"] .played + .played,
+      &:is([data-v3="us"], [data-v3="them"]) .trick[data-t="3"] .played + .played {
+        margin-inline-start: calc(var(--card-w) * -0.84);
       }
     }
 
@@ -1129,32 +1264,54 @@ body:has([data-screen="arena"]) > nav a {
     animation: none;
   }
 
+  & .table-instruction-bar {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    inline-size: 100%;
+    min-block-size: clamp(26px, 3.8dvh, 34px);
+    margin-block: clamp(3px, 0.8dvh, 7px);
+    pointer-events: none;
+  }
+
+  & .play:has(.shout[data-state="live"]) .table-instruction-bar {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   /* What the table says, on a strip of its own: dark enough that the cloth
      stops showing through, lit along its top edge by the same bulb as
      everything else, and thrown far enough off the felt to sit in front of it
      rather than on it. */
   & .talk {
-    min-block-size: clamp(20px, 3.2dvh, 26px);
-    block-size: clamp(20px, 3.2dvh, 26px);
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+    min-block-size: clamp(22px, 3.4dvh, 28px);
+    block-size: auto;
     box-sizing: border-box;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: clamp(3px, 0.6dvh, 6px) clamp(12px, 2vw, 22px);
+    padding: clamp(3px, 0.6dvh, 6px) clamp(16px, 2.5vw, 24px);
     border-radius: var(--r-full);
     background: linear-gradient(180deg,
-      color-mix(in oklch, var(--wood-deep) 90%, transparent) 0%,
-      color-mix(in oklch, #000 62%, transparent) 100%);
-    font: 700 clamp(0.8125rem, 2dvh, 1.125rem)/1.3 ui-sans-serif, system-ui, sans-serif;
+      color-mix(in oklch, var(--wood-deep) 94%, transparent) 0%,
+      color-mix(in oklch, #000 72%, transparent) 100%);
+    font: 700 clamp(0.8125rem, 1.9dvh, 1rem)/1.3 ui-sans-serif, system-ui, sans-serif;
     text-align: center;
     color: #FDF6E7;
-    text-shadow: 0 1px 0 color-mix(in oklch, #000 55%, transparent);
+    text-shadow: 0 1px 1px color-mix(in oklch, #000 70%, transparent);
     box-shadow:
-      inset 0 1px 0 color-mix(in oklch, var(--rim) 45%, transparent),
-      0 10px 20px -10px color-mix(in oklch, #000 90%, transparent);
+      inset 0 1px 0 color-mix(in oklch, var(--rim) 50%, transparent),
+      0 4px 14px color-mix(in oklch, #000 75%, transparent);
+    border: 1px solid color-mix(in oklch, var(--rim) 40%, transparent);
+    white-space: nowrap;
   }
 
-  & .talk:empty { box-shadow: none; background: none; }
+  & .talk:empty { display: none; }
 
   /* Every line the table says should land. A CSS animation only restarts when
      the animation NAME changes, so the two below are identical and the dealer
@@ -1197,10 +1354,16 @@ body:has([data-screen="arena"]) > nav a {
     grid-area: log;
     display: grid;
     align-content: end;
-    min-block-size: 0;
+    min-block-size: clamp(32px, 4.2dvh, 38px);
+    block-size: clamp(32px, 4.2dvh, 38px);
+    max-block-size: clamp(32px, 4.2dvh, 38px);
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar { display: none; }
     gap: 1px;
     margin: 0;
-    padding: 5px 8px;
+    padding: 3px 8px;
     border-block-start: 1px solid color-mix(in oklch, var(--on-cloth) 22%, transparent);
     list-style: none;
     font-size: clamp(0.6875rem, 1.25dvh, 0.75rem);
@@ -1244,13 +1407,18 @@ body:has([data-screen="arena"]) > nav a {
     pointer-events: none;
     z-index: 2;
     white-space: nowrap;
-    font: 900 clamp(2.8rem, 26cqh, 9.5rem)/1 var(--shout-font);
+    max-inline-size: 92cqw;
+    margin-inline: auto;
+    font: 900 clamp(2.2rem, min(14cqw, 18cqh), 7.5rem)/1 var(--shout-font);
     color: #FFF9E6;
     -webkit-text-stroke: max(2px, 0.035em) #1A0D00;
     paint-order: stroke fill;
     text-shadow:
       0.04em 0.05em 0 #1A0D00,
       0 0.08em 0.2em rgba(0, 0, 0, 0.55);
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.65));
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     transition: opacity 320ms cubic-bezier(0.2, 0.8, 0.25, 1),
                 transform 320ms cubic-bezier(0.2, 0.8, 0.25, 1),
                 display 320ms allow-discrete;
@@ -1261,14 +1429,8 @@ body:has([data-screen="arena"]) > nav a {
       transform: scale(0.6) translateY(28px) rotate(-6deg);
     }
   }
-  & .shout::before {
-    content: attr(data-word);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.65));
-  }
   & .shout[data-from="them"] {
-    font-size: clamp(3.2rem, 30cqh, 11.5rem);
+    font-size: clamp(2.2rem, min(14cqw, 18cqh), 8.5rem);
     color: var(--rim-hi);
     -webkit-text-stroke: max(2.5px, 0.04em) #2A0800;
     text-shadow:
@@ -1276,7 +1438,7 @@ body:has([data-screen="arena"]) > nav a {
       0 0 24px color-mix(in oklch, var(--rim) 50%, transparent);
   }
   & .shout[data-kind="run"] {
-    font-size: clamp(2.2rem, 18cqh, 6rem);
+    font-size: clamp(1.8rem, min(12.5cqw, 16cqh), 5.5rem);
     color: #FFC0B8;
     -webkit-text-stroke: max(2px, 0.03em) #3A0A05;
     text-shadow: 0.04em 0.05em 0 #3A0A05;
@@ -1285,18 +1447,15 @@ body:has([data-screen="arena"]) > nav a {
     color: var(--rim-hi);
   }
   & .shout:not([data-state="live"]) {
+    display: none;
     opacity: 0;
     transform: translateY(-16px) scale(0.92);
   }
   & .shout[data-state="gone"] {
     animation: shout-exit 340ms cubic-bezier(0.2, 0.8, 0.25, 1) both;
   }
-  & .shout:not([data-word]):not([data-state="live"]),
-  & .shout[data-word=""]:not([data-state="live"]) {
-    display: none;
-  }
   & .shout[data-kind="accept"] {
-    font-size: clamp(2.6rem, 23cqh, 8.5rem);
+    font-size: clamp(2.2rem, min(14cqw, 18cqh), 7.5rem);
   }
   & .shout[data-kind="accept"][data-from="us"] {
     color: #4DFFA8;
@@ -1309,7 +1468,7 @@ body:has([data-screen="arena"]) > nav a {
     color: var(--rim-hi);
   }
   & .shout[data-kind="win"] {
-    font-size: clamp(2.8rem, 25cqh, 8.8rem);
+    font-size: clamp(2.2rem, min(14.5cqw, 19cqh), 7.5rem);
   }
   & .shout[data-kind="win"][data-from="us"] {
     color: #FFDF66;
@@ -1322,7 +1481,7 @@ body:has([data-screen="arena"]) > nav a {
     color: var(--danger);
   }
   & .shout[data-kind="close"] {
-    font-size: clamp(2.5rem, 24cqh, 8.5rem);
+    font-size: clamp(2.2rem, min(14.5cqw, 18cqh), 7.5rem);
   }
   & .shout[data-kind="close"][data-from="us"] {
     color: var(--accent);
@@ -1333,12 +1492,12 @@ body:has([data-screen="arena"]) > nav a {
   & .shout[data-kind="close"][data-state="live"] {
     animation: shout-close 2600ms cubic-bezier(0.2, 0.8, 0.25, 1) both;
   }
-  & .shout[data-from="us"][data-t="1"][data-state="live"] { animation: shout-up-a 420ms var(--motion-ease) both; }
-  & .shout[data-from="us"][data-t="2"][data-state="live"] { animation: shout-up-b 420ms var(--motion-ease) both; }
-  & .shout[data-from="them"][data-t="1"][data-state="live"] { animation: shout-down-a 420ms var(--motion-ease) both; }
-  & .shout[data-from="them"][data-t="2"][data-state="live"] { animation: shout-down-b 420ms var(--motion-ease) both; }
-  & .shout[data-from="us"]:not([data-t])[data-state="live"] { animation: shout-up-a 420ms var(--motion-ease) both; }
-  & .shout[data-from="them"]:not([data-t])[data-state="live"] { animation: shout-down-a 420ms var(--motion-ease) both; }
+  & .shout:not([data-kind="close"]):not([data-kind="run"])[data-from="us"][data-t="1"][data-state="live"] { animation: shout-up-a 420ms var(--motion-ease) both; }
+  & .shout:not([data-kind="close"]):not([data-kind="run"])[data-from="us"][data-t="2"][data-state="live"] { animation: shout-up-b 420ms var(--motion-ease) both; }
+  & .shout:not([data-kind="close"]):not([data-kind="run"])[data-from="them"][data-t="1"][data-state="live"] { animation: shout-down-a 420ms var(--motion-ease) both; }
+  & .shout:not([data-kind="close"]):not([data-kind="run"])[data-from="them"][data-t="2"][data-state="live"] { animation: shout-down-b 420ms var(--motion-ease) both; }
+  & .shout:not([data-kind="close"]):not([data-kind="run"])[data-from="us"]:not([data-t])[data-state="live"] { animation: shout-up-a 420ms var(--motion-ease) both; }
+  & .shout:not([data-kind="close"]):not([data-kind="run"])[data-from="them"]:not([data-t])[data-state="live"] { animation: shout-down-a 420ms var(--motion-ease) both; }
   & .shout i {
     display: inline-block;
     font-style: normal;
@@ -1486,6 +1645,7 @@ body:has([data-screen="arena"]) > nav a {
   & .play[data-phase="waiting"] #btn-next,
   & .play[data-phase="raised"] #btn-next { display: none; }
   & .play[data-phase="resolved"] #btn-truco,
+  & .play[data-phase="resolved"] #btn-resign,
   & .play[data-phase="raised"] #btn-truco { display: none; }
   & .play[data-phase="raised"] .answers { display: flex; }
   /* Animations, not declarations: the deal's fill holds the card where it
@@ -1495,33 +1655,121 @@ body:has([data-screen="arena"]) > nav a {
      not, and the dealer takes off only the pair that ran. */
   &:has(.matchbox:not([data-seats="2v2v2"])) .play[data-ran="them"] .seat-row.house .card-back { animation: leave-down 340ms var(--motion-settle-ease) both; }
 
-  & .answers { align-items: flex-end; gap: clamp(6px, 1.4vw, 16px); }
+  & .answers {
+    display: none;
+    align-items: stretch;
+    justify-content: center;
+    gap: clamp(8px, 2vw, 14px);
+    inline-size: 100%;
+    max-inline-size: 420px;
+    margin-inline: auto;
+  }
   & .answers .act {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 3px;
-    min-inline-size: clamp(84px, 24cqw, 156px);
-    padding: 8px 12px 9px;
-    transform-origin: 50% 100%;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    font-family: var(--shout-font);
+    transition: transform var(--motion-fast) var(--motion-ease),
+                box-shadow var(--motion-fast) var(--motion-ease),
+                filter var(--motion-fast) var(--motion-ease);
   }
-  & .answers .act b { font: inherit; letter-spacing: 0.06em; text-transform: uppercase; }
-  & .answers .act small { font: 600 0.625rem/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.04em; opacity: 0.75; }
+  & .answers .act b {
+    font-family: var(--shout-font);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  & .answers .act small {
+    font: 700 0.65rem/1.2 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.03em;
+  }
   & .answers .act small:empty { display: none; }
-  & #btn-accept { rotate: -5deg; }
-  & #btn-run { rotate: 5deg; }
-  & #btn-raise { translate: 0 -6px; }
-  & #btn-raise:hover { translate: 0 -8px; }
-  & #btn-raise:active { translate: 0 -5px; }
+
+  /* Corro: Subdued retreat action — low contrast, discreet, folds out of the wager */
+  & #btn-run {
+    order: 1;
+    flex: 0.85;
+    min-inline-size: clamp(75px, 20cqw, 95px);
+    padding: 8px 10px;
+    background: linear-gradient(180deg, #281a13 0%, #150d09 100%);
+    border: 1px solid #4a3424;
+    color: #a8947e;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  }
+  & #btn-run b { font-size: clamp(0.85rem, 2.2vw, 0.95rem); color: #a8947e; }
+  & #btn-run small { color: #8c7362; }
+  & #btn-run:hover {
+    background: #35231a;
+    color: #e2d3c1;
+    border-color: #6b4d36;
+    translate: 0 -2px;
+  }
+  & #btn-run:active { translate: 0 1px; }
+
+  /* Aceito: Solid tavern agreement */
+  & #btn-accept {
+    order: 2;
+    flex: 1.1;
+    min-inline-size: clamp(90px, 24cqw, 120px);
+    padding: 8px 12px;
+    background: linear-gradient(180deg, #e5b93b 0%, #b88618 100%);
+    border: 1.5px solid #fef08a;
+    color: #261704;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  & #btn-accept b { font-size: clamp(0.95rem, 2.4vw, 1.05rem); font-weight: 800; color: #261704; text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
+  & #btn-accept small { color: #422a0a; font-weight: 700; }
+  & #btn-accept:hover {
+    filter: brightness(1.1);
+    translate: 0 -2px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  & #btn-accept:active { translate: 0 1px; }
+
+  /* Raise (SEIS! / NOVE! / DOZE!): High risk / high reward hero choice! */
+  & #btn-raise {
+    order: 3;
+    flex: 1.8;
+    min-inline-size: clamp(120px, 32cqw, 170px);
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #b91c1c 0%, #dc2626 45%, #991b1b 100%);
+    border: 2px solid #fbbf24;
+    color: #fff;
+    box-shadow: 0 0 18px rgba(220, 38, 38, 0.65), 0 0 12px rgba(245, 158, 11, 0.45), 0 8px 18px rgba(0, 0, 0, 0.7);
+    animation: heroRaisePulse 2.2s infinite ease-in-out;
+  }
+  & #btn-raise b {
+    font-size: clamp(1.05rem, 3vw, 1.25rem);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(245, 158, 11, 0.6);
+  }
+  & #btn-raise b::before { content: "🔥 "; font-style: normal; }
+  & #btn-raise small {
+    color: #fef08a;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+  & #btn-raise:hover {
+    translate: 0 -6px;
+    filter: brightness(1.15);
+    box-shadow: 0 0 24px rgba(239, 68, 68, 0.8), 0 0 16px rgba(251, 191, 36, 0.6), 0 10px 22px rgba(0, 0, 0, 0.8);
+  }
+  & #btn-raise:active {
+    translate: 0 -1px;
+    filter: brightness(0.95);
+    animation: none;
+  }
   & .act.hot {
-    border-color: var(--attention);
+    border-color: #fbbf24;
     color: #fff;
     text-shadow: 0 1px 0 color-mix(in oklch, #000 35%, transparent);
-    background: linear-gradient(180deg,
-      color-mix(in oklch, var(--attention) 90%, #fff) 0%,
-      color-mix(in oklch, var(--attention) 70%, #000) 100%);
+    background: linear-gradient(135deg, #b91c1c 0%, #dc2626 45%, #991b1b 100%);
   }
-  & .act.hot[disabled] { border-color: var(--pad-line); background: linear-gradient(180deg, var(--pad) 0%, var(--pad-2) 100%); color: var(--pad-ink); text-shadow: none; }
+  & .act.hot[disabled] { border-color: var(--pad-line); background: linear-gradient(180deg, var(--pad) 0%, var(--pad-2) 100%); color: var(--pad-ink); text-shadow: none; animation: none; box-shadow: none; }
   & .play[data-phase="raised"] .answers .act { animation: plate-up var(--motion-base) var(--motion-ease) both; }
   & .play[data-phase="raised"] .answers #btn-run { animation-delay: 60ms; }
   & .play[data-phase="raised"] .answers #btn-raise { animation-delay: 120ms; }
@@ -1534,31 +1782,8 @@ body:has([data-screen="arena"]) > nav a {
   & .play[data-phase="over"] .actions { display: flex; }
   & .play[data-phase="over"] #btn-truco,
   & .play[data-phase="over"] #btn-next { display: none; }
-  & .play[data-phase="over"] #btn-again,
+  & .play[data-phase="over"] #btn-again { display: inline-flex; opacity: 1 !important; pointer-events: auto !important; }
   & .play[data-phase="over"] #link-rules { display: inline-block; opacity: 1 !important; pointer-events: auto !important; }
-  & #btn-again {
-    font-weight: 800;
-    font-size: 1rem;
-    padding: clamp(8px, 1.6dvh, 14px) clamp(16px, 3.2vw, 28px);
-    background: linear-gradient(180deg, var(--rim-hi) 0%, var(--rim) 50%, color-mix(in oklch, var(--rim) 75%, #000) 100%);
-    color: var(--wood-deep);
-    border: 2px solid var(--rim-hi);
-    border-radius: var(--r-md);
-    box-shadow: 0 4px 16px color-mix(in oklch, var(--rim) 45%, transparent),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    cursor: pointer;
-    transition: transform var(--motion-base) var(--motion-ease),
-                box-shadow var(--motion-base) var(--motion-ease);
-  }
-  & #btn-again:hover {
-    transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 6px 20px color-mix(in oklch, var(--rim) 65%, transparent),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  }
-  & #btn-again:active {
-    transform: translateY(1px) scale(0.98);
-  }
-  & .play[data-phase="over"] .actions { order: 1; }
   & .play[data-phase="over"] .over:has(#over-line:not(:empty)) {
     display: flex;
     flex-direction: column;
@@ -1618,19 +1843,53 @@ body:has([data-screen="arena"]) > nav a {
   & #link-rules { display: none; }
   & .over:not(:has(#over-line:not(:empty))) { display: none !important; }
   & .over a { display: none !important; }
+  & .play[data-phase="over"] .boteco-shouts,
+  & .play[data-phase="idle"] .boteco-shouts,
+  &:has(.matchbox[data-status="over"]) .boteco-shouts {
+    display: flex !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  & .play[data-phase="over"] .encobrir-bar,
+  & .play[data-phase="idle"] .encobrir-bar,
+  &:has(.matchbox[data-status="over"]) .encobrir-bar,
+  & .play[data-phase="over"] .table-instruction-bar,
+  &:has(.matchbox[data-status="over"]) .table-instruction-bar,
+  & .play[data-phase="over"] .seat-row.mine:not(:has(.card)),
+  &:has(.matchbox[data-status="over"]) .seat-row.mine:not(:has(.card)),
+  & .play[data-phase="idle"] .seat-row.mine:not(:has(.card)) {
+    display: none !important;
+  }
   &:has(.matchbox[data-status="over"]) .play .over:has(#over-line:not(:empty)),
   & .play[data-phase="over"] .over:has(#over-line:not(:empty)) {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     block-size: auto;
     min-block-size: auto;
+    margin-block: 6px;
+    text-align: center;
+  }
+  & .over #over-line {
+    font-family: var(--shout-font);
+    font-size: clamp(1.15rem, 3.8vw, 1.45rem);
+    font-weight: 900;
+    color: #fde047;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
+    margin: 0;
+  }
+  & .over #over-say {
+    font-size: clamp(0.85rem, 2.6vw, 1.05rem);
+    font-weight: 700;
+    color: #fef08a;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    margin: 0;
   }
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] .nomatch { display: none; }
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] .actions { display: flex; }
-  &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-again { display: inline-block; opacity: 1 !important; pointer-events: auto !important; }
+  &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-again { display: inline-flex; opacity: 1 !important; pointer-events: auto !important; }
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #link-rules { display: inline-block; opacity: 1 !important; pointer-events: auto !important; }
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-truco,
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-next,
@@ -1658,16 +1917,11 @@ body:has([data-screen="arena"]) > nav a {
   /* Landscape and desktop: the log takes a rail beside the felt instead of
      eating the board's height, and the table stops stretching past a width
      you could actually sit at. */
-  /* Wide screens: the sides are the table, not margin. The score pad takes the
-     left, the hand's papers and the log take the right, and the felt keeps the
-     whole middle at full height — which is what a short, wide window needs,
-     because stacking everything in one column is what pushed the cards and the
-     call button off the bottom. */
-  @media (min-width: 56rem) {
+  @media (min-width: 48rem) {
     & .board { justify-self: center; inline-size: min(100%, 74rem); block-size: 100%; }
     & .mat {
       block-size: 100%;
-      grid-template-columns: 12rem minmax(0, 1fr) minmax(13rem, max-content);
+      grid-template-columns: clamp(10rem, 18vw, 13rem) minmax(0, 1fr) clamp(11rem, 20vw, 15rem);
       grid-template-rows: auto auto auto minmax(0, 1fr);
       grid-template-areas:
         "seat    seat  seat"
@@ -1691,21 +1945,67 @@ body:has([data-screen="arena"]) > nav a {
     & .stakebox { justify-self: start; }
 
     & .handline { justify-self: stretch; text-align: center; }
-    /* The log is a pad on the table, not a column: it takes the room its
-       entries need and stops. */
-    & .log { align-content: start; align-self: start; max-block-size: 100%; overflow-y: auto; }
+    & .log {
+      align-content: start;
+      align-self: start;
+      max-block-size: 100%;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      &::-webkit-scrollbar { display: none; }
+    }
     & .log > li { grid-template-columns: 1.6rem 3.6rem 1fr; }
   }
 
-  @media (max-width: 55.99rem) {
+  @media (min-width: 75rem) {
+    & .board {
+      inline-size: min(100%, 96rem);
+    }
+    & .mat {
+      grid-template-columns: 14rem minmax(0, 1fr) 17rem;
+      column-gap: clamp(18px, 2vw, 32px);
+    }
+    & .scores {
+      gap: clamp(12px, 2dvh, 20px);
+      padding: clamp(10px, 1.5dvh, 18px);
+    }
+    & .score .figure {
+      font-size: clamp(2.5rem, 6dvh, 4rem);
+    }
+    & .handline {
+      font-size: 0.9375rem;
+    }
+    & .log {
+      align-content: start;
+      align-self: start;
+      max-block-size: 100%;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      &::-webkit-scrollbar { display: none; }
+    }
+    & .log > li {
+      grid-template-columns: 2rem 4.5rem 1fr;
+    }
+    & .play > * {
+      --card-w: clamp(40px, min(24cqw, 17cqh), 180px);
+    }
+  }
+
+  @media (max-width: 47.99rem) {
     & .online-label-full { display: none; }
     & .online-label-short { display: inline; }
     & .log > li:nth-child(n+3) { display: none; }
     & .log {
-      block-size: clamp(40px, 6dvh, 48px);
-      min-block-size: clamp(40px, 6dvh, 48px);
-      max-block-size: clamp(40px, 6dvh, 48px);
+      block-size: clamp(32px, 4.2dvh, 38px);
+      min-block-size: clamp(32px, 4.2dvh, 38px);
+      max-block-size: clamp(32px, 4.2dvh, 38px);
       overflow: hidden;
+    }
+    &:has(.matchbox:is([data-seats="2v2"], [data-seats="2v2v2"])) .matcards {
+      --card-w: clamp(28px, min(14cqw, 10cqh), 60px);
+      --card-h: round(nearest, calc(var(--card-w) * 1.46), 4px);
+      --card-r: calc(var(--card-w) * 0.12);
     }
     & .seatbar .sect { display: none; }
     & .seatbar {
@@ -2176,16 +2476,231 @@ body:has(#mp-sync-challenge span[data-status="pending"]) .incoming-challenge-ban
 .screen .suspended { flex-basis: 100%; }
 .screen .rail-label {
   font-size: var(--font-size-0);
+  font-weight: 700;
   letter-spacing: var(--font-letterspacing-3);
-  color: var(--accent);
+  color: #FDF6E7;
   text-transform: uppercase;
-  align-items: baseline;
+  align-items: center;
+  justify-content: center;
   gap: var(--size-2);
+  background: linear-gradient(180deg,
+    color-mix(in oklch, var(--wood-deep) 92%, transparent) 0%,
+    color-mix(in oklch, #000 68%, transparent) 100%);
+  border: 1px solid color-mix(in oklch, var(--rim) 45%, transparent);
+  border-radius: var(--r-full);
+  padding: clamp(3px, 0.5dvh, 5px) clamp(10px, 1.5vw, 16px);
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
 }
 /* The row has to be allowed to wrap, or a line taking the full width is just
    a wide item squeezed in beside the buttons. Wrapping is what the narrow
    table wanted anyway: a row of calls that cannot wrap is a row that clips. */
-.screen #actions { flex-wrap: wrap; }
+.screen #actions {
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  block-size: 44px;
+  min-block-size: 44px;
+  max-block-size: 44px;
+  box-sizing: border-box;
+  gap: clamp(8px, 1.8vw, 14px);
+}
+.screen:has([data-calls~="answer"]) #actions,
+.screen:has(.rail-label:not(:empty)) #actions {
+  block-size: auto;
+  max-block-size: none;
+}
+
+.screen #btn-truco {
+  inline-size: clamp(146px, 38vw, 168px);
+  min-inline-size: clamp(146px, 38vw, 168px);
+  max-inline-size: clamp(146px, 38vw, 168px);
+  block-size: 44px;
+  min-block-size: 44px;
+  max-block-size: 44px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--shout-font);
+  font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 45%, #78350f 100%);
+  border: 2px solid #fbbf24;
+  border-radius: var(--r-md);
+  padding: 0 clamp(8px, 1.6vw, 12px);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.55), 0 6px 16px rgba(0,0,0,0.7);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(245, 158, 11, 0.5);
+  animation: heroTrucoPulse 2.5s infinite ease-in-out;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform var(--motion-fast) var(--motion-ease),
+              box-shadow var(--motion-fast) var(--motion-ease),
+              filter var(--motion-fast) var(--motion-ease);
+}
+.screen #btn-truco::before {
+  content: "⚡ ";
+  font-style: normal;
+}
+.screen #btn-truco:hover {
+  translate: 0 -3px;
+  filter: brightness(1.12);
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.75), 0 8px 20px rgba(0,0,0,0.8);
+}
+.screen #btn-truco:active {
+  translate: 0 1px;
+  filter: brightness(0.95);
+  animation: none;
+}
+.screen #btn-truco:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  animation: none;
+  background: linear-gradient(135deg, #3d2a1d 0%, #251811 100%);
+  border-color: #5a3d28;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  color: #c9b49e;
+  text-shadow: none;
+}
+
+@keyframes heroNextPulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(34, 197, 94, 0.5), 0 6px 16px rgba(0,0,0,0.7); }
+  50% { box-shadow: 0 0 24px rgba(74, 222, 128, 0.85), 0 6px 16px rgba(0,0,0,0.7); }
+}
+
+.screen #btn-next {
+  inline-size: clamp(146px, 38vw, 168px);
+  min-inline-size: clamp(146px, 38vw, 168px);
+  max-inline-size: clamp(146px, 38vw, 168px);
+  block-size: 44px;
+  min-block-size: 44px;
+  max-block-size: 44px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--shout-font);
+  font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 48%, #14532d 100%);
+  border: 2px solid #86efac;
+  border-radius: var(--r-md);
+  padding: 0 clamp(8px, 1.6vw, 12px);
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.5), 0 6px 16px rgba(0,0,0,0.7);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(34, 197, 94, 0.4);
+  animation: heroNextPulse 2.5s infinite ease-in-out;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform var(--motion-fast) var(--motion-ease),
+              box-shadow var(--motion-fast) var(--motion-ease),
+              filter var(--motion-fast) var(--motion-ease);
+}
+.screen #btn-next::after {
+  content: " ➔";
+  font-style: normal;
+  font-size: 1.1em;
+  margin-inline-start: 4px;
+}
+.screen #btn-next:hover {
+  translate: 0 -3px;
+  filter: brightness(1.15);
+  box-shadow: 0 0 24px rgba(74, 222, 128, 0.8), 0 8px 20px rgba(0,0,0,0.8);
+}
+.screen #btn-next:active {
+  translate: 0 1px;
+  filter: brightness(0.95);
+  animation: none;
+}
+
+.screen #btn-again {
+  inline-size: clamp(146px, 38vw, 168px);
+  min-inline-size: clamp(146px, 38vw, 168px);
+  max-inline-size: clamp(146px, 38vw, 168px);
+  block-size: 44px;
+  min-block-size: 44px;
+  max-block-size: 44px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--shout-font);
+  font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 45%, #78350f 100%);
+  border: 2px solid #fde047;
+  border-radius: var(--r-md);
+  padding: 0 clamp(8px, 1.6vw, 12px);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.55), 0 6px 16px rgba(0,0,0,0.7);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform var(--motion-fast) var(--motion-ease),
+              box-shadow var(--motion-fast) var(--motion-ease),
+              filter var(--motion-fast) var(--motion-ease);
+}
+.screen #btn-again:hover {
+  translate: 0 -3px;
+  filter: brightness(1.12);
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.75), 0 8px 20px rgba(0,0,0,0.8);
+}
+.screen #btn-again:active {
+  translate: 0 1px;
+  filter: brightness(0.95);
+}
+
+.screen #btn-resign {
+  inline-size: clamp(96px, 24vw, 116px);
+  min-inline-size: clamp(96px, 24vw, 116px);
+  max-inline-size: clamp(96px, 24vw, 116px);
+  block-size: 44px;
+  min-block-size: 44px;
+  max-block-size: 44px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  padding: 0 clamp(6px, 1.4vw, 10px);
+  background: linear-gradient(180deg, #241812 0%, #160f0b 100%);
+  border: 1px solid #4a3424;
+  color: #a8947e;
+  border-radius: var(--r-md);
+  font-size: 0.8125rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all var(--motion-fast) var(--motion-ease);
+}
+.screen #btn-resign:hover {
+  background: #35231a;
+  color: #e2d3c1;
+  border-color: #6b4d36;
+  translate: 0 -2px;
+}
+.screen #btn-resign:active {
+  translate: 0 1px;
+}
 .screen .suspended {
   align-items: center;
   gap: var(--size-2);
@@ -2195,6 +2710,8 @@ body:has(#mp-sync-challenge span[data-status="pending"]) .incoming-challenge-ban
   color: var(--primary);
 }
 .screen .act.wager { border-color: var(--accent); color: var(--accent); }
+.screen .act.wager.hot { border-color: var(--attention); color: #fff; }
+.screen .act.wager.risk { border-color: color-mix(in oklch, var(--danger) 65%, #000); color: #FFF7F3; }
 .screen .act.bloom { border-color: var(--attention); color: var(--attention); }
 
 /* Nothing of the second wager is drawn unless the dealer says this seat can
@@ -2205,24 +2722,61 @@ body:has(#mp-sync-challenge span[data-status="pending"]) .incoming-challenge-ban
 .screen .act.wager,
 .screen .act.bloom,
 .screen #btn-envido-take,
-.screen #btn-envido-run { display: none; }
-.screen:has(.hand[data-calls~="envido"]) #btn-envido,
-.screen:has(.hand[data-calls~="real"]) #btn-envido-real,
-.screen:has(.hand[data-calls~="falta"]) #btn-envido-falta,
-.screen:has(.hand[data-calls~="flor"]) #btn-flor,
-.screen:has(.hand[data-calls~="answer"]) #btn-envido-take,
-.screen:has(.hand[data-calls~="answer"]) #btn-envido-run { display: revert; }
+.screen #btn-envido-run,
+.screen .rail-label { display: none; }
+.screen:not(:has(.hand:not([data-result=""]))):has(.hand[data-calls~="envido"]) #btn-envido,
+.screen:not(:has(.hand:not([data-result=""]))):has(.hand[data-calls~="real"]) #btn-envido-real,
+.screen:not(:has(.hand:not([data-result=""]))):has(.hand[data-calls~="falta"]) #btn-envido-falta,
+.screen:not(:has(.hand:not([data-result=""]))):has(.hand[data-calls~="flor"]) #btn-flor,
+.screen:not(:has(.hand:not([data-result=""]))):has(.hand[data-calls~="answer"]) #btn-envido-take,
+.screen:not(:has(.hand:not([data-result=""]))):has(.hand[data-calls~="answer"]) #btn-envido-run {
+  display: inline-flex;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* When answering envido, truco is suspended (el envido va primero) */
+.screen:has(.hand[data-calls~="answer"]) #btn-truco,
+.screen:has(.hand[data-calls~="answer"]) #btn-envido { display: none !important; }
 
 /* The rail names the wager it is asking you about, so it speaks only when it
    is asking: an envido you called yourself is one the other side owes, and a
    caption telling you to answer it while the house thinks is a lie about whose
    turn it is. */
-.screen:has(.hand[data-calls~="answer"]) .rail-label { display: flex; }
+.screen:not(:has(.hand:not([data-result=""]))):has(.hand[data-calls~="answer"]) .rail-label { display: flex; }
 .screen:has(.hand[data-envido="called"]):has(.hand[data-asked]:not([data-asked=""])) .suspended { display: flex; }
+
+/* A phone's felt has a card's height for the mat only when the second wager's
+   calls take two lines rather than three — set at Abandonar's size, beside it —
+   and the quick shouts give up their line while those calls are drawn. Short
+   of that the mat overflows its row and a played card lies under the talk and
+   over Encobrir. */
+@media (max-width: 47.99rem) {
+  .screen .act.wager,
+  .screen .act.bloom {
+    padding-inline: var(--sp-sm);
+    font-size: 0.8125rem;
+  }
+  .screen:not(:has(.hand:not([data-result=""]))):has(.hand:is([data-calls~="envido"], [data-calls~="real"], [data-calls~="falta"], [data-calls~="flor"], [data-calls~="answer"])) .boteco-shouts {
+    display: none;
+  }
+}
 
 /* What each wager is worth, beside the wager it belongs to — a figure, so it
    is set as one rather than left to run on from the words. */
-.screen .rail-label .wager-stood,
+.screen .rail-label .wager-stood {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: normal;
+  padding-inline: var(--size-2);
+  background: var(--accent);
+  color: #000;
+  border: 1px solid var(--accent);
+  border-radius: var(--r-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .screen .suspended .stood {
   font-variant-numeric: tabular-nums;
   font-weight: 700;

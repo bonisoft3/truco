@@ -1,4 +1,4 @@
-import { chromium } from "npm:playwright@1.59.1";
+import { chromium } from "npm:playwright@1.61.1";
 import { baseUrl } from "../../../plugins/omnishell/base-url.ts";
 
 const APP = ".";

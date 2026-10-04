@@ -173,10 +173,41 @@ reads the level ([omnishell's half](../omnishell/PENDING.md#machines)) — makes
 the lattice's first join a refusal, and lets one copy of the table import the
 other.
 
-**The three cluster rungs differ only in the publication**
+**`server` and `live` differ only in the publication**
 ([the lattice](docs/lattice.md#the-durability-ladder)): `live` owes a client
-that sees changes without asking and `offline` one that works with no network,
-and neither emits anything `server` lacks.
+that sees changes without asking, and emits nothing `server` lacks. `offline`
+differs at the client too, where its table syncs whole.
+
+**Sync on demand takes only equality.** A view whose filter holds a boolean, a
+range or a pattern is read from the collection, so its table syncs whole
+([screens](docs/screens.md#the-reads-decide-how-a-table-syncs)): golaberto's
+`game_card`, `team_game`, `position_chance`, `standing` and its directories.
+The view engine's clause vocabulary lacks those ops, and a boolean clause is
+refused because an optimistic row lacks the schema's defaulted booleans, which
+belongs with `writers` below. A named read (`data-read-*`) counts as a whole
+read until derive can prove an identical view on its screen serves it, and an
+`is.null` clause on a domain-typed column counts as a comparison Electric
+cannot make, though `IS NULL` needs no operator; it is the first reason ponto's
+`shift` is eager. No pronto deployment carries a data directory from one
+image to the next, so the domain/base split reaches every database rebuilt from
+the regenerated migrations; a database container started again from an image
+built before it keeps its domains, and the first subset on one is Electric's
+400, which the store raises as a ProgramError naming the table. An in-place
+retype waits for a deployed database (the generated columns and policies that
+read a retyped column block `ALTER COLUMN TYPE`,
+[schema change](docs/schema-change-admission.md)).
+
+**A capped view ordered by free text keeps its table eager**
+([screens](docs/screens.md#the-reads-decide-how-a-table-syncs)): golaberto's
+`stage_group`, read `limit=1` by `position,name`. Postgres picks the rows inside
+the cap by ICU root and the view orders them by the reader's locale; it goes on
+demand once both sides order by one collation, which TanStack's
+`lexical`/`locale` choice does not offer.
+
+**A reduce keeps every server table eager**, whatever event it is bound to. Its
+updates and effects name their entities in code, so derive cannot read them off
+the markup; no app with an on-demand table has one today. Closing it needs the
+entities a reduce writes stated somewhere derive reads and the store enforces.
 
 **`writers` is read by nothing.** `#Entity.writers: "pipeline"` marks a derived
 entity, and no lint, store check or policy consults it: a form, a reduce or an
@@ -379,6 +410,12 @@ driven the way `apps/truco/tests/acceptance.ts` drives it — and at ~18ms per
 page of checks, walking every beat costs less than one of the sleeps it
 replaced.
 
+## The build graph
+
+**Pronto apps don't use `sayt.depot`** until bayt writes the depot flatten
+from its own manifests: no app emits `depot.yaml` or `depot.json`, and no app
+build reads or writes the Depot bake cache. Checked 2026-10-02.
+
 ## Release targets
 
 Only `pages` is emitted, and each design is
@@ -400,9 +437,21 @@ Only `pages` is emitted, and each design is
 **`verify@<target>` is not emitted**
 ([the design](docs/release-targets.md#what-a-release-is)).
 
-**The page runs no pipeline and serves no blob, and `pages` refuses neither**
-([pages](docs/release-targets.md#pages)); either mecha's `pipeline` package runs
-in the page, or the target refuses both.
+**The page derives nothing live** ([pages](docs/release-targets.md#pages)).
+Its streams' and computations' rows are the release's, so a result recorded in
+the page moves no table, chance or rating; the derivation running in the page
+on DuckStream's machinery is what closes it.
+
+**A duckstream's sink is empty in the page** ([pages](docs/release-targets.md#pages)):
+the release derives the rows of streams and computations, and xpense's
+`MonthStat` and `CategoryMonthStat` are neither's.
+
+**Settling waits out the slowest computation's cadence**
+([pages](docs/release-targets.md#pages)): compute says nothing when a look
+finds its reads unchanged, so a release cannot see that one has looked.
+
+**The page serves no blob, and `pages` does not refuse one**
+([pages](docs/release-targets.md#pages)).
 
 **A unit cannot be bundled** ([pages](docs/release-targets.md#pages)). Bundling
 it needs three changes the terminal owns: `hatch.js` admitting `blob:`, the

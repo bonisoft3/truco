@@ -116,7 +116,7 @@ def format-xattrs [x: record]: nothing -> string {
 # Missing literal paths print a warning, not an error: host invocations have
 # no cross-project dep stamps until docker COPY chains land them.
 # Load the on-disk stat memo from .task/bayt/index (JSON format).
-def load-index [root: string]: nothing -> record {
+export def load-index [root: string]: nothing -> record {
   let f = ($root | path expand | path join ".task/bayt/index")
   if ($f | path exists) {
     try { open $f | from json } catch { {} }
@@ -322,7 +322,7 @@ def plan-scopes [r: record]: nothing -> record {
 # mutate an outer binding. Keyed by manifest plus view, cmd and scope flavor —
 # each selects a different file set from the same file, so a shared key would
 # hand one scope another's hash. A diamond within one key is walked once.
-def closure-hash [
+export def closure-hash [
   manifest: string
   cmd: string
   docker: bool
@@ -416,9 +416,10 @@ def dep-hashes [nodes: list<record>, docker: bool, memo: record, all_cmds: bool 
 # --cmd selects a per-cmd entry: its srcs feed in and the stamp name
 # picks up `.<cmd>`. The `stamp` field is informational only; callers
 # pick the stamp path via --stamp-file.
-# `../` hops from a project dir to the repo root: one per path segment.
+# `../` hops from a project dir to the repo root: one per path segment. A
+# "." segment is none: dir "." roots a project at itself.
 def dir-hops [dir: string]: nothing -> int {
-  $dir | path split | where { |s| not ($s | is-empty) } | length
+  $dir | path split | where { |s| not ($s | is-empty) and $s != "." } | length
 }
 
 # The project a manifest belongs to, anchored on the manifest rather than the

@@ -1,0 +1,14 @@
+# generated from bayt.cue — do not edit
+include:
+- path: ../../../apps/truco/.bayt/compose.replay.yaml
+  required: false
+- path: ../../../apps/truco/.bayt/compose.setup.yaml
+  required: false
+- path: ../../../.bayt/compose.setup.yaml
+  required: false
+services:
+  bayt:
+    extends:
+      file: ./compose.replay.yaml
+      service: apps_truco-replay
+    scale: 1

@@ -11,6 +11,7 @@ auth:
   required: false
   service: /auth
   mode: passkey
+  promote: false
 floors:
   touch: 24
 i18n:
@@ -27,10 +28,10 @@ i18n:
     ca-ES:
       path: ca
 local:
-  held: tab
   match: device
-  play: tab
   round: tab
+  play: tab
+  held: tab
 optional:
   match:
     - name: others_score
@@ -47,6 +48,10 @@ optional:
     - name: vira
       type: text
     - name: truco_state
+      type: text
+    - name: envido_state
+      type: text
+    - name: trick_state
       type: text
     - name: ran
       type: text
@@ -152,6 +157,7 @@ routes:
         es-UY: Mesa
         es-PY: Mesa
         ca-ES: Taula
+      strip: false
     files:
       html: shell/screens/arena.html
       css: shell/screens/arena.css
@@ -402,6 +408,30 @@ schema:
           - vale4_accepted
           - truco_folded
         name: truco_state
+        type: text
+        required: false
+      - enum:
+          - ''
+          - none
+          - called
+          - real_called
+          - falta_called
+          - accepted
+          - folded
+          - flor
+        name: envido_state
+        type: text
+        required: false
+      - enum:
+          - ''
+          - dealt
+          - v1_in_progress
+          - v1_us
+          - v1_them
+          - v1_tie
+          - v2_tie
+          - result
+        name: trick_state
         type: text
         required: false
       - enum:
@@ -862,6 +892,7 @@ schema:
           - pending
           - accepted
           - declined
+          - expired
         name: status
         type: text
         required: true
@@ -914,7 +945,9 @@ schema:
 types:
   types:
     string:
-      sql: portable_string
+      pg: text
+      column: plain
+      subset: true
       base:
         - text
         - varchar
@@ -926,7 +959,9 @@ types:
       beyond:
         - scalar-values
     bool:
-      sql: portable_bool
+      pg: boolean
+      column: plain
+      subset: true
       base:
         - bool
         - boolean
@@ -934,7 +969,9 @@ types:
       order: boolean
       beyond: []
     int32:
-      sql: portable_int32
+      pg: integer
+      column: plain
+      subset: true
       base:
         - int2
         - int4
@@ -946,6 +983,9 @@ types:
       order: number
       beyond: []
     int64:
+      pg: bigint
+      column: domain
+      subset: false
       sql: portable_int64
       base:
         - int8
@@ -956,7 +996,9 @@ types:
       beyond:
         - int64-range
     double:
-      sql: portable_double
+      pg: double precision
+      column: checked
+      subset: true
       base:
         - float4
         - float8
@@ -966,6 +1008,9 @@ types:
       order: number
       beyond: []
     bytes:
+      pg: bytea
+      column: domain
+      subset: false
       sql: portable_bytes
       base:
         - bytea
@@ -974,7 +1019,9 @@ types:
       order: none
       beyond: []
     uuid:
-      sql: portable_uuid
+      pg: uuid
+      column: plain
+      subset: true
       base:
         - uuid
       json: string
@@ -982,6 +1029,9 @@ types:
       order: text
       beyond: []
     timestamp:
+      pg: timestamptz
+      column: domain
+      subset: false
       sql: portable_timestamp
       base:
         - timestamptz
@@ -992,6 +1042,9 @@ types:
       beyond:
         - calendar
     duration:
+      pg: interval
+      column: domain
+      subset: false
       sql: portable_duration
       base:
         - interval
@@ -1001,6 +1054,9 @@ types:
       beyond:
         - duration-range
     decimal:
+      pg: numeric
+      column: domain
+      subset: false
       base:
         - numeric
         - decimal
@@ -1010,7 +1066,9 @@ types:
       beyond:
         - decimal-profile
     date:
-      sql: portable_date
+      pg: date
+      column: checked
+      subset: true
       base:
         - date
       json: string
@@ -1019,6 +1077,9 @@ types:
       beyond:
         - calendar
     time:
+      pg: time(6)
+      column: domain
+      subset: false
       sql: portable_time
       base:
         - time
@@ -1028,15 +1089,20 @@ types:
       order: text
       beyond: []
     timezone:
-      sql: portable_timezone
-      base: []
+      pg: text
+      column: checked
+      subset: true
+      base:
+        - text
       json: string
       pattern: '^[A-Za-z0-9+_/-]+$'
       order: none
       beyond:
         - tzdb
     json:
-      sql: portable_json
+      pg: json
+      column: checked
+      subset: false
       base:
         - json
         - jsonb
@@ -1046,8 +1112,12 @@ types:
         - scalar-values
         - finite-numbers
     geojson:
-      sql: portable_geojson
+      pg: json
+      column: checked
+      subset: false
       base:
+        - json
+        - jsonb
         - geometry
         - geography
       json: value
@@ -1065,7 +1135,9 @@ types:
 carriers:
   types:
     string:
-      sql: portable_string
+      pg: text
+      column: plain
+      subset: true
       base:
         - text
         - varchar
@@ -1077,7 +1149,9 @@ carriers:
       beyond:
         - scalar-values
     bool:
-      sql: portable_bool
+      pg: boolean
+      column: plain
+      subset: true
       base:
         - bool
         - boolean
@@ -1085,7 +1159,9 @@ carriers:
       order: boolean
       beyond: []
     int32:
-      sql: portable_int32
+      pg: integer
+      column: plain
+      subset: true
       base:
         - int2
         - int4
@@ -1097,6 +1173,9 @@ carriers:
       order: number
       beyond: []
     int64:
+      pg: bigint
+      column: domain
+      subset: false
       sql: portable_int64
       base:
         - int8
@@ -1107,7 +1186,9 @@ carriers:
       beyond:
         - int64-range
     double:
-      sql: portable_double
+      pg: double precision
+      column: checked
+      subset: true
       base:
         - float4
         - float8
@@ -1117,6 +1198,9 @@ carriers:
       order: number
       beyond: []
     bytes:
+      pg: bytea
+      column: domain
+      subset: false
       sql: portable_bytes
       base:
         - bytea
@@ -1125,7 +1209,9 @@ carriers:
       order: none
       beyond: []
     uuid:
-      sql: portable_uuid
+      pg: uuid
+      column: plain
+      subset: true
       base:
         - uuid
       json: string
@@ -1133,6 +1219,9 @@ carriers:
       order: text
       beyond: []
     timestamp:
+      pg: timestamptz
+      column: domain
+      subset: false
       sql: portable_timestamp
       base:
         - timestamptz
@@ -1143,6 +1232,9 @@ carriers:
       beyond:
         - calendar
     duration:
+      pg: interval
+      column: domain
+      subset: false
       sql: portable_duration
       base:
         - interval
@@ -1152,6 +1244,9 @@ carriers:
       beyond:
         - duration-range
     decimal:
+      pg: numeric
+      column: domain
+      subset: false
       base:
         - numeric
         - decimal
@@ -1161,7 +1256,9 @@ carriers:
       beyond:
         - decimal-profile
     date:
-      sql: portable_date
+      pg: date
+      column: checked
+      subset: true
       base:
         - date
       json: string
@@ -1170,6 +1267,9 @@ carriers:
       beyond:
         - calendar
     time:
+      pg: time(6)
+      column: domain
+      subset: false
       sql: portable_time
       base:
         - time
@@ -1179,15 +1279,20 @@ carriers:
       order: text
       beyond: []
     timezone:
-      sql: portable_timezone
-      base: []
+      pg: text
+      column: checked
+      subset: true
+      base:
+        - text
       json: string
       pattern: '^[A-Za-z0-9+_/-]+$'
       order: none
       beyond:
         - tzdb
     json:
-      sql: portable_json
+      pg: json
+      column: checked
+      subset: false
       base:
         - json
         - jsonb
@@ -1197,8 +1302,12 @@ carriers:
         - scalar-values
         - finite-numbers
     geojson:
-      sql: portable_geojson
+      pg: json
+      column: checked
+      subset: false
       base:
+        - json
+        - jsonb
         - geometry
         - geography
       json: value
@@ -1222,5 +1331,6 @@ migrations:
   - services/database/migrations/006_policies.sql
   - services/database/migrations/007_txid.sql
   - services/database/migrations/008_publication.sql
+  - services/database/migrations/010_machines.sql
   - services/database/migrations/012_lobby.sql
 pipelines: []

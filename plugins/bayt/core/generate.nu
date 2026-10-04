@@ -26,9 +26,11 @@
 #   Pass 2: echo '{"depManifestsIn":{...}}' | cue export - ./bayt.cue -e _render --out json
 #           Full render with resolved dep manifests injected via stdin.
 #
-# --recursive and --all walk up to the workspace root (cue.mod/ marker),
-# topo-order the dep graph, and regenerate leaf-first — parallel within
-# dependency levels (see run-schedule).
+# Every run walks up to the workspace root (cue.mod/ marker) and scans it;
+# a project rooted at itself (dir ".") containing the cwd is the run's root
+# instead. --recursive and --all topo-order the dep graph and regenerate
+# leaf-first — parallel within dependency levels (see run-schedule) — and
+# --all regenerates each nested root in a pass of its own.
 #
 # Files emitted, relative to the project's dir. ALL bayt-generated
 # files live under `.bayt/` with the `<tool>.<target>.<ext>` convention.
@@ -57,6 +59,7 @@
 # leave stale per-target files behind.
 
 use ../runtime/tools.nu [run-cue, run-nu]
+use ../runtime/ignore.nu [walk-scope]
 
 # Data file holding the render.cue core-package import, so copybara can
 # rewrite the mirror identity on the .nuon (not in this source). See it.
@@ -69,50 +72,105 @@ def print-timing [label: string, start: datetime] {
 	}
 }
 
+# The workspace's files, as git sees them in a work tree: tracked and
+# untracked-but-not-ignored, under every exclude git honours. Where there is
+# no work tree — a build context leaves .git out — the walk that honours the
+# .gitignore files stands in. Any other git failure is fatal.
+def workspace-files [workspace_root: string]: nothing -> list<string> {
+	let in_repo = if (which git | is-empty) { false } else {
+		let r = (do { cd $workspace_root; ^git rev-parse --is-inside-work-tree } | complete)
+		if $r.exit_code == 0 { true } else if ($r.stderr | str contains "not a git repository") { false } else {
+			error make {msg: $"bayt: git cannot read the workspace at ($workspace_root): ($r.stderr | str trim)"}
+		}
+	}
+	if not $in_repo { return (walk-scope ($workspace_root | path expand) --no-git) }
+	let listed = (do { cd $workspace_root; ^git ls-files --cached --others --exclude-standard } | complete)
+	if $listed.exit_code != 0 {
+		error make {msg: $"bayt: cannot list the workspace's files at ($workspace_root): ($listed.stderr | str trim)"}
+	}
+	$listed.stdout | lines
+}
+
 # scan-projects runs ONE parallel `cue export` per bayt.cue and returns
 # [{path, name, dir_rel, targets}] — the single CUE read behind the
 # project index (name → dir), the topo schedule, and regen's pass 1.
 # One read, not one per consumer: `cue export` costs ~40 ms here but the
 # pass-2 render costs seconds, so keep work out of pass 2, not out of here.
-def scan-projects [workspace_root: string] {
-	# Enumerate bayt.cue files via `git ls-files`. Drop bayt's own
-	# package + stacks files: they share the bayt.cue name but
-	# define schemas, not projects. Anchor repo-relative paths to
+export def scan-projects [workspace_root: string] {
+	# Drop bayt's own package + stacks files: they share the bayt.cue name
+	# but define schemas, not projects. Anchor repo-relative paths to
 	# workspace_root so the downstream `cue export` works from any cwd.
-	let rel_paths = (do { cd $workspace_root; ^git ls-files --cached --others --exclude-standard }
-		| lines
+	let rel_paths = (workspace-files $workspace_root
 		| where ($it | str ends-with "/bayt.cue") or $it == "bayt.cue"
 		| where not ($it | str starts-with "plugins/bayt/core/")
 		| where not ($it | str starts-with "plugins/bayt/stacks/")
 		| each { |p| $"($workspace_root)/($p)" }
 	)
+	# The cue stub installs on its first run; concurrent first runs race that
+	# install and find it half-written ("http:cue.toml does not have an
+	# executable named cue"), so one run comes before the par-each.
+	run-cue version | ignore
 	$rel_paths | par-each { |path|
-		# A sibling bayt.json is the project value itself (pronto's build
-		# seat exports it; the bayt.cue stub only embeds it) — read it
-		# directly. File-mode `cue export` has no module context, so the
-		# stub's @embed cannot resolve there.
-		let json_path = ($path | path dirname | path join "bayt.json")
-		let p = if ($json_path | path exists) {
-			open $json_path
-		} else {
-			let r = (do { run-cue export $path -e '{name: project.name, dir: project.dir, targets: project.targets}' --out json } | complete)
-			if $r.exit_code != 0 {
-				# A bayt.cue with no `project` defines schemas (a stack or a
-				# consumer's roster), not a project — skip it.
-				if ($r.stderr | str contains 'reference "project" not found') {
-					null
-				} else {
-					error make {msg: $"bayt: project scan failed for ($path)\n($r.stderr)"}
-				}
-			} else {
-				$r.stdout | from json
-			}
-		}
+		let p = (read-project $path)
 		if $p == null { null } else {
-			let dir_rel = if ($p.dir | str trim) == "" { "." } else { $p.dir }
-			{path: $path, name: $p.name, dir_rel: $dir_rel, targets: $p.targets}
+			# Dir "." roots a project at itself, wherever it sits; nested in
+			# this workspace, it is placed where it sits, never at this root.
+			let rooted = ($p.dir == ".")
+			let dir_rel = if $rooted {
+				scan-dir ($path | path dirname | path relative-to $workspace_root)
+			} else if ($p.dir | str trim) == "" { "." } else { $p.dir }
+			{path: $path, name: $p.name, dir_rel: $dir_rel, targets: $p.targets, rooted: $rooted}
 		}
 	} | compact
+}
+
+# read-project reads the project a bayt.cue declares, or null for one that
+# declares none. A sibling bayt.json is the project value itself (pronto's
+# build seat exports it; the bayt.cue stub only embeds it) — read it
+# directly. File-mode `cue export` has no module context, so the stub's
+# @embed cannot resolve there.
+def read-project [path: string]: nothing -> any {
+	let json_path = ($path | path dirname | path join "bayt.json")
+	if ($json_path | path exists) { return (open $json_path) }
+	let r = (do { run-cue export $path -e '{name: project.name, dir: project.dir, targets: project.targets}' --out json } | complete)
+	if $r.exit_code != 0 {
+		# A bayt.cue with no `project` defines schemas (a stack or a
+		# consumer's roster), not a project — skip it.
+		if ($r.stderr | str contains 'reference "project" not found') { return null }
+		error make {msg: $"bayt: project scan failed for ($path)\n($r.stderr)"}
+	}
+	$r.stdout | from json
+}
+
+# check-dirs holds each project a root generates to its declared dir: where
+# its bayt.cue sits relative to that root. The dir is authored and never
+# inferred, so a stale one fails here instead of writing a .bayt/ elsewhere.
+export def check-dirs [rows: table, workspace_root: string] {
+	for r in $rows {
+		let at = (scan-dir ($r.path | path dirname | path relative-to $workspace_root))
+		if $at != $r.dir_rel {
+			error make {msg: $"bayt: ($r.name) declares dir ($r.dir_rel) but its bayt.cue sits at ($at) under ($workspace_root)"}
+		}
+	}
+}
+
+# partition-scan splits one root's scan: the projects it generates (local);
+# the projects nested in it that are rooted at themselves, each generated in
+# its own pass with its subtree (nested); and the index refs resolve against,
+# which marks a nested root so a ref to it is refused by name.
+export def partition-scan [scanned: table]: nothing -> record {
+	let rooted = ($scanned | where {|r| $r.rooted and $r.dir_rel != "." })
+	# By where each bayt.cue sits: a project below a nested root declares its
+	# dir relative to that root, not to this one.
+	let roots = ($rooted | each {|n| $n.path | path dirname })
+	let under = {|at| $roots | any {|n| $at == $n or ($at | str starts-with $"($n)/") } }
+	let below = {|at| $roots | any {|n| $at | str starts-with $"($n)/" } }
+	let local = ($scanned | where {|r| not (do $under ($r.path | path dirname)) })
+	# Only the outermost get a pass here; each generates its own nested roots.
+	let nested = ($rooted | where {|r| not (do $below ($r.path | path dirname)) })
+	let index = ($local | reduce -f {} { |row, acc| $acc | insert $row.name $row.dir_rel })
+	let index = ($rooted | reduce -f $index { |row, acc| $acc | insert $row.name {rooted: $row.dir_rel} })
+	{local: $local, nested: $nested, index: $index}
 }
 
 # dep-to-dir resolves a Bazel-style cross-project ref ("project:target")
@@ -124,7 +182,19 @@ def dep-to-dir [dep: string, index: record] {
 	if $dir == null {
 		error make {msg: $"bayt: cross-project ref ($dep) refers to unknown project '($project)' — known projects: (($index | columns | str join ', '))"}
 	}
+	# Rooted at itself, it has no siblings: its manifests state dir ".", its
+	# own root, which a dependent here would read as this one.
+	if ($dir | describe | str starts-with "record") {
+		error make {msg: $"bayt: cross-project ref ($dep) names ($project), rooted at itself in ($dir.rooted) \(dir \".\"\); a project of another root cannot depend on it"}
+	}
 	$dir
+}
+
+# clear-bayt-dir empties a project's .bayt/ so removed targets leave no stale
+# files, keeping .env: the one file there bayt never writes.
+export def clear-bayt-dir [bayt_dir: string] {
+	mkdir $bayt_dir
+	ls -a $bayt_dir | where { |e| ($e.name | path basename) != ".env" } | each { |e| rm -rf $e.name } | ignore
 }
 
 # atomic-write writes `content` to `target` via a sibling tempfile then
@@ -212,11 +282,7 @@ def write-bundle [bundle: record, base: string, --depot] {
 		error make {msg: $"bayt: the imported bayt CUE package predates this CLI \(launch shim include resolves to '($shim)'\) — refresh the vendored plugins/bayt tree to match the installed bayt version"}
 	}
 
-	let bayt_dir = $"($prefix).bayt"
-	if ($bayt_dir | path exists) {
-		rm -rf $bayt_dir
-	}
-	mkdir $bayt_dir
+	clear-bayt-dir $"($prefix).bayt"
 	write-render-driver $"($prefix)bayt.cue"
 
 	# --- canonical per-target manifests. Synthetics nest under
@@ -254,6 +320,11 @@ def write-bundle [bundle: record, base: string, --depot] {
 	atomic-write $"($prefix).bayt/compose.bayt.yaml" (_hash-header (_inject-runtime $bundle.docker.compose.bayt_root $base | to yaml))
 	for entry in ($bundle.docker.compose.files | transpose name data) {
 		atomic-write $"($prefix).bayt/compose.($entry.name).yaml" (_hash-header (_inject-runtime $entry.data $base | to yaml))
+	}
+
+	# --- process-compose: one file per project, one process per host process.
+	if ($bundle.processCompose.file.processes | is-not-empty) {
+		atomic-write $"($prefix).bayt/process-compose.yaml" (_hash-header ($bundle.processCompose.file | to yaml))
 	}
 
 	# --- skaffold
@@ -353,14 +424,31 @@ def emit-depot-yaml [proj_dir: string, ws: string, --required, --group: record =
 		print -e $detail
 		return
 	}
-	let flat = ($r.stdout
-		| str replace --all $"($ws)/" ""
-		| str replace --all $ws "."
-		| str replace --all "service:" "target:")
+	let flat = (relative-flat $r.stdout $ws | str replace --all "service:" "target:")
 	atomic-write $"($dir)/.bayt/depot.yaml" (_hash-header (_dedup-x-bake $flat))
 	if not ($group | is-empty) {
 		atomic-write $"($dir)/.bayt/depot.json" (depot-plan $flat $group | to json --indent 2)
 	}
+}
+
+# relative-flat — the flattened compose with the workspace's absolute paths made
+# repo-root-relative. On Windows compose spells them with backslashes, so only
+# the lines that carry the workspace path are rewritten to forward slashes; a
+# backslash anywhere else is content and stays.
+export def relative-flat [flat: string, ws: string]: nothing -> string {
+	let fwd = ($ws | str replace --all '\' '/')
+	let native = ($ws | str replace --all '/' '\')
+	$flat
+	| lines
+	| each { |l|
+		if ($native != $fwd) and ($l | str contains $native) {
+			$l | str replace --all $native $fwd | str replace --all '\' '/'
+		} else { $l }
+	}
+	| str join "\n"
+	| $"($in)\n"
+	| str replace --all $"($fwd)/" ""
+	| str replace --all $fwd "."
 }
 
 # repo-of — a compose `image:` minus its tag. A tag cannot contain '/', so only
@@ -577,9 +665,9 @@ def srcs-variants [deps: list<string>] {
 	$deps | where {|r| ($r | split row ":" | length) == 2 } | each {|r| $"($r):srcs" }
 }
 
-# find-workspace-root walks up from cwd to find the directory containing cue.mod/.
-def find-workspace-root [] {
-	mut dir = (pwd)
+# find-workspace-root walks up from `from` to the directory containing cue.mod/.
+export def find-workspace-root [from: string] {
+	mut dir = $from
 	loop {
 		if ($"($dir)/cue.mod" | path exists) {
 			return $dir
@@ -592,6 +680,22 @@ def find-workspace-root [] {
 	}
 }
 
+# root-for picks the root a run from `here` belongs to: the innermost project
+# rooted at itself (dir ".") that contains it, or else the cue.mod root, which
+# is itself rooted when a project at it declares dir ".", as a mirror's root.
+export def root-for [scanned: table, workspace_root: string, here: string]: nothing -> record {
+	let containing = ($scanned
+		| where {|r| $r.rooted }
+		| each {|r| $r.path | path dirname }
+		| where {|at| $here == $at or ($here | str starts-with $"($at)/") }
+		| sort-by {|at| $at | str length })
+	if ($containing | is-empty) {
+		{root: $workspace_root, rooted: false}
+	} else {
+		{root: ($containing | last), rooted: true}
+	}
+}
+
 # topo-schedule returns {order, edges}: workspace-root-relative project
 # dirs in leaf-first (topological) order via post-order DFS, plus each
 # dir's direct cross-project dep dirs (`edges: [{dir, deps}]` — a table,
@@ -601,7 +705,7 @@ def find-workspace-root [] {
 # roots — workspace-root-relative starting dirs ("." for root)
 # scan  — scan-projects rows (targets feed the dep walk)
 # index — project_name → dir map (resolves "project:target" refs)
-def topo-schedule [roots: list<string>, scan: table, index: record] {
+export def topo-schedule [roots: list<string>, scan: table, index: record] {
 	mut visiting: list<string> = []  # nodes on current DFS stack (cycle detection)
 	mut done: list<string> = []      # post-order output (leaf-first)
 	mut edges: list = []             # [{dir, deps}] — one row per visited node
@@ -714,7 +818,7 @@ export def main [--recursive (-r), --all, --runtime: string = "", --depot] {
 	with-env { BAYT_RUNTIME_DIR: $effective } { _main --recursive=$recursive --all=$all --depot=$depot }
 }
 
-# A workspace-relative dir spelled the way the scan spells it: `git ls-files`
+# A workspace-relative dir spelled the way the scan spells it: its listing
 # and a bayt.json's `dir` both answer in forward slashes, where the `path
 # relative-to` this is given answers in the platform's own. Without it a
 # project on Windows never matches its own scanned row, and the pass-1
@@ -728,39 +832,12 @@ def _main [--recursive (-r), --all, --depot] {
 	if not $all and not ("bayt.cue" | path exists) {
 		return
 	}
-
-	let workspace_root = (find-workspace-root)
-	let t0 = (date now)
-	let scan = (scan-projects $workspace_root)
-	let index = ($scan | reduce -f {} { |row, acc| $acc | insert $row.name $row.dir_rel })
-	print-timing scan $t0
-
-	if $all {
-		# Every project in the workspace; works from any cwd inside it.
-		cd $workspace_root
-		let schedule = (topo-schedule ($scan | get dir_rel | uniq) $scan $index)
-		run-schedule $schedule $scan $index $workspace_root --depot=$depot
-	} else if $recursive {
-		let project_rel = (scan-dir ((pwd) | path relative-to $workspace_root))
-
-		# Work from workspace root so write-bundle's relative paths are correct.
-		cd $workspace_root
-
-		let schedule = (topo-schedule [$project_rel] $scan $index)
-		run-schedule $schedule $scan $index $workspace_root --depot=$depot
-	} else {
-		# Single-project mode: cd to workspace_root so write-bundle's
-		# relative paths (used by --runtime injection) are computed
-		# against the right depth — same convention --recursive uses.
-		let project_rel = (scan-dir ((pwd) | path relative-to $workspace_root))
-		let bayt_cue = if $project_rel == "." { $"($workspace_root)/bayt.cue" } else { $"($workspace_root)/($project_rel)/bayt.cue" }
-		cd $workspace_root
-		# The row can be missing here (e.g. a gitignored dir escapes the
-		# scan's `git ls-files`); regen-project's pass 1 covers it.
-		let row = ($scan | where dir_rel == $project_rel | get --optional 0)
-		let tgts = if $row == null { null } else { $row.targets }
-		regen-project $bayt_cue $project_rel $index $workspace_root $tgts --depot=$depot
-	}
+	let workspace_root = (find-workspace-root (pwd))
+	let scanned = (scan-projects $workspace_root)
+	let found = (root-for $scanned $workspace_root (pwd))
+	# The scan already covers the cue.mod root; a nested root scans its own.
+	let given = if $found.root == $workspace_root { $scanned } else { null }
+	generate-root $found.root $given --rooted=$found.rooted --recursive=$recursive --all=$all --depot=$depot
 
 	# Run cache GC at end of generation: regen happens after bayt.cue
 	# edits, exactly when projects most likely have accumulated cache
@@ -770,4 +847,54 @@ def _main [--recursive (-r), --all, --depot] {
 	# propagate — silently swallowed GC means the cache fills until it
 	# eats the disk.
 	run-nu $cache_nu gc
+}
+
+# generate-root generates within one workspace root. A rooted project nested
+# in it is its own root: kept out of this one's index and schedule, and under
+# --all regenerated in place.
+# A rooted root generates with no --runtime: its other checkouts have no
+# monorepo bayt tree to point at.
+def generate-root [workspace_root: string, scanned?: any, --rooted, --recursive (-r), --all, --depot] {
+	with-env {BAYT_RUNTIME_DIR: (if $rooted { "" } else { $env.BAYT_RUNTIME_DIR? | default "" })} {
+		let t0 = (date now)
+		let parts = (partition-scan (if $scanned == null { scan-projects $workspace_root } else { $scanned }))
+		let scan = $parts.local
+		check-dirs $scan $workspace_root
+		let index = $parts.index
+		print-timing scan $t0
+
+		if $all {
+			# A nested root is generated in its own pass, with its subtree; the
+			# passes are independent roots.
+			$parts.nested | par-each {|w|
+				let root = ($workspace_root | path join $w.dir_rel)
+				do { cd $root; generate-root $root --rooted --all --depot=$depot }
+			} | ignore
+			# Every project in the workspace; works from any cwd inside it.
+			cd $workspace_root
+			let schedule = (topo-schedule ($scan | get dir_rel | uniq) $scan $index)
+			run-schedule $schedule $scan $index $workspace_root --depot=$depot
+		} else if $recursive {
+			let project_rel = (scan-dir ((pwd) | path relative-to $workspace_root))
+
+			# Work from workspace root so write-bundle's relative paths are correct.
+			cd $workspace_root
+
+			let schedule = (topo-schedule [$project_rel] $scan $index)
+			run-schedule $schedule $scan $index $workspace_root --depot=$depot
+		} else {
+			# Single-project mode: cd to workspace_root so write-bundle's
+			# relative paths (used by --runtime injection) are computed
+			# against the right depth — same convention --recursive uses.
+			let project_rel = (scan-dir ((pwd) | path relative-to $workspace_root))
+			let bayt_cue = if $project_rel == "." { $"($workspace_root)/bayt.cue" } else { $"($workspace_root)/($project_rel)/bayt.cue" }
+			cd $workspace_root
+			# The row can be missing here (e.g. a gitignored dir escapes the
+			# scan's listing); regen-project's pass 1 covers it.
+			let row = ($scan | where dir_rel == $project_rel | get --optional 0)
+			let tgts = if $row == null { null } else { $row.targets }
+			regen-project $bayt_cue $project_rel $index $workspace_root $tgts --depot=$depot
+		}
+
+	}
 }

@@ -9,6 +9,9 @@
       "*.cue",
       "bayt.json",
       "DESIGN.md",
+      "[p]ipelines/*.blobl",
+      "[m]essages/*.json",
+      "[s]hell/boot.js",
       "brief.html",
       "ir.html",
       "acceptance.md"
@@ -43,6 +46,9 @@
           "*.cue",
           "bayt.json",
           "DESIGN.md",
+          "[p]ipelines/*.blobl",
+          "[m]essages/*.json",
+          "[s]hell/boot.js",
           "brief.html",
           "ir.html",
           "acceptance.md"

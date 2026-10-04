@@ -21,6 +21,7 @@ services:
     - --allow-env
     - --allow-run
     - --allow-sys
+    - --unsafely-ignore-certificate-errors=caddy
     - /omnishell/check-visual.ts
     - '.'
     depends_on:
@@ -28,7 +29,7 @@ services:
         condition: service_healthy
         restart: true
     environment:
-      APP_URL: http://caddy:8080
+      APP_URL: https://caddy:8443
     image: bayt-apps_truco-integrate:${BAYT_IMAGE_TAG:-latest}
     scale: 0
   apps_truco-integrate_bayt:

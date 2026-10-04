@@ -28,7 +28,7 @@ type Hatch = { kind: string; files?: string[]; note: string };
 type RawMigration = { name: string; src: string };
 
 /** Directories that hold no SQL of the app's own. */
-const SKIP = new Set(["node_modules", ".git", ".bayt", ".omc", ".pronto", "dist", "build"]);
+const SKIP = new Set(["node_modules", "dist", "build"]);
 
 /**
  * Integer width is the type table's decision, not the linter's: an app that
@@ -39,11 +39,12 @@ const EXCLUDED_RULES = ["prefer-bigint-over-int"];
 
 /**
  * The one rule forgiven, and only in the file pronto derives from the type
- * table. Every portable_* domain carries its CHECK by design — that is what
- * makes the domain the canonical form rather than a naked base type — and
- * squawk prefers table constraints because a domain constraint is awkward to
- * change later. Changing one is a type-system change, which is the checks'
- * subject rather than something to hide from them.
+ * table. Every portable_* domain carries its CHECK by design — a domain is
+ * kept only where PostgREST needs its representation functions, and its
+ * bounds belong with them — and squawk prefers table constraints because a
+ * domain constraint is awkward to change later. Changing one is a type-system
+ * change, which is the checks' subject rather than something to hide from
+ * them.
  */
 const FORGIVEN: { rule: string; path: string } = {
   rule: "ban-create-domain-with-constraint",
@@ -56,7 +57,8 @@ async function sqlFiles(appDir: string): Promise<string[]> {
   const walk = async (dir: string, prefix: string) => {
     for await (const entry of Deno.readDir(dir)) {
       if (entry.isDirectory) {
-        if (SKIP.has(entry.name)) continue;
+        // A dot directory is tooling's, a mirror's .runtime among them.
+        if (entry.name.startsWith(".") || SKIP.has(entry.name)) continue;
         await walk(`${dir}/${entry.name}`, `${prefix}${entry.name}/`);
       } else if (entry.isFile && entry.name.endsWith(".sql")) {
         found.push(`${prefix}${entry.name}`);
@@ -102,16 +104,145 @@ export function findings(reported: Squawk[], appDir: string): Finding[] {
   return out;
 }
 
+export type DuckStream = {
+  name: string;
+  ir?: string;
+  sql: string;
+  sources: string[];
+  sink: string;
+  tempo?: "hot" | "cold";
+  operators?: string[];
+};
+
+export function walkAst(obj: unknown, detected: Set<string>) {
+  if (!obj || typeof obj !== "object") return;
+  if (Array.isArray(obj)) {
+    for (const item of obj) walkAst(item, detected);
+    return;
+  }
+  const record = obj as Record<string, unknown>;
+
+  if (record.class === "FUNCTION" && typeof record.function_name === "string") {
+    const fn = record.function_name.toLowerCase();
+    if (fn === "tumble" || fn === "hop" || fn === "session") {
+      detected.add(fn);
+    }
+  }
+
+  if (record.type === "DISTINCT_MODIFIER" || record.distinct === true) {
+    detected.add("distinct");
+  }
+
+  if (record.type === "JOIN" && (record.ref_type === "CROSS" || record.join_type === "CROSS")) {
+    detected.add("cross_join");
+  }
+
+  if (record.type === "JOIN" && record.condition) {
+    const condStr = JSON.stringify(record.condition).toLowerCase();
+    const hasInterval = condStr.includes("interval") || condStr.includes("to_seconds") || condStr.includes("to_minutes") || condStr.includes("to_hours") || condStr.includes("to_days");
+    const hasRange = condStr.includes("compare_between") || condStr.includes("compare_greaterthan") || condStr.includes("compare_lessthan");
+    if (hasInterval && hasRange) {
+      detected.add("interval_join");
+    }
+  }
+
+  for (const val of Object.values(record)) {
+    walkAst(val, detected);
+  }
+}
+
+export async function checkDuckStreams(
+  duckstreams: Record<string, DuckStream>,
+  appDir: string,
+): Promise<Finding[]> {
+  const out: Finding[] = [];
+  for (const [name, ds] of Object.entries(duckstreams)) {
+    const tempo = ds.tempo;
+    const declaredOps = new Set(ds.operators ?? []);
+    const sql = ds.sql;
+
+    const escaped = sql.replaceAll("'", "''");
+    const cmd = new Deno.Command("mise", {
+      args: ["exec", "--", "duckdb", "-dark-mode", "-batch", "-json", "-c", `SELECT json_serialize_sql('${escaped}');`],
+      cwd: appDir,
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const res = await cmd.output();
+    if (!res.success) {
+      const err = new TextDecoder().decode(res.stderr).trim();
+      throw new Error(`duckdb failed to parse "${name}": ${err}`);
+    }
+
+    const stdoutText = new TextDecoder().decode(res.stdout).trim();
+    if (!stdoutText) {
+      throw new Error(`duckdb returned empty output for "${name}"`);
+    }
+    const rows = JSON.parse(stdoutText);
+    const firstRow = rows[0];
+    const key = Object.keys(firstRow)[0];
+    const parsed = firstRow[key];
+
+    if ((parsed as { error?: boolean })?.error) {
+      const errMsg = (parsed as { error_message?: string })?.error_message ?? "syntax error";
+      out.push({
+        severity: "error",
+        path: `pipelines/duckstream/${name}.sql`,
+        message: `duckstream "${name}": SQL syntax error: ${errMsg}`,
+      });
+      continue;
+    }
+
+    const detected = new Set<string>();
+    walkAst(parsed, detected);
+
+    for (const op of detected) {
+      if (!declaredOps.has(op)) {
+        out.push({
+          severity: "error",
+          path: `program.cue`,
+          message: `duckstream "${name}" uses operator "${op}" but does not declare it in operators: [...]`,
+        });
+      }
+    }
+
+    for (const op of declaredOps) {
+      if (!detected.has(op)) {
+        out.push({
+          severity: "error",
+          path: `program.cue`,
+          message: `duckstream "${name}" declares operator "${op}" in operators: [...] but the query does not use it`,
+        });
+      }
+    }
+
+    const windowOps = ["tumble", "hop", "session"].filter((o) => detected.has(o));
+    if (windowOps.length > 0 && tempo !== "cold") {
+      out.push({
+        severity: "error",
+        path: `program.cue`,
+        message: `duckstream "${name}" uses windowing operator (${windowOps.join(", ")}) which requires tempo: "cold", but tempo is "${tempo}"`,
+      });
+    }
+  }
+  return out;
+}
+
 async function main(appDir: string) {
   const hatches = await exportJson<Record<string, Hatch>>(appDir, "code.capabilities.hatches");
   const raw = await exportJson<RawMigration[]>(
     appDir,
     "[if code.state.rawMigrations != _|_ {code.state.rawMigrations}, []][0]",
   );
+  const duckstreams = await exportJson<Record<string, DuckStream>>(
+    appDir,
+    "[if code.state.duckstreams != _|_ {code.state.duckstreams}, {}][0]",
+  );
 
   const skip = withheld(hatches, raw);
   const all = await sqlFiles(appDir);
-  const read = all.filter((f) => !skip.has(f));
+  const duckstreamPaths = new Set(Object.keys(duckstreams).map((n) => `pipelines/duckstream/${n}.sql`));
+  const read = all.filter((f) => !skip.has(f) && !duckstreamPaths.has(f));
 
   // A hatch naming a file the app does not have is an exemption for nothing:
   // it reads as protection while protecting no one, so it is an error here
@@ -129,27 +260,27 @@ async function main(appDir: string) {
     Deno.exit(1);
   }
 
-  if (read.length === 0) {
-    console.log(JSON.stringify([], null, 2));
-    return;
+  const duckFindings = await checkDuckStreams(duckstreams, appDir);
+
+  let squawkReported: Squawk[] = [];
+  if (read.length > 0) {
+    const out = await new Deno.Command("mise", {
+      args: ["x", "--", "squawk", ...read, "--reporter", "json", `--exclude=${EXCLUDED_RULES.join(",")}`],
+      cwd: appDir,
+      stdout: "piped",
+      stderr: "piped",
+    }).output();
+    const stdout = new TextDecoder().decode(out.stdout).trim();
+    // squawk reports findings on stdout and exits 0; a non-zero exit with nothing
+    // parseable is squawk failing to run, which is not a clean bill of health.
+    if (stdout === "") {
+      const err = new TextDecoder().decode(out.stderr).trim();
+      if (!out.success) throw new Error(`squawk failed: ${err || `exit ${out.code}`}`);
+    }
+    squawkReported = stdout === "" ? [] : JSON.parse(stdout);
   }
 
-  const out = await new Deno.Command("mise", {
-    args: ["x", "--", "squawk", ...read, "--reporter", "json", `--exclude=${EXCLUDED_RULES.join(",")}`],
-    cwd: appDir,
-    stdout: "piped",
-    stderr: "piped",
-  }).output();
-  const stdout = new TextDecoder().decode(out.stdout).trim();
-  // squawk reports findings on stdout and exits 0; a non-zero exit with nothing
-  // parseable is squawk failing to run, which is not a clean bill of health.
-  if (stdout === "") {
-    const err = new TextDecoder().decode(out.stderr).trim();
-    if (!out.success) throw new Error(`squawk failed: ${err || `exit ${out.code}`}`);
-  }
-  const reported: Squawk[] = stdout === "" ? [] : JSON.parse(stdout);
-
-  const found = findings(reported, appDir);
+  const found = [...findings(squawkReported, appDir), ...duckFindings];
   console.log(JSON.stringify(found, null, 2));
   if (found.some((f) => f.severity === "error")) Deno.exit(1);
 }

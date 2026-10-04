@@ -8,9 +8,12 @@
 // into the program — so `cue export` stays the one source the emitter and the
 // checkers read, and the markup is the authority.
 //
-// Derived per screen: `reads` as the SET of entities the markup touches
-// (sorted, deduped, no filter/order/select — those live in the markup alone),
-// and `files.handlers` as shell/handlers/<name>.js for every handler name.
+// Derived per screen: `reads`, every read the markup makes as the terminal
+// routes it (#Read: its table, kind, nesting, route, filter clauses, embeds,
+// cap and order columns), verbatim from the reader, `writes`, every write it states (#Write), and
+// `files.handlers` as shell/handlers/<name>.js for every handler name. They
+// are facts, not decisions: what a program concludes from them — which tables
+// a browser loads on demand (sync.cue) — is CUE's to say.
 // Screen names come from shell/screens/*.html; a stale html file for a screen
 // the program no longer declares fails the export rather than deriving in
 // silence.
@@ -43,6 +46,8 @@ import {
 import { scalesSelfTest } from "./scales.ts";
 import { celSites, renderCel, renderIr } from "./derive-cel.ts";
 import { renderValidations, resolveEdges, type VEntity, validationLint, validationsSelfTest } from "./validations.ts";
+import { oneHome, parseHeld, seedKey, vetHeld } from "./seed.ts";
+import type { TypeEntity } from "./type-check.ts";
 import { claims, irAccepts, irPaths, LEDGER } from "./acceptance.ts";
 import { declarations, irIds, irRoutes, KINDS } from "./objects.ts";
 import { irDiagrams } from "./diagrams.ts";
@@ -70,6 +75,21 @@ import {
   sha256Hex,
 } from "./facts.ts";
 type Spec = { col: string; op: string; value?: string }[] | null;
+/** A read and a write as the reader prints them and program_derived.cue
+ * states them (#Read, #Write). */
+type Read = {
+  table: string;
+  kind: "live" | "reads" | "named";
+  nested: boolean;
+  lists: number[];
+  route: "server" | "snapshot" | "whole" | "view";
+  clauses?: { col: string; op: string }[];
+  embeds?: string[];
+  limit?: number;
+  orders: string[];
+};
+type Write = { table: string; op: string; filter?: string };
+type DerivedScreen = { name: string; reads: Read[]; writes: Write[]; handlers: string[]; adapters: string[] };
 
 /**
  * The markup projection, as the terminal's reader prints it — read-markup.ts's
@@ -88,8 +108,9 @@ type MachineProjection = {
   refs: string[];
   assignStrings: string[];
   filterSpec: Spec;
+  writes: Write[];
 };
-type ScreenProjection = { tables: string[]; handlers: string[]; adapters: string[]; machines: MachineProjection[] };
+type ScreenProjection = { handlers: string[]; adapters: string[]; reads: Read[]; writes: Write[]; machines: MachineProjection[] };
 
 /** The slice of a program's entity this pass reads off its own export; every
  * module it hands the entities to declares the slice it reads for itself. */
@@ -166,17 +187,20 @@ export function decisionNote(body: string): string {
   return text.replace(/\.$/, "");
 }
 
+/** A derived read or write as a CUE struct; JSON is CUE here, keys and all. */
+const row = (value: object): string =>
+  `{${Object.entries(value).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(", ")}}`;
+
 export function renderDerived(
   pkg: string,
-  screens: { name: string; entities: string[]; handlers: string[]; adapters: string[] }[],
+  screens: DerivedScreen[],
   // The app's own Jessie modules, by basename: an adapter it does not ship is
   // the terminal's, and the route names the path the terminal serves it at.
   available: Set<string>,
   decisions: { id: string; note: string }[],
   tests: { id: string; accepts: string[] }[],
 ): string {
-  const blocks = screens.map(({ name, entities, handlers, adapters }) => {
-    const reads = entities.map((e) => `{entity: "${e}"}`).join(", ");
+  const blocks = screens.map(({ name, reads, writes, handlers, adapters }) => {
     const mods = handlers.map((h) => `"shell/handlers/${h}.js"`).join(", ");
     // An adapter is listed apart from the reduces: the role decides the cage a
     // module loads in, and a checker cannot ask about a role it cannot see.
@@ -185,7 +209,9 @@ export function renderDerived(
     const adapterMods = adapters
       .map((a) => (available.has(a) ? `"shell/handlers/${a}.js"` : `"/omnishell/components/${a}.js"`))
       .join(", ");
-    return `\t${quoteKey(name)}: {\n\t\treads: [${reads}]\n\t\tfiles: {handlers: [${mods}], adapters: [${adapterMods}]}\n\t}`;
+    const list = (rows: object[]) => rows.length === 0 ? "[]" : `[\n${rows.map((r) => `\t\t\t${row(r)},`).join("\n")}\n\t\t]`;
+    return `\t${quoteKey(name)}: {\n\t\treads: ${list(reads)}\n\t\twrites: ${list(writes)}\n` +
+      `\t\tfiles: {handlers: [${mods}], adapters: [${adapterMods}]}\n\t}`;
   });
   // JSON escapes are CUE escapes, and CUE reads `\(` as interpolation only
   // after a backslash JSON.stringify would have doubled.
@@ -249,6 +275,20 @@ export function notesFor(
 }
 
 /** notesFor over the ir the program pins. */
+// A path the terminal names: from the app for a checkout, from the installed
+// omnishell's root (where the app's mise put it) for an install.
+async function terminalPath(exp: { terminalRuntime: string }, path: string, appDir: string): Promise<string> {
+  if (exp.terminalRuntime !== "") return path;
+  const where = await new Deno.Command("mise", {
+    args: ["where", "github:bonisoft3/omnishell"],
+    cwd: appDir,
+    stdout: "piped",
+    stderr: "inherit",
+  }).output();
+  if (!where.success) throw new Error("mise does not resolve github:bonisoft3/omnishell");
+  return `${new TextDecoder().decode(where.stdout).trim()}/${path}`;
+}
+
 async function decisionNotes(
   appDir: string,
   source: string,
@@ -294,11 +334,15 @@ export async function derive(appDir: string): Promise<void> {
         "entry: out.terminal.surface.entry, " +
         // The terminal's own paths: what this pass spawns to read the markup,
         // and the published schema it vets each chart against.
+        "terminalRuntime: out.terminal.surface.runtime, " +
         "markupReader: out.terminal.surface.markupReader, " +
         "machineSchema: out.terminal.surface.machineSchema, " +
         "statics: [for s in out.cluster.meta.statics {file: s.file, target: s.target}], " +
         "shared: {for k, s in code.surface.screens {(k): s.files.shared}}, " +
         "pendingLiterals: code.meta.design.pendingLiterals, " +
+        // Which tables a browser loads on demand and why, as the program
+        // decides it from the reads and writes the last derivation projected.
+        "sync: code.#sync, " +
         // `program` rather than `code`: a field named for the value it holds would
         // shadow it inside the struct literal and export an incomplete `_`.
         "program: code}",
@@ -323,24 +367,35 @@ export async function derive(appDir: string): Promise<void> {
     designCss: string;
     shellCss: string;
     entry: string;
+    // "" for an installed terminal, whose paths are then named from its own
+    // root, where mise put it.
+    terminalRuntime: string;
     markupReader: string;
     machineSchema: string;
     statics: { file: string; target: string }[];
     shared: Record<string, string[]>;
     pendingLiterals: number;
+    sync: Record<string, { table: string; mode: string; reason: string }>;
     program: Record<string, unknown>;
   } = JSON.parse(new TextDecoder().decode(exported.stdout));
   const entities = exp.entities;
   // `program` is exported whole, so the slices the table registry needs are
   // read off it rather than added to the expression above.
   const { surface, state, meta: appMeta } = exp.program as unknown as {
-    surface: { screens: Record<string, { forms?: { id: string; entity: string }[] }> };
-    state: { pipelines?: Record<string, { fold?: { pair: { table: string } } }> };
+    surface: {
+      screens: Record<string, { forms?: { id: string; entity: string }[] }>;
+      endowments?: Record<string, string[]>;
+    };
+    state: {
+      pipelines?: Record<string, { fold?: { pair: { table: string } } }>;
+      computations?: Record<string, { src: string; wasm: string[] }>;
+      seed?: { src: string };
+    };
     meta?: { i18n?: { default?: string; locales?: Record<string, { path: string }> } };
   };
   const defaultLocale = appMeta?.i18n?.default ?? null;
   const locales = Object.keys(appMeta?.i18n?.locales ?? {});
-  const catalogs: Record<string, Record<string, string | Record<string, string>>> = {};
+  const catalogs: Record<string, Record<string, unknown>> = {};
   for (const loc of locales) {
     const text = await ifMissing(Deno.readTextFile(`${appDir}/messages/${loc}.json`), null);
     if (text === null) fail(`messages/${loc}.json is declared in i18n.locales and missing`);
@@ -351,7 +406,7 @@ export async function derive(appDir: string): Promise<void> {
       fail(`messages/${loc}.json does not parse: ${(e as Error).message}`);
     }
     if (catalog === null || typeof catalog !== "object" || Array.isArray(catalog)) fail(`messages/${loc}.json is not an object`);
-    catalogs[loc] = catalog as Record<string, string | Record<string, string>>;
+    catalogs[loc] = catalog as Record<string, unknown>;
   }
   const notes = await decisionNotes(appDir, exp.ir, exp.decisions);
   const byTable = new Map(Object.entries(entities).map(([name, e]) => [e.table, name]));
@@ -361,6 +416,7 @@ export async function derive(appDir: string): Promise<void> {
   const TAG = "$validation$";
   const modules: { path: string; references: string[]; completion: string; role: string }[] = [];
   const validated: { entity: string; name: string; edges: ReturnType<typeof resolveEdges>; statements: string; completion: string }[] = [];
+  const surfaceEndowments = surface.endowments ?? {};
   for (const [ename, e] of Object.entries(entities)) {
     for (const [vname, v] of Object.entries(e.validations ?? {})) {
       const why = validationLint(entities, ename, vname);
@@ -370,7 +426,8 @@ export async function derive(appDir: string): Promise<void> {
       if (src.includes(TAG)) fail(`entity ${ename}: validations "${vname}": ${v.src} contains the quote tag ${TAG}`);
       const split = splitCompletion(src);
       if (split === null) fail(`entity ${ename}: validations "${vname}": ${v.src} must end in an arrow function`);
-      const facts = jessieFacts(src);
+      const granted = surfaceEndowments[v.src] ?? surfaceEndowments[v.src.split("/").pop() ?? ""] ?? [];
+      const facts = jessieFacts(src, granted);
       modules.push({ path: v.src, ...facts, role: "validation" });
       // A handler's denied name is a fact row a query reports; a validation's
       // is a refusal here, because its source is embedded in a migration and
@@ -380,6 +437,18 @@ export async function derive(appDir: string): Promise<void> {
       }
       validated.push({ entity: ename, name: vname, edges: resolveEdges(entities, ename, v.via), ...split });
     }
+  }
+
+  // A computation's module joins the fact rows in a role of its own: the cage
+  // mecha's compute service runs it in endows none of the denied names, and
+  // what it completes in is its exports, so no completion shape applies.
+  for (const [cname, c] of Object.entries(state.computations ?? {})) {
+    const src = await ifMissing(Deno.readTextFile(`${appDir}/${c.src}`), null);
+    if (src === null) fail(`computation ${cname}: src ${c.src} is not a file`);
+    for (const w of c.wasm) {
+      if ((await ifMissing(Deno.stat(`${appDir}/${w}`), null)) === null) fail(`computation ${cname}: wasm ${w} is not a file`);
+    }
+    modules.push({ path: c.src, references: jessieFacts(src).references, completion: "exports", role: "computation" });
   }
 
   // One parse per distinct constraint, and then the parser is done: the IR
@@ -424,8 +493,10 @@ export async function derive(appDir: string): Promise<void> {
   // above and from the same directory, so the path the program's terminal
   // declares is the path that resolves; --no-config because every module the
   // reader loads is a static import of its own.
+  // The terminal's reader, a path from the app for a checkout and from the
+  // installed omnishell's root for an install.
   const read = await new Deno.Command("deno", {
-    args: ["run", "--no-lock", "--no-check", "--no-config", "--allow-read=.", exp.markupReader, "."],
+    args: ["run", "--no-lock", "--no-check", "--no-config", "--allow-read=.", await terminalPath(exp, exp.markupReader, appDir), "."],
     cwd: appDir,
     stdout: "piped",
     stderr: "inherit",
@@ -435,7 +506,7 @@ export async function derive(appDir: string): Promise<void> {
     new TextDecoder().decode(read.stdout),
   );
 
-  const screens: { name: string; entities: string[]; handlers: string[]; adapters: string[] }[] = [];
+  const screens: DerivedScreen[] = [];
   const machines: { screen: string; region: MachineProjection }[] = [];
   const allMsgRefs: FactTemplateMsgRef[] = [];
   const allProse: FactTemplateProse[] = [];
@@ -446,9 +517,9 @@ export async function derive(appDir: string): Promise<void> {
       allMsgRefs.push(...msgRefs);
       allProse.push(...prose);
     }
-    const named = screen.tables.map((t) =>
-      byTable.get(t) ?? fail(`${name}.html reads "${t}", the table of no declared entity`)
-    );
+    for (const t of new Set([...screen.reads, ...screen.writes].map((r) => r.table))) {
+      if (!byTable.has(t)) fail(`${name}.html names "${t}", the table of no declared entity`);
+    }
     // A machine's leaves are handler modules like any other: its references
     // (and the assign strings that resolve) join the screen's derived
     // files.handlers so the loader can fetch them.
@@ -460,21 +531,22 @@ export async function derive(appDir: string): Promise<void> {
     }
     screens.push({
       name,
-      entities: [...new Set(named)].sort(),
+      reads: screen.reads,
+      writes: screen.writes,
       handlers: [...new Set([...screen.handlers, ...machineNames])].sort(),
       adapters: [...new Set(screen.adapters)].sort(),
     });
   }
   screens.sort((a, b) => (a.name < b.name ? -1 : 1));
 
-  // The tables the terminal will register, in the set #shellConfig._tables
-  // builds: every screen's reads, every form's entity, and each fold's private
-  // pair. A validation's edge is read out of that registry at the store seat,
+  // The tables the terminal will register, in the set #App.#collections
+  // builds: every screen's reads and writes, every form's entity, and each
+  // fold's private pair. A validation's edge is read out of that registry at the store seat,
   // so an edge to a table outside it has no collection to read and the seat
   // would throw at the first write. The write of program_validations.cue waits
   // for this, so a refused derivation leaves no artifact for the emitter.
   const held = new Set<string>();
-  for (const s of screens) for (const name of s.entities) held.add(entities[name].table);
+  for (const s of screens) for (const r of [...s.reads, ...s.writes]) held.add(r.table);
   for (const [sname, s] of Object.entries(surface.screens)) {
     for (const f of s.forms ?? []) {
       if (entities[f.entity] === undefined) fail(`screen ${sname}: form ${f.id} names undeclared entity ${f.entity}`);
@@ -562,7 +634,7 @@ export async function derive(appDir: string): Promise<void> {
         // rather than by a path into a plugin directory: a consumer keeping the
         // terminal elsewhere says where by unifying machineSchema, and vets
         // against the file it ships.
-        args: ["vet", "-d", "#Machine", exp.machineSchema, ...files],
+        args: ["vet", "-d", "#Machine", await terminalPath(exp, exp.machineSchema, appDir), ...files],
         cwd: appDir,
         stderr: "inherit",
       }).output();
@@ -582,6 +654,32 @@ export async function derive(appDir: string): Promise<void> {
       }
     }
     if (refused !== undefined) fail(refused);
+  }
+
+  // Held seed rows are judged here, once per change to them or to what judges
+  // them, because judging them costs more than evaluating the program does: the
+  // verdict is recorded under seedKey, and a recorded key is a verdict already
+  // given. check-facts holds the file to its artifact row, so an edit that skips
+  // this pass is a lint failure, never an unjudged row in 900_seed.sql.
+  const seedSrc = state.seed?.src;
+  const seed_vetted: { src: string; key: string }[] = [];
+  if (seedSrc !== undefined) {
+    const bytes = await Deno.readFile(`${appDir}/${seedSrc}`).catch((e) => fail(`${seedSrc}: state.seed names it, and it does not open: ${e.message}`));
+    const key = await seedKey(bytes, entities, await Deno.readTextFile(`${appDir}/program_cel.cue`));
+    const previous = await ifMissing(Deno.readTextFile(`${appDir}/.pronto/facts.json`), null);
+    const vetted = previous !== null &&
+      ((JSON.parse(previous).seed_vetted ?? []) as { src: string; key: string }[]).some((r) => r.src === seedSrc && r.key === key);
+    if (!vetted) {
+      try {
+        const held = parseHeld(seedSrc, new TextDecoder().decode(bytes));
+        oneHome(seedSrc, entities as Record<string, { seed?: Record<string, unknown>[] }>, held);
+        // The export is CUE's, so every field's type is one types.cue names.
+        await vetHeld(appDir, seedSrc, held, entities as unknown as Record<string, TypeEntity>);
+      } catch (e) {
+        fail((e as Error).message);
+      }
+    }
+    seed_vetted.push({ src: seedSrc, key });
   }
 
   // The fact store, last: it is a projection of everything above, so anything
@@ -672,7 +770,8 @@ export async function derive(appDir: string): Promise<void> {
   const handlerNames = new Set(screens.flatMap((s) => s.handlers.map((h) => h.replace(/^.*\//, "").replace(/\.js$/, ""))));
   for (const name of [...available].sort()) {
     const rel = `shell/handlers/${name}.js`;
-    const facts = jessieFacts(await Deno.readTextFile(`${appDir}/${rel}`));
+    const granted = surfaceEndowments[rel] ?? surfaceEndowments[`${name}.js`] ?? [];
+    const facts = jessieFacts(await Deno.readTextFile(`${appDir}/${rel}`), granted);
     const roles = [...(adapterNames.has(name) ? ["adapter"] : []), ...(handlerNames.has(name) || !adapterNames.has(name) ? ["handler"] : [])];
     for (const role of roles) modules.push({ path: rel, ...facts, role });
   }
@@ -694,9 +793,11 @@ export async function derive(appDir: string): Promise<void> {
     ["program_cel.cue", true],
     ["program_derived.cue", true],
     ...(validated.length > 0 ? [["program_validations.cue", true]] : []),
+    ...(seedSrc !== undefined ? [[seedSrc, false]] : []),
   ] as [string, boolean][]) {
     artifacts.push({ path, sha256: await sha(path), derived });
   }
+  for (const c of Object.values(state.computations ?? {})) artifacts.push({ path: c.src, sha256: await sha(c.src), derived: false });
   // The stylesheets the rules above read, so that editing one and not
   // regenerating is a stale-row finding rather than a green literal lint over
   // yesterday's numbers. A screen's row hashes the STRING scanned rather than a
@@ -714,7 +815,14 @@ export async function derive(appDir: string): Promise<void> {
   await Deno.writeTextFile(
     `${appDir}/.pronto/facts.json`,
     renderFacts(mergeFacts(
-      programFacts(entities, screens, charts),
+      programFacts(
+        entities,
+        screens.map((s) => ({
+          name: s.name,
+          entities: screenEntities(s.reads, machines.filter((m) => m.screen === s.name).map((m) => m.region), byTable),
+        })),
+        charts,
+      ),
       ledger,
       bijection,
       nestingFacts(irHtml),
@@ -727,11 +835,19 @@ export async function derive(appDir: string): Promise<void> {
       importFacts(exp.statics, imports),
       jessieFactRows(DENIED, modules),
       { enum_value },
+      { sync_mode: Object.entries(exp.sync).map(([entity, s]) => ({ entity, ...s })) },
+      seed_vetted.length > 0 ? { seed_vetted } : {},
       diagramFacts(diagrams.nodes, diagrams.edges),
       i18nFacts(defaultLocale, locales, catalogs, allMsgRefs, allProse),
     )),
   );
 
+}
+
+/** The entities a screen needs a collection for, its `reads` fact: each
+ * table it reads, and each its charts' effects write. */
+function screenEntities(reads: { table: string }[], charts: { writes: Write[] }[], byTable: Map<string, string>): string[] {
+  return [...new Set([...reads, ...charts.flatMap((c) => c.writes)].map((r) => byTable.get(r.table) as string))].sort();
 }
 
 function selfTest(): void {
@@ -853,6 +969,22 @@ function selfTest(): void {
   ]);
   const wantKey = '\t"decision\\\\blob": "a \\"q\\" and a \\\\ and \\\\(x)"';
   const wantAccepts = '_irAccepts: {\n\t"test-one": ["accept-a","accept-b"]\n\t"test-none": []\n}\n\ncode: meta: tests: [Id=string]: accepts: _irAccepts[Id]\n';
+  // A screen's reads and writes, the rows sync.cue decides which tables load
+  // on demand from.
+  const block = renderDerived("p", [{
+    name: "jogo",
+    reads: [
+      { table: "goal", kind: "live", nested: true, lists: [], route: "view", clauses: [{ col: "game_id", op: "eq" }], embeds: ["player"], limit: 5, orders: ["minute", "id"] },
+      { table: "game", kind: "live", nested: false, lists: [], route: "server", orders: [] },
+    ],
+    writes: [{ table: "goal", op: "delete", filter: "game_id=eq.{id}" }],
+    handlers: [],
+    adapters: [],
+  }], new Set(), [], []);
+  const wantBlock = '\tjogo: {\n\t\treads: [\n' +
+    '\t\t\t{table: "goal", kind: "live", nested: true, lists: [], route: "view", clauses: [{"col":"game_id","op":"eq"}], embeds: ["player"], limit: 5, orders: ["minute","id"]},\n' +
+    '\t\t\t{table: "game", kind: "live", nested: false, lists: [], route: "server", orders: []},\n\t\t]\n' +
+    '\t\twrites: [\n\t\t\t{table: "goal", op: "delete", filter: "game_id=eq.{id}"},\n\t\t]\n';
   // The cel emitters are pinned here too: one self-test, wired to one rule.
   const celFindings = celFixtures();
   for (const f of celFindings) console.error(`FAIL ${f.message}`);
@@ -864,7 +996,6 @@ function selfTest(): void {
   for (const f of validationFailures) console.error(`FAIL ${f}`);
   const scaleFailures = scalesSelfTest();
   for (const f of scaleFailures) console.error(`FAIL ${f}`);
-
   let failed = celFindings.length + styleFailures.length + jessieFailures.length + validationFailures.length +
     scaleFailures.length;
   if (!rendered.includes(wantKey)) {
@@ -874,6 +1005,22 @@ function selfTest(): void {
   if (!rendered.endsWith(wantAccepts)) {
     failed++;
     console.error(`FAIL a test's citations render as its constraint:\n  got  ${JSON.stringify(rendered.slice(-wantAccepts.length))}\n  want ${JSON.stringify(wantAccepts)}`);
+  }
+  // Regression: the facts' `reads` held only the tables a screen reads, where
+  // it holds every table the screen needs a collection for, a chart's effect's
+  // among them, as it did when the markup reader projected one table list.
+  const needed = JSON.stringify(screenEntities(
+    [{ table: "match" }],
+    [{ writes: [{ table: "score", op: "create" }, { table: "match", op: "update" }] }],
+    new Map([["match", "Match"], ["score", "Score"]]),
+  ));
+  if (needed !== '["Match","Score"]') {
+    failed++;
+    console.error(`FAIL a screen's facts name the tables a chart's effects write:\n  got  ${needed}\n  want ["Match","Score"]`);
+  }
+  if (!block.includes(wantBlock)) {
+    failed++;
+    console.error(`FAIL a screen's reads and writes render as rows:\n  got  ${JSON.stringify(block)}\n  want ${JSON.stringify(wantBlock)}`);
   }
   // The element must exist; what it cites may be nothing.
   const acceptsCases: { name: string; elements: string[]; irOf: Record<string, string>; want?: string; throws?: string }[] = [
@@ -973,7 +1120,7 @@ function selfTest(): void {
   if (failed > 0) Deno.exit(1);
   console.error(
     `derive self-test: ${notes.length + scans.length + maps.length + 1} derivation cases, ` +
-      "the cel fixtures, the style scanner, the jessie scanner, the validation resolver, the tree reader and the i18n template scanner passed",
+      "the cel fixtures, the style scanner, the jessie scanner, the validation resolver, the reads and writes, the tree reader and the i18n template scanner passed",
   );
 }
 

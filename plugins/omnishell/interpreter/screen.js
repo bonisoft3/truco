@@ -4,11 +4,16 @@
 import { renderInto } from "./render.js";
 import { mountHatch } from "./hatch.js";
 import {
+  ABSENT,
+  binding,
   directionOf,
+  fillFilter,
   machineCandidates,
   machineShape,
   parseFilter,
+  OrderError,
   parseFilterSpec,
+  parseOrder,
   parseReadSpec,
   PLACEHOLDER,
   PLACEHOLDERS,
@@ -36,9 +41,6 @@ export class TemplateCycleError extends ProgramError {}
 export class ProjectionError extends ProgramError {}
 // A data-key naming a key outside APG's set, or a form that is not one.
 export class KeyBindingError extends ProgramError {}
-// A data-order whose closed map is malformed, or whose column named an order
-// the map does not carry.
-export class OrderError extends ProgramError {}
 
 // The terminal's own generator, seeded from the URL when one asks. Every draw
 // an app makes comes through here, so a replay is a property of the terminal
@@ -171,14 +173,15 @@ const mintUuid = () => {
 // Every role resolves the same way: the attribute names the role, its value
 // names the module, and route.files.handlers is the app's list of Jessie
 // sources whatever role each one plays.
-async function loadRole(screen, appBase, route, attr, role, listed = "handlers") {
+async function loadRole(screen, appBase, route, attr, role, listed = "handlers", endowmentsMap = {}) {
   const loaded = new Map();
   for (const el of screen.querySelectorAll(`[${attr}]`)) {
     const name = el.getAttribute(attr);
     if (loaded.has(name)) continue;
     const path = (route.files[listed] ?? []).find((p) => p.split("/").pop() === `${name}.js`);
     if (!path) throw new Error(`no Jessie module for ${attr}="${name}"`);
-    loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), role));
+    const granted = endowmentsMap[path] ?? endowmentsMap[name] ?? endowmentsMap[`${name}.js`] ?? [];
+    loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), role, granted));
   }
   return loaded;
 }
@@ -207,8 +210,8 @@ function adapterOf(el, ctx) {
   return adapter;
 }
 
-async function loadAdapters(screen, appBase, route) {
-  const loaded = await loadRole(screen, appBase, route, "data-value-adapter", "adapter", "adapters");
+async function loadAdapters(screen, appBase, route, endowmentsMap = {}) {
+  const loaded = await loadRole(screen, appBase, route, "data-value-adapter", "adapter", "adapters", endowmentsMap);
   // A control in an item template is bound per row, and its markup is not in
   // the screen's own tree — the same reason loadHandlers and loadRenderers
   // walk withTemplates.
@@ -218,14 +221,15 @@ async function loadAdapters(screen, appBase, route) {
       if (loaded.has(name)) continue;
       const path = (route.files.adapters ?? []).find((p) => p.split("/").pop() === `${name}.js`);
       if (!path) throw new Error(`no Jessie module for data-value-adapter="${name}"`);
-      loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), "adapter"));
+      const granted = endowmentsMap[path] ?? endowmentsMap[name] ?? endowmentsMap[`${name}.js`] ?? [];
+      loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), "adapter", granted));
     }
   }
   return loaded;
 }
 
-async function loadHandlers(screen, appBase, route) {
-  const loaded = await loadRole(screen, appBase, route, "data-handler", "handler");
+async function loadHandlers(screen, appBase, route, endowmentsMap = {}) {
+  const loaded = await loadRole(screen, appBase, route, "data-handler", "handler", "handlers", endowmentsMap);
   // The same modules, reached by the other spelling. An item's handler lives in
   // a template, whose markup is never in the screen's own tree.
   for (const scope of withTemplates(screen)) {
@@ -234,7 +238,8 @@ async function loadHandlers(screen, appBase, route) {
         if (loaded.has(name)) continue;
         const path = route.files.handlers.find((f) => f.split("/").pop() === `${name}.js`);
         if (!path) throw new Error(`no Jessie module for data-on-* handler "${name}"`);
-        loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), "handler"));
+        const granted = endowmentsMap[path] ?? endowmentsMap[name] ?? endowmentsMap[`${name}.js`] ?? [];
+        loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), "handler", granted));
       }
     }
   }
@@ -252,12 +257,16 @@ async function loadHandlers(screen, appBase, route) {
           if (loaded.has(name)) continue;
           const path = route.files.handlers.find((f) => f.split("/").pop() === `${name}.js`);
           if (!path) throw new Error(`no Jessie module for machine reference "${name}"`);
-          loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), "handler"));
+          const granted = endowmentsMap[path] ?? endowmentsMap[name] ?? endowmentsMap[`${name}.js`] ?? [];
+          loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), "handler", granted));
         }
         for (const name of shape.assignStrings) {
           if (loaded.has(name)) continue;
           const path = route.files.handlers.find((f) => f.split("/").pop() === `${name}.js`);
-          if (path) loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), "handler"));
+          if (path) {
+            const granted = endowmentsMap[path] ?? endowmentsMap[name] ?? endowmentsMap[`${name}.js`] ?? [];
+            loaded.set(name, await evaluateRole(await fetchText(new URL(path, appBase)), "handler", granted));
+          }
         }
       }
     }
@@ -280,17 +289,13 @@ const withTemplates = (screen) => {
 // are value formatting — text in, text out, no DOM. Any other name is a
 // renderer: a Jessie module the app declared in files.renderers, resolved by
 // basename exactly as a handler is.
-const TEXT_FORMATS = new Set(["plain", "datetime", "number", "money"]);
+const TEXT_FORMATS = new Set(["plain", "datetime", "number"]);
 
-// The controls whose bound value the DOM keeps only as a property: setting the
-// attribute leaves a date picker empty. Text and its kin bind through `value`
-// like any attribute.
-const VALUE_PROPERTY = new Set(["date", "datetime-local", "time", "month", "week", "color", "range"]);
 // The built-ins that format the looked-up VALUE rather than interpolate a
 // sentence around it. plain is not one: it is the default spelled out.
-const VALUE_FORMATS = new Set(["datetime", "number", "money"]);
+const VALUE_FORMATS = new Set(["datetime", "number"]);
 
-async function loadRenderers(screen, appBase, route) {
+async function loadRenderers(screen, appBase, route, endowmentsMap = {}) {
   const declared = route.files.renderers ?? [];
   for (const path of declared) {
     const name = path.split("/").pop().replace(/\.js$/, "");
@@ -307,7 +312,8 @@ async function loadRenderers(screen, appBase, route) {
       if (TEXT_FORMATS.has(name) || Object.hasOwn(loaded, name)) continue;
       const path = declared.find((p) => p.split("/").pop() === `${name}.js`);
       if (!path) throw new Error(`no renderer module for data-text-format="${name}"`);
-      loaded[name] = await evaluateRole(await fetchText(new URL(path, appBase)), "renderer");
+      const granted = endowmentsMap[path] ?? endowmentsMap[name] ?? endowmentsMap[`${name}.js`] ?? [];
+      loaded[name] = await evaluateRole(await fetchText(new URL(path, appBase)), "renderer", granted);
     }
   }
   return loaded;
@@ -322,8 +328,12 @@ async function loadRenderers(screen, appBase, route) {
 // first key forever, which is a sort that never sorts again.
 const REGION_ATTRS = new Set([
   "data-text", "data-filter", "data-select", "data-empty", "data-empty-row", "data-when",
-  "data-project", "data-order", "data-exit-motion",
+  "data-project", "data-order", "data-exit-motion", "data-machine",
 ]);
+
+const WHOLE_PLACEHOLDER = new RegExp(`^${PLACEHOLDER.source}$`);
+// The key a slot's own entry is kept under, beside a list's rows.
+const SLOT = Symbol("slot");
 
 // What a machine may read off the event that fired it (machine.cue #EventRef).
 const EVENT_FIELDS = new Set([
@@ -367,9 +377,9 @@ const regionAttr = (name) => REGION_ATTRS.has(name) || name.startsWith("data-rea
 // Attributes the browser resolves as URLs, where the empty string is not
 // "unset" but a reference to the current document.
 const URL_ATTRS = new Set(["src", "href", "srcset", "poster", "action", "formaction", "data"]);
-// A bound boolean attribute is absent when its value is empty. `disabled=""`
-// is disabled, so interpolating an empty string would pin the control shut —
-// the same trap URL_ATTRS exists for, and the same answer.
+// A bound boolean attribute is absent when its value is empty or "false".
+// `disabled=""` is disabled, so interpolating an empty string would pin the
+// control shut — the same trap URL_ATTRS exists for, and the same answer.
 const BOOL_ATTRS = new Set([
   "disabled", "checked", "readonly", "required", "selected", "hidden", "open", "multiple",
 ]);
@@ -385,20 +395,9 @@ function localeOf(ctx) {
   return ctx?.params?.locale || ctx?.locale || ctx?.row?.locale || ctx?.i18n?.default;
 }
 
-// {param.x} reads route params; any other expression is a dot path into the
-// row ({a.b} descends into embedded objects). Fixture rows answer the whole
-// dotted key directly (their `has` is total), so the whole-key probe comes
-// before the walk.
-//
-// `arm` is the catalogue arm the element selected (armOf), and only a message
-// has arms to select from.
-function lookup(expr, ctx, arm) {
+// {msg.x} and {msg[col]} read the catalogue; everything else is `binding`'s.
+function lookup(expr, ctx) {
   const { row, params, messages, locale, i18n } = ctx ?? {};
-  if (expr.startsWith("param.")) {
-    const name = expr.slice("param.".length);
-    if (!params || !(name in params)) throw new Error(`unknown route param {${expr}}`);
-    return params[name];
-  }
   // {msg[column]} names the message a ROW carries: the writer stored a key
   // rather than a sentence, so the text it stands for is the reader's to
   // choose. A column that has said nothing yet stands for nothing, which is
@@ -439,77 +438,70 @@ function lookup(expr, ctx, arm) {
       if (rowMsg !== null) return key;
       throw new Error(`unknown message {${expr}}`);
     }
-    if (val !== null && typeof val === "object") return selectArm(expr, val, arm, ctx);
+    if (Array.isArray(val)) return evaluateAst(val, ctx, activeLocale);
     return val;
   }
+  const v = binding(expr, row, params);
+  if (v !== ABSENT) return v;
   const r = row ?? {};
-  if (expr in r) return r[expr];
-  let v = r;
-  for (const seg of expr.split(".")) {
-    // A null embed is how PostgREST answers when the joined row is hidden
-    // from this reader's RLS (a sharee reading the owner's label): bind
-    // blank — only a key the row itself lacks is a real binding error.
-    if (v == null) return undefined;
-    if (!(seg in Object(v))) {
-      // An optimistic insert carries only the submitted fields; DB-defaulted
-      // columns materialize when the synced row arrives. Bind blank instead
-      // of crashing the screen out from under the pending row.
-      if (r.$synced === false) return undefined;
-      throw new Error(`binding {${expr}} not in row [${Object.keys(r)}]`);
-    }
-    v = v[seg];
-  }
-  return v;
+  // An optimistic insert carries only the submitted fields; DB-defaulted
+  // columns materialize when the synced row arrives. Bind blank instead of
+  // crashing the screen out from under the pending row.
+  if (r.$synced === false) return undefined;
+  throw new Error(`binding {${expr}} not in row [${Object.keys(r)}]`);
 }
 
-/* --- a message with more than one wording --------------------------------
- *
- * A catalogue value is a string or a flat map of arm name to string, and the
- * element names which arm it reads: data-msg-plural runs a count through
- * Intl.PluralRules and indexes by the CLDR category, data-msg-select indexes
- * by the value itself — one selection, two selectors.
- *
- * It resolves here because Intl is endowed in the interpreter and in nothing a
- * screen can reach otherwise; it is an attribute rather than new {placeholder}
- * syntax because the bracket arm of PLACEHOLDER is taken and says the opposite
- * thing — {msg[said]} means the ROW carries the key.
+/**
+ * Evaluates a compile-time FormatJS ICU MessageFormat AST in pure SES.
+ * Handles literals (0), arguments (1), selects (5), plurals (6), and pounds (7).
  */
-
-/** An arm's own {column} bindings resolve in the element's context. A plain
- * string value stays single-pass: making every value two-pass would change
- * what every catalogue already ships. */
-function selectArm(expr, val, arm, ctx) {
-  const arms = Object.keys(val).join(", ");
-  if (arm === undefined) {
-    throw new ProgramError(`message {${expr}} is a map of [${arms}]; name data-msg-plural or data-msg-select to pick one`);
-  }
-  if (!Object.hasOwn(val, arm)) throw new ProgramError(`message {${expr}} has no arm "${arm}"; it carries [${arms}]`);
-  return String(val[arm]).replace(PLACEHOLDERS, (_, inner) => {
-    if (inner.startsWith("msg.") || inner.startsWith("msg[")) {
-      throw new ProgramError(`message {${expr}} arm "${arm}" names {${inner}}: an arm is text, not another key`);
+export function evaluateAst(ast, ctx, locale, pound) {
+  if (typeof ast === "string") return ast;
+  if (!Array.isArray(ast)) return String(ast ?? "");
+  const loc = locale ?? localeOf(ctx) ?? "en-US";
+  let out = "";
+  for (const node of ast) {
+    switch (node.type) {
+      case 0:
+        out += node.value;
+        break;
+      case 1:
+        out += String(lookup(node.value, ctx) ?? "");
+        break;
+      case 5: {
+        const val = String(lookup(node.value, ctx) ?? "");
+        const opt = node.options?.[val] ?? node.options?.other;
+        if (opt?.value !== undefined) {
+          out += evaluateAst(opt.value, ctx, loc, pound);
+        }
+        break;
+      }
+      case 6: {
+        const countVal = lookup(node.value, ctx);
+        if (countVal === null || countVal === undefined || countVal === "" || !Number.isFinite(Number(countVal))) {
+          throw new ProgramError(`plural "${node.value}" reads ${JSON.stringify(countVal)}, which is not a count`);
+        }
+        const count = Number(countVal);
+        const offset = node.offset ?? 0;
+        const n = count - offset;
+        const exact = `=${count}`;
+        const pr = pluralRulesFor(loc);
+        const category = pr.select(n);
+        const opt = node.options?.[exact] ?? node.options?.[category] ?? node.options?.other;
+        if (opt?.value !== undefined) {
+          const formattedPound = numberFormatFor(loc).format(n);
+          out += evaluateAst(opt.value, ctx, loc, formattedPound);
+        }
+        break;
+      }
+      case 7:
+        out += pound ?? "";
+        break;
+      default:
+        throw new ProgramError(`unsupported ICU node type: ${node.type}`);
     }
-    return String(lookup(inner, ctx) ?? "");
-  });
-}
-
-/** The arm an element selects, or undefined where it selects none.
- *
- * Intl.PluralRules.select answers "other" for NaN, undefined, "" and "abc"
- * alike, so a column that is not a count would quietly render a plural; the
- * count is refused here rather than left to Intl. */
-function armOf(el, ctx) {
-  const plural = el.dataset?.msgPlural;
-  const select = el.dataset?.msgSelect;
-  if (plural !== undefined && select !== undefined) {
-    throw new ProgramError(`data-msg-plural="${plural}" and data-msg-select="${select}" on one element: an arm is selected once`);
   }
-  if (select !== undefined) return String(lookup(select, ctx) ?? "");
-  if (plural === undefined) return undefined;
-  const count = lookup(plural, ctx);
-  if (count === null || count === undefined || count === "" || !Number.isFinite(Number(count))) {
-    throw new ProgramError(`data-msg-plural="${plural}" reads ${JSON.stringify(count)}, which is not a count`);
-  }
-  return pluralRulesFor(localeOf(ctx) ?? "en-US").select(Number(count));
+  return out;
 }
 
 // Constructing a PluralRules is expensive and this runs per binding per
@@ -591,77 +583,26 @@ export function formatDatetime(value, ctx) {
 // for the same fact. check-markup grades every such binding against the
 // emitted schema for exactly that reason.
 //
-// Built once per (locale, currency, scale) for the same reason FORMATTERS
-// above is: this runs per binding per refresh.
+// Built once per locale: this runs per binding per refresh.
 const NUMBERS = new Map();
-function numberFormatFor(locale, money) {
-  const key = `${locale} ${money?.currency ?? ""} ${money?.minorUnits ?? ""}`;
-  let fmt = NUMBERS.get(key);
+function numberFormatFor(locale) {
+  let fmt = NUMBERS.get(locale);
   if (fmt === undefined) {
-    fmt = new Intl.NumberFormat(
-      locale,
-      money === undefined ? {} : {
-        style: "currency",
-        currency: money.currency,
-        // The column states the scale, so the amount shows exactly that many
-        // places rather than CLDR's idea of the currency's — a ledger in whole
-        // reais would otherwise grow a ",00" it does not hold.
-        minimumFractionDigits: money.minorUnits,
-        maximumFractionDigits: money.minorUnits,
-      },
-    );
-    NUMBERS.set(key, fmt);
+    fmt = new Intl.NumberFormat(locale);
+    NUMBERS.set(locale, fmt);
   }
   return fmt;
 }
 
-/** A count of minor units placed as a decimal string.
- *
- * On the DIGITS and never by dividing: 123456789012345678 cents is exact as
- * text and rounds to ...568,00 as a double, and Intl.NumberFormat takes the
- * string as it stands. */
-function scaled(digits, minorUnits) {
-  if (minorUnits === 0) return digits;
-  const sign = digits.startsWith("-") ? "-" : "";
-  const body = (sign === "" ? digits : digits.slice(1)).padStart(minorUnits + 1, "0");
-  return `${sign}${body.slice(0, -minorUnits)}.${body.slice(-minorUnits)}`;
-}
-
-/** Exported so tests can pin the shape without hydrating a screen. `money` is
- * the bound column's own declaration, and its absence is a plain number rather
- * than a currency with no code. */
-export function formatNumber(value, ctx, money) {
+/** Exported so tests can pin the shape without hydrating a screen. Plain
+ * number and decimal formatting using the reader's locale. */
+export function formatNumber(value, ctx) {
   if (value == null || value === "") return "";
   const text = String(value).trim();
-  // Storybook fixtures synthesize a sentence for every column they cannot name
-  // (storybook.js fixture()), so without the passthrough every money frame
-  // would read "NaN" — Intl.NumberFormat answers that string for anything it
-  // cannot read. formatDatetime passes an unparsable value through for the
-  // same reason.
-  if (money !== undefined) {
-    if (!/^-?\d+$/.test(text)) return text;
-    return numberFormatFor(localeOf(ctx) ?? "en-US", money).format(scaled(text, money.minorUnits));
-  }
   if (!Number.isFinite(Number(text))) return text;
   // The string, not Number(text): a value wider than a double survives to the
   // formatter, which reads a decimal literal exactly.
   return numberFormatFor(localeOf(ctx) ?? "en-US").format(text);
-}
-
-/** The money declaration of a column a format is bound to.
- *
- * Refused rather than defaulted: a currency this cannot resolve has no code to
- * render with, and rendering the bare integer would be a ledger silently
- * showing cents as reais. check-markup answers the same question statically, so
- * reaching here means the markup was never graded. */
-function moneyOf(ctx, expr) {
-  const money = ctx?.cfg?.schema?.[ctx?.table]?.fields?.find((f) => f.name === expr)?.money;
-  if (money === undefined) {
-    throw new ProgramError(
-      `data-text-format="money" reads {${expr}}, which declares no money: on "${ctx?.table ?? "no data-live region"}"`,
-    );
-  }
-  return money;
 }
 
 /**
@@ -722,40 +663,6 @@ export function parseProjection(spec, table) {
     }
     return { name, kind: "eq", column: eq[0], value: eq[1] };
   });
-}
-
-/**
- * A region's order: either the literal one, or a closed map of them chosen by a
- * column.
- *
- * `data-order="pos.asc"` is the order. `{"by":"{sort}","of":{...}}` states EVERY
- * order the region can be read in, in the file, and lets a column pick among
- * them — so a sortable header is a form writing a key, and the reader can still
- * finish reading what the screen can do. The order itself never interpolates:
- * a column naming a column is reflection, and the set of reads a screen has
- * would stop being enumerable.
- */
-export function parseOrder(spec, table) {
-  // Structural, not a probe: a value that opens a map and fails to parse is a
-  // broken declaration, never quietly the literal order "{...".
-  if (!spec.trimStart().startsWith("{")) return { literal: spec };
-  let declared;
-  try {
-    declared = JSON.parse(spec);
-  } catch {
-    throw new OrderError(`region "${table}": data-order opens a map and is not JSON`);
-  }
-  const { by, of: of_, ...rest } = declared ?? {};
-  if (
-    typeof by !== "string" || of_ === null || typeof of_ !== "object" || Array.isArray(of_) ||
-    Object.keys(rest).length > 0 || Object.keys(of_).length === 0 ||
-    Object.values(of_).some((o) => typeof o !== "string")
-  ) {
-    throw new OrderError(
-      `region "${table}": data-order is ${spec}; a closed order map is {"by": "{column}", "of": {"<key>": "<order>"}}`,
-    );
-  }
-  return { by, of: of_ };
 }
 
 function orderOf(parsed, ctx, table) {
@@ -895,7 +802,6 @@ function declared(spec, table, what) {
 }
 
 function nestedBindings(el, ctx) {
-  const arm = armOf(el, ctx);
   const stash = el._prontoAttrs ?? {};
   const names = new Set([...(el.attributes ?? [])].map((a) => a.name));
   for (const name of Object.keys(stash)) names.add(name);
@@ -904,21 +810,18 @@ function nestedBindings(el, ctx) {
     if (name !== "data-project" && regionAttr(name)) continue;
     const template = stash[name] ?? el.getAttribute(name);
     if (template === null || !PLACEHOLDER.test(template)) continue;
-    out.push(`${name}=${fromEnclosing(() => interpolate(template, ctx, arm), el.dataset.live, name)}`);
+    out.push(`${name}=${fromEnclosing(() => interpolate(template, ctx), el.dataset.live, name)}`);
   }
   return out.join("\u0000");
 }
 
-// `arm` reaches only the callers that have an element to read it off: a filter
-// fragment, an order clause and a data-when probe bind row columns, and a map
-// arriving there gets lookup's own refusal.
-function interpolate(template, ctx, arm) {
-  return template.replace(PLACEHOLDERS, (_, expr) => String(lookup(expr, ctx, arm) ?? ""));
+function interpolate(template, ctx) {
+  if (Array.isArray(template)) return evaluateAst(template, ctx, localeOf(ctx));
+  return template.replace(PLACEHOLDERS, (_, expr) => String(lookup(expr, ctx) ?? ""));
 }
 
-// Filter fragments land in a query string, so resolved values are URI-encoded.
 function interpolateFilter(template, ctx) {
-  return template.replace(PLACEHOLDERS, (_, expr) => encodeURIComponent(String(lookup(expr, ctx) ?? "")));
+  return fillFilter(template, (expr) => lookup(expr, ctx));
 }
 
 // Hidden data-value grammar: literal "null" → JSON null; {now} → the terminal
@@ -1077,9 +980,29 @@ function clearBindings(scope) {
 const PHRASING_REGION = /^(A|ABBR|B|BUTTON|CODE|EM|I|LABEL|OUTPUT|P|SMALL|SPAN|STRONG|H[1-6])$/;
 
 /** The element a note may be, from the region it stands in: a list admits only
- * li, a phrasing container only phrasing, and everything else takes the
- * paragraph the note reads as. */
-const noteTag = (tag) => /^(UL|OL)$/.test(tag) ? "li" : PHRASING_REGION.test(tag) ? "span" : "p";
+ * li, a table section only a row, a phrasing container only phrasing, and
+ * everything else takes the paragraph the note reads as. */
+const noteTag = (tag) =>
+  /^(UL|OL)$/.test(tag) ? "li" : TABLE_SECTION.test(tag) ? "tr" : PHRASING_REGION.test(tag) ? "span" : "p";
+const TABLE_SECTION = /^(THEAD|TBODY|TFOOT)$/;
+
+/** How many columns a table section's note spans: the cells of the table
+ * head's last row, else of the row its items are stamped from, else of a
+ * slot's own row. */
+function noteColumns(region, item) {
+  const rowOf = (parent) => [...(parent?.children ?? [])].filter((c) => c.tagName === "TR");
+  const table = region.closest("table");
+  const head = [...(table?.children ?? [])].find((c) => c.tagName === "THEAD");
+  const row = rowOf(head).at(-1) ?? rowOf(item?.content ?? item)[0] ?? rowOf(region)[0];
+  if (row === undefined) {
+    throw new ProgramError(
+      `region "${region.dataset.live}": an empty note in a ${region.tagName.toLowerCase()} spans the table's columns, and the table has no thead row, no item row and no row of its own to count them by`,
+    );
+  }
+  return [...row.children]
+    .filter((c) => c.tagName === "TD" || c.tagName === "TH")
+    .reduce((n, c) => n + Number(c.getAttribute("colspan") ?? 1), 0);
+}
 
 /**
  * The copy `data-empty` declares, for a region holding nothing: a list with no
@@ -1099,15 +1022,23 @@ function submitsOnChange(form) {
   return form !== null && form !== undefined && !form.querySelector('button, [type="submit"]');
 }
 
-function emptyNote(region, copy, ctx) {
+function emptyNote(region, copy, ctx, item) {
   region._prontoEmpty?.remove();
   region._prontoEmpty = undefined;
   if (!copy) return;
   const note = document.createElement(noteTag(region.tagName));
   note.className = "empty";
-  note.textContent = ctx && PLACEHOLDER.test(copy)
+  const text = ctx && PLACEHOLDER.test(copy)
     ? interpolate(copy, ctx)
     : copy;
+  // A row's only content is cells: a paragraph in a table section is moved
+  // out of the table by a parser reading the served page.
+  if (TABLE_SECTION.test(region.tagName)) {
+    const cell = document.createElement("td");
+    cell.setAttribute("colspan", String(noteColumns(region, item)));
+    cell.textContent = text;
+    note.append(cell);
+  } else note.textContent = text;
   region._prontoEmpty = note;
   region.append(note);
 }
@@ -1117,18 +1048,12 @@ function bindTexts(scope, ctx, renderers = {}) {
   targets.push(...scope.querySelectorAll("[data-text]"));
   for (const el of targets) {
     if (!ownedBy(el, scope)) continue;
-    const arm = armOf(el, ctx);
     const format = el.dataset.textFormat;
     if (VALUE_FORMATS.has(format)) {
-      // These branches format the looked-up VALUE, and an arm is a sentence
-      // rather than a value.
-      if (arm !== undefined) {
-        throw new ProgramError(`data-text="${el.dataset.text}" formats as a ${format} and selects the arm "${arm}": an arm is not a value`);
-      }
       el.textContent = el.dataset.text.replace(PLACEHOLDERS, (_, expr) =>
         format === "datetime"
           ? formatDatetime(lookup(expr, ctx), ctx)
-          : formatNumber(lookup(expr, ctx), ctx, format === "money" ? moneyOf(ctx, expr) : undefined),
+          : formatNumber(lookup(expr, ctx), ctx),
       );
       continue;
     }
@@ -1137,11 +1062,11 @@ function bindTexts(scope, ctx, renderers = {}) {
       // Every format resolves at hydration, so an unresolved one can only be
       // the fixture adapter, which evaluates no Jessie. It shows the value as
       // text there, the way it shows a widget's markup unenhanced.
-      if (render === undefined) el.textContent = interpolate(el.dataset.text, ctx, arm);
-      else renderInto(render, interpolate(el.dataset.text, ctx, arm), el);
+      if (render === undefined) el.textContent = interpolate(el.dataset.text, ctx);
+      else renderInto(render, interpolate(el.dataset.text, ctx), el);
       continue;
     }
-    el.textContent = interpolate(el.dataset.text, ctx, arm);
+    el.textContent = interpolate(el.dataset.text, ctx);
   }
 }
 
@@ -1165,8 +1090,6 @@ function bindElementAttributes(el, ctx) {
   // markup: nothing in them is a binding, and the braces an author wrote
   // name no column.
   if (el.parentElement?.closest("[data-text-format]")) return;
-  // A message bound into an attribute selects the same arm its text does.
-  const arm = armOf(el, ctx);
   // setAttribute would consume the placeholder template; persistent regions
   // (singletons) re-bind on every refresh, so originals are stashed.
   const stash = (el._prontoAttrs ??= {});
@@ -1202,7 +1125,13 @@ function bindElementAttributes(el, ctx) {
       // whose form submits on change, for the same reason: the reader's pick
       // was the write, there is no unsent edit to protect, and a focused
       // select left un-bound goes on showing a value the row no longer holds.
-      if (el.type !== "checkbox" && !submitsOnChange(el.closest("form"))) {
+      // A machine's control is the other exception: its arrows write every
+      // keystroke into the row, so the row is what the reader typed, and a
+      // machine that clears the column must clear the control. Only focus
+      // holds it, so a rebind never moves the caret under the reader.
+      const machined = el.closest("[data-machine]") !== null;
+      if (machined && el === document.activeElement) continue;
+      if (!machined && el.type !== "checkbox" && !submitsOnChange(el.closest("form"))) {
         if (el._prontoDirty || el === document.activeElement) continue;
         if (!el._prontoDirtyWired) {
           el._prontoDirtyWired = true;
@@ -1215,7 +1144,7 @@ function bindElementAttributes(el, ctx) {
         }
       }
       if (el.type === "checkbox") {
-        el.checked = Boolean(lookup(template.slice(1, -1), ctx, arm));
+        el.checked = Boolean(lookup(template.slice(1, -1), ctx));
         continue;
       }
       // The inverse of what values() reads back: a group's members share one
@@ -1223,7 +1152,7 @@ function bindElementAttributes(el, ctx) {
       // member whose value the column already holds and a round trip is a
       // fixed point.
       if (el.type === "radio") {
-        el.checked = String(lookup(template.slice(1, -1), ctx, arm) ?? "") === el.value;
+        el.checked = String(lookup(template.slice(1, -1), ctx) ?? "") === el.value;
         continue;
       }
       // A control's value is the control's own spelling and a column's is its
@@ -1232,22 +1161,28 @@ function bindElementAttributes(el, ctx) {
       // (plugins/omnishell/REFERENCE.md#adapters).
       const adapter = adapterOf(el, ctx);
       if (adapter !== undefined) {
-        el.value = adapter.format(interpolate(template, ctx, arm), { zone: ctx.timeZone });
+        el.value = adapter.format(interpolate(template, ctx), { zone: ctx.timeZone, locale: localeOf(ctx) });
         continue;
       }
-      if (el.localName === "textarea" || el.localName === "select" || VALUE_PROPERTY.has(el.type)) {
-        el.value = interpolate(template, ctx, arm);
+      // The property, not the attribute: once a reader has typed, the
+      // attribute no longer moves what the control shows.
+      if (el.localName === "textarea" || el.localName === "select" || el.localName === "input") {
+        const value = interpolate(template, ctx);
+        el.value = value;
+        // A select's options may be a list still to arrive; it re-applies this.
+        if (el.localName === "select") el._prontoBound = el.value === value ? undefined : value;
         continue;
       }
     }
-    const value = interpolate(template, ctx, arm);
+    const value = interpolate(template, ctx);
+    if (BOOL_ATTRS.has(attr.name)) {
+      if (value === "" || value === "false") el.removeAttribute(attr.name);
+      else el.setAttribute(attr.name, value);
+      continue;
+    }
     // A URL attribute that resolves to nothing must not stay empty: the
     // empty string is a valid relative URL meaning "this document", so
     // `src=""` fetches the page and paints it as a broken image.
-    if (value === "" && BOOL_ATTRS.has(attr.name)) {
-      el.removeAttribute(attr.name);
-      continue;
-    }
     if (value === "" && URL_ATTRS.has(attr.name)) {
       // An <img> is sized by CSS whether or not it has a source, and a
       // sized <img> with no src at all still gets the engine's missing-image
@@ -1260,7 +1195,6 @@ function bindElementAttributes(el, ctx) {
       continue;
     }
     el.setAttribute(attr.name, value);
-    if (attr.name === "data-open") openPopover(el, value);
   }
   // Last, because the params it reads are the ones the loop above just
   // resolved. A row-bound link therefore re-addresses itself whenever its
@@ -1281,138 +1215,40 @@ function bindElementAttributes(el, ctx) {
   }
 }
 
-/**
- * A surface's place in the top layer, decided by a row.
- *
- * The one thing on this list CSS cannot do: `popover` openness is not a style,
- * the element is MOVED, and the browser offers only an imperative call and an
- * invoker that answers a click. A right-click has no invoker, so a menu the
- * platform dismisses — light dismiss and Escape, both the UA's — is reachable
- * no other way.
- *
- * It stays a consequence rather than an effect anyone schedules: the value is a
- * column, it is re-derived on every bind, and it is idempotent, so a replay
- * puts the surface exactly where the session had it. One column drives one
- * surface; two columns claiming one is the one-writer rule, and a binding
- * cannot express it.
- */
-function openPopover(el, value) {
-  if (el.getAttribute("popover") === null) {
-    throw new ProgramError(`data-open on a <${el.localName}> that declares no popover`);
+
+function astNeedsRow(ast, params) {
+  if (!Array.isArray(ast)) return false;
+  for (const node of ast) {
+    if (node.type === 1 || node.type === 5 || node.type === 6) {
+      const varName = node.value;
+      if (!params || !(varName in params)) return true;
+      if (node.options) {
+        for (const opt of Object.values(node.options)) {
+          if (opt?.value && astNeedsRow(opt.value, params)) return true;
+        }
+      }
+    }
   }
-  setPopover(el, value === "true");
+  return false;
 }
 
-/**
- * Moves a surface into or out of the top layer, once.
- *
- * showPopover throws on an already-open popover and hidePopover on a closed
- * one, so the guard is the contract rather than caution — and the flag is the
- * terminal's own record because `:popover-open` is a selector, which every DOM
- * this runs against does not answer. A surface nobody has opened IS closed:
- * that is the element's state, not a value assumed for it, which is why the
- * first bind of a closed row must reach neither call.
- */
-function setPopover(el, want) {
-  // An `auto` popover has a second writer — light dismiss and Escape are the
-  // UA's, and it closes the surface without telling the row. A flag that only
-  // this function wrote would then say open over a closed surface and skip the
-  // call that reopens it: a menu dead after its first dismissal. `toggle` is
-  // where the element states what it did.
-  if (el._prontoToggle === undefined) {
-    el._prontoToggle = (e) => {
-      el._prontoOpen = e.newState === "open";
-    };
-    el.addEventListener("toggle", el._prontoToggle);
-  }
-  if ((el._prontoOpen ?? false) === want) return;
-  el._prontoOpen = want;
-  if (want) el.showPopover();
-  else el.hidePopover();
-}
-
-// A data-interest naming no element, or one that is not a popover.
-export class InterestError extends ProgramError {}
-
-// How long a pointer rests on a trigger before its surface opens, and how long
-// the surface survives the pointer leaving. The grace is what makes the surface
-// HOVERABLE — WCAG 1.4.13's second clause — since a reader moving onto it
-// crosses the gap between the two.
-const INTEREST_IN = 300;
-const INTEREST_OUT = 200;
-
-/**
- * A surface a trigger opens on hover or focus. The terminal performs the open,
- * the grace that makes it hoverable, and nothing else.
- *
- * Three constraints hold it up, each argued in
- * plugins/omnishell/docs/machines.md#gestures-and-cancels. It stores nothing,
- * so no row can disagree with it. Its waits are the terminal's clock and never
- * setTimeout, or `?clock=manual` could not hold them still. And the surface must
- * be `popover="auto"`, so WCAG 1.4.13's DISMISSIBLE clause is the element's and
- * nothing here listens for a key.
- *
- * Not spelled `interestfor`: that name belongs to a spec no engine ships, and
- * this deletes when one does.
- */
-function wireInterest(el) {
-  if (el._prontoInterest) return;
-  const id = el.dataset.interest;
-  const surface = document.getElementById(id);
-  if (surface === null) throw new InterestError(`data-interest names "${id}", which is no element on the screen`);
-  if (surface.getAttribute("popover") !== "auto") {
-    throw new InterestError(
-      `data-interest names "${id}", which is not popover="auto" — light dismiss and Escape are the element's half of WCAG 1.4.13`,
-    );
-  }
-  // One owner per surface. A row deciding openness and a pointer deciding it
-  // are two writers of one fact, and they disagree the moment either moves:
-  // the row would restate its answer on the next bind and shut a surface the
-  // reader is still under.
-  if (surface.dataset.open !== undefined) {
-    throw new InterestError(
-      `data-interest names "${id}", whose openness is already a column — a surface has one owner`,
-    );
-  }
-  el._prontoInterest = true;
-
-  let generation = 0;
-  // The generation mark IS the cancellation, as it is for a machine's `after`:
-  // a wait that comes due after interest moved on finds a stale mark and dies.
-  const settle = (want, delay) => {
-    const mine = ++generation;
-    rest(delay / TEMPO, { kind: "interest" }).then(() => {
-      if (mine !== generation) return;
-      setPopover(surface, want);
-    });
-  };
-
-  // Focus opens with no delay: 1.4.13 is "hover OR focus", and a keyboard
-  // reader who has arrived has already waited.
-  for (const [node, type, want, delay] of [
-    [el, "pointerenter", true, INTEREST_IN],
-    [el, "pointerleave", false, INTEREST_OUT],
-    [el, "focusin", true, 0],
-    [el, "focusout", false, INTEREST_OUT],
-    // The surface's own: a reader moving onto it is still interested, which is
-    // the clause a CSS-only tooltip cannot meet without the two boxes touching.
-    [surface, "pointerenter", true, 0],
-    [surface, "pointerleave", false, INTEREST_OUT],
-    // And the same pair for the keyboard, which is what a surface holding
-    // anything reachable needs: Tab moves focus out of the trigger, and a
-    // surface that only heard the pointer would close under the reader on
-    // their way into it — taking the focus with it, since the element it held
-    // is gone.
-    [surface, "focusin", true, 0],
-    [surface, "focusout", false, INTEREST_OUT],
-  ]) {
-    node.addEventListener(type, () => settle(want, delay));
-  }
-}
-
-function staticOrParam(template) {
+function staticOrParam(template, ctx) {
   const exprs = [...template.matchAll(PLACEHOLDERS)].map((m) => m[1]);
-  return exprs.length > 0 && exprs.every((e) => e.startsWith("param.") || e.startsWith("msg."));
+  if (exprs.length === 0) return false;
+  for (const e of exprs) {
+    if (e.startsWith("param.")) continue;
+    if (e.startsWith("msg.")) {
+      if (ctx?.messages) {
+        const key = e.slice("msg.".length);
+        const catalog = ctx.messages[ctx.locale] ?? ctx.messages[ctx.i18n?.default] ?? ctx.messages.default ?? Object.values(ctx.messages)[0];
+        const val = catalog?.[key];
+        if (astNeedsRow(val, ctx.params)) return false;
+      }
+      continue;
+    }
+    return false;
+  }
+  return true;
 }
 
 // opts.handlers: false skips handler loading (the storybook's fixture adapter —
@@ -1454,10 +1290,8 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
   // so one app never keeps the same sentence in two places.
   globalThis.__prontoMessages = opts.messages;
   // What a binding reads off the app rather than off its row: the route table
-  // and the locales every link's address is composed from (routeHref), and the
-  // emitted entity schema a value format resolves a column's declaration in
-  // (moneyOf).
-  const cfg = { routes: opts.routes, i18n: opts.i18n, schema: opts.schema, prefix: opts.prefix };
+  // and the locales every link's address is composed from (routeHref).
+  const cfg = { routes: opts.routes, i18n: opts.i18n, schema: opts.schema, prefix: opts.prefix, endowments: opts.endowments };
   // Loaded below, before anything binds; the ctx carries the map so an adapter
   // is reached the way a message catalogue is, and every derived ctx keeps it.
   let adapters = null;
@@ -1493,23 +1327,17 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
     // an Arabic match inside a Portuguese app lays out left-to-right.
     if (currentLocale !== undefined) screen.dir = directionOf(currentLocale);
     for (const el of [screen, ...screen.querySelectorAll("*")]) {
-      // An arm selected out of a row is the region's to render: this pass runs
-      // with no row, and the region re-binds on every refresh anyway. One
-      // selected from a route param is resolvable here and is resolved.
-      const selector = el.dataset?.msgSelect ?? el.dataset?.msgPlural;
-      if (selector !== undefined && !selector.startsWith("param.")) continue;
-      const arm = armOf(el, screenCtx);
-      if (el.dataset?.text && staticOrParam(el.dataset.text)) {
-        el.textContent = interpolate(el.dataset.text, screenCtx, arm);
+      if (el.dataset?.text && staticOrParam(el.dataset.text, screenCtx)) {
+        el.textContent = interpolate(el.dataset.text, screenCtx);
       }
       for (const attr of [...(el.attributes ?? [])]) {
         if (regionAttr(attr.name) || attr.name === "data-value") continue;
         const template = (el._prontoAttrs ?? {})[attr.name] ?? attr.value;
-        if (staticOrParam(template)) {
+        if (staticOrParam(template, screenCtx)) {
           if (PLACEHOLDER.test(template)) {
             (el._prontoAttrs ??= {})[attr.name] = template;
           }
-          el.setAttribute(attr.name, interpolate(template, screenCtx, arm));
+          el.setAttribute(attr.name, interpolate(template, screenCtx));
         }
       }
     }
@@ -1553,6 +1381,12 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
     screen.dataset.state = s;
   };
   setState(base);
+  // The regions whose outage the screen says: a top region whose read failed,
+  // a nested region whose first read did. Whichever reads again last puts the
+  // state back, so a region nested two deep that recovers on its own pass
+  // clears what it set, and a top region's pass does not clear what a nested
+  // one still says.
+  const outages = new Set();
 
   // Connect only once the tree carries its state: screens style themselves per
   // `[data-state]`, so a screen mounted before this paints with every
@@ -1565,11 +1399,17 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
     s.replaceWith(fresh);
   }
 
-  const handlers = opts.handlers === false ? new Map() : await loadHandlers(screen, appBase, route);
-  adapters = opts.handlers === false ? null : await loadAdapters(screen, appBase, route);
+  const endowmentsMap = {
+    ...(cfg?.endowments ?? {}),
+    ...(opts.endowments ?? {}),
+    ...(route.files?.endowments ?? {}),
+    ...(route.endowments ?? {}),
+  };
+  const handlers = opts.handlers === false ? new Map() : await loadHandlers(screen, appBase, route, endowmentsMap);
+  adapters = opts.handlers === false ? null : await loadAdapters(screen, appBase, route, endowmentsMap);
   const renderers = opts.handlers === false
     ? {}
-    : await loadRenderers(screen, appBase, route);
+    : await loadRenderers(screen, appBase, route, endowmentsMap);
 
   const units = opts.units ?? {};
   const resolveUnit = (name) => {
@@ -1701,18 +1541,15 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
   // data-key='{"<key>": "<form id>"}' submits a form on a key, the way a form
   // with no submit button submits on change. The id interpolates, so the map is
   // read at event time; the keys are literals, so they are checked once.
-  /** Every key binding at or under `scope` that no deeper region owns, and
-   * every interest binding likewise: both name a target by id and both are
-   * wired once per element, so one pass carries them. */
+  /** Every key binding at or under `scope` that no deeper region owns,
+   * named by id and wired once per element. */
   function wireKeysIn(scope) {
     wireKeysOn(scope);
     for (const el of scope.querySelectorAll("[data-key]")) if (ownedBy(el, scope)) wireKeys(el);
-    for (const el of scope.querySelectorAll("[data-interest]")) if (ownedBy(el, scope)) wireInterest(el);
   }
   /** The element's own bindings, and none of its descendants'. */
   function wireKeysOn(el) {
     if (el.dataset?.key !== undefined) wireKeys(el);
-    if (el.dataset?.interest !== undefined) wireInterest(el);
   }
 
   function wireKeys(el) {
@@ -1805,7 +1642,7 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
           // the inputs are both in hand, so there is nothing to materialise
           // and nothing to wait for. The modules and the zone are the screen's
           // — a form's own ctx carries the row it writes, and nothing else.
-          out[input.name] = input.value === "" ? null : adapter.parse(input.value, { zone: screenCtx.timeZone });
+          out[input.name] = input.value === "" ? null : adapter.parse(input.value, { zone: screenCtx.timeZone, locale: localeOf(screenCtx) });
         } else out[input.name] = input.value.trim();
       }
       return out;
@@ -2141,18 +1978,30 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
       for (const eff of effects) {
         const entity = eff.entity ?? region.dataset.live;
         const id = eff.values?.id;
+        if (!["upsert", "create", "update", "delete"].includes(eff.op)) {
+          throw new Error(`unknown effect op: ${eff.op}`);
+        }
+        const upsertFn = eff.op === "upsert" ? store.upsertBy ?? store.upsert : undefined;
+        if (eff.op === "upsert" && typeof upsertFn !== "function") {
+          throw new Error("store has no upsertBy or upsert");
+        }
+        const method = eff.op === "create" ? "add" : eff.op === "update" ? "patch" :
+          eff.op === "delete" ? (eff.filter === undefined ? "drop" : "dropWhere") : undefined;
+        if (method !== undefined && typeof store[method] !== "function") {
+          throw new Error(`store has no ${method}`);
+        }
+        let refused = false;
+        const wrappedRefused = (err) => {
+          refused = true;
+          deliver(entity, id, err);
+        };
+        const row = eff.op === "create" && eff.values?.id === undefined
+          ? { id: mintUuid(), ...eff.values }
+          : eff.values;
         try {
-          let refused = false;
-          const wrappedRefused = (err) => {
-            refused = true;
-            deliver(entity, id, err);
-          };
           if (eff.op === "upsert") {
-            const upsertFn = store.upsertBy ?? store.upsert;
-            if (typeof upsertFn !== "function") throw new Error(`store has no upsertBy or upsert`);
             await upsertFn.call(store, entity, eff.values, wrappedRefused);
           } else if (eff.op === "create") {
-            const row = eff.values?.id === undefined ? { id: mintUuid(), ...eff.values } : eff.values;
             await store.add(entity, [row], wrappedRefused);
           } else if (eff.op === "update") {
             await store.patch(entity, [{ key: id, changes: eff.values }], wrappedRefused);
@@ -2162,18 +2011,15 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
             } else {
               await store.drop(entity, [id], wrappedRefused);
             }
-          } else {
-            throw new Error(`unknown effect op: ${eff.op}`);
-          }
-          if (refused) return false;
-          if (machineAck.length > 0) {
-            const ackEvent = { type: "sync_ack", entity, token: eff.token };
-            for (const hear of machineAck) hear(ackEvent);
           }
         } catch (err) {
-          if (err?.name !== "NonRetriableError") throw err;
-          deliver(entity, id, err);
+          if (!refused) deliver(entity, id, err);
           return false;
+        }
+        if (refused) return false;
+        if (machineAck.length > 0) {
+          const ackEvent = { type: "sync_ack", entity, token: eff.token };
+          for (const hear of machineAck) hear(ackEvent);
         }
       }
       return true;
@@ -2933,16 +2779,20 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
     // data-template references a named template instead of containing one; a
     // region carrying both would leave its own templates silently unused.
     const ref = region.dataset.template;
-    if (ref !== undefined && region.querySelector("template[data-item]") !== null) {
-      throw new ProgramError(`region "${table}" has both data-template and its own item templates`);
-    }
+
     // A region holds any number of item templates, each optionally narrowed by
     // a data-when fragment (the one filter grammar, matched against the row
     // itself); one with no data-when admits every row.
     // The templates are the markup's, not the render's, and a render replaces
     // this element's children — so they are read once and kept. An empty set
     // read back off the DOM is how a SLOT is spelled.
-    const own = (region._prontoItemTemplates ??= [...region.querySelectorAll("template[data-item]")]);
+    // A template is the region's whose nearest region it is: a slot holding
+    // lists of its own (an editor's choices, its goals) is still a slot.
+    const own = (region._prontoItemTemplates ??= [...region.querySelectorAll("template[data-item]")]
+      .filter((t) => t.parentElement.closest("[data-live]") === region));
+    if (ref !== undefined && own.length > 0) {
+      throw new ProgramError(`region "${table}" has both data-template and its own item templates`);
+    }
     const templates = (ref !== undefined ? [resolveTemplate(ref)] : own).map((el) => {
       // An item is the template's first element child, and only that: a second
       // one is not rendered, not bound and not reported, so the region quietly
@@ -3016,7 +2866,15 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
       : declaredCharts(region.dataset.machine, table);
     let fallbackRow;
     if (region.dataset.emptyRow) {
-      fallbackRow = declared(region.dataset.emptyRow, table, "data-empty-row");
+      // Resolved against the enclosing row, as the filter is: a draft nested in
+      // the row it edits starts from that row. A value that is one whole
+      // placeholder keeps the column's type and its null.
+      fallbackRow = fromEnclosing(() => Object.fromEntries(
+        Object.entries(declared(region.dataset.emptyRow, table, "data-empty-row")).map(([k, v]) => [k,
+          typeof v !== "string" ? v
+          : WHOLE_PLACEHOLDER.test(v) ? lookup(v.slice(1, -1), ctx) ?? null
+          : PLACEHOLDER.test(v) ? interpolate(v, ctx) : v]),
+      ), table, "data-empty-row");
     }
     else if (mounted.length > 0 && templates.length === 0) {
       const spec = parseFilterSpec(opts.filter ?? "") ?? [];
@@ -3163,111 +3021,15 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
           // otherwise take whichever arm sits last, silently.
           else throw new ProjectionError(`region "${table}": no answer for clause kind "${p.kind}"`);
         }
-        return { ...row, ...derived };
+        // A fixture row owns no keys, so a spread of one keeps nothing of it.
+        return ctx.inert === true
+          ? new Proxy(row, { get: (t, f) => (Object.hasOwn(derived, f) ? derived[f] : t[f]) })
+          : { ...row, ...derived };
       });
     };
 
-    /**
-     * APG's other focus model: the affordances are focusable, one of them holds
-     * the tabstop, and moving the caret moves DOM focus. Virtual focus needs
-     * neither — `aria-activedescendant` names the active row and focus never
-     * leaves the container — so this is the arm that has to reach the DOM.
-     *
-     * `data-rove` names the column that says which member is current, and the
-     * terminal performs both effects it decides: the tab order, because the DOM
-     * has one and a screen spelling it per member could disagree with itself,
-     * and the focus.
-     *
-     * Focus follows the tabstop MOVING, which is the delta between two
-     * consecutive views and not a fact about who caused it. The reader is the
-     * other writer: Tab moves focus with no column changing, so a terminal
-     * re-asserting focus on every refresh fights them for it — and a column
-     * that did not change is every such refresh. Nothing is recorded to decide
-     * this: a cause the rows do not carry would be state outside the algebra,
-     * invisible to a trace and absent from a snapshot, so a replay would take
-     * one path and a jump to the same state another.
-     *
-     * The column has ONE writer by construction, which is what makes the delta
-     * the reader's own move: `roveLint` refuses a tabstop over an entity the
-     * reader does not own, where a second reader's write would land as a jump
-     * of this one's caret.
-     */
-    // Whether the region's markup can ever carry a member of either set. Asked
-    // of the markup once rather than of the rendered tree on every refresh: a
-    // region with none scans its whole list per write to learn nothing.
-    const declares = (selector) =>
-      region.querySelector(selector) !== null ||
-      templates.some(({ el }) => el.content.querySelector(selector) !== null);
-    const roving = declares("[data-rove]");
-    const focusing = declares("[data-focus]");
     const dragging = templates.some(({ el }) => el.content.querySelector("[data-drag-handle]") !== null);
-    const rove = () => {
-      if (!roving) return;
-      // Every stop the region owns, whatever row each came from. A list whose
-      // rows are the members and a compile-time set of N members under one row
-      // are the same set — the region's shape says nothing about the tabstop,
-      // and a one-row list carrying a fixed set of affordances is both at once.
-      const stops = [...region.querySelectorAll("[data-rove]")].filter((el) => ownedBy(el, region));
-      if (stops.length === 0) return;
-      const held = stops.find((el) => el.getAttribute("tabindex") === "0");
-      // The set is what the region still renders; the tab order above is every
-      // stop the document holds. They differ by the rows mid-exit.
-      const reading = stops.filter((el) => !midExit(el, region) && el.getAttribute("data-rove") === "true");
-      // The invariant a set has, in either shape: one member is current. Two
-      // would leave which one holds the tabstop to document order, and the
-      // reader would find the caret somewhere the columns did not put it.
-      if (reading.length > 1) {
-        throw new ProgramError(
-          `region "${table}": ${reading.length} members read data-rove="true"; a set has one current member`,
-        );
-      }
-      const current = reading[0];
-      // The attribute, not the property: the tab order is what the markup
-      // states, so it has to be readable off the element the same way every
-      // other stamped fact is.
-      for (const el of stops) el.setAttribute("tabindex", el === current ? "0" : "-1");
-      // A set that carried no tabstop is arriving, not moving: focusing on
-      // first paint would take the page from whatever the reader opened it on.
-      if (held === undefined || current === undefined || held === current) return;
-      current.focus();
-    };
 
-    /**
-     * Move focus to the member a column names, leaving the tab order alone.
-     *
-     * APG gives some patterns one tab stop and others — an accordion's headers
-     * — every affordance in the Tab sequence with the arrows as an addition.
-     * `data-rove` performs the first; this is the second, and the split matters
-     * because stamping a tabstop where the standard keeps them all would take
-     * headers OUT of the Tab sequence, which is a worse contract than the one
-     * it replaces.
-     *
-     * Nothing is remembered and nothing is stamped to stand in for it: the DOM
-     * already holds where focus is, so the rule reads it. Move only when the
-     * reader is INSIDE this widget and on the wrong member — outside it, their
-     * focus is not this region's business, and on the right member there is
-     * nothing to do.
-     *
-     * What keeps the two writers from fighting is `focusin`: the reader's own
-     * moves write the column, so a disagreement is the chart's move and never
-     * theirs. `focusLint` refuses a region that does not hear it.
-     */
-    const moveFocus = () => {
-      if (!focusing) return;
-      const members = [...region.querySelectorAll("[data-focus]")]
-        .filter((el) => ownedBy(el, region) && !midExit(el, region));
-      const reading = members.filter((el) => el.getAttribute("data-focus") === "true");
-      if (reading.length > 1) {
-        throw new ProgramError(
-          `region "${table}": ${reading.length} members read data-focus="true"; a set has one current member`,
-        );
-      }
-      const current = reading[0];
-      if (current === undefined) return;
-      const active = document.activeElement ?? null;
-      if (active === current || !region.contains(active)) return;
-      current.focus();
-    };
 
     // Item nodes persist across refreshes, keyed by row id. A surviving node
     // keeps its listeners, its focus, its scroll position and any transition
@@ -3387,8 +3149,13 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
     // handle lands in the element the incoming one now owns — and lands second.
     let stopped = false;
 
+    // Whether the pass in flight is still waiting on the store's answer, so
+    // that a failure is told apart as the read's rather than the render's.
+    let reading = false;
     const refresh = async (changes) => {
+      reading = true;
       const stored = await store.query(table, opts.order, opts);
+      reading = false;
       if (stopped) return;
       currentRows = stored;
       const rows = projected(stored);
@@ -3566,9 +3333,14 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
             if (HAS_MOVE_BEFORE && node.isConnected) region.moveBefore(node, cursor);
             else region.insertBefore(node, cursor);
           }
-          rove();
-          moveFocus();
-          emptyNote(region, order.length === 0 ? region.dataset.empty : undefined, ctx);
+          emptyNote(region, order.length === 0 ? region.dataset.empty : undefined, ctx, templates[0]?.el);
+          // A list of options landing under a select whose bound value had no
+          // option to take yet.
+          const select = region.closest("select");
+          if (select?._prontoBound !== undefined) {
+            select.value = select._prontoBound;
+            if (select.value === select._prontoBound) select._prontoBound = undefined;
+          }
           // The region's own element, from the ENCLOSING row rather than any
           // of its rows: a container naming one of them — a listbox's
           // aria-activedescendant — states a fact about the choice, not about
@@ -3635,6 +3407,9 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
             );
           }
           clearBindings(region);
+          // The lists it held go with the row: left running, they would go on
+          // painting the last row's children under the note.
+          dropAll();
           emptyNote(region, region.dataset.empty, slotCtx);
           return;
         }
@@ -3658,8 +3433,14 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
         wireKeysIn(region);
         bindTexts(region, slotCtx, renderers);
         bindHatches(region, slotCtx);
-        rove();
-        moveFocus();
+        // The lists a slot holds — an editor's choices, its goals — are
+        // hydrated from its row as an item's are from its own.
+        let slot = live.get(SLOT);
+        if (slot === undefined) live.set(SLOT, slot = { node: region, ctx: slotCtx, nested: new Map() });
+        const ready = [];
+        syncNested(slot, ready);
+        await Promise.all(ready);
+        if (stopped) return;
       }
     };
     let retryTimer;
@@ -3685,7 +3466,7 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
         else if (queuedChanges !== undefined && changes !== undefined) queuedChanges = [...queuedChanges, ...changes];
         else queuedChanges = undefined;
         queued = true;
-        return;
+        return false;
       }
       running = true;
       busy += 1;
@@ -3700,6 +3481,7 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
         running = false;
         busy -= 1;
       }
+      return true;
     };
     // A dead gateway must degrade, never crash: a failed read leaves the
     // region's DOM (and every form in it) standing, flips the screen to
@@ -3714,13 +3496,36 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
     // one whatever it was handed, or the rows the failed delta named stay
     // bound to values no pass read.
     let stale = false;
+    // A nested region's first attempt, which is what its `ready` answers: the
+    // enclosing row awaits it before it is painted, so a wake queued behind
+    // the first read does not count it painted. A pass that ran settles it,
+    // and so does one that failed: a read that never answers cannot hold the
+    // row, its list or the screen, and the region says its outage until it
+    // reads again (`outages`), so the screen says populated only once what it
+    // shows is on it. Settled by the region's stop too, since a region gone
+    // paints nothing more. A top region's `ready` is its first attempt.
+    let paint;
+    const painted = top ? undefined : new Promise((resolve, reject) => (paint = { resolve, reject }));
+    let shown = false;
+    // A top region's pass clears any network-error no region still says; a
+    // nested region's clears only one it said.
+    const recovered = (clears) => {
+      const said = outages.delete(guarded);
+      if ((clears || said) && outages.size === 0 && screen.dataset.state === "network-error") setState(base);
+    };
     const guarded = async (changes) => {
       clearTimeout(retryTimer);
       try {
-        await refreshSerially(stale ? undefined : changes);
+        // A wake queued behind a pass in flight has painted nothing; the
+        // call running the pass answers for it.
+        const ran = await refreshSerially(stale ? undefined : changes);
         stale = false;
         retryMs = 2000;
-        if (top && screen.dataset.state === "network-error") setState(base);
+        if (ran) {
+          shown = true;
+          paint?.resolve();
+          recovered(top);
+        }
       } catch (err) {
         stale = true;
         // A slot that matched two rows, or a row no template admits, is a
@@ -3729,9 +3534,16 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
         // wrong. The rejection propagates — hydration fails on a first paint,
         // a later wake rejects loudly — and the next real change re-checks
         // without a timer.
-        if (err instanceof ProgramError) throw err;
+        if (err instanceof ProgramError) {
+          paint?.reject(err);
+          throw err;
+        }
         console.error(err);
-        if (top) setState("network-error");
+        if (top || (reading && !shown)) {
+          outages.add(guarded);
+          setState("network-error");
+        }
+        paint?.resolve();
         retryTimer = setTimeout(guarded, retryMs);
         retryMs = Math.min(retryMs * 2, 15000);
       }
@@ -3757,12 +3569,16 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
         wireForm(form, () => currentRow.id, () => ({ params: ctx.params, row: currentRow }), region);
       }
     }
+    const attempt = guarded();
+    // A nested region's ProgramError reaches its enclosing row through
+    // `painted`, which rejects with it.
+    if (!top) attempt.catch(() => {});
     return {
       // Whether this region binds its own element from the row it hangs under
       // — the same condition that guards the call, and not re-derivable from
       // the DOM afterwards, since a first render sweeps the template away.
       binds: templates.length > 0,
-      ready: guarded(),
+      ready: top ? attempt : painted,
       // A re-render on the same rows, for a parent whose projection parameter
       // moved. Not resume(): the subscription is already standing.
       restate: () => guarded(),
@@ -3780,6 +3596,8 @@ export async function interpretScreen(mount, appBase, route, store, params = {},
         stopped = true;
         detach();
         dropAll();
+        paint?.resolve();
+        recovered(false);
       },
     };
   }
@@ -3858,6 +3676,17 @@ export async function morphScreen(liveScreen, newHtml) {
   const newScreen = holder.content.firstElementChild;
   if (!newScreen) {
     throw new Error("morphScreen: incoming markup has no root element");
+  }
+
+  for (const attr of [...newScreen.attributes]) {
+    if (liveScreen.getAttribute(attr.name) !== attr.value) {
+      liveScreen.setAttribute(attr.name, attr.value);
+    }
+  }
+  for (const attr of [...liveScreen.attributes]) {
+    if (!newScreen.hasAttribute(attr.name)) {
+      liveScreen.removeAttribute(attr.name);
+    }
   }
 
   const { morphInner } = await import("./vendor/morphlex.js");

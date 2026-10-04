@@ -110,9 +110,70 @@
     cida: { name: "Dona Cida", call: 7.2, take: 6.4, tell: "Dona Cida bate duas vezes na mesa…", line: "Truco, meu bem!" },
     tiao: { name: "Tião Pandeiro", call: 6.6, take: 6.0, tell: "Tião começa a cantarolar…", line: "Truuuco, seu moço!" },
     ze: { name: "Zé da Bicicleta", call: 9.2, take: 8.0, tell: "Zé fica quieto…", line: "Truco." },
+    xiru: { name: "Xirú Velho", call: 8.4, take: 7.2, tell: "Xirú Velho ajeita o lenço…", line: "Truco, vivente!" },
+    osvaldo: { name: "Don Osvaldo", call: 8.2, take: 7.0, tell: "Don Osvaldo acaricia el bigote…", line: "¡Truco, carajo!" },
+    tiao_queijo: { name: "Tião do Queijo", call: 8.0, take: 6.8, tell: "Tião do Queijo corta uma fatia…", line: "Truco, uai!" },
+    tabare: { name: "Don Tabaré", call: 8.5, take: 7.1, tell: "Don Tabaré toma un mate amargo…", line: "¡Truco, bo!" },
+    jordi: { name: "L'Oncle Jordi", call: 8.3, take: 7.3, tell: "L'Oncle Jordi mira de reüll…", line: "Truc, noi!" },
     online: { name: "Adversário Online", call: 0, take: 0, tell: "", line: "" },
   };
   const CAST_KEYS = ["nezinho", "cida", "tiao", "ze"];
+  const BOT_SHOUT_RETORTS = {
+    nezinho: [
+      "Pode vir quente que o café tá pronto!",
+      "Aqui se joga com a alma, meu filho!",
+      "Cuidado com o gato na tuba!",
+      "Quem tem garrafa pra vender fala agora!",
+    ],
+    cida: [
+      "Não vem de garfo que hoje é sopa, meu bem!",
+      "Bate na mesa que a madeira é forte!",
+      "Cê guenta a pressão?",
+      "Quero ver no final da rodada!",
+    ],
+    tiao: [
+      "Segura esse pagode, seu moço!",
+      "Chora viola, que o jogo esquentou!",
+      "É nóis na fita!",
+      "Se gritar mais alto a cerveja esquenta!",
+    ],
+    ze: [
+      "Zé só balança a cabeça…",
+      "Mostra o que tem na mão.",
+      "Menos barulho, mais jogo.",
+      "A mesa cobra o que promete.",
+    ],
+    xiru: [
+      "Mas bah, te apruma vivente!",
+      "O pala tá voando!",
+      "Sustenta o tirão!",
+      "Aqui não tem choro nem vela, tchê!",
+    ],
+    osvaldo: [
+      "¡Abran cancha que viene la buena!",
+      "¡No te achiques ahora!",
+      "¡Metéle candela!",
+      "¡El truco se juega con coraje!",
+    ],
+    tiao_queijo: [
+      "Passa o queijo e joga a carta, uai!",
+      "Trem bão é jogo disputado!",
+      "Cuidado com o tombo, sô!",
+      "Aqui mineiro não perde o trem!",
+    ],
+    tabare: [
+      "¡Vamo' arriba la celeste!",
+      "¡Garra y corazón, bo!",
+      "¡Tranquilo y con calma!",
+      "¡No apures el mate!",
+    ],
+    jordi: [
+      "Val més maña que força, noi!",
+      "Au va, tira que fa tard!",
+      "A poc a poc i bona lletra!",
+      "Qui no arrisca no pisca!",
+    ],
+  };
   // Your parça, and the swept centre anybody else falls back to.
   const BIGODE = { call: 8.0, take: 7.0, tell: "", line: "Truco!" };
 
@@ -394,6 +455,22 @@
     };
   }
 
+  if (event.type === "bot_shout_retort") {
+    const standing = (rows.round ?? []).find((r) => r.current === "yes");
+    if (!standing) return { updates: [] };
+    return {
+      updates: [{
+        op: "patch",
+        entity: "round",
+        id: standing.id,
+        row: {
+          said: event.reply ?? "",
+        },
+      }],
+      then: { type: "close_shout", delay: 1800 },
+    };
+  }
+
   // Which brink the next hand is, read off the score it is dealt at. The
   // decision is the side's own, and across a room the side on the brink is a
   // person this dealer cannot decide for — so, like the second wager, a table
@@ -549,7 +626,7 @@
     const now = event.type === "deal" || (event.type === "click" && event.from === "btn-next");
     const read = standing !== undefined && standing.match_id === match.id && (standing.result ?? "") !== "";
     if (read && !now) {
-      return { updates: [], then: { type: "deal", delay: 2200 } };
+      return { updates: [], then: { type: "deal", delay: 2800 } };
     }
     const deck = deckOf(match.seed, handNo);
     const vira = named !== undefined ? "" : deck[deck.length - 1];
@@ -580,7 +657,7 @@
       row: {
         match_id: match.id, hand_no: txt(handNo), vira,
         manilha: manilhaWord(trumps),
-        phase: "dealt", truco_state: "none", ran: "", v1: "", v2: "", v3: "",
+        phase: "dealt", truco_state: "none", envido_state: "none", ran: "", v1: "", v2: "", v3: "",
         stake: txt(ladder[0]), result: "",
         said: brink !== "" ? `brink_${variant}_${brink}` : iam === "" ? opener : `${iam}_${opener}`,
         leader: mao, asked: "", raised: "", rung: txt(brink !== "" ? 0 : nextRung(ladder[0])),
@@ -679,10 +756,11 @@
    * beside the row, and saying it twice is how the two drift apart. */
   const put = (entity, row) => ({ op: "put", entity, id: row.id, row });
 
-  const laidBy = (seat, from) => ({
+  const laidBy = (seat, from, encobrir = false) => ({
     id: `${round.id}/v${vaza}/${seat}/card`,
     round_id: round.id, vaza: txt(vaza), seat, kind: "card",
-    card: from.card, count: "", power: txt(from.power), said: "",
+    card: from.card, count: "", power: encobrir ? "0" : txt(from.power),
+    said: encobrir ? "encoberta" : "",
     from_slot: from.slot !== undefined ? String(from.slot) : undefined,
     rank: from.rank, suit: from.suit, face: from.face, manilha: from.manilha,
     lie: lieOf(from.card), win: "", seq: at(),
@@ -1142,6 +1220,46 @@
       if (!calls.split(" ").includes("answer")) return { updates: [] };
       return { updates: settleEnvido(mySeat, event.from === "btn-envido-take") };
     }
+    if (event.from === "btn-encobrir") {
+      if (!playing || turn !== mySeat) return { updates: [] };
+      const nextSaid = (round.said ?? "") === "modo_oculta" ? "your_turn" : "modo_oculta";
+      return { updates: patchRound({ ...view, said: nextSaid }) };
+    }
+    if (event.from && event.from.startsWith("shout-")) {
+      const SHOUT_TEXTS = {
+        "shout-chama": "CHAMA!",
+        "shout-manda": "MANDA VIR!",
+        "shout-desce": "DESCE A MADEIRA!",
+        "shout-chorou": "CHOROU, PAROU!",
+      };
+      const playerShout = SHOUT_TEXTS[event.from] ?? "TRUCO!";
+      const oppKey = match.opponent ?? "nezinho";
+      const retorts = BOT_SHOUT_RETORTS[oppKey] ?? BOT_SHOUT_RETORTS.nezinho;
+      const prng = mulberry32(Number(match.seed) + handNo * 7919 + vaza * 131 + (event.from.length * 17));
+      const shouldRetort = prng() < 0.70;
+      const retortIndex = Math.floor(prng() * retorts.length);
+      const botReply = retorts[retortIndex];
+
+      const baseUpdates = patchRound({
+        ...view,
+        shout_state: "live",
+        shout_word: playerShout,
+        shout_from: sideOf(mySeat),
+        shout_kind: "call",
+        shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+      });
+
+      if (shouldRetort) {
+        return {
+          updates: baseUpdates,
+          then: { type: "bot_shout_retort", reply: botReply, delay: 850 + Math.floor(prng() * 300) },
+        };
+      }
+      return {
+        updates: baseUpdates,
+        then: { type: "close_shout", delay: 1800 },
+      };
+    }
     if (event.from === "btn-truco") {
       const caller = mySeat;
       const callerSide = sideOf(caller);
@@ -1379,7 +1497,7 @@
       const nextSaid = nextTurn === mySeat ? "your_turn" : (match.opponent === "online" ? "opponent_turn" : "turn_of");
       const updates = [
         { op: "patch", entity: "held", id: card.id, row: { current: "no" } },
-        put("play", laidBy(card.seat, card)),
+        put("play", laidBy(card.seat, card, (round.said ?? "") === "modo_oculta")),
         ...(rows.held ?? [])
           .filter((h) => h.current === "yes" && h.seat === mySeat && h.id !== card.id)
           .map((h) => ({ op: "patch", entity: "held", id: h.id, row: { blocked: "disabled" } })),
@@ -1429,8 +1547,9 @@
     // Scored exactly once: scoring is what moves the match on to the next
     // hand, so a hand whose number the match has already passed is paid for.
     if (Number(match.hand_no) !== Number(round.hand_no)) return settled({});
-    // "ran" stands a beat before the score replaces it.
-    if (ran !== "" && event.type !== "paid") return after("paid", BEAT);
+    // "ran" stands before the score replaces it; btn-next speeds it up.
+    const skipPaid = event.type === "click" && event.from === "btn-next";
+    if (ran !== "" && event.type !== "paid" && !skipPaid) return after("paid", 1400);
     const worth = Number(round.stake);
     const isGameOver = SIDES.some((s) => Math.min(scoreOf(s) + (s === round.result ? worth : 0), goal) >= goal);
     const winWord = round.result === "us" ? vData.we_won : round.result === "them" ? vData.they_won : "";
@@ -1442,9 +1561,6 @@
     const shoutKind = isGameOver ? "close" : (ran !== "" ? "run" : "win");
     const updates = [
       ...keep,
-      ...(rows.held ?? [])
-        .filter((h) => h.current === "yes" && h.round_id === round.id)
-        .map((h) => ({ op: "patch", entity: "held", id: h.id, row: { current: "no" } })),
       ...patchRound({
         ...view,
         shout_state: shoutWord !== "" ? "live" : "gone",

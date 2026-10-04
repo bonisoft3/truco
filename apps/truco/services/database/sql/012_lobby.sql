@@ -47,7 +47,7 @@ DROP POLICY IF EXISTS challenge_service_all ON challenge;
 
 CREATE POLICY challenge_select ON challenge FOR SELECT TO anon, app_user USING (true);
 CREATE POLICY challenge_insert ON challenge FOR INSERT TO anon, app_user WITH CHECK (status = 'pending');
-CREATE POLICY challenge_update ON challenge FOR UPDATE TO anon, app_user USING (status IN ('pending', 'accepted', 'declined')) WITH CHECK (status IN ('accepted', 'declined'));
+CREATE POLICY challenge_update ON challenge FOR UPDATE TO anon, app_user USING (true) WITH CHECK (true);
 CREATE POLICY challenge_service_all ON challenge FOR ALL TO service USING (true) WITH CHECK (true);
 
 -- Room Action RLS: append-only immutable game events, no client update/delete

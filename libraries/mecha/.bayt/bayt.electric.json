@@ -44,7 +44,7 @@
     "preamble": [],
     "preambleCopyContexts": [],
     "from": {
-      "name": "electricsql/electric@sha256:f311edc272e227ddaea593c5205a02c3d1e5969c2db0f7655a039a5e24abb176"
+      "name": "docker.io/bonitao/electric:1.8.0@sha256:7b6aed2d5fd356a5e5edd5290eeec0b19859ab798d3cbdb7d9d223fbb872a5ab"
     },
     "add": [],
     "mounts": [],
@@ -109,8 +109,7 @@
         "libraries/mecha/.bayt/compose.electric.yaml",
         "libraries/mecha/.bayt/compose.database.yaml",
         "libraries/mecha/.bayt/compose.database-image.yaml",
-        "libraries/mecha/.bayt/compose.migrate.yaml",
-        "libraries/mecha/.bayt/compose.migrate-image.yaml"
+        "libraries/mecha/.bayt/compose.migrate.yaml"
       ]
     },
     "outs": {
@@ -141,8 +140,7 @@
         "libraries/mecha/.bayt/compose.electric.yaml",
         "libraries/mecha/.bayt/compose.database.yaml",
         "libraries/mecha/.bayt/compose.database-image.yaml",
-        "libraries/mecha/.bayt/compose.migrate.yaml",
-        "libraries/mecha/.bayt/compose.migrate-image.yaml"
+        "libraries/mecha/.bayt/compose.migrate.yaml"
       ]
     }
   },
@@ -165,8 +163,7 @@
     "libraries/mecha/.bayt/compose.electric.yaml",
     "libraries/mecha/.bayt/compose.database.yaml",
     "libraries/mecha/.bayt/compose.database-image.yaml",
-    "libraries/mecha/.bayt/compose.migrate.yaml",
-    "libraries/mecha/.bayt/compose.migrate-image.yaml"
+    "libraries/mecha/.bayt/compose.migrate.yaml"
   ],
   "chainedDeps": [
     {

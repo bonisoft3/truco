@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS challenge (
   "challenger_name" TEXT NOT NULL CHECK (char_length(challenger_name) > 0 AND char_length(challenger_name) <= 40),
   "target_id" TEXT NOT NULL CHECK (char_length(target_id) <= 64),
   "seed" TEXT NOT NULL CHECK (char_length(seed) <= 64),
-  "status" TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'declined')),
+  "status" TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'declined', 'expired')),
   "created_at" TIMESTAMPTZ,
   "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
   "scope_id" TEXT GENERATED ALWAYS AS ('public:') STORED NOT NULL

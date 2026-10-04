@@ -1,6 +1,5 @@
 // The fit check: does every table fit, and can every table be read?
 //
-//   deno run --unstable-sloppy-imports --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors tests/fit.ts .
 //   deno run tests/fit.ts --self-test
 //
 // The checks are the platform's — contrast where the glyphs are, controls
@@ -101,7 +100,7 @@ async function clothOf(page: Page, theme: string, said: string[]): Promise<void>
 
 async function sweep(browser: Page, base: string, vw: number, vh: number): Promise<Finding[]> {
   const found: Finding[] = [];
-  const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: vw, height: vh } });
+  const context = await browser.newContext({ viewport: { width: vw, height: vh } });
   const page = await context.newPage();
   const said: string[] = [];
   page.on("console", (m: { type(): string; text(): string }) => {
@@ -129,9 +128,9 @@ async function sweep(browser: Page, base: string, vw: number, vh: number): Promi
 }
 
 async function main(appDir: string): Promise<number> {
-  const { chromium } = await import("npm:playwright@1.59.1");
+  const { chromium } = await import("npm:playwright@1.61.1");
   const base = await baseUrl(appDir);
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: ["--ignore-certificate-errors"] });
   // One context per window shape, all at once: the shapes do not interact —
   // each opens its own table in its own storage — and almost all of the time
   // here is the table settling between cloths, which five can spend together.

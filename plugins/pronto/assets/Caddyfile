@@ -4,10 +4,43 @@
   # driver measured in hundreds of KiB; compression at the door is what keeps
   # a cold cache from paying for that in seconds on a slow link.
   encode zstd gzip
-  # Chromium probes /favicon.ico unsolicited; answering 204 prevents console
-  # errors that break Best Practices audits without paying for an asset.
+  # Chromium probes /favicon.ico unsolicited; serve the file if present, or
+  # answer 204 to prevent console errors that break Best Practices audits
+  # without paying for an asset.
   handle /favicon.ico {
-    respond "" 204
+    root * /srv
+    @favicon file /favicon.ico /shell/favicon.ico /favicon.svg /shell/favicon.svg /favicon.png /shell/favicon.png
+    handle @favicon {
+      header Cache-Control "no-cache"
+      rewrite {http.matchers.file.relative}
+      file_server
+    }
+    handle {
+      respond "" 204
+    }
+  }
+  # Web App Manifest: serve with application/manifest+json; alias /manifest.json.
+  handle /manifest.webmanifest {
+    root * /srv
+    @manifest file /manifest.webmanifest /shell/manifest.webmanifest
+    handle @manifest {
+      header Content-Type "application/manifest+json"
+      header Cache-Control "no-cache"
+      rewrite {http.matchers.file.relative}
+      file_server
+    }
+    handle {
+      respond "" 404
+    }
+  }
+  handle /shell/manifest.webmanifest {
+    root * /srv
+    header Content-Type "application/manifest+json"
+    header Cache-Control "no-cache"
+    file_server
+  }
+  handle /manifest.json {
+    redir /manifest.webmanifest 308
   }
   handle /crud/* {
     uri strip_prefix /crud
@@ -43,6 +76,15 @@
         flush_interval -1
         transport http {
           read_timeout 300s
+        }
+        # Electric's 5xx reaches the client without its text: mecha's services/proxy/Caddyfile says why.
+        @fault status 5xx
+        handle_response @fault {
+          copy_response_headers {
+            exclude Content-Type Content-Length Content-Encoding Server
+          }
+          header Content-Type application/json
+          respond `{"message":"electric failed"}` {rp.status_code}
         }
       }
     }
@@ -95,6 +137,40 @@
     }
     file_server
   }
+  # LLM discovery documents. Served from the root with markdown typing.
+  handle /llms.txt {
+    root * /srv
+    @llms file /llms.txt
+    handle @llms {
+      header Content-Type "text/markdown; charset=utf-8"
+      header Cache-Control "no-cache"
+      file_server
+    }
+    handle {
+      respond "" 404
+    }
+  }
+  handle /llms-full.txt {
+    root * /srv
+    @llmsfull file /llms-full.txt
+    handle @llmsfull {
+      header Content-Type "text/markdown; charset=utf-8"
+      header Cache-Control "no-cache"
+      file_server
+    }
+    handle {
+      respond "" 404
+    }
+  }
+  # Platform well-knowns (Universal Links, App Links, passkeys).
+  # iOS apple-app-site-association has no file extension; set application/json.
+  handle /.well-known/* {
+    root * /srv
+    @extensionless path_regexp ^/\.well-known/[^/.]+$
+    header @extensionless Content-Type "application/json"
+    header Cache-Control "no-cache"
+    file_server
+  }
   handle /omnishell/* {
     uri strip_prefix /omnishell
     root * /omnishell
@@ -114,17 +190,23 @@
   import app
 }
 
-# The published door. Hostname-scoped: a port-only address would make the
-# automation policy a catch-all and conflict with :8080's default.
+# The published door, by the two names it answers (mecha's docs/proxy.md, "The
+# certificate"). Hostname-scoped: a port-only address would make the automation
+# policy a catch-all and conflict with :8080's default.
 #
-# The certificate is mkcert's, mounted from the host rather than issued here.
-# `tls internal` would be simpler and is wrong for this: Caddy's root would
-# live inside the container, so no browser on the host could ever trust it, and
-# an untrusted certificate is worse than plain http — the interstitial blocks
-# WebAuthn outright, where http://localhost is a secure context and passkeys
-# work. mkcert puts the root in the host trust store instead, where the browser
-# can see it.
+# localhost, for a person's browser: mkcert's pair when the host issued one
+# (CADDY_TLS, set as the container starts), Caddy's own CA otherwise.
 https://localhost:8443 {
-  tls /certs/localhost.pem /certs/localhost-key.pem
+  tls {$CADDY_TLS:internal}
+  import app
+}
+
+# caddy, for the integrate checkers on the cluster's network, so they speak the
+# protocol a reader gets: Electric holds one long-poll per table a screen reads,
+# and on HTTP/1.1's six connections per host a screen reading more stalls. Its
+# own block, so mkcert's localhost-only pair never leaves this name to a public
+# CA.
+https://caddy:8443 {
+  tls internal
   import app
 }

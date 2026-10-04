@@ -10,15 +10,18 @@
       "secrets": [],
       "args": {}
     },
+    "command": [
+      "sh",
+      "-c",
+      "if [ -f /certs/localhost.pem ]; then export CADDY_TLS='/certs/localhost.pem /certs/localhost-key.pem'; fi; exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"
+    ],
     "environment": {
       "ELECTRIC_SECRET": "${ELECTRIC_SECRET:-dev-electric-secret}"
     },
     "ports": [
-      "${CADDY_TLS_HOST_PORT:-8443}:8443"
+      "${CADDY_TLS_HOST_PORT:-0}:8443"
     ],
-    "volumes": [
-      "../.certs:/certs:ro"
-    ],
+    "volumes": [],
     "depends_on": {},
     "networks": {
       "default": {
@@ -45,6 +48,11 @@
           "action": "sync+restart",
           "path": "../docker/Caddyfile",
           "target": "/etc/caddy/Caddyfile"
+        },
+        {
+          "action": "sync+restart",
+          "path": "../.certs",
+          "target": "/certs"
         },
         {
           "action": "sync+restart",
@@ -223,6 +231,16 @@
         },
         {
           "action": "sync+restart",
+          "path": "../../../plugins/omnishell/interpreter/kinetic.js",
+          "target": "/omnishell/interpreter/kinetic.js"
+        },
+        {
+          "action": "sync+restart",
+          "path": "../../../plugins/omnishell/interpreter/prng.js",
+          "target": "/omnishell/interpreter/prng.js"
+        },
+        {
+          "action": "sync+restart",
           "path": "../../../plugins/omnishell/interpreter/vendor/mecha-client.js",
           "target": "/omnishell/interpreter/vendor/mecha-client.js"
         },
@@ -240,6 +258,11 @@
           "action": "sync+restart",
           "path": "../../../plugins/omnishell/interpreter/vendor/morphlex.js",
           "target": "/omnishell/interpreter/vendor/morphlex.js"
+        },
+        {
+          "action": "sync+restart",
+          "path": "../../../plugins/omnishell/interpreter/vendor/messages.js",
+          "target": "/omnishell/interpreter/vendor/messages.js"
         },
         {
           "action": "sync+restart",
@@ -310,6 +333,16 @@
           "docker/Caddyfile"
         ],
         "dst": "/etc/caddy/Caddyfile",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          ".cert[s]"
+        ],
+        "dst": "/certs/",
         "link": true,
         "parents": false,
         "exclude": []
@@ -691,6 +724,30 @@
           "name": "root"
         },
         "srcs": [
+          "plugins/omnishell/interpreter/kinetic.js"
+        ],
+        "dst": "/omnishell/interpreter/kinetic.js",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "name": "root"
+        },
+        "srcs": [
+          "plugins/omnishell/interpreter/prng.js"
+        ],
+        "dst": "/omnishell/interpreter/prng.js",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "name": "root"
+        },
+        "srcs": [
           "plugins/omnishell/interpreter/vendor/mecha-client.js"
         ],
         "dst": "/omnishell/interpreter/vendor/mecha-client.js",
@@ -739,9 +796,111 @@
           "name": "root"
         },
         "srcs": [
+          "plugins/omnishell/interpreter/vendor/messages.js"
+        ],
+        "dst": "/omnishell/interpreter/vendor/messages.js",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "name": "root"
+        },
+        "srcs": [
           "plugins/omnishell/components/wallclock.js"
         ],
         "dst": "/omnishell/components/wallclock.js",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          "shell/assets/bigode.png"
+        ],
+        "dst": "/srv/shell/assets/bigode.png",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          "shell/assets/cida.png"
+        ],
+        "dst": "/srv/shell/assets/cida.png",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          "shell/assets/jordi.png"
+        ],
+        "dst": "/srv/shell/assets/jordi.png",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          "shell/assets/nezinho.png"
+        ],
+        "dst": "/srv/shell/assets/nezinho.png",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          "shell/assets/osvaldo.png"
+        ],
+        "dst": "/srv/shell/assets/osvaldo.png",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          "shell/assets/tabare.png"
+        ],
+        "dst": "/srv/shell/assets/tabare.png",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          "shell/assets/tiao.png"
+        ],
+        "dst": "/srv/shell/assets/tiao.png",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          "shell/assets/tiao_queijo.png"
+        ],
+        "dst": "/srv/shell/assets/tiao_queijo.png",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          "shell/assets/xiru.png"
+        ],
+        "dst": "/srv/shell/assets/xiru.png",
         "link": true,
         "parents": false,
         "exclude": []
@@ -854,6 +1013,15 @@
       "messages/es-UY.json",
       "messages/es-PY.json",
       "messages/ca-ES.json",
+      "shell/assets/bigode.png",
+      "shell/assets/cida.png",
+      "shell/assets/jordi.png",
+      "shell/assets/nezinho.png",
+      "shell/assets/osvaldo.png",
+      "shell/assets/tabare.png",
+      "shell/assets/tiao.png",
+      "shell/assets/tiao_queijo.png",
+      "shell/assets/xiru.png",
       "brief.html",
       "ir.html",
       "acceptance.md",
@@ -970,6 +1138,15 @@
           "messages/es-UY.json",
           "messages/es-PY.json",
           "messages/ca-ES.json",
+          "shell/assets/bigode.png",
+          "shell/assets/cida.png",
+          "shell/assets/jordi.png",
+          "shell/assets/nezinho.png",
+          "shell/assets/osvaldo.png",
+          "shell/assets/tabare.png",
+          "shell/assets/tiao.png",
+          "shell/assets/tiao_queijo.png",
+          "shell/assets/xiru.png",
           "brief.html",
           "ir.html",
           "acceptance.md",

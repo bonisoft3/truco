@@ -7,6 +7,323 @@
     "includes": []
   },
   "targets": {
+    "browser": {
+      "name": "browser",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "srcs": {
+        "globs": [],
+        "defaultGlobs": null,
+        "exclude": [],
+        "defaultExclude": null
+      },
+      "outs": {
+        "globs": [],
+        "exclude": []
+      },
+      "state": {
+        "globs": []
+      },
+      "visibility": "internal",
+      "cmd": {
+        "builtin": null
+      },
+      "deps": [],
+      "dockerfile": {
+        "from": {
+          "name": "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
+        },
+        "preamble": [],
+        "defaultPreamble": {
+          "lazybox-copy": {
+            "name": "lazybox-copy",
+            "priority": -10,
+            "line": "COPY --from=bonitao/lazybox:0.8.3@sha256:c896a6836673d8fd217f6021a2522351fd82d580ed985159feb2f10373018e73 /lazybox/ /root/.local/share/lazybox/"
+          },
+          "path-env": {
+            "name": "path-env",
+            "priority": -9,
+            "line": "ENV PATH=/root/.local/bin:/root/.local/share/lazybox/bin:$PATH"
+          },
+          "mise-trusted": {
+            "name": "mise-trusted",
+            "priority": -8,
+            "line": "ENV MISE_TRUSTED_CONFIG_PATHS=/monorepo"
+          }
+        },
+        "add": [],
+        "mounts": [],
+        "secrets": {},
+        "extra_hosts": [],
+        "epilogue": [],
+        "copy": [],
+        "defaultCopy": null,
+        "healthcheck": null,
+        "expose": [],
+        "entrypoint": null,
+        "incremental": false,
+        "cmd": null
+      },
+      "env": {},
+      "taskfile": {
+        "run": "when_changed",
+        "incremental": true,
+        "preconditions": []
+      },
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      }
+    },
+    "replay": {
+      "name": "replay",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "activate": "",
+      "cmd": {
+        "builtin": {
+          "name": "builtin",
+          "priority": -1,
+          "shell": "exec",
+          "do": "mise install",
+          "stop": false,
+          "dockerfile": {
+            "do": "d=/root/.local/share/mise/downloads; s=/mise-tarball-store; mkdir -p \"$d\" \"$s\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; mise install || exit; cd \"$d\" && for f in */*/*; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; :",
+            "mounts": [
+              {
+                "type": "cache",
+                "target": "/root/.local/share/mise/downloads",
+                "scope": "project",
+                "required": false
+              },
+              {
+                "type": "cache",
+                "target": "/mise-tarball-store",
+                "scope": "global",
+                "required": false
+              }
+            ],
+            "shell": "sh"
+          },
+          "srcs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "defaultGlobs": null,
+            "exclude": [],
+            "defaultExclude": null
+          }
+        }
+      },
+      "deps": [
+        ":setup"
+      ],
+      "env": {
+        "MISE_ALWAYS_KEEP_DOWNLOAD": "1"
+      },
+      "outs": {
+        "globs": [],
+        "exclude": []
+      },
+      "srcs": {
+        "globs": [
+          ".bayt/compose*.yaml",
+          "services/database/migrations/**"
+        ],
+        "defaultGlobs": {
+          "pronto-cue": {
+            "glob": "*.cue",
+            "name": "pronto-cue",
+            "priority": 1
+          },
+          "pronto-bayt": {
+            "glob": "bayt.json",
+            "name": "pronto-bayt",
+            "priority": 2
+          },
+          "pronto-design": {
+            "glob": "DESIGN.md",
+            "name": "pronto-design",
+            "priority": 3
+          },
+          "pronto-pipelines": {
+            "glob": "[p]ipelines/*.blobl",
+            "name": "pronto-pipelines",
+            "priority": 7
+          },
+          "pronto-messages": {
+            "glob": "[m]essages/*.json",
+            "name": "pronto-messages",
+            "priority": 8
+          },
+          "pronto-boot": {
+            "glob": "[s]hell/boot.js",
+            "name": "pronto-boot",
+            "priority": 9
+          }
+        },
+        "exclude": [],
+        "defaultExclude": null
+      },
+      "state": {
+        "globs": []
+      },
+      "visibility": "internal",
+      "dockerfile": {
+        "from": {
+          "ref": ":setup",
+          "name": "apps_truco-setup"
+        },
+        "preamble": [],
+        "defaultPreamble": {
+          "docker": {
+            "name": "docker",
+            "priority": -10,
+            "copy": {
+              "from": {
+                "name": "docker:29.7.1-cli@sha256:27a51d5ab1cd38d9eeaba7b415b8c07bc10c31e1cf1ec8d78f6413fcfab3f44f"
+              },
+              "srcs": [
+                "/usr/local/bin/docker"
+              ],
+              "dst": "/usr/local/bin/docker",
+              "link": true,
+              "parents": false,
+              "exclude": []
+            }
+          },
+          "docker-compose": {
+            "name": "docker-compose",
+            "priority": -9,
+            "copy": {
+              "from": {
+                "name": "docker:29.7.1-cli@sha256:27a51d5ab1cd38d9eeaba7b415b8c07bc10c31e1cf1ec8d78f6413fcfab3f44f"
+              },
+              "srcs": [
+                "/usr/local/libexec/docker/cli-plugins/docker-compose"
+              ],
+              "dst": "/usr/local/libexec/docker/cli-plugins/docker-compose",
+              "link": true,
+              "parents": false,
+              "exclude": []
+            }
+          },
+          "docker-path": {
+            "name": "docker-path",
+            "priority": -8,
+            "line": "ENV PATH=/usr/local/bin:$PATH"
+          }
+        },
+        "add": [],
+        "mounts": [],
+        "secrets": {},
+        "extra_hosts": [],
+        "epilogue": [],
+        "copy": [
+          {
+            "from": {
+              "name": "root"
+            },
+            "srcs": [
+              "cue.mod",
+              ".bayt",
+              "plugins/pronto",
+              "plugins/omnishell",
+              "plugins/bayt",
+              "plugins/sayt",
+              "libraries/mecha"
+            ],
+            "dst": "/monorepo/",
+            "link": true,
+            "parents": true,
+            "exclude": []
+          }
+        ],
+        "defaultCopy": null,
+        "healthcheck": null,
+        "expose": [],
+        "entrypoint": null,
+        "incremental": false,
+        "cmd": null
+      },
+      "compose": {
+        "up": true,
+        "manual": true,
+        "build": {
+          "additional_contexts": {
+            "root": "../../.."
+          },
+          "secrets": [],
+          "args": {}
+        },
+        "command": [
+          "mise",
+          "x",
+          "--",
+          "sh",
+          "-c",
+          "deno run --config \"../../plugins/pronto/deno.json\" --allow-read --allow-write --allow-run --allow-env \"../../plugins/pronto/check-replay.ts\" ."
+        ],
+        "environment": {
+          "BAYT_IMAGE_TAG": "${BAYT_IMAGE_TAG:-latest}"
+        },
+        "ports": [],
+        "volumes": [
+          "//var/run/docker.sock:/var/run/docker.sock"
+        ],
+        "depends_on": {}
+      },
+      "taskfile": {
+        "run": "once",
+        "incremental": true,
+        "preconditions": []
+      },
+      "cmds": [
+        {
+          "do": "mise install",
+          "dockerfile": {
+            "do": "d=/root/.local/share/mise/downloads; s=/mise-tarball-store; mkdir -p \"$d\" \"$s\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; mise install || exit; cd \"$d\" && for f in */*/*; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; :",
+            "mounts": [
+              {
+                "type": "cache",
+                "target": "/root/.local/share/mise/downloads",
+                "scope": "project",
+                "required": false
+              },
+              {
+                "type": "cache",
+                "target": "/mise-tarball-store",
+                "scope": "global",
+                "required": false
+              }
+            ],
+            "shell": "sh"
+          },
+          "srcs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "defaultGlobs": null,
+            "exclude": [],
+            "defaultExclude": null
+          },
+          "name": "builtin",
+          "shell": "exec",
+          "stop": false
+        }
+      ],
+      "cache": {
+        "full": false,
+        "similar": false
+      }
+    },
     "setup": {
       "name": "setup",
       "project": "apps_truco",
@@ -84,6 +401,21 @@
             "glob": "DESIGN.md",
             "name": "pronto-design",
             "priority": 3
+          },
+          "pronto-pipelines": {
+            "glob": "[p]ipelines/*.blobl",
+            "name": "pronto-pipelines",
+            "priority": 7
+          },
+          "pronto-messages": {
+            "glob": "[m]essages/*.json",
+            "name": "pronto-messages",
+            "priority": 8
+          },
+          "pronto-boot": {
+            "glob": "[s]hell/boot.js",
+            "name": "pronto-boot",
+            "priority": 9
           }
         },
         "exclude": [],
@@ -166,6 +498,21 @@
             "glob": "DESIGN.md",
             "name": "pronto-design",
             "priority": 3
+          },
+          "pronto-pipelines": {
+            "glob": "[p]ipelines/*.blobl",
+            "name": "pronto-pipelines",
+            "priority": 7
+          },
+          "pronto-messages": {
+            "glob": "[m]essages/*.json",
+            "name": "pronto-messages",
+            "priority": 8
+          },
+          "pronto-boot": {
+            "glob": "[s]hell/boot.js",
+            "name": "pronto-boot",
+            "priority": 9
           }
         },
         "exclude": [],
@@ -270,6 +617,21 @@
             "glob": "DESIGN.md",
             "name": "pronto-design",
             "priority": 3
+          },
+          "pronto-pipelines": {
+            "glob": "[p]ipelines/*.blobl",
+            "name": "pronto-pipelines",
+            "priority": 7
+          },
+          "pronto-messages": {
+            "glob": "[m]essages/*.json",
+            "name": "pronto-messages",
+            "priority": 8
+          },
+          "pronto-boot": {
+            "glob": "[s]hell/boot.js",
+            "name": "pronto-boot",
+            "priority": 9
           }
         },
         "exclude": [],
@@ -484,7 +846,7 @@
       ],
       "dockerfile": {
         "from": {
-          "name": "mcr.microsoft.com/playwright:v1.59.1-noble@sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53"
+          "name": "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
         },
         "preamble": [
           "COPY --from=denoland/deno:bin-2.5.5@sha256:a8dd9a073b2b4d1beb77a8174830c5af54e32517808dcc28249ed6c04fdac979 /deno /usr/local/bin/deno",
@@ -546,6 +908,7 @@
           "--allow-env",
           "--allow-run",
           "--allow-sys",
+          "--unsafely-ignore-certificate-errors=caddy",
           "/omnishell/check-visual.ts",
           "."
         ],
@@ -555,7 +918,7 @@
           }
         },
         "environment": {
-          "APP_URL": "http://caddy:8080"
+          "APP_URL": "https://caddy:8443"
         },
         "ports": [],
         "volumes": []
@@ -566,6 +929,534 @@
         "preconditions": []
       },
       "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      }
+    },
+    "check-acceptance": {
+      "name": "check-acceptance",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "activate": "",
+      "cmd": {
+        "builtin": {
+          "name": "builtin",
+          "priority": -1,
+          "shell": "exec",
+          "do": "mise install",
+          "stop": false,
+          "dockerfile": {
+            "do": "d=/root/.local/share/mise/downloads; s=/mise-tarball-store; mkdir -p \"$d\" \"$s\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; mise install || exit; cd \"$d\" && for f in */*/*; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; :",
+            "mounts": [
+              {
+                "type": "cache",
+                "target": "/root/.local/share/mise/downloads",
+                "scope": "project",
+                "required": false
+              },
+              {
+                "type": "cache",
+                "target": "/mise-tarball-store",
+                "scope": "global",
+                "required": false
+              }
+            ],
+            "shell": "sh"
+          },
+          "srcs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "defaultGlobs": null,
+            "exclude": [],
+            "defaultExclude": null
+          }
+        }
+      },
+      "deps": [
+        ":browser",
+        ":launch:outs"
+      ],
+      "env": {
+        "MISE_ALWAYS_KEEP_DOWNLOAD": "1"
+      },
+      "outs": {
+        "globs": [],
+        "exclude": []
+      },
+      "srcs": {
+        "globs": [
+          "tests/**"
+        ],
+        "defaultGlobs": null,
+        "exclude": [],
+        "defaultExclude": null
+      },
+      "state": {
+        "globs": []
+      },
+      "visibility": "internal",
+      "dockerfile": {
+        "from": {
+          "ref": ":browser",
+          "name": "apps_truco-browser"
+        },
+        "preamble": [],
+        "defaultPreamble": null,
+        "add": [],
+        "mounts": [],
+        "secrets": {},
+        "extra_hosts": [],
+        "epilogue": [],
+        "copy": [
+          {
+            "from": {
+              "name": "root"
+            },
+            "srcs": [
+              "plugins/omnishell",
+              "libraries/mecha"
+            ],
+            "dst": "/monorepo/",
+            "link": true,
+            "parents": true,
+            "exclude": []
+          }
+        ],
+        "defaultCopy": null,
+        "healthcheck": null,
+        "expose": [],
+        "entrypoint": null,
+        "incremental": false,
+        "cmd": null
+      },
+      "compose": {
+        "up": true,
+        "manual": true,
+        "build": {
+          "additional_contexts": {
+            "root": "../../.."
+          },
+          "secrets": [],
+          "args": {}
+        },
+        "command": [
+          "mise",
+          "x",
+          "--",
+          "sh",
+          "-c",
+          "deno run --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/acceptance.ts ."
+        ],
+        "depends_on": {
+          "apps_truco-launch": {
+            "condition": "service_healthy"
+          }
+        },
+        "environment": {
+          "APP_URL": "https://caddy:8443"
+        },
+        "ports": [],
+        "volumes": []
+      },
+      "taskfile": {
+        "run": "once",
+        "incremental": true,
+        "preconditions": []
+      },
+      "cmds": [
+        {
+          "do": "mise install",
+          "dockerfile": {
+            "do": "d=/root/.local/share/mise/downloads; s=/mise-tarball-store; mkdir -p \"$d\" \"$s\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; mise install || exit; cd \"$d\" && for f in */*/*; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; :",
+            "mounts": [
+              {
+                "type": "cache",
+                "target": "/root/.local/share/mise/downloads",
+                "scope": "project",
+                "required": false
+              },
+              {
+                "type": "cache",
+                "target": "/mise-tarball-store",
+                "scope": "global",
+                "required": false
+              }
+            ],
+            "shell": "sh"
+          },
+          "srcs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "defaultGlobs": null,
+            "exclude": [],
+            "defaultExclude": null
+          },
+          "name": "builtin",
+          "shell": "exec",
+          "stop": false
+        }
+      ],
+      "cache": {
+        "full": false,
+        "similar": false
+      }
+    },
+    "check-fit": {
+      "name": "check-fit",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "activate": "",
+      "cmd": {
+        "builtin": {
+          "name": "builtin",
+          "priority": -1,
+          "shell": "exec",
+          "do": "mise install",
+          "stop": false,
+          "dockerfile": {
+            "do": "d=/root/.local/share/mise/downloads; s=/mise-tarball-store; mkdir -p \"$d\" \"$s\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; mise install || exit; cd \"$d\" && for f in */*/*; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; :",
+            "mounts": [
+              {
+                "type": "cache",
+                "target": "/root/.local/share/mise/downloads",
+                "scope": "project",
+                "required": false
+              },
+              {
+                "type": "cache",
+                "target": "/mise-tarball-store",
+                "scope": "global",
+                "required": false
+              }
+            ],
+            "shell": "sh"
+          },
+          "srcs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "defaultGlobs": null,
+            "exclude": [],
+            "defaultExclude": null
+          }
+        }
+      },
+      "deps": [
+        ":browser",
+        ":launch:outs"
+      ],
+      "env": {
+        "MISE_ALWAYS_KEEP_DOWNLOAD": "1"
+      },
+      "outs": {
+        "globs": [],
+        "exclude": []
+      },
+      "srcs": {
+        "globs": [
+          "tests/**"
+        ],
+        "defaultGlobs": null,
+        "exclude": [],
+        "defaultExclude": null
+      },
+      "state": {
+        "globs": []
+      },
+      "visibility": "internal",
+      "dockerfile": {
+        "from": {
+          "ref": ":browser",
+          "name": "apps_truco-browser"
+        },
+        "preamble": [],
+        "defaultPreamble": null,
+        "add": [],
+        "mounts": [],
+        "secrets": {},
+        "extra_hosts": [],
+        "epilogue": [],
+        "copy": [
+          {
+            "from": {
+              "name": "root"
+            },
+            "srcs": [
+              "plugins/omnishell",
+              "libraries/mecha"
+            ],
+            "dst": "/monorepo/",
+            "link": true,
+            "parents": true,
+            "exclude": []
+          }
+        ],
+        "defaultCopy": null,
+        "healthcheck": null,
+        "expose": [],
+        "entrypoint": null,
+        "incremental": false,
+        "cmd": null
+      },
+      "compose": {
+        "up": true,
+        "manual": true,
+        "build": {
+          "additional_contexts": {
+            "root": "../../.."
+          },
+          "secrets": [],
+          "args": {}
+        },
+        "command": [
+          "mise",
+          "x",
+          "--",
+          "sh",
+          "-c",
+          "deno run --unstable-sloppy-imports --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/fit.ts ."
+        ],
+        "depends_on": {
+          "apps_truco-launch": {
+            "condition": "service_healthy"
+          }
+        },
+        "environment": {
+          "APP_URL": "https://caddy:8443"
+        },
+        "ports": [],
+        "volumes": []
+      },
+      "taskfile": {
+        "run": "once",
+        "incremental": true,
+        "preconditions": []
+      },
+      "cmds": [
+        {
+          "do": "mise install",
+          "dockerfile": {
+            "do": "d=/root/.local/share/mise/downloads; s=/mise-tarball-store; mkdir -p \"$d\" \"$s\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; mise install || exit; cd \"$d\" && for f in */*/*; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; :",
+            "mounts": [
+              {
+                "type": "cache",
+                "target": "/root/.local/share/mise/downloads",
+                "scope": "project",
+                "required": false
+              },
+              {
+                "type": "cache",
+                "target": "/mise-tarball-store",
+                "scope": "global",
+                "required": false
+              }
+            ],
+            "shell": "sh"
+          },
+          "srcs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "defaultGlobs": null,
+            "exclude": [],
+            "defaultExclude": null
+          },
+          "name": "builtin",
+          "shell": "exec",
+          "stop": false
+        }
+      ],
+      "cache": {
+        "full": false,
+        "similar": false
+      }
+    },
+    "check-window": {
+      "name": "check-window",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "activate": "",
+      "cmd": {
+        "builtin": {
+          "name": "builtin",
+          "priority": -1,
+          "shell": "exec",
+          "do": "mise install",
+          "stop": false,
+          "dockerfile": {
+            "do": "d=/root/.local/share/mise/downloads; s=/mise-tarball-store; mkdir -p \"$d\" \"$s\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; mise install || exit; cd \"$d\" && for f in */*/*; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; :",
+            "mounts": [
+              {
+                "type": "cache",
+                "target": "/root/.local/share/mise/downloads",
+                "scope": "project",
+                "required": false
+              },
+              {
+                "type": "cache",
+                "target": "/mise-tarball-store",
+                "scope": "global",
+                "required": false
+              }
+            ],
+            "shell": "sh"
+          },
+          "srcs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "defaultGlobs": null,
+            "exclude": [],
+            "defaultExclude": null
+          }
+        }
+      },
+      "deps": [
+        ":browser",
+        ":launch:outs"
+      ],
+      "env": {
+        "MISE_ALWAYS_KEEP_DOWNLOAD": "1"
+      },
+      "outs": {
+        "globs": [],
+        "exclude": []
+      },
+      "srcs": {
+        "globs": [
+          "tests/**"
+        ],
+        "defaultGlobs": null,
+        "exclude": [],
+        "defaultExclude": null
+      },
+      "state": {
+        "globs": []
+      },
+      "visibility": "internal",
+      "dockerfile": {
+        "from": {
+          "ref": ":browser",
+          "name": "apps_truco-browser"
+        },
+        "preamble": [],
+        "defaultPreamble": null,
+        "add": [],
+        "mounts": [],
+        "secrets": {},
+        "extra_hosts": [],
+        "epilogue": [],
+        "copy": [
+          {
+            "from": {
+              "name": "root"
+            },
+            "srcs": [
+              "plugins/omnishell",
+              "libraries/mecha"
+            ],
+            "dst": "/monorepo/",
+            "link": true,
+            "parents": true,
+            "exclude": []
+          }
+        ],
+        "defaultCopy": null,
+        "healthcheck": null,
+        "expose": [],
+        "entrypoint": null,
+        "incremental": false,
+        "cmd": null
+      },
+      "compose": {
+        "up": true,
+        "manual": true,
+        "build": {
+          "additional_contexts": {
+            "root": "../../.."
+          },
+          "secrets": [],
+          "args": {}
+        },
+        "command": [
+          "mise",
+          "x",
+          "--",
+          "sh",
+          "-c",
+          "deno run --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/window.test.ts"
+        ],
+        "depends_on": {
+          "apps_truco-launch": {
+            "condition": "service_healthy"
+          }
+        },
+        "environment": {
+          "APP_URL": "https://caddy:8443"
+        },
+        "ports": [],
+        "volumes": []
+      },
+      "taskfile": {
+        "run": "once",
+        "incremental": true,
+        "preconditions": []
+      },
+      "cmds": [
+        {
+          "do": "mise install",
+          "dockerfile": {
+            "do": "d=/root/.local/share/mise/downloads; s=/mise-tarball-store; mkdir -p \"$d\" \"$s\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; mise install || exit; cd \"$d\" && for f in */*/*; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; :",
+            "mounts": [
+              {
+                "type": "cache",
+                "target": "/root/.local/share/mise/downloads",
+                "scope": "project",
+                "required": false
+              },
+              {
+                "type": "cache",
+                "target": "/mise-tarball-store",
+                "scope": "global",
+                "required": false
+              }
+            ],
+            "shell": "sh"
+          },
+          "srcs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "defaultGlobs": null,
+            "exclude": [],
+            "defaultExclude": null
+          },
+          "name": "builtin",
+          "shell": "exec",
+          "stop": false
+        }
+      ],
       "cache": {
         "full": false,
         "similar": false
@@ -585,6 +1476,7 @@
           "services/database/migrations/006_policies.sql",
           "services/database/migrations/007_txid.sql",
           "services/database/migrations/008_publication.sql",
+          "services/database/migrations/010_machines.sql",
           "services/database/migrations/012_lobby.sql"
         ],
         "defaultGlobs": null,
@@ -629,6 +1521,7 @@
               "services/database/migrations/006_policies.sql",
               "services/database/migrations/007_txid.sql",
               "services/database/migrations/008_publication.sql",
+              "services/database/migrations/010_machines.sql",
               "services/database/migrations/012_lobby.sql"
             ],
             "dst": "/docker-entrypoint-initdb.d/",
@@ -745,6 +1638,11 @@
             },
             {
               "action": "rebuild",
+              "path": "../services/database/migrations/010_machines.sql",
+              "target": "/docker-entrypoint-initdb.d"
+            },
+            {
+              "action": "rebuild",
               "path": "../services/database/migrations/012_lobby.sql",
               "target": "/docker-entrypoint-initdb.d"
             }
@@ -752,6 +1650,7 @@
         }
       },
       "healthcheck": {
+        "template": "postgres",
         "db": "${POSTGRES_DB:-truco}",
         "user": "${POSTGRES_USER:-postgres}",
         "port": 5432,
@@ -881,6 +1780,7 @@
         }
       },
       "healthcheck": {
+        "template": "http",
         "url": "http://127.0.0.1:3001/ready",
         "interval": "5s",
         "start_interval": "500ms",
@@ -948,7 +1848,7 @@
           "DATABASE_URL": "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-truco}",
           "PGRST_JWT_SECRET": "${PGRST_JWT_SECRET:-mecha-dev-secret-please-override-32ch}",
           "WEBAUTHN_RP_ID": "${WEBAUTHN_RP_ID:-localhost}",
-          "WEBAUTHN_ORIGIN": "https://localhost:${CADDY_TLS_HOST_PORT:-8443}"
+          "WEBAUTHN_ORIGIN": "${WEBAUTHN_ORIGIN:-https://localhost:*}"
         },
         "ports": [],
         "volumes": [],
@@ -1002,6 +1902,15 @@
           "messages/es-UY.json",
           "messages/es-PY.json",
           "messages/ca-ES.json",
+          "shell/assets/bigode.png",
+          "shell/assets/cida.png",
+          "shell/assets/jordi.png",
+          "shell/assets/nezinho.png",
+          "shell/assets/osvaldo.png",
+          "shell/assets/tabare.png",
+          "shell/assets/tiao.png",
+          "shell/assets/tiao_queijo.png",
+          "shell/assets/xiru.png",
           "brief.html",
           "ir.html",
           "acceptance.md",
@@ -1045,6 +1954,16 @@
               "docker/Caddyfile"
             ],
             "dst": "/etc/caddy/Caddyfile",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              ".cert[s]"
+            ],
+            "dst": "/certs/",
             "link": true,
             "parents": false,
             "exclude": []
@@ -1426,6 +2345,30 @@
               "name": "root"
             },
             "srcs": [
+              "plugins/omnishell/interpreter/kinetic.js"
+            ],
+            "dst": "/omnishell/interpreter/kinetic.js",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": {
+              "name": "root"
+            },
+            "srcs": [
+              "plugins/omnishell/interpreter/prng.js"
+            ],
+            "dst": "/omnishell/interpreter/prng.js",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": {
+              "name": "root"
+            },
+            "srcs": [
               "plugins/omnishell/interpreter/vendor/mecha-client.js"
             ],
             "dst": "/omnishell/interpreter/vendor/mecha-client.js",
@@ -1474,9 +2417,111 @@
               "name": "root"
             },
             "srcs": [
+              "plugins/omnishell/interpreter/vendor/messages.js"
+            ],
+            "dst": "/omnishell/interpreter/vendor/messages.js",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": {
+              "name": "root"
+            },
+            "srcs": [
               "plugins/omnishell/components/wallclock.js"
             ],
             "dst": "/omnishell/components/wallclock.js",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              "shell/assets/bigode.png"
+            ],
+            "dst": "/srv/shell/assets/bigode.png",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              "shell/assets/cida.png"
+            ],
+            "dst": "/srv/shell/assets/cida.png",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              "shell/assets/jordi.png"
+            ],
+            "dst": "/srv/shell/assets/jordi.png",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              "shell/assets/nezinho.png"
+            ],
+            "dst": "/srv/shell/assets/nezinho.png",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              "shell/assets/osvaldo.png"
+            ],
+            "dst": "/srv/shell/assets/osvaldo.png",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              "shell/assets/tabare.png"
+            ],
+            "dst": "/srv/shell/assets/tabare.png",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              "shell/assets/tiao.png"
+            ],
+            "dst": "/srv/shell/assets/tiao.png",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              "shell/assets/tiao_queijo.png"
+            ],
+            "dst": "/srv/shell/assets/tiao_queijo.png",
+            "link": true,
+            "parents": false,
+            "exclude": []
+          },
+          {
+            "from": null,
+            "srcs": [
+              "shell/assets/xiru.png"
+            ],
+            "dst": "/srv/shell/assets/xiru.png",
             "link": true,
             "parents": false,
             "exclude": []
@@ -1584,15 +2629,18 @@
           "secrets": [],
           "args": {}
         },
+        "command": [
+          "sh",
+          "-c",
+          "if [ -f /certs/localhost.pem ]; then export CADDY_TLS='/certs/localhost.pem /certs/localhost-key.pem'; fi; exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"
+        ],
         "environment": {
           "ELECTRIC_SECRET": "${ELECTRIC_SECRET:-dev-electric-secret}"
         },
         "ports": [
-          "${CADDY_TLS_HOST_PORT:-8443}:8443"
+          "${CADDY_TLS_HOST_PORT:-0}:8443"
         ],
-        "volumes": [
-          "../.certs:/certs:ro"
-        ],
+        "volumes": [],
         "depends_on": {},
         "networks": {
           "default": {
@@ -1619,6 +2667,11 @@
               "action": "sync+restart",
               "path": "../docker/Caddyfile",
               "target": "/etc/caddy/Caddyfile"
+            },
+            {
+              "action": "sync+restart",
+              "path": "../.certs",
+              "target": "/certs"
             },
             {
               "action": "sync+restart",
@@ -1797,6 +2850,16 @@
             },
             {
               "action": "sync+restart",
+              "path": "../../../plugins/omnishell/interpreter/kinetic.js",
+              "target": "/omnishell/interpreter/kinetic.js"
+            },
+            {
+              "action": "sync+restart",
+              "path": "../../../plugins/omnishell/interpreter/prng.js",
+              "target": "/omnishell/interpreter/prng.js"
+            },
+            {
+              "action": "sync+restart",
               "path": "../../../plugins/omnishell/interpreter/vendor/mecha-client.js",
               "target": "/omnishell/interpreter/vendor/mecha-client.js"
             },
@@ -1814,6 +2877,11 @@
               "action": "sync+restart",
               "path": "../../../plugins/omnishell/interpreter/vendor/morphlex.js",
               "target": "/omnishell/interpreter/vendor/morphlex.js"
+            },
+            {
+              "action": "sync+restart",
+              "path": "../../../plugins/omnishell/interpreter/vendor/messages.js",
+              "target": "/omnishell/interpreter/vendor/messages.js"
             },
             {
               "action": "sync+restart",
@@ -1854,6 +2922,7 @@
         }
       },
       "healthcheck": {
+        "template": "http",
         "url": "http://127.0.0.1:8080/health",
         "interval": "5s",
         "start_interval": "500ms",
@@ -1895,7 +2964,7 @@
       ],
       "dockerfile": {
         "from": {
-          "name": "electricsql/electric@sha256:f311edc272e227ddaea593c5205a02c3d1e5969c2db0f7655a039a5e24abb176"
+          "name": "docker.io/bonitao/electric:1.8.0@sha256:7b6aed2d5fd356a5e5edd5290eeec0b19859ab798d3cbdb7d9d223fbb872a5ab"
         },
         "preamble": [],
         "defaultPreamble": null,

@@ -50,7 +50,7 @@ import (
 // targets leave them out. The host test verb runs package.json's test
 // script on a full checkout, and that is where they run.
 _smokes: strings.Join([
-	for f in ["adapter", "clock", "handler", "hatch", "login", "nav", "pending", "renderer", "validate", "worker"] {"interpreter/\(f)-smoke.js"},
+	for f in ["adapter", "clock", "handler", "hatch", "kinetic", "login", "nav", "ondemand", "pending", "renderer", "validate", "worker"] {"interpreter/\(f)-smoke.js"},
 ], " ")
 
 _smokeCmd: {
@@ -134,7 +134,7 @@ _omnishell: bayt.#project & {
 		// Stays parallel to integrate, which re-uses the same command —
 		// omnishell has no separate integration suite.
 		"test": sayt.test & mise.exec & {
-			srcs: globs: ["test/**/*", "interpreter/**/*", "components/**/*", "check-*.ts", "base-url.ts", "terminal.cue", "read-markup.ts"]
+			srcs: globs: ["test/**/*", "interpreter/**/*", "components/**/*", "check-*.ts", "base-url.ts", "terminal.cue", "read-markup.ts", "offline-first-sw.js"]
 			cmd: _smokeCmd
 		}
 
@@ -143,7 +143,7 @@ _omnishell: bayt.#project & {
 		// (from the build chain) + the same unit tests. No dind.sh wrap
 		// (no docker socket needed).
 		"integrate": sayt.integrate & mise.exec & {
-			srcs: globs: ["test/**/*", "interpreter/**/*", "components/**/*", "check-*.ts", "base-url.ts", "terminal.cue", "read-markup.ts"]
+			srcs: globs: ["test/**/*", "interpreter/**/*", "components/**/*", "check-*.ts", "base-url.ts", "terminal.cue", "read-markup.ts", "offline-first-sw.js"]
 			dockerfile: {
 				from: ref: ":build"
 			}
@@ -160,7 +160,7 @@ _omnishell: bayt.#project & {
 		//
 		// The output is checked in, like .bayt/ and the apps' emitted trees: the
 		// shell images COPY it from the repo (pronto's terminal emit), and CI's
-		// tests job runs `bayt:generate` and fails on a diff.
+		// `fresh` rung runs `bayt:generate` and fails on a diff.
 		"bundle": mise.exec & {
 			visibility: "public"
 			taskfile: run: "when_changed"
@@ -183,14 +183,46 @@ _omnishell: bayt.#project & {
 			// about.
 			cmd: "builtin": {
 				shell: "sh"
-				do:    "sh -c '" + _packageJson.scripts["bundle:mecha-client"] + " && deno run --allow-run=deno --allow-read --allow-write interpreter/vendor/bundle-morphlex.ts && deno bundle --config interpreter/deno.json --platform browser --format esm --minify interpreter/vendor/entry-js-yaml.ts -o interpreter/vendor/js-yaml.js'"
+				do:    "sh -c '" + _packageJson.scripts["bundle:mecha-client"] + " && deno run --allow-run=deno --allow-read --allow-write interpreter/vendor/bundle-morphlex.ts && deno bundle --config interpreter/deno.json --platform browser --format esm --minify interpreter/vendor/entry-js-yaml.ts -o interpreter/vendor/js-yaml.js && " + _packageJson.scripts["bundle:messages"] + "'"
 			}
 			dockerfile: from: ref: ":setup"
 		}
 
 		"generate": sayt.generate & {deps: [":bundle"], cmd: "builtin": do: "nu -c \"null\""}
+
+		// What an installed app's images read of the terminal, at the image's
+		// root: the interpreter and adapters caddy serves, the visual checker
+		// and what it imports, the URL base tests share, and the markup reader
+		// and machine schema. Published as bonitao/omnishell (cd.yml); an app
+		// in the monorepo builds it from here instead (MONOREPO_COMPOSE_MODE).
+		"runtime-image": {
+			visibility: "public"
+			cmd: "builtin": null
+			activate: ""
+			srcs: globs: _runtimeTree
+			// At the root: the sources bayt copies land where the app's
+			// images read them, as one layer.
+			dockerfile: {
+				from:    null
+				workdir: "/"
+			}
+		}
 	}
 }
+
+// The runtime image's tree; runtime/cli_test.ts holds it closed under what
+// check-visual.ts and read-markup.ts import.
+_runtimeTree: [
+	"interpreter/**",
+	"components/**",
+	"src/**",
+	"test/storybook-injector.ts",
+	"test/canonical.ts",
+	"check-visual.ts",
+	"base-url.ts",
+	"read-markup.ts",
+	"machine.cue",
+]
 
 _packageJson: _ @embed(file="package.json")
 

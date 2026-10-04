@@ -4,7 +4,7 @@
 //   deno run -A --unsafely-ignore-certificate-errors bench-runtime.ts <name> <url> <readySelector>
 
 const [name, base, ready] = Deno.args;
-const { chromium } = await import("npm:playwright@1.59.1");
+const { chromium } = await import("npm:playwright@1.61.1");
 const b = await chromium.launch();
 const c = await b.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
 // An app with an auth gate never mounts a screen without a session; measuring

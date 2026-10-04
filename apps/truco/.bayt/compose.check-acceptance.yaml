@@ -1,0 +1,54 @@
+# generated from bayt.cue — do not edit
+services:
+  apps_truco-check-acceptance:
+    build:
+      additional_contexts:
+        apps_truco-browser: service:apps_truco-browser
+        apps_truco-launch: service:apps_truco-launch
+        root: ../../..
+      context: ..
+      dockerfile: .bayt/Dockerfile.check-acceptance
+      target: check-acceptance
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    command:
+    - mise
+    - x
+    - --
+    - sh
+    - -c
+    - >-
+      deno run --allow-read --allow-write --allow-net --allow-env --allow-run
+      --allow-sys --unsafely-ignore-certificate-errors=caddy tests/acceptance.ts .
+    depends_on:
+      apps_truco-launch:
+        condition: service_healthy
+        restart: true
+    environment:
+      APP_URL: https://caddy:8443
+    image: bayt-apps_truco-check-acceptance:${BAYT_IMAGE_TAG:-latest}
+    scale: 0
+  apps_truco-check-acceptance_bayt:
+    build:
+      additional_contexts:
+        apps_truco-browser_bayt: service:apps_truco-browser_bayt
+        apps_truco-launch_bayt: service:apps_truco-launch_bayt
+      context: ..
+      dockerfile: .bayt/Dockerfile.check-acceptance
+      target: check-acceptance_bayt
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: bayt-apps_truco-check-acceptance_bayt:latest
+    scale: 0
+  apps_truco-check-acceptance_srcs:
+    build:
+      context: ..
+      dockerfile: .bayt/Dockerfile.check-acceptance
+      target: check-acceptance_srcs
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: bayt-apps_truco-check-acceptance_srcs:latest
+    scale: 0

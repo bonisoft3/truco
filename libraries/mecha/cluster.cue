@@ -99,6 +99,10 @@ _devElectricSecret: "dev-electric-secret"
 		// a fresh one too, once initdb has run.
 		pgroll: [grammar.#Name]: grammar.#Migration
 		pipelines: [...{name: string, file: string}]
+		// Numeric programs over the lake (services/compute/main.ts states the
+		// contract): a module each, the tables it alone writes (`to`),
+		// and the wasm modules its jobs call, shipped by their file names.
+		computations: [...{name: string, file: string, every: int & >0, to: [...string] & [_, ...], wasm: [...string]}]
 		// Names only: the cluster needs to know whether any schedule exists,
 		// never what it says. One brings the ticker, its clock and the table
 		// they sweep (#ScheduleMigration); the caller's migrations seed it.
@@ -181,7 +185,17 @@ _devElectricSecret: "dev-electric-secret"
 		if len(X.state.pgroll) > 0 {migrate: _completed}
 	}
 
+	let databaseUrl = "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-\(X.meta.app)}"
+	let jwtSecret = "${PGRST_JWT_SECRET:-\(_devJwtSecret)}"
+
 	surface: {
+		// How a client on the cluster's network reaches its database, and the
+		// secret crud and auth verify a session token under.
+		if X.capabilities.server {
+			"databaseUrl": databaseUrl
+			"jwtSecret":   jwtSecret
+		}
+
 		// How this cluster's schema reaches its database.
 		//
 		// A cluster bakes its schema into the database image and lets postgres
@@ -272,7 +286,9 @@ _devElectricSecret: "dev-electric-secret"
 				if len(X.state.pgroll) > 0 {
 					migrate: X._image & {
 						dockerfile: {
-							from: (_from & {in: X.meta.images.migrate}).out
+							// The database's own image, run as the runner.
+							from: (_from & {in: X.meta.images.database}).out
+							entrypoint: ["/migrate.sh"]
 							cmd: [#PgRollDir, grammar.#Baseline]
 							// Each migration is written into the image from the
 							// value state.pgroll holds, so what runs is what was
@@ -304,7 +320,7 @@ _devElectricSecret: "dev-electric-secret"
 					compose: {
 						depends_on: X._schemaReady
 						environment: {
-							PGRST_DB_URI:       "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-\(X.meta.app)}"
+							PGRST_DB_URI:       databaseUrl
 							PGRST_DB_SCHEMA:    "public"
 							PGRST_DB_ANON_ROLE: "anon"
 							// Called once per request, in the request's transaction, after the
@@ -316,7 +332,7 @@ _devElectricSecret: "dev-electric-secret"
 							PGRST_SERVER_PORT:       "3000"
 							PGRST_ADMIN_SERVER_PORT: "3001"
 							if X.capabilities.auth {
-								PGRST_JWT_SECRET: "${PGRST_JWT_SECRET:-\(_devJwtSecret)}"
+								PGRST_JWT_SECRET: jwtSecret
 							}
 						}
 					}
@@ -333,10 +349,12 @@ _devElectricSecret: "dev-electric-secret"
 					compose: {
 						depends_on: X._schemaReady
 						environment: {
-							DATABASE_URL:     "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-\(X.meta.app)}"
-							PGRST_JWT_SECRET: "${PGRST_JWT_SECRET:-\(_devJwtSecret)}"
+							DATABASE_URL:     databaseUrl
+							PGRST_JWT_SECRET: jwtSecret
 							WEBAUTHN_RP_ID:   "${WEBAUTHN_RP_ID:-localhost}"
-							WEBAUTHN_ORIGIN:  "https://localhost:${CADDY_TLS_HOST_PORT:-8443}"
+							// The door's port is the host's pick; auth reads this
+							// default as whichever port the request came through.
+							WEBAUTHN_ORIGIN: "${WEBAUTHN_ORIGIN:-https://localhost:*}"
 						}
 					}
 				}
@@ -354,26 +372,31 @@ _devElectricSecret: "dev-electric-secret"
 				// at something deleted — every edit then 404s until the
 				// container is recreated. `develop: watch` below updates them.
 				//
-				// Statics living above the app dir (the terminal's
-				// interpreter) arrive through the `root` additional context,
-				// a path from .bayt/ to the monorepo root, which is why their
-				// COPY lines are rewritten relative to it. The fingerprint
-				// covers only the app's own files: a srcs glob cannot leave
-				// the project directory.
+				// The runtime's statics (the terminal's interpreter) arrive
+				// through the `root` additional context, a path from .bayt/ to
+				// the workspace root, which is why their COPY lines are
+				// rewritten relative to it. The fingerprint covers only the
+				// app's own files: a srcs glob cannot leave the project
+				// directory.
 				srcs: globs: list.Concat([
 					[X.meta.caddyfile],
-					[for s in X.meta.statics if !strings.HasPrefix(s.file, "../../") {s.file}],
+					[for s in X.meta.statics if !strings.HasPrefix(s.file, X.meta.runtime) {s.file}],
 				])
 				dockerfile: {
 					from: name: "caddy:2.9-alpine@sha256:b4e3952384eb9524a887633ce65c752dd7c71314d2c2acf98cd5c715aaa534f0"
 					copy: list.Concat([
 						[{srcs: [X.meta.caddyfile], dst: "/etc/caddy/Caddyfile"}],
+						// mkcert's pair, where `sayt setup` issued one on this host;
+						// trusted there once with `mkcert -install`. The wildcard is
+						// what makes it optional: a context without .certs copies
+						// nothing, and the door then serves Caddy's own CA.
+						[{srcs: [".cert[s]"], dst: "/certs/"}],
 						[for s in X.meta.statics {
-							if strings.HasPrefix(s.file, "../../") {
+							if strings.HasPrefix(s.file, X.meta.runtime) {
 								from: {name: "root"}
-								srcs: [strings.TrimPrefix(s.file, "../../")]
+								srcs: [strings.TrimPrefix(s.file, X.meta.root)]
 							}
-							if !strings.HasPrefix(s.file, "../../") {
+							if !strings.HasPrefix(s.file, X.meta.runtime) {
 								srcs: [s.file]
 							}
 							dst: s.target
@@ -381,7 +404,7 @@ _devElectricSecret: "dev-electric-secret"
 					])
 				}
 				compose: {
-					build: additional_contexts: root: "../../.."
+					build: additional_contexts: root: strings.TrimSuffix("../\(X.meta.root)", "/")
 					// One published door. For an app it is h2 over TLS; the plain
 					// listener still exists inside the container — the healthcheck
 					// above uses it — but is deliberately NOT published: the
@@ -394,15 +417,16 @@ _devElectricSecret: "dev-electric-secret"
 					// service reads, and both are overridden together or neither.
 					environment: ELECTRIC_SECRET: "${ELECTRIC_SECRET:-\(_devElectricSecret)}"
 
-					// mkcert's pair, issued on the host by `sayt setup` and trusted
-					// there once with `mkcert -install`. A DIRECTORY mount, not two
-					// file mounts: an editor or a re-issue replaces a file's inode and
-					// leaves a file-mount pointing at something deleted, which is the
-					// same trap the baked statics avoid. The path is from .bayt/.
-					volumes: ["../.certs:/certs:ro"]
+					// The Caddyfile's door serves CADDY_TLS: the baked pair when the
+					// host issued one, Caddy's own CA otherwise, so the stack comes up
+					// before any mkcert step. The rest is the image's own command.
+					command: ["sh", "-c", "if [ -f /certs/localhost.pem ]; then export CADDY_TLS='/certs/localhost.pem /certs/localhost-key.pem'; fi; exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"]
 					// Watch paths are from .bayt/ too, hence the ../ on each.
 					develop: watch: list.Concat([
 						[{action: "sync+restart", path: "../\(X.meta.caddyfile)", target: "/etc/caddy/Caddyfile"}],
+						// A re-issued pair reaches a running door; the restart re-reads
+						// it through the command above.
+						[{action: "sync+restart", path: "../.certs", target: "/certs"}],
 						// Honoured, not assumed: a static that says it is not watched is
 						// one whose edit is a rebuild — a generated file, or a vendored
 						// unit whose megabytes would restart the proxy on every launch.
@@ -412,7 +436,7 @@ _devElectricSecret: "dev-electric-secret"
 			}
 			if X.capabilities.server {
 				electric: X._image & {
-					dockerfile: from: name: "electricsql/electric@sha256:f311edc272e227ddaea593c5205a02c3d1e5969c2db0f7655a039a5e24abb176"
+					dockerfile: from: name: "docker.io/bonitao/electric:1.8.0@sha256:7b6aed2d5fd356a5e5edd5290eeec0b19859ab798d3cbdb7d9d223fbb872a5ab"
 					compose: {
 						depends_on: X._schemaReady
 						environment: {
@@ -494,7 +518,7 @@ _devElectricSecret: "dev-electric-secret"
 						depends_on: {database: _healthy, X._schemaReady, "mesh-events": _started}
 						develop: watch: [{action: "sync+restart", path: "../\(X.meta.conduitTemplate)", target: "/conduit/cdc-to-bus.yaml.tmpl"}]
 						environment: {
-							DATABASE_URL:           "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-\(X.meta.app)}"
+							DATABASE_URL:           databaseUrl
 							CONDUIT_PIPELINES_PATH: "/conduit/pipelines"
 							CONDUIT_DB_TYPE:        "inmemory"
 						}
@@ -503,8 +527,12 @@ _devElectricSecret: "dev-electric-secret"
 				}
 			}
 			if X.capabilities.blobs {
+				// rclone's own image: its entrypoint makes the bucket and serves it.
 				"rclone-s3": X._image & {
-					dockerfile: from: (_from & {in: X.meta.images."rclone-s3"}).out
+					dockerfile: {
+						from: name: "rclone/rclone:1.71.0@sha256:fd635aecd9667ee3c3bf920d14118090d4f2a83a080c1fa77e0bafbd4587ca87"
+						entrypoint: ["sh", "-c", "mkdir -p \"/data/$RCLONE_LOCAL_BUCKET\" && exec rclone serve s3 --addr=0.0.0.0:3900 --vfs-cache-mode=off /data"]
+					}
 					compose: {
 						environment: RCLONE_LOCAL_BUCKET: "mecha-objects"
 						healthcheck: {
@@ -570,6 +598,55 @@ _devElectricSecret: "dev-electric-secret"
 					}
 				}
 			}
+			// The numeric stage: an app's computations, each reading the lake
+			// the service publishes from Postgres, writing back through crud
+			// as the service role, the path every pipeline writes by.
+			if len(X.state.computations) > 0 {
+				// Two computations may share a wasm module; it ships once.
+				let _wasm = [for w, _ in {for c in X.state.computations for w in c.wasm {(w): true}} {file: w, target: "/app/computations/\(path.Base(w, path.Unix))"}]
+				let _target = {for w in _wasm {(w.file): w.target}}
+				compute: X._image & {
+					srcs: globs: list.Concat([[for c in X.state.computations {c.file}], [for w in _wasm {w.file}]])
+					dockerfile: {
+						from: (_from & {in: X.meta.images.compute}).out
+						copy: list.Concat([
+							[for c in X.state.computations {srcs: [c.file], dst: "/app/computations/\(c.name).js"}],
+							[for w in _wasm {srcs: [w.file], dst: w.target}],
+						])
+					}
+					compose: {
+						depends_on: {X._schemaReady, crud: _healthy}
+						environment: {
+							CRUD_URL:     "http://crud:3000"
+							DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-\(X.meta.app)}"
+							LAKE_DIR:     "/lake"
+							COMPUTATIONS: json.Marshal([for c in X.state.computations {
+								name:  c.name
+								file:  "/app/computations/\(c.name).js"
+								every: c.every
+								to:    c.to
+								wasm: [for w in c.wasm {_target[w]}]
+							}])
+							if X.capabilities.auth {
+								SERVICE_JWT: "${SERVICE_JWT:-\(_devServiceJwt)}"
+							}
+						}
+						restart: "on-failure"
+						develop: watch: list.Concat([
+							[for c in X.state.computations {
+								action: "sync+restart"
+								path:   "../\(c.file)"
+								target: "/app/computations/\(c.name).js"
+							}],
+							[for w in _wasm {
+								action: "sync+restart"
+								path:   "../\(w.file)"
+								target: w.target
+							}],
+						])
+					}
+				}
+			}
 			// Only an app that declares a schedule gets a clock. A ticker with
 			// nothing to sweep is a container answering pokes nobody sends.
 			if len(X.state.schedules) > 0 {
@@ -630,6 +707,9 @@ _devElectricSecret: "dev-electric-secret"
 						}
 						if len(X.state.pipelines) > 0 {
 							transform: _started
+						}
+						if len(X.state.computations) > 0 {
+							compute: _started
 						}
 						if X.capabilities.auth {
 							auth: _started
@@ -721,22 +801,25 @@ _devElectricSecret: "dev-electric-secret"
 		// same-project refs in mecha's own stack, cross-project refs from an
 		// app in the monorepo, pinned names where the images are pulled.
 		images: {
-			database:   #From
-			migrate:    #From
-			mesh:       #From
-			conduit:    #From
-			auth:       #From
-			ticker:     #From
-			clock:      #From
-			"rclone-s3": #From
+			database: #From
+			mesh:     #From
+			conduit:  #From
+			auth:     #From
+			ticker:   #From
+			clock:    #From
+			compute:  #From
 		}
 		// The proxy's config, relative to the app dir.
 		caddyfile: *"docker/Caddyfile" | string
 		// The one published door, in compose's `host:container` form.
-		door: *"${CADDY_TLS_HOST_PORT:-8443}:8443" | string
+		door: *"${CADDY_TLS_HOST_PORT:-0}:8443" | string
 		// The conduit pipeline, an envsubst template, relative to the app dir.
 		conduitTemplate: *"docker/conduit-pipeline.yaml" | string
 		statics: [...#Static]
+		// The workspace root and the runtime's directory, as paths from the
+		// app dir: the monorepo's unless the app states its own layout.
+		root:    *"../../" | string
+		runtime: *root | string
 	}
 }
 

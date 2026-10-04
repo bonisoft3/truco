@@ -11,7 +11,17 @@ import {
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
 import postgres from "postgres";
-import { shapeWhere, signJwt as sign, verifyJwt as verify } from "./jwt.ts";
+import {
+  isSubsetWhere,
+  SHAPE_FIXED_PARAMS,
+  shapeWhere,
+  signJwt as sign,
+  SUBSET_LIMIT,
+  SUBSET_ORDER,
+  SUBSET_PARAMS,
+  subsetParams,
+  verifyJwt as verify,
+} from "./jwt.ts";
 export { shapeWhere };
 
 function required(name: string): string {
@@ -21,8 +31,55 @@ function required(name: string): string {
 }
 const DATABASE_URL = required("DATABASE_URL");
 const JWT_SECRET = required("PGRST_JWT_SECRET");
+/** The dev cluster's door: localhost, on whatever port the host published. */
+const DEV_DOOR = "https://localhost:*";
+
+/**
+ * The origin ceremonies are checked against, refused at startup where it can
+ * admit none: WebAuthn verifies a ceremony only on the relying party's domain
+ * or under it, and both settings have compose defaults, so a deployment that
+ * names one and forgets the other would otherwise boot and answer every
+ * ceremony with a 401; so is one no ceremony's origin can equal. DEV_DOOR
+ * stands for localhost.
+ */
+export function admittedOrigin(rpId: string, origin: string): string {
+  if (origin === DEV_DOOR) {
+    if (rpId === "localhost") return origin;
+    throw new Error(
+      `WEBAUTHN_ORIGIN is the dev door ${DEV_DOOR}, which serves only WEBAUTHN_RP_ID=localhost; ` +
+        `set WEBAUTHN_ORIGIN to the origin ${rpId}'s pages are served from`,
+    );
+  }
+  // A ceremony's origin is bare, scheme://host[:port], and WebAuthn runs only
+  // in a secure context: https, or http on localhost.
+  const url = new URL(origin);
+  if (url.origin !== origin) {
+    throw new Error(`WEBAUTHN_ORIGIN ${origin} is not an origin, which no ceremony's equals; set it to ${url.origin}`);
+  }
+  if (url.protocol !== "https:" && url.hostname !== "localhost") {
+    throw new Error(`WEBAUTHN_ORIGIN ${origin} is not https, where no browser makes a ceremony`);
+  }
+  if (url.hostname === rpId || url.hostname.endsWith(`.${rpId}`)) return origin;
+  throw new Error(
+    `WEBAUTHN_ORIGIN ${origin} is not on WEBAUTHN_RP_ID ${rpId}, so no ceremony made there verifies; ` +
+      `set WEBAUTHN_RP_ID to the domain its pages are served under`,
+  );
+}
+
 const RP_ID = required("WEBAUTHN_RP_ID");
-const ORIGIN = required("WEBAUTHN_ORIGIN");
+const ORIGIN = admittedOrigin(RP_ID, required("WEBAUTHN_ORIGIN"));
+
+/**
+ * The origin a ceremony must have been made on. A configured origin is exact.
+ * The dev cluster's door is published on a port the host picks, so there
+ * DEV_DOOR stands for the door the request came through, named by the Host
+ * it forwards; a Host other than localhost leaves DEV_DOOR itself, which no
+ * page's origin equals.
+ */
+export function ceremonyOrigin(configured: string, host: string | null): string {
+  if (configured !== DEV_DOOR) return configured;
+  return host !== null && /^localhost(:\d+)?$/.test(host) ? `https://${host}` : configured;
+}
 
 const USER_TOKEN_TTL_S = 7 * 24 * 3600;
 // A shape token outlives one long-poll cycle and little else: Electric holds a
@@ -54,11 +111,14 @@ const enc = new TextEncoder();
 export const signJwt = (claims: Record<string, unknown>) => sign(JWT_SECRET, claims);
 export const verifyJwt = (token: string) => verify(JWT_SECRET, token);
 
-export function issueUserToken(id: string, handle: string): Promise<string> {
+// A guest's token says so, so a policy can keep writes to the people who
+// signed in (`request.jwt.claims ->> 'guest'`).
+export function issueUserToken(id: string, handle: string, guest = false): Promise<string> {
   return signJwt({
     role: "app_user",
     sub: id,
     handle,
+    guest,
     exp: Math.floor(Date.now() / 1000) + USER_TOKEN_TTL_S,
   });
 }
@@ -185,9 +245,34 @@ async function shapeToken(req: Request): Promise<Response> {
 
 // The parameters a shape request may carry besides the two the token names:
 // Electric's paging and streaming, none of which widens what a row predicate
-// admits. Anything else is refused, `columns`, `replica`, `params` and the
-// secret among them: a parameter this list does not know has a reach it does
-// not know either.
+// admits, and a subset snapshot's, which only narrows it. Anything else is
+// refused, `columns`, `params` and the secret among them: a parameter this
+// list does not know has a reach it does not know either.
+//
+// A subset returns no row the token does not reach, on these premises, each
+// held by tests/entrypoint.sh against Electric itself:
+// - Electric ANDs `subset__where` onto the shape's `where` as two parsed
+//   expressions, never as text, so a subset cannot close the shape's
+//   parenthesis and OR around it.
+// - The shape's `where` is the token's, compared by equality below, and the
+//   mint writes it as a literal with no `$n` a subset's `subset__params` could
+//   bind into.
+// - Electric's where parser admits its own operators and functions only, and
+//   no subquery while no ELECTRIC_FEATURE_FLAGS enables one, so a subset
+//   cannot read another table, call pg_sleep or reach a function Postgres
+//   would run as Electric's BYPASSRLS role.
+// - The verify is GET-only, so a subset sent as a POST body never passes.
+// Returning is not evaluating: Postgres orders the two predicates by its own
+// costs, so a subset's runs on rows the token's excludes too, and an error it
+// raises there comes back with the row's value in its text. Electric's parser
+// admits casts, and a LIKE whose pattern raises once a row's value matches it
+// up to a trailing escape, so the gate holds a subset to the grammar its
+// client compiles to (jwt.ts), in which no error depends on a row's value, and
+// refuses the rest as Electric refuses a subset.
+// The `*_expr` and `subset__offset` variants are left out: the client never
+// sends them (electric-db-collection 0.4.0 compiles the string form and pages
+// by cursor), and an admitted parameter nothing exercises is reach nobody
+// tests.
 const SHAPE_FREE_PARAMS = new Set([
   "offset",
   "handle",
@@ -199,6 +284,33 @@ const SHAPE_FREE_PARAMS = new Set([
   "log",
   "cache-buster",
 ]);
+
+/** A raw query's values by name, each pair decoded strictly, or null where a
+ * pair holds a `;` or a `%` that is no escape of UTF-8. */
+function strictQuery(query: string): Map<string, string[]> | null {
+  if (query.includes(";")) return null;
+  const params = new Map<string, string[]>();
+  for (const pair of query.split("&")) {
+    if (pair === "") continue;
+    const eq = pair.indexOf("=");
+    let key: string;
+    let value: string;
+    try {
+      key = decodeURIComponent((eq === -1 ? pair : pair.slice(0, eq)).replaceAll("+", " "));
+      value = eq === -1 ? "" : decodeURIComponent(pair.slice(eq + 1).replaceAll("+", " "));
+    } catch {
+      return null;
+    }
+    params.set(key, [...params.get(key) ?? [], value]);
+  }
+  return params;
+}
+
+/** A subset refused as Electric refuses one, a 400 whose `errors.subset`
+ * names the parameter: the store takes it for a predicate the program stated
+ * wrong, which no retry answers. */
+const subsetError = (param: string, message: string) =>
+  json(400, { message: "Invalid request", errors: { subset: { [param]: [message] } } });
 
 // What Caddy asks before proxying to Electric. It answers about the request
 // Caddy actually received, not about one the client describes: the method and
@@ -219,20 +331,43 @@ async function shapeVerify(req: Request): Promise<Response> {
   // is query text here as it is to Electric.
   if (forwarded.includes("#")) return jsonError(403, "fragment in uri");
   const q = forwarded.indexOf("?");
-  const params = new URLSearchParams(q === -1 ? "" : forwarded.slice(q + 1));
+  // What passes is re-encoded by Caddy (`uri query`) through Go's
+  // url.ParseQuery, which drops a pair holding a `;` or an escape that does
+  // not decode, where URLSearchParams keeps both: a `where` compared here
+  // would never reach Electric, and Electric would serve the whole table. A
+  // query the two could read differently is refused.
+  const params = strictQuery(q === -1 ? "" : forwarded.slice(q + 1));
+  if (params === null) return jsonError(403, "query Caddy would read differently");
 
   // Electric keeps the last copy of a repeated parameter, so a parameter is
-  // compared only once it is known to have one value.
-  for (const key of new Set(params.keys())) {
-    if (params.getAll(key).length !== 1) return jsonError(403, `${key} repeated`);
-    if (key !== "table" && key !== "where" && !SHAPE_FREE_PARAMS.has(key)) {
+  // compared only once it is known to have one value. Every refusal of a
+  // subset parameter is Electric's 400 for one, which the store raises as
+  // the program's error, where it asks again after a 403.
+  for (const [key, values] of params) {
+    if (values.length !== 1) {
+      return key.startsWith("subset__") ? subsetError(key.slice("subset__".length), `${key} repeated`) : jsonError(403, `${key} repeated`);
+    }
+    if (key in SHAPE_FIXED_PARAMS) {
+      if (values[0] !== SHAPE_FIXED_PARAMS[key]) return jsonError(403, `${key} must be ${SHAPE_FIXED_PARAMS[key]}`);
+      continue;
+    }
+    if (key.startsWith("subset__") && !SUBSET_PARAMS.has(key)) return subsetError(key.slice("subset__".length), `${key} is not served`);
+    if (key !== "table" && key !== "where" && !SHAPE_FREE_PARAMS.has(key) && !SUBSET_PARAMS.has(key)) {
       return jsonError(403, `${key} is not a shape parameter`);
     }
   }
+  const get = (key: string) => params.get(key)?.[0] ?? null;
   // A missing parameter is not a matching one. `??` would let an absent `where`
   // read as authorized against a claim that named a predicate.
-  if (params.get("table") !== claims.table) return jsonError(403, "table not authorized");
-  if (params.get("where") !== claims.where) return jsonError(403, "where not authorized");
+  if (get("table") !== claims.table) return jsonError(403, "table not authorized");
+  if (get("where") !== claims.where) return jsonError(403, "where not authorized");
+  if (subsetParams(get("subset__params")) === undefined) return subsetError("params", "subset__params is not an object of positions to strings");
+  const subsetWhere = get("subset__where");
+  if (subsetWhere !== null && !isSubsetWhere(subsetWhere)) return subsetError("where", "subset__where is not a predicate a subset may state");
+  const subsetOrder = get("subset__order_by");
+  if (subsetOrder !== null && !SUBSET_ORDER.test(subsetOrder)) return subsetError("order_by", "subset__order_by is not a list of columns");
+  const subsetLimit = get("subset__limit");
+  if (subsetLimit !== null && !SUBSET_LIMIT.test(subsetLimit)) return subsetError("limit", "subset__limit is not a count");
   return json(200, { ok: true });
 }
 
@@ -276,10 +411,18 @@ function generateHandle(): string {
   return `${a}-${n}-${10 + Math.floor(Math.random() * 90)}`;
 }
 
-async function registerStart(_req: Request): Promise<Response> {
-  // Usernameless by doctrine: no identifier is ever collected.
-  const handle = generateHandle();
-  const userId = crypto.randomUUID();
+async function registerStart(req: Request): Promise<Response> {
+  const subject = await subjectOf(req);
+  if (subject === "refused") return jsonError(401, "invalid token");
+  const claims = subject.claims;
+  // Only a guest is promoted, keeping its handle and every row it wrote: a
+  // passkey added to an account on the strength of a bearer token would
+  // outlive the token and its sign-out. With no session, a new identity —
+  // usernameless by doctrine: no identifier is ever collected.
+  if (claims !== null && claims.guest !== true) return jsonError(409, "already an account");
+  const promote = claims !== null;
+  const handle = claims ? claims.handle as string : generateHandle();
+  const userId = claims ? claims.sub as string : crypto.randomUUID();
   const options = await generateRegistrationOptions({
     rpName: RP_ID,
     rpID: RP_ID,
@@ -294,6 +437,7 @@ async function registerStart(_req: Request): Promise<Response> {
     purpose: "register",
     handle,
     userId,
+    promote,
     challenge: options.challenge,
     exp: Math.floor(Date.now() / 1000) + STATE_TTL_S,
   });
@@ -311,7 +455,7 @@ async function registerVerify(req: Request): Promise<Response> {
       // deno-lint-ignore no-explicit-any
       response: body.response as any,
       expectedChallenge: st.challenge as string,
-      expectedOrigin: ORIGIN,
+      expectedOrigin: ceremonyOrigin(ORIGIN, req.headers.get("host")),
       expectedRPID: RP_ID,
       requireUserVerification: false,
     });
@@ -324,6 +468,16 @@ async function registerVerify(req: Request): Promise<Response> {
   const { credentialID, credentialPublicKey, counter } =
     verification.registrationInfo;
   const userId = st.userId as string;
+  if (st.promote === true) {
+    // The guest becomes an account once: a guest token that outlives its
+    // promotion is still a guest's, and adds no second way in.
+    const added = await sql`insert into webauthn_credential (id, user_id, public_key, counter)
+      select ${credentialID}, ${userId}, ${credentialPublicKey}, ${counter}
+      where not exists (select 1 from webauthn_credential where user_id = ${userId})`;
+    if (added.count === 0) return jsonError(409, "already an account");
+    const token = await issueUserToken(userId, st.handle as string);
+    return json(200, { token, user: { id: userId, handle: st.handle } });
+  }
   // Generated handles can collide; regenerate and retry — never a user error.
   let handle = st.handle as string;
   let inserted = false;
@@ -383,7 +537,7 @@ async function loginVerify(req: Request): Promise<Response> {
       // deno-lint-ignore no-explicit-any
       response: body.response as any,
       expectedChallenge: st.challenge as string,
-      expectedOrigin: ORIGIN,
+      expectedOrigin: ceremonyOrigin(ORIGIN, req.headers.get("host")),
       expectedRPID: RP_ID,
       requireUserVerification: false,
       authenticator: {
@@ -423,8 +577,9 @@ async function guest(_req: Request): Promise<Response> {
     }
   }
   if (!inserted) return jsonError(500, "could not allocate identity");
-  const token = await issueUserToken(userId, handle);
-  return json(200, { token, user: { id: userId, handle } });
+  const token = await issueUserToken(userId, handle, true);
+  // A guest is told so: it is the one session a passkey can still promote.
+  return json(200, { token, user: { id: userId, handle, guest: true } });
 }
 
 async function whoami(req: Request): Promise<Response> {

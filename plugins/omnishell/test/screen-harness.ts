@@ -14,11 +14,13 @@
 import { parseHTML } from "npm:linkedom@0.18.4";
 import "npm:fake-indexeddb@6.2.5/auto";
 import { load as parseYaml } from "../interpreter/vendor/js-yaml.js";
-import { embedTables, parseFilter, parseLimit, parseSelect, screenEnv } from "../interpreter/fragment.js";
+import { embedDeps, parseEmbeds, parseFilter, parseLimit, screenEnv } from "../interpreter/fragment.js";
 import { upsertKey as resolveKey } from "../interpreter/data-sync.js";
 import { batched } from "../interpreter/batched-store.js";
 import "../interpreter/vendor/ses.umd.min.js";
 import { ensureSes } from "../interpreter/jessie.js";
+import { controlProperties } from "./linkedom-controls.ts";
+import { compileCatalog } from "../src/messages.ts";
 
 /** data-sync.js is the shipped store, not a typed module: the natural key an
  * upsert resolves against comes from there so there is one resolution and not
@@ -109,14 +111,14 @@ export type Route = {
 export type I18n = { default: string; locales: Record<string, { path: string }> };
 
 /** shell.yaml's `schema:`, keyed by table, in the one shape a mount reads out
- * of it: the columns, and what an integer counts where it counts money. */
+ * of it: the columns, what an integer counts where it counts money, and the
+ * table a foreign key refers to. */
 export type Schema = Record<string, {
-  fields: { name: string; type: string; money?: { currency: string; minorUnits: number } }[];
+  fields: { name: string; type: string; money?: { currency: string; minorUnits: number }; ref?: string }[];
 }>;
 
-/** A catalogue per locale. A value is a sentence, or the map of arms an
- * element's data-msg-plural / data-msg-select picks one of. */
-export type Catalogs = Record<string, Record<string, string | Record<string, string>>>;
+/** A catalogue per locale. A value is a sentence or a compile-time AST. */
+export type Catalogs = Record<string, Record<string, unknown>>;
 
 /** One store contact, in the order it was made. `op` is what the store RESOLVED
  * to and not what the markup declared: an upsert lands here as the create or the
@@ -188,6 +190,9 @@ export type Cluster = {
   /** The pk of every table whose pk is not `id` (shell.yaml `keys:`), which is
    * how a pipeline sink keys on its subject. */
   keys?: Record<string, string>;
+  /** Each table's fields (shell.yaml `schema:`), whose `ref`s are how
+   * PostgREST resolves an embed. */
+  schema?: Schema;
   /** Each entity's access scope (shell.yaml `access:`), which decides which
    * rows a reader can see at all. Answered only for a mount that names its
    * reader: with nobody reading there is no visibility question to settle. */
@@ -216,6 +221,7 @@ export type Cluster = {
  * which is what the interpreter's delta path reads to decide which rows a
  * refresh has to reconsider.
  */
+
 export function memoryStore(tables: Record<string, Row[]>, cluster: Cluster = {}): MemoryStore {
   const data = new Map<string, Row[]>(
     Object.entries(tables).map(([t, rows]) => [t, rows.map((r) => ({ ...r }))]),
@@ -308,27 +314,46 @@ export function memoryStore(tables: Record<string, Row[]>, cluster: Cluster = {}
     store.calls.push({ op: "query", table });
     const preds = parseFilter(opts.filter);
     if (preds === null) throw new Error(`filter outside the grammar for ${table}: ${opts.filter}`);
-    const embeds = parseSelect(opts.select);
-    if (embeds === null) throw new Error(`select outside the grammar for ${table}: ${opts.select}`);
+    // What the shipped store hands to PostgREST, short of a hint, a spread,
+    // a base column list or a column renamed, cast or computed, which no
+    // read here may widen.
+    const tree = parseEmbeds(opts.select);
+    type Embed = { hints: string[]; spread: boolean; cols: string[]; embeds: Embed[] };
+    const plain = (e: Embed): boolean =>
+      e.hints.length === 0 && !e.spread && e.cols.every((c) => /^[a-z_][a-z0-9_]*$/.test(c)) &&
+      e.embeds.every(plain);
+    if (tree === null || tree.cols.some((c: string) => c !== "*") || !tree.embeds.every(plain)) {
+      throw new Error(`select outside the grammar for ${table}: ${opts.select}`);
+    }
+    const embeds = tree.embeds;
     const sorted = of(table)
       .filter((r: Row) => visible(table, r) && preds.every((p: (row: Row) => boolean) => p(r)))
       .sort(compareBy(order ?? (opts.order as string | undefined)));
     const limit = parseLimit(opts.filter);
     const capped = limit === undefined ? sorted : sorted.slice(0, limit);
-    return capped.map((row: Row) => {
-      if (embeds.length === 0) return row;
-      const out = { ...row };
-      for (const { alias, table: rel, cols } of embeds) {
-        const t = relationOf(rel);
-        const target = of(t).find((r) => String(r[keyOf(t)]) === String(row[`${alias}_id`]));
-        // A joined row that does not resolve binds null, never omitted:
-        // PostgREST under RLS answers the same way.
-        out[alias] = target === undefined
-          ? null
-          : Object.fromEntries(cols.map((c: string) => [c, target[c]]));
-      }
-      return out;
-    });
+    return capped.map((row: Row) => embedInto(table, row, { ...row }, embeds));
+  };
+
+  // An embed names either a foreign-key column of the row's table or the table
+  // one points at; without the schema's refs, the column is `<alias>_id`.
+  // deno-lint-ignore no-explicit-any
+  const embedInto = (table: string, row: Row, out: Row, embeds: any[]): Row => {
+    const refs: Record<string, string> = Object.fromEntries(
+      (cluster.schema?.[table]?.fields ?? []).flatMap((f) => f.ref === undefined ? [] : [[f.name, f.ref]]),
+    );
+    for (const { alias, rel, cols, embeds: inner } of embeds) {
+      const named = refs[rel] !== undefined ? [rel] : Object.keys(refs).filter((c) => refs[c] === rel);
+      if (named.length > 1) throw new Error(`embed "${rel}" on ${table} is ambiguous: ${named.join(", ")}`);
+      const col = named[0] ?? `${alias}_id`;
+      const t = named[0] === undefined ? relationOf(rel) : refs[col];
+      const target = of(t).find((r) => String(r[keyOf(t)]) === String(row[col]));
+      // A joined row that does not resolve binds null, never omitted:
+      // PostgREST under RLS answers the same way.
+      out[alias] = target === undefined
+        ? null
+        : embedInto(t, target, Object.fromEntries(cols.map((c: string) => [c, target[c]])), inner);
+    }
+    return out;
   };
 
   // Per table, not per read: the shipped store maintains a view over the
@@ -342,7 +367,7 @@ export function memoryStore(tables: Record<string, Row[]>, cluster: Cluster = {}
     // The shipped store watches the region's embedded tables beside its own,
     // so an edit to a joined row reaches the region that renders it. Row
     // visibility is the part not modelled: every seeded row is readable here.
-    const watched = [table, ...embedTables(opts.select as string | undefined)]
+    const watched = [table, ...embedDeps(opts.select as string | undefined, table, cluster.schema)]
       .filter((t) => data.has(t));
     for (const t of watched) {
       const set = subs.get(t) ?? new Set<Sub>();
@@ -597,6 +622,8 @@ export type Mounted = {
   /** Dispatches the event and hands it back, so a test can assert whether the
    * terminal cancelled it. */
   fire(target: string | El, type?: string, init?: Record<string, unknown>): { defaultPrevented: boolean };
+  /** Deliver a store refusal through a region and account for its expected diagnostic. */
+  refuse(region: El, entity: string, error: Error): void;
   /** Every match's text, trimmed — a region's rendered rows in order. */
   texts(selector: string): string[];
   /** The elements of a role, optionally the one whose accessible name matches
@@ -664,6 +691,7 @@ export type MountSpec = {
    * minor-unit scale off the column. mountApp reads it from the app's own
    * shell.yaml. */
   schema?: Schema;
+  endowments?: Record<string, string[]>;
 };
 
 /** linkedom's HTMLFormElement carries no constraint API, and the interpreter
@@ -723,112 +751,6 @@ function formValidation(document: unknown, submitEvent: new (t: string, i: objec
   proto.requestSubmit = function (this: { dispatchEvent(e: unknown): boolean }) {
     this.dispatchEvent(new submitEvent("submit", { bubbles: true, cancelable: true }));
   };
-}
-
-/** A number or range input's parsed value, which linkedom models nowhere:
- * without it the allowlist advertises a field this tier can never deliver, and
- * a machine reading it works in every browser and refuses under test. */
-function valueAsNumber(document: unknown): void {
-  type Input = { type?: string; value?: string; getAttribute(name: string): string | null };
-  const proto = Object.getPrototypeOf(
-    (document as { createElement(tag: string): object }).createElement("input"),
-  ) as object;
-  if (Object.getOwnPropertyDescriptor(proto, "valueAsNumber") !== undefined) return;
-  Object.defineProperty(proto, "valueAsNumber", {
-    configurable: true,
-    get(this: Input) {
-      if (this.type !== "number" && this.type !== "range") return Number.NaN;
-      // An empty number field is NaN, not zero: the interpreter drops the field
-      // when it is NaN, and a test asserting a cleared field writes 0 would
-      // pass while the browser wrote nothing at all.
-      const raw = (this.value ?? "").trim();
-      if (raw === "") return Number.NaN;
-      const n = Number(raw);
-      // A range CLAMPS to its own bounds, and a screen may rest a safety
-      // argument on that. Returning the raw number would let a test claim a
-      // clamp the browser performs and this tier does not.
-      if (this.type !== "range" || Number.isNaN(n)) return n;
-      const lo = Number(this.getAttribute("min") ?? "0");
-      const hi = Number(this.getAttribute("max") ?? "100");
-      return Math.min(Math.max(n, Number.isNaN(lo) ? n : lo), Number.isNaN(hi) ? n : hi);
-    },
-  });
-}
-
-/** A button's `value`, which the DOM gives every one of them and linkedom gives
- * none.
- *
- * The interpreter reads a control's leaves off the ELEMENT — `value` off the
- * closest input, select, textarea or BUTTON — so in a browser every click
- * carries `value: ""` from the button it came from, where here it carried
- * nothing at all. A guard or an assign reading the event's value then answers
- * one way under test and the other way in front of a reader, which is the whole
- * class this shim closes: a questionnaire's Back arrow read an empty string as
- * an unanswered question and blocked a step the reader had already answered. */
-function buttonValue(document: unknown): void {
-  const proto = Object.getPrototypeOf(
-    (document as { createElement(tag: string): object }).createElement("button"),
-  ) as object;
-  if (Object.getOwnPropertyDescriptor(proto, "value") !== undefined) return;
-  Object.defineProperty(proto, "value", {
-    configurable: true,
-    get(this: { getAttribute(name: string): string | null }) {
-      return this.getAttribute("value") ?? "";
-    },
-    set(this: { setAttribute(name: string, v: string): void }, v: string) {
-      this.setAttribute("value", String(v));
-    },
-  });
-}
-
-/** A select's `value` setter, which linkedom omits: its select answers `value`
- * off the `selected` attribute and refuses an assignment, so a `data-value`
- * binding on a select threw at mount here while working in every browser.
- *
- * The setter is the browser's: the first option whose value matches becomes the
- * selected one and every other option stops being selected. A value no option
- * offers selects nothing, and the select then reads back as the empty string —
- * never the first option, which would show a choice the row never made. */
-function selectValue(document: unknown): void {
-  type Option = {
-    textContent: string | null;
-    getAttribute(name: string): string | null;
-    hasAttribute(name: string): boolean;
-    setAttribute(name: string, v: string): void;
-    removeAttribute(name: string): void;
-  };
-  type Select = { querySelectorAll(sel: string): Option[]; _prontoNoMatch?: boolean };
-  let proto = Object.getPrototypeOf(
-    (document as { createElement(tag: string): object }).createElement("select"),
-  ) as object | null;
-  let found: PropertyDescriptor | undefined;
-  while (proto !== null && found === undefined) {
-    found = Object.getOwnPropertyDescriptor(proto, "value");
-    if (found === undefined) proto = Object.getPrototypeOf(proto);
-  }
-  if (proto === null || found?.get === undefined) {
-    throw new Error("linkedom's select no longer answers value; this shim has nothing to extend");
-  }
-  if (found.set !== undefined) return;
-  const read = found.get;
-  const optionValue = (o: Option) => o.getAttribute("value") ?? (o.textContent ?? "").trim();
-  Object.defineProperty(proto, "value", {
-    configurable: true,
-    get(this: Select) {
-      // A selected option answers for itself, whoever selected it — choose()
-      // moves the attribute directly.
-      const picked = [...this.querySelectorAll("option")].find((o) => o.hasAttribute("selected"));
-      if (picked !== undefined) return optionValue(picked);
-      return this._prontoNoMatch === true ? "" : read.call(this);
-    },
-    set(this: Select, v: string) {
-      const options = [...this.querySelectorAll("option")];
-      const match = options.find((o) => optionValue(o) === String(v));
-      for (const o of options) if (o !== match) o.removeAttribute("selected");
-      if (match !== undefined) match.setAttribute("selected", "");
-      this._prontoNoMatch = match === undefined;
-    },
-  });
 }
 
 /** An element's box, which this tier has no layout to measure.
@@ -909,7 +831,7 @@ export function topLayer(document: unknown, Event: new (t: string, i: object) =>
  * children into `content`, a fragment of another document, where
  * `getElementById` cannot reach them at all.
  *
- * Without this the tier answers `data-key` and `data-interest` from markup that
+ * Without this the tier answers `data-key` from markup that
  * was never rendered: a key whose form only exists inside the template it is
  * stamped from resolves here and throws in a browser, so the one case that
  * matters — a filtered list with nothing in it — passes under test and fails in
@@ -938,47 +860,6 @@ export type Box = { left: number; top: number; width: number; height: number }
 /** States the box an element occupies, for the tier that cannot measure one. */
 export function boxOf(el: unknown, box: Box): void {
   ;(el as { _prontoBox?: Box })._prontoBox = box
-}
-
-/** The control properties linkedom declares nowhere. `checked` is the state a
- * radio or checkbox submits — the attribute is that state here, as it is for
- * value, and a radio's group clears when one of its own is set. */
-function controlProperties(document: unknown) {
-  type Input = {
-    type?: string;
-    name?: string;
-    getAttribute(name: string): string | null;
-    setAttribute(name: string, value: string): void;
-    removeAttribute(name: string): void;
-    closest(selector: string): { querySelectorAll(sel: string): Input[] } | null;
-  };
-  valueAsNumber(document);
-  buttonValue(document);
-  selectValue(document);
-  const proto = Object.getPrototypeOf(
-    (document as { createElement(tag: string): object }).createElement("input"),
-  ) as object;
-  if (Object.getOwnPropertyDescriptor(proto, "checked") !== undefined) return;
-
-  Object.defineProperty(proto, "checked", {
-    configurable: true,
-    get(this: Input) {
-      return this.getAttribute("checked") !== null;
-    },
-    set(this: Input, on: boolean) {
-      if (!on) {
-        this.removeAttribute("checked");
-        return;
-      }
-      if (this.type === "radio" && this.name !== undefined) {
-        const scope = this.closest("form");
-        for (const peer of scope?.querySelectorAll(`input[type=radio][name="${this.name}"]`) ?? []) {
-          peer.removeAttribute("checked");
-        }
-      }
-      this.setAttribute("checked", "");
-    },
-  });
 }
 
 /** Every store call a mount made that was not a read. */
@@ -1030,7 +911,13 @@ export async function mountScreen(spec: MountSpec): Promise<Mounted> {
     return Promise.resolve(new Response(source));
   };
 
-  if (spec.expectRefusal !== true) collect = (err) => escaped.push(err);
+  let expectedRefusalLog: Error | undefined;
+  if (spec.expectRefusal !== true) {
+    collect = (err) => {
+      if (err === expectedRefusalLog) expectedRefusalLog = undefined;
+      else escaped.push(err);
+    };
+  }
   const disarm = () => {
     collect = null;
     (globalThis as unknown as EventTarget).removeEventListener("unhandledrejection", onEscape as EventListener);
@@ -1158,6 +1045,23 @@ export async function mountScreen(spec: MountSpec): Promise<Mounted> {
       el.dispatchEvent(ev);
       return ev;
     },
+    refuse(region, entity, error) {
+      const deliver = (region as El & {
+        _prontoRefusal?: (entity: string, id: string | undefined, error: Error) => void;
+      })._prontoRefusal;
+      if (deliver === undefined) throw new Error("region has no refusal delivery hook");
+      expectedRefusalLog = error;
+      try {
+        deliver(entity, undefined, error);
+      } catch (err) {
+        expectedRefusalLog = undefined;
+        throw err;
+      }
+      if (expectedRefusalLog === error) {
+        expectedRefusalLog = undefined;
+        throw new Error("refusal delivery did not report its error");
+      }
+    },
     texts: (selector) => [...mount.querySelectorAll(selector)].map(textOf),
     byRole: (role, name) => byRole(mount, role, name),
     set(target, prop, value) {
@@ -1202,15 +1106,15 @@ export async function mountScreen(spec: MountSpec): Promise<Mounted> {
   };
 }
 
-export async function appMessages(appDir: URL): Promise<Record<string, Record<string, string>>> {
-  const messages: Record<string, Record<string, string>> = {};
+export async function appMessages(appDir: URL): Promise<Record<string, Record<string, unknown>>> {
+  const messages: Record<string, Record<string, unknown>> = {};
   try {
     const dir = new URL("messages/", appDir);
     for await (const entry of Deno.readDir(dir)) {
       if (entry.isFile && entry.name.endsWith(".json")) {
         const locale = entry.name.slice(0, -".json".length);
         const text = await Deno.readTextFile(new URL(entry.name, dir));
-        messages[locale] = JSON.parse(text);
+        messages[locale] = compileCatalog(JSON.parse(text));
       }
     }
   } catch {}
@@ -1242,7 +1146,16 @@ export async function mountApp(
     cluster: { ...declared, ...spec.cluster },
     units: { ...(await appUnits(spec.appDir)), ...spec.units },
     schema: spec.schema ?? await appSchema(spec.appDir),
+    endowments: spec.endowments ?? await appEndowments(spec.appDir),
   });
+}
+
+/** The manifest-granted platform endowments an app declares (shell.yaml `endowments:`). */
+export async function appEndowments(appDir: URL): Promise<Record<string, string[]> | undefined> {
+  const shell = parseYaml(await Deno.readTextFile(new URL("shell/shell.yaml", appDir))) as {
+    endowments?: Record<string, string[]>;
+  };
+  return shell.endowments;
 }
 
 /** The entity projection an app emits (shell.yaml `schema:`), which is what a
@@ -1281,10 +1194,11 @@ export async function appCluster(appDir: URL): Promise<Cluster> {
     uniques?: Record<string, string[][]>;
     access?: Cluster["access"];
     keys?: Record<string, string>;
+    schema?: Schema;
   };
   const owners: Record<string, string> = {};
   for (const [table, a] of Object.entries(shell.access ?? {})) {
     if (a.owner !== undefined) owners[table] = a.owner;
   }
-  return { uniques: shell.uniques, owners, keys: shell.keys, access: shell.access };
+  return { uniques: shell.uniques, owners, keys: shell.keys, access: shell.access, schema: shell.schema };
 }

@@ -1,6 +1,6 @@
 // Precached immutable shell assets required for cold offline boot.
-const STATIC_CACHE = "pronto-static-v2";
-const RUNTIME_CACHE = "pronto-runtime-v2";
+const STATIC_CACHE = "pronto-static-v3";
+const RUNTIME_CACHE = "pronto-runtime-v3";
 
 const PRECACHE_ASSETS = [
   "/shell/index.html",
@@ -40,18 +40,57 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (BYPASS_PREFIXES.some((p) => url.pathname.startsWith(p))) return;
 
-  // Cache-first for immutable static shell and interpreter code.
+  // Stale-While-Revalidate for shell, screen templates, styles, and interpreter assets.
+  // Serves from cache immediately for 0ms offline boot, while revalidating against
+  // the server in the background. If a template or stylesheet has updated, the SW
+  // caches the new response and posts a message to active client windows to morph
+  // the DOM or hot-reload styles in-place without page reload.
   if (url.pathname.startsWith("/shell/") || url.pathname.startsWith("/omnishell/")) {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((res) => {
-          if (res.ok) {
-            const clone = res.clone();
-            caches.open(STATIC_CACHE).then((cache) => cache.put(req, clone));
-          }
-          return res;
-        });
+      caches.open(STATIC_CACHE).then(async (cache) => {
+        const cached = await cache.match(req);
+
+        const revalidatePromise = fetch(req)
+          .then(async (res) => {
+            if (!res.ok) return res;
+            if (!cached) {
+              // A first fetch is not an update: the requester is handed this very
+              // response, and a morph to it would strip the state a screen mounted.
+              await cache.put(req, res.clone());
+              return res;
+            }
+            const newText = await res.clone().text();
+            if (newText !== await cached.clone().text()) {
+              await cache.put(req, res.clone());
+              const clients = await self.clients.matchAll({ type: "window" });
+              for (const client of clients) {
+                if (url.pathname.endsWith(".html")) {
+                  client.postMessage({
+                    type: "PRONTO_SKELETON_UPDATED",
+                    url: req.url,
+                    pathname: url.pathname,
+                    html: newText,
+                  });
+                } else if (url.pathname.endsWith(".css")) {
+                  client.postMessage({
+                    type: "PRONTO_STYLE_UPDATED",
+                    url: req.url,
+                    pathname: url.pathname,
+                    css: newText,
+                  });
+                }
+              }
+            }
+            return res;
+          })
+          .catch(() => {
+            // Network failure / offline: cached response already served
+          });
+
+        if (cached) {
+          return cached;
+        }
+        return revalidatePromise;
       }),
     );
     return;

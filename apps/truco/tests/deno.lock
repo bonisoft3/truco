@@ -12,7 +12,7 @@
     "npm:@xstate/graph@3.0.4": "3.0.4_xstate@5.32.6",
     "npm:fake-indexeddb@6.2.5": "6.2.5",
     "npm:linkedom@0.18.4": "0.18.4",
-    "npm:playwright@1.59.1": "1.59.1",
+    "npm:playwright@1.61.1": "1.61.1",
     "npm:xstate@5.32.6": "5.32.6"
   },
   "jsr": {
@@ -140,12 +140,12 @@
         "boolbase"
       ]
     },
-    "playwright-core@1.59.1": {
-      "integrity": "sha512-HBV/RJg81z5BiiZ9yPzIiClYV/QMsDCKUyogwH9p3MCP6IYjUFu/MActgYAvK0oWyV9NlwM3GLBjADyWgydVyg==",
+    "playwright-core@1.61.1": {
+      "integrity": "sha512-h7Qlt6m4REp25qvIdvbDtVmD4LqVXfpRxhORv9L0jzETM05p4fuPJ3dKyuSXQxDSbXnmS79HAgi9589lGSpLkg==",
       "bin": true
     },
-    "playwright@1.59.1": {
-      "integrity": "sha512-C8oWjPR3F81yljW9o5OxcWzfh6avkVwDD2VYdwIGqTkl+OGFISgypqzfu7dOe4QNLL2aqcWBmI3PMtLIK233lw==",
+    "playwright@1.61.1": {
+      "integrity": "sha512-DWnY5o3YbLWK4GovuAVwpqL+1VwGNdUGrRr++8j8PtQQzvAVZUIMjKQ90fY689sEJZJBbZVw1rXaOKSTitkzPQ==",
       "dependencies": [
         "playwright-core"
       ],

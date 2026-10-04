@@ -14,13 +14,10 @@ const SIZES: [number, number][] = [[1440, 900], [1280, 800], [390, 844]];
 type Page = any;
 
 const onTable = async (width: number, height: number, fn: (page: Page) => Promise<void>) => {
-  const { chromium } = await import("npm:playwright@1.59.1");
+  const { chromium } = await import("npm:playwright@1.61.1");
   const browser = await chromium.launch({ headless: true, args: ["--ignore-certificate-errors"] });
   try {
-    const page = await browser.newPage({
-      viewport: { width, height },
-      ignoreHTTPSErrors: true,
-    });
+    const page = await browser.newPage({ viewport: { width, height } });
     await page.goto(`${BASE}/`, { waitUntil: "load" });
     await page.waitForSelector(".board.table-frame", { timeout: 25000 });
     // Wait for the seated match

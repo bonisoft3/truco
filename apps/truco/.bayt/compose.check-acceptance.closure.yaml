@@ -1,0 +1,28 @@
+# generated from bayt.cue — do not edit
+include:
+- path: ../../../apps/truco/.bayt/compose.check-acceptance.yaml
+  required: false
+- path: ../../../apps/truco/.bayt/compose.browser.yaml
+  required: false
+- path: ../../../apps/truco/.bayt/compose.launch.yaml
+  required: false
+- path: ../../../apps/truco/.bayt/compose.caddy.yaml
+  required: false
+- path: ../../../apps/truco/.bayt/compose.database.yaml
+  required: false
+- path: ../../../libraries/mecha/.bayt/compose.database-image.yaml
+  required: false
+- path: ../../../apps/truco/.bayt/compose.crud.yaml
+  required: false
+- path: ../../../apps/truco/.bayt/compose.electric.yaml
+  required: false
+- path: ../../../apps/truco/.bayt/compose.auth.yaml
+  required: false
+- path: ../../../libraries/mecha/.bayt/compose.auth-image.yaml
+  required: false
+services:
+  bayt:
+    extends:
+      file: ./compose.check-acceptance.yaml
+      service: apps_truco-check-acceptance
+    scale: 1

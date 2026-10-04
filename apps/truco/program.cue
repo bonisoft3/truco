@@ -10,6 +10,8 @@
 package truco
 
 import (
+	"list"
+
 	pronto "bonisoft.org/plugins/pronto"
 )
 
@@ -72,6 +74,8 @@ code: pronto.#App & {
 					{name: "manilha", type: "text", cel: "this.size() > 0"},
 					{name: "phase", type: "text", cel: "this in ['dealt', 'v1', 'v2', 'v3', 'result']"},
 					{name: "truco_state", type: "text", required: false, cel: "this in ['', 'none', 'truco_called', 'retruco_called', 'vale4_called', 'truco_accepted', 'retruco_accepted', 'vale4_accepted', 'truco_folded']"},
+					{name: "envido_state", type: "text", required: false, cel: "this in ['', 'none', 'called', 'real_called', 'falta_called', 'accepted', 'folded', 'flor']"},
+					{name: "trick_state", type: "text", required: false, cel: "this in ['', 'dealt', 'v1_in_progress', 'v1_us', 'v1_them', 'v1_tie', 'v2_tie', 'result']"},
 					{name: "ran", type: "text", required: false, cel: "this in ['', 'us', 'them', 'others']"},
 					{name: "v1", type: "text", required: false, cel: "this in ['', 'us', 'them', 'others', 'tie']"},
 					{name: "v2", type: "text", required: false, cel: "this in ['', 'us', 'them', 'others', 'tie']"},
@@ -206,7 +210,7 @@ code: pronto.#App & {
 					{name: "challenger_name", type: "text", cel: "this.size() > 0 && this.size() <= 40"},
 					{name: "target_id", type: "text", cel: "this.size() <= 64"},
 					{name: "seed", type: "text", cel: "this.size() <= 64"},
-					{name: "status", type: "text", cel: "this in ['pending', 'accepted', 'declined']"},
+					{name: "status", type: "text", cel: "this in ['pending', 'accepted', 'declined', 'expired']"},
 					{name: "created_at", type: "timestamptz", required: false},
 				]
 			}
@@ -223,6 +227,28 @@ code: pronto.#App & {
 					{name: "slot", type: "int", required: false, cel: "this >= 0 && this <= 12"},
 					{name: "created_at", type: "timestamptz", required: false},
 				]
+			}
+		}
+		machines: {
+			ChallengeMachine: {
+				name:    "ChallengeMachine"
+				entity:  "Challenge"
+				field:   "status"
+				initial: "pending"
+				states: {
+					pending: {
+						after: {
+							"60000": "expired"
+						}
+						on: {
+							accept:  "accepted"
+							decline: "declined"
+						}
+					}
+					accepted: {type: "final"}
+					declined: {type: "final"}
+					expired: {type: "final"}
+				}
 			}
 		}
 		// No pipeline: a tab entity has no table to publish (ir decision-04).
@@ -244,9 +270,8 @@ code: pronto.#App & {
 			arena: {
 				title: "Mesa"
 				route: "/"
-				// The one route on the strip, so the strip's one word is this
-				// one, and it is drawn in the language of the page it sits on.
 				label:  "nav_table"
+				strip:  false
 				markup: _arenaMarkup
 				forms: [
 				]
@@ -683,46 +708,16 @@ code: pronto.#App & {
 }
 
 // The terminal's statics ride the cluster's caddy image; without this
-// wiring the image bakes only the ladder docs and every route 404s.
-cluster: (pronto.#DefaultCluster & {"code": code, statics: terminal.surface.statics}).out
+// wiring the image bakes only the ladder docs and every route 404s. The
+// opponents' portraits are named by shell/shared/table.css, which pronto does
+// not read, so they are listed here.
+_portraits: [for p in ["bigode", "cida", "jordi", "nezinho", "osvaldo", "tabare", "tiao", "tiao_queijo", "xiru"] {
+	file:   "shell/assets/\(p).png"
+	target: "/srv/shell/assets/\(p).png"
+}]
+cluster: (pronto.#DefaultCluster & {"code": code, statics: list.Concat([terminal.surface.statics, _portraits])}).out
 terminal: (pronto.#DefaultTerminal & {"code": code}).out
 loop: (pronto.#DefaultLoop & {"code": code, "cluster": cluster, "terminal": terminal}).out
-
-// The brief asks for an automated driver over the acceptance checklist, and a
-// check no verb reaches does not exist: it needs the cluster up, so it lands
-// at integrate beside the visual battery. This is the loop seat's declared
-// override seam — the app adds a check, it does not invent a verb.
-loop: surface: checks: "acceptance": {
-	verb: "integrate"
-	cmds: [
-		"mise exec -- docker compose up -d --wait --build launch",
-		"deno run --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors tests/acceptance.ts .",
-	]
-	note: "walks the brief's acceptance checklist against the running table: deal, play, raise, score, pickers, both screens"
-}
-
-// The platform's battery runs its contrast and clipping checks at the theme
-// the table boots in, at two window shapes. A cloth changes the ink and a
-// window shape changes what fits, so the app runs the same two checks across
-// every window shape and every cloth.
-loop: surface: checks: "fit": {
-	verb: "integrate"
-	cmds: [
-		"mise exec -- docker compose up -d --wait --build launch",
-		"deno run --unstable-sloppy-imports --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors tests/fit.ts .",
-	]
-	note: "the terminal's contrast and clipping checks across five window shapes and all four cloths"
-}
-
-// Spatial geometry, trick card alignment, and window layout invariants across viewports.
-loop: surface: checks: "window": {
-	verb: "integrate"
-	cmds: [
-		"mise exec -- docker compose up -d --wait --build launch",
-		"deno run --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors tests/window.test.ts",
-	]
-	note: "spatial geometry, trick card alignment, and window layout invariants across desktop and mobile viewports"
-}
 
 // The only tier below the cluster where a fact about the table AS A WHOLE
 // holds still: the engine, the pickers and the fold run together, so a claim
@@ -744,5 +739,38 @@ loop: surface: checks: "fuel_mutations": {
 }
 
 build: (pronto.#DefaultBuild & {"code": code, "loop": loop, "cluster": cluster}).out
+
+// The brief asks for an automated driver over the acceptance checklist, and a
+// check no verb reaches does not exist: it needs the cluster up, so it lands
+// at integrate beside the visual battery. This is the build seat's declared
+// override seam — the app adds a check, it does not invent a verb.
+build: checks: "acceptance": {
+	browser: true
+	cmds: [
+		"deno run --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/acceptance.ts .",
+	]
+	note: "walks the brief's acceptance checklist against the running table: deal, play, raise, score, pickers, both screens"
+}
+
+// The platform's battery runs its contrast and clipping checks at the theme
+// the table boots in, at two window shapes. A cloth changes the ink and a
+// window shape changes what fits, so the app runs the same two checks across
+// every window shape and every cloth.
+build: checks: "fit": {
+	browser: true
+	cmds: [
+		"deno run --unstable-sloppy-imports --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/fit.ts .",
+	]
+	note: "the terminal's contrast and clipping checks across five window shapes and all four cloths"
+}
+
+// Spatial geometry, trick card alignment, and window layout invariants across viewports.
+build: checks: "window": {
+	browser: true
+	cmds: [
+		"deno run --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/window.test.ts",
+	]
+	note: "spatial geometry, trick card alignment, and window layout invariants across desktop and mobile viewports"
+}
 
 out: pronto.#emit & {"code": code, "cluster": cluster, "terminal": terminal, "loop": loop, "build": build}

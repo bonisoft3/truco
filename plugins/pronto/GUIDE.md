@@ -43,6 +43,7 @@ An app is one directory. What you author:
 | `pipelines/*.blobl`, `pipelines/*.browser.js` | a pipeline's transform and its browser twin |
 | `messages/<tag>.json` | one message catalogue per declared locale |
 | `services/database/sql/*.sql` | SQL beyond the derived DDL |
+| `seed.json` | seed rows a tool produced, held as data ([Seed rows](#seed-rows)) |
 | `tests/*` | the app's own tests and drivers, each declared as a check |
 | `.mise.toml`, `mise.lock` | the toolchain, scaffold-owned |
 
@@ -77,7 +78,10 @@ with no live service (`tests/*.test.ts`, `check machines`, `check battery`),
 `integrate` for anything that needs the cluster up (the migration replay, the
 scheduled pipelines, visual lint). `sayt launch` brings the cluster up,
 minting a local TLS pair on first run. An app adds a check as
-`loop: surface: checks: <name>: {verb, cmds, note}` in its program; it never
+`loop: surface: checks: <name>: {verb, cmds, note}` in its program, and one
+that talks to the running app as `build: checks: <name>: {cmds, note}`, which
+runs in a container beside the stack
+([checks and verbs](docs/component-contracts.md#checks-and-verbs)); it never
 invents a verb or a script nobody runs.
 
 On the running shell, `?storybook` renders every screen × state against
@@ -159,6 +163,37 @@ query. If they cannot — a favourite count over private favourites — declare 
 tells each reader whether that total counted them; its fields are
 [the fold's](docs/pipelines-and-schedules.md#the-shapes), and why nothing local
 can tell is [access](docs/access.md#a-count-the-reader-is-inside-of).
+
+### Seed rows
+
+An entity's `seed` states the rows its store holds before anyone writes one: a
+cluster durability renders them into `900_seed.sql`, a `tab` one into
+`shell.yaml`. CUE unifies each with its entity's constraints, at every
+evaluation of the program — which is right for the rows a program means, and a
+tax on every export, vet and check for an archive a crawler produced.
+
+Such an archive is held as data instead: a JSON file beside the program,
+outside its package, named by `state: seed: src`.
+
+```cue
+state: seed: src: "seed.json" // {"<Entity>": [row, ...]}
+```
+
+- Its rows go only to server entities, and render into `900_seed.sql` with the
+  stated ones; an entity's rows are stated or held, never both.
+- `derive.ts` judges them with `cue vet -d 'code.#Seed' . seed.json` — the same
+  constraints a stated row meets — and then with the `beyond` checks. A bad row
+  fails the writer, its path in cue's report (`Game.5.home_score`).
+- The verdict is recorded in `.pronto/facts.json` (`seed_vetted`) under a key
+  over the file, the entities, `program_cel.cue` and pronto's `types.cue` and
+  `schema.cue`, so a write that changed none of them does not judge again, and
+  the file's `artifact` row makes `check-facts` refuse an edit the writer never
+  saw.
+- Write a row's constraints as its fields' types and `cel`. A constraint
+  written on `seed` by hand is still applied, but the key does not cover it.
+
+Why data, and why judged this way rather than in TypeScript or not at all, is
+[held seeds](docs/archive/2026-10-02-held-seeds.md).
 
 ### Schedules
 

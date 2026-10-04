@@ -10,11 +10,21 @@ services:
       args:
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    command:
+    - sh
+    - -c
+    - >-
+      if [ -f /certs/localhost.pem ]; then export CADDY_TLS='/certs/localhost.pem
+      /certs/localhost-key.pem'; fi; exec caddy run --config /etc/caddy/Caddyfile
+      --adapter caddyfile
     develop:
       watch:
       - action: sync+restart
         path: ../docker/Caddyfile
         target: /etc/caddy/Caddyfile
+      - action: sync+restart
+        path: ../.certs
+        target: /certs
       - action: sync+restart
         path: ../shell/index.html
         target: /srv/shell/index.html
@@ -121,6 +131,12 @@ services:
         path: ../../../plugins/omnishell/interpreter/jessie.js
         target: /omnishell/interpreter/jessie.js
       - action: sync+restart
+        path: ../../../plugins/omnishell/interpreter/kinetic.js
+        target: /omnishell/interpreter/kinetic.js
+      - action: sync+restart
+        path: ../../../plugins/omnishell/interpreter/prng.js
+        target: /omnishell/interpreter/prng.js
+      - action: sync+restart
         path: ../../../plugins/omnishell/interpreter/vendor/mecha-client.js
         target: /omnishell/interpreter/vendor/mecha-client.js
       - action: sync+restart
@@ -132,6 +148,9 @@ services:
       - action: sync+restart
         path: ../../../plugins/omnishell/interpreter/vendor/morphlex.js
         target: /omnishell/interpreter/vendor/morphlex.js
+      - action: sync+restart
+        path: ../../../plugins/omnishell/interpreter/vendor/messages.js
+        target: /omnishell/interpreter/vendor/messages.js
       - action: sync+restart
         path: ../../../plugins/omnishell/components/wallclock.js
         target: /omnishell/components/wallclock.js
@@ -171,9 +190,7 @@ services:
         aliases:
         - caddy
     ports:
-    - ${CADDY_TLS_HOST_PORT:-8443}:8443
-    volumes:
-    - ../.certs:/certs:ro
+    - ${CADDY_TLS_HOST_PORT:-0}:8443
   apps_truco-caddy_bayt:
     build:
       context: ..

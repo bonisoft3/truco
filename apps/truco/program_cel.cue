@@ -67,6 +67,8 @@ code: state: entities: {
 			manilha?: strings.MinRunes(1)
 			phase?: ("dealt" | "v1" | "v2" | "v3" | "result")
 			truco_state?: ("" | "none" | "truco_called" | "retruco_called" | "vale4_called" | "truco_accepted" | "retruco_accepted" | "vale4_accepted" | "truco_folded")
+			envido_state?: ("" | "none" | "called" | "real_called" | "falta_called" | "accepted" | "folded" | "flor")
+			trick_state?: ("" | "dealt" | "v1_in_progress" | "v1_us" | "v1_them" | "v1_tie" | "v2_tie" | "result")
 			ran?: ("" | "us" | "them" | "others")
 			v1?: ("" | "us" | "them" | "others" | "tie")
 			v2?: ("" | "us" | "them" | "others" | "tie")
@@ -92,6 +94,8 @@ code: state: entities: {
 		enums: {
 			phase: ["dealt","v1","v2","v3","result"]
 			truco_state: ["","none","truco_called","retruco_called","vale4_called","truco_accepted","retruco_accepted","vale4_accepted","truco_folded"]
+			envido_state: ["","none","called","real_called","falta_called","accepted","folded","flor"]
+			trick_state: ["","dealt","v1_in_progress","v1_us","v1_them","v1_tie","v2_tie","result"]
 			ran: ["","us","them","others"]
 			v1: ["","us","them","others","tie"]
 			v2: ["","us","them","others","tie"]
@@ -226,7 +230,7 @@ code: state: entities: {
 			challenger_name: "char_length(challenger_name) > 0 AND char_length(challenger_name) <= 40"
 			target_id: "char_length(target_id) <= 64"
 			seed: "char_length(seed) <= 64"
-			status: "status IN ('pending', 'accepted', 'declined')"
+			status: "status IN ('pending', 'accepted', 'declined', 'expired')"
 		}
 		seed: [...{
 			id?: strings.MaxRunes(64)
@@ -234,10 +238,10 @@ code: state: entities: {
 			challenger_name?: strings.MinRunes(1) & strings.MaxRunes(40)
 			target_id?: strings.MaxRunes(64)
 			seed?: strings.MaxRunes(64)
-			status?: ("pending" | "accepted" | "declined")
+			status?: ("pending" | "accepted" | "declined" | "expired")
 		}]
 		enums: {
-			status: ["pending","accepted","declined"]
+			status: ["pending","accepted","declined","expired"]
 		}
 		bounds: {
 			id: {sizeMax: 64}

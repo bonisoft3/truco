@@ -51,10 +51,10 @@ _t1_tf: files: build: tasks: default: {
 	// BAYTW invokes the `bayt` CLI (cache subcommand) + activate suffix;
 	// the cmd line reads as `{{.BAYTW}} <do>`. Defer is last so source
 	// order matches the task-exit firing order.
-	vars: BAYTW: =~"^bayt cache run --manifest '.*bayt\\.build\\.json'.* -- mise x --$"
+	vars: BAYTW: =~"^mise x -- bayt cache run --manifest '.*bayt\\.build\\.json'.* -- mise x --$"
 	cmds: [
 		"{{.BAYTW}} cargo build --release",
-		{defer: =~"^{{if not .EXIT_CODE}}bayt fingerprint .* --update-stamp{{end}}$"},
+		{defer: =~"^{{if not .EXIT_CODE}}mise x -- bayt fingerprint .* --update-stamp{{end}}$"},
 	]
 }
 
@@ -101,10 +101,10 @@ _t3_tf: files: build: tasks: builtin: deps:   ["pregen"]
 _t3_tf: files: build: tasks: postcheck: deps: ["builtin"]
 // Per-cmd generates path under .task/bayt/.
 _t3_tf: files: build: tasks: pregen: generates: [".task/bayt/build.pregen.hash"]
-_t3_tf: files: build: tasks: pregen: vars: BAYTW: =~"^bayt cache run --manifest '.*bayt\\.build\\.json' --cmd pregen.* -- mise x --$"
+_t3_tf: files: build: tasks: pregen: vars: BAYTW: =~"^mise x -- bayt cache run --manifest '.*bayt\\.build\\.json' --cmd pregen.* -- mise x --$"
 _t3_tf: files: build: tasks: pregen: cmds: [
 	"{{.BAYTW}} gen-code.nu",
-	{defer: =~"^{{if not .EXIT_CODE}}bayt fingerprint --manifest '.*' --cmd pregen --stamp-file .*build\\.pregen\\.hash --update-stamp{{end}}$"},
+	{defer: =~"^{{if not .EXIT_CODE}}mise x -- bayt fingerprint --manifest '.*' --cmd pregen --stamp-file .*build\\.pregen\\.hash --update-stamp{{end}}$"},
 ]
 
 // --- T4: env map flows through onto the emitted task.
@@ -154,7 +154,7 @@ _t6: #project & {
 	}
 }
 _t6_tf: (#taskfileGen & {project: _t6, depManifests: {}})
-_t6_tf: files: build: tasks: default: vars: BAYTW: =~"^bayt cache run --manifest '.*bayt\\.build\\.json'.* -- devbox run --$"
+_t6_tf: files: build: tasks: default: vars: BAYTW: =~"^mise x -- bayt cache run --manifest '.*bayt\\.build\\.json'.* -- devbox run --$"
 _t6_tf: files: build: tasks: default: cmds: [
 	"{{.BAYTW}} cargo build",
 	{defer: string},
@@ -226,8 +226,10 @@ _t9_tf: files: doctor: tasks: default: cmds: [
 // bayt_root (union over targets, `run: once`, each a dep on the target
 // through the dep project's include, skipped where that project has no
 // `.bayt`) plus `::bayt:cross_*` deps on the
-// per-target default. Depth-aware paths: dir "apps/t10" → `../../`; a
-// workspaceroot dep (dir "") drops the dir segment. Synthetic views and
+// per-target default. Runners and includes are keyed by the dep's project
+// name, not its dir: a project keeps its name when a mirror relocates it.
+// Depth-aware paths: dir "apps/t10" → `../../`; a workspaceroot dep (dir "")
+// drops the dir segment. Synthetic views and
 // same-project entries never produce runners (t1–t9 stay runner-free —
 // see T7's includes-only pin).
 _t10: #project & {
@@ -258,11 +260,23 @@ _t10_tf: (#taskfileGen & {project: _t10, depManifests: {
 		outs: {globs: [], exclude: []}
 	}
 }})
-_t10_tf: bayt_root: tasks: cross_libs_x_build: {
+_t10_tf: bayt_root: tasks: cross_libx_build: {
 	internal: true
 	run:      "once"
 	if:       "test -f ../../libs/x/Taskfile.yml"
-	deps: ["libs_x:bayt:build"]
+	deps: ["libx:bayt:build"]
+}
+_t10_tf: bayt_root: tasks: cross_libs_x_build?: _|_
+_t10_tf: bayt_root: includes: libx: {
+	taskfile: "../../../libs/x/Taskfile.yml"
+	dir:      "../../../libs/x/"
+	optional: true
+}
+_t10_tf: bayt_root: includes: libs_x?: _|_
+_t10_tf: bayt_root: includes: workspaceroot: {
+	taskfile: "../../../Taskfile.yml"
+	dir:      "../../../"
+	optional: true
 }
 _t10_tf: bayt_root: tasks: cross_workspaceroot_setup: {
 	internal: true
@@ -270,7 +284,7 @@ _t10_tf: bayt_root: tasks: cross_workspaceroot_setup: {
 	if:       "test -f ../../Taskfile.yml"
 	deps: ["workspaceroot:bayt:setup"]
 }
-_t10_tf: files: build: tasks: default: deps: ["::bayt:setup", "::bayt:cross_libs_x_build"]
+_t10_tf: files: build: tasks: default: deps: ["::bayt:setup", "::bayt:cross_libx_build"]
 _t10_tf: files: setup: tasks: default: deps: ["::bayt:cross_workspaceroot_setup"]
 
 // --- T11: a single-cmd cache.full target carries the cache check as its
@@ -290,7 +304,7 @@ _t11: #project & {
 	}
 }
 _t11_tf: (#taskfileGen & {project: _t11, depManifests: {}})
-_t11_tf: files: build: tasks: default: if: =~"^bayt cache check --manifest '\\{\\{\\.TASKFILE_DIR\\}\\}/bayt\\.build\\.json' --stamp-file \\.task/bayt/build\\.hash; \\[ \\$\\? -ne 10 \\]$"
+_t11_tf: files: build: tasks: default: if: =~"^mise x -- bayt cache check --manifest '\\{\\{\\.TASKFILE_DIR\\}\\}/bayt\\.build\\.json' --stamp-file \\.task/bayt/build\\.hash; \\[ \\$\\? -ne 10 \\]$"
 _t11_tf: files: setup: tasks: default: {[=~"^if$"]: _|_}
 _t1_tf: files: build: tasks: default: {[=~"^if$"]: _|_}
 
@@ -308,3 +322,29 @@ Tests: taskfile: {
 	t10: _t10_tf
 	t11: _t11_tf
 }
+
+// --- T12: a dep that states a discriminator is keyed by it, so a local
+// target of its name does not collide: a target `libx` and a dep project
+// `libx` (discriminator k4wz) include side by side. Without one, the two
+// would conflict, telling the dep's author to mint it.
+_t12: #project & {
+	name: "t12"
+	dir:  "apps/t12"
+	targets: {
+		"libx": {taskfile: {}, cmd: "builtin": do: "true"}
+		"build": {taskfile: {}, deps: [":libx", "libx:build"], cmd: "builtin": do: "true"}
+	}
+}
+_t12_tf: (#taskfileGen & {project: _t12, depManifests: {
+	"libx:build": {
+		visibility:    "public"
+		name:          "build"
+		project:       "libx"
+		discriminator: "k4wz"
+		dir:           "libs/x"
+		outs: {globs: [], exclude: []}
+	}
+}})
+_t12_tf: bayt_root: includes: libx: taskfile: "./Taskfile.libx.yaml"
+_t12_tf: bayt_root: includes: "libx-k4wz": taskfile: "../../../libs/x/Taskfile.yml"
+_t12_tf: bayt_root: tasks: cross_libx_build: deps: ["libx-k4wz:bayt:build"]

@@ -106,6 +106,12 @@ t; CREATE TABLE t` restarts it at 1, so on name and number alone an identical
 recreate reads as no change. A catalog state does not care how it was reached,
 which is why it sees what the text readers cannot.
 
+The replay is a service of the app's build graph, `replay`, whose exit code is
+the verdict. It drives the host's daemon through its socket, since only that
+daemon holds the images the runtime was built into, and runs under a compose
+project of its own, `<app>-replay`, so its `--remove-orphans` cannot take the
+running cluster down.
+
 The replay then applies the whole set a second time, onto a copy, with each
 statement isolated. A step that cannot be applied twice is a finding, since a
 correction below it never reaches a database that already exists; the only
@@ -163,6 +169,27 @@ migration that does not apply, such as one adding a column the entity already
 declares, is an error at `code.state.migrations.<name>`, and so is one pgroll's
 ledger shows it skipped. Step 2 is a manual discipline
 ([pending](../PENDING.md#schema-changes)).
+
+### Retyping a column from a domain to its base type
+
+The domain/base split ([types](types-and-identity.md#a-domain-only-where-the-output-needs-one))
+changes the column type of every field of the nine types that lost their
+domain. A database built from the regenerated migrations takes the new types
+from initdb. No pronto deployment carries a data directory from one image to
+the next: `PGDATA` sits on the database container's writable layer
+([mecha's schema](../../../libraries/mecha/docs/schema.md)), and a rebuilt image
+recreates the container empty. So no migration is emitted, and the database is
+rebuilt with its migrations: a container started again from an image built
+before the split keeps its domains, and the first subset an on-demand
+collection asks of one is Electric's 400, a ProgramError naming the table.
+Comparing the data directory with the initdb steps inside one container cannot
+see that, since the container carries the steps that built it. When a pronto
+database is deployed, the retype is a pgroll `sql` step, and it is not a one-liner: Postgres
+refuses `ALTER COLUMN TYPE` on a column a generated column, a policy or a
+column-list trigger reads (golaberto's `season` and `full_name`, ponto's `day`
+and `competencia`, realworld's `slug`, every private owner policy), and
+re-creating a generated column issues it a new `attnum`, which the replay
+reports as a column gone ([pending](../PENDING.md#the-lattice)).
 
 ## Rejected
 

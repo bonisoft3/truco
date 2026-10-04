@@ -33,6 +33,9 @@ import (
 					said: ""
 				}
 			}]
+			after: {
+				"15000": "truco_folded"
+			}
 			on: {
 				"click@btn-accept": {
 					target: "truco_accepted"
@@ -67,6 +70,9 @@ import (
 					said: ""
 				}
 			}]
+			after: {
+				"15000": "truco_folded"
+			}
 			on: {
 				"click@btn-accept": {
 					target: "retruco_accepted"
@@ -90,6 +96,9 @@ import (
 					said: ""
 				}
 			}]
+			after: {
+				"15000": "truco_folded"
+			}
 			on: {
 				"click@btn-accept": {
 					target: "vale4_accepted"
@@ -151,5 +160,257 @@ import (
 	}
 	onDone: {
 		target: ".none"
+	}
+}
+
+#EnvidoMachine: terminal.#Machine & {
+	field:   "envido_state"
+	initial: "none"
+	states: {
+		none: {
+			entry: [{
+				assign: {
+					envido_calls: ""
+					envido_rung:  0
+				}
+			}]
+			on: {
+				"click@btn-envido": {
+					target: "called"
+				}
+				"click@btn-envido-real": {
+					target: "real_called"
+				}
+				"click@btn-envido-falta": {
+					target: "falta_called"
+				}
+				"click@btn-flor": {
+					target: "flor"
+				}
+			}
+		}
+		called: {
+			entry: [{
+				assign: {
+					envido_calls: "real falta answer"
+					envido_rung:  2
+				}
+			}]
+			exit: [{
+				assign: {
+					envido_calls: ""
+					envido_rung:  0
+				}
+			}]
+			on: {
+				"click@btn-envido-take": {
+					target: "accepted"
+				}
+				"click@btn-envido-run": {
+					target: "folded"
+				}
+				"click@btn-envido-real": {
+					target: "real_called"
+				}
+				"click@btn-envido-falta": {
+					target: "falta_called"
+				}
+			}
+		}
+		real_called: {
+			entry: [{
+				assign: {
+					envido_calls: "falta answer"
+					envido_rung:  4
+				}
+			}]
+			exit: [{
+				assign: {
+					envido_calls: ""
+					envido_rung:  0
+				}
+			}]
+			on: {
+				"click@btn-envido-take": {
+					target: "accepted"
+				}
+				"click@btn-envido-run": {
+					target: "folded"
+				}
+				"click@btn-envido-falta": {
+					target: "falta_called"
+				}
+			}
+		}
+		falta_called: {
+			entry: [{
+				assign: {
+					envido_calls: "answer"
+					envido_rung:  6
+				}
+			}]
+			exit: [{
+				assign: {
+					envido_calls: ""
+					envido_rung:  0
+				}
+			}]
+			on: {
+				"click@btn-envido-take": {
+					target: "accepted"
+				}
+				"click@btn-envido-run": {
+					target: "folded"
+				}
+			}
+		}
+		accepted: {
+			type: "final"
+			entry: [{
+				assign: {
+					envido_calls: ""
+					envido_rung:  0
+				}
+			}]
+		}
+		folded: {
+			type: "final"
+			entry: [{
+				assign: {
+					envido_calls: ""
+					envido_rung:  0
+				}
+			}]
+		}
+		flor: {
+			type: "final"
+			entry: [{
+				assign: {
+					envido_calls: ""
+					envido_rung:  0
+				}
+			}]
+		}
+	}
+	onDone: {
+		target: ".none"
+	}
+}
+
+#TrickMachine: terminal.#Machine & {
+	field:   "trick_state"
+	initial: "dealt"
+	states: {
+		dealt: {
+			entry: [{
+				assign: {
+					phase: "dealt"
+					v1:    ""
+					v2:    ""
+					v3:    ""
+				}
+			}]
+			on: {
+				"play@card": {
+					target: "v1_in_progress"
+				}
+			}
+		}
+		v1_in_progress: {
+			entry: [{
+				assign: {
+					phase: "v1"
+					v1:    ""
+					v2:    ""
+					v3:    ""
+				}
+			}]
+			on: {
+				"trick@win": {
+					target: "v1_us"
+				}
+				"trick@loss": {
+					target: "v1_them"
+				}
+				"trick@tie": {
+					target: "v1_tie"
+				}
+			}
+		}
+		v1_tie: {
+			entry: [{
+				assign: {
+					phase: "v2"
+					v1:    "tie"
+					v2:    ""
+					v3:    ""
+				}
+			}]
+			on: {
+				"trick@win": {
+					target: "v1_us"
+				}
+				"trick@tie": {
+					target: "v2_tie"
+				}
+			}
+		}
+		v1_us: {
+			entry: [{
+				assign: {
+					phase: "v2"
+					v1:    "us"
+					v2:    ""
+					v3:    ""
+				}
+			}]
+			on: {
+				"trick@win": {
+					target: "result"
+				}
+			}
+		}
+		v1_them: {
+			entry: [{
+				assign: {
+					phase: "v2"
+					v1:    "them"
+					v2:    ""
+					v3:    ""
+				}
+			}]
+			on: {
+				"trick@win": {
+					target: "result"
+				}
+			}
+		}
+		v2_tie: {
+			entry: [{
+				assign: {
+					phase: "v3"
+					v1:    "tie"
+					v2:    "tie"
+					v3:    ""
+				}
+			}]
+			on: {
+				"trick@win": {
+					target: "result"
+				}
+			}
+		}
+		result: {
+			type: "final"
+			entry: [{
+				assign: {
+					phase:  "result"
+					result: "us"
+				}
+			}]
+		}
+	}
+	onDone: {
+		target: ".dealt"
 	}
 }

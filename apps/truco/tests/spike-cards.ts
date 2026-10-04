@@ -79,7 +79,7 @@ const html = (w: number) => `<!doctype html><meta charset="utf-8"><style>${css}
   <h2>B — counted pips, courts lettered (${w}px)</h2><div class="row">${deck(faceB)}</div>
   <h2>C — two corners, one mark (${w}px)</h2><div class="row">${deck(faceC)}</div>`;
 
-const { chromium } = await import("npm:playwright@1.59.1");
+const { chromium } = await import("npm:playwright@1.61.1");
 const out = "/private/tmp/claude-501/-Users-davi-code-trash/cdd66cef-549d-4251-930a-b7997c46990c/scratchpad";
 const b = await chromium.launch();
 for (const w of SIZES) {

@@ -56,6 +56,13 @@ export function withheld(hatches: Record<string, Hatch>): Map<string, string> {
   return out;
 }
 
+/** Whether `branch` holds a proto under the app. ls-tree lists the subtree
+ * of the directory it runs in, and reads a pathspec literally, not as a glob,
+ * so the names are filtered here. */
+export async function holdsProto(appDir: string, branch: string): Promise<boolean> {
+  return (await git(appDir, "ls-tree", "-r", "--name-only", branch)).split("\n").some((f) => f.endsWith(".proto"));
+}
+
 /**
  * buf's git input for the app, whatever repo it is sitting in. The common dir
  * is asked for rather than assumed because a worktree's `.git` is a file that
@@ -83,7 +90,7 @@ export function findings(stdout: string): Finding[] {
 }
 
 async function main(appDir: string, branch: string) {
-  // Three absences, and only the middle one is an answer. They are settled
+  // Some absences are answers and some are failures. All are settled
   // before the hatches are read: whether git can answer at all does not depend
   // on what the app declares, and asking first keeps the failure about the
   // missing repository rather than about a CUE export that ran in a tree the
@@ -104,8 +111,8 @@ async function main(appDir: string, branch: string) {
     throw new Error(`${appDir} is not in a git repository, so there is no history to compare against`);
   }
 
-  // A repository with no commits yet has nothing to compare against, and that
-  // is the one absence this treats as an answer.
+  // A repository with no commits yet has nothing to compare against, which is
+  // an answer.
   const anyHistory = await new Deno.Command("git", {
     args: ["rev-parse", "--verify", "HEAD"],
     cwd: appDir,
@@ -116,17 +123,40 @@ async function main(appDir: string, branch: string) {
     console.log(JSON.stringify([], null, 2));
     return;
   }
-  // A branch missing from a repository which HAS history is a misconfiguration
-  // — a renamed default branch, a shallow clone — and passing it silently would
+  // A branch missing from a repository which HAS history is fetched from origin;
+  // if still missing, it is a misconfiguration, and passing it silently would
   // leave a gate that reads green while comparing nothing.
-  const known = await new Deno.Command("git", {
+  let known = await new Deno.Command("git", {
     args: ["rev-parse", "--verify", `${branch}^{commit}`],
     cwd: appDir,
     stdout: "null",
     stderr: "null",
   }).output();
   if (!known.success) {
+    const fetch = await new Deno.Command("git", {
+      args: ["fetch", "--depth=1", "origin", `${branch}:${branch}`],
+      cwd: appDir,
+      stdout: "null",
+      stderr: "null",
+    }).output();
+    if (fetch.success) {
+      known = await new Deno.Command("git", {
+        args: ["rev-parse", "--verify", `${branch}^{commit}`],
+        cwd: appDir,
+        stdout: "null",
+        stderr: "null",
+      }).output();
+    }
+  }
+  if (!known.success) {
     throw new Error(`this repository has history but no "${branch}" to compare against; name the branch to compare with as the second argument`);
+  }
+
+  // A branch that holds no proto of this app has published no schema a change
+  // could break, the same answer as a repository with no commits.
+  if (!(await holdsProto(appDir, branch))) {
+    console.log(JSON.stringify([], null, 2));
+    return;
   }
 
   const hatches = await exportJson<Record<string, Hatch>>(appDir, "code.capabilities.hatches");
@@ -148,7 +178,13 @@ async function main(appDir: string, branch: string) {
   const stderr = new TextDecoder().decode(out.stderr).trim();
   // buf reports breakages on stdout and exits non-zero; a non-zero exit with
   // nothing on stdout is buf failing to run, which is not a clean verdict.
-  if (!out.success && stdout === "") throw new Error(`buf breaking failed: ${stderr || `exit ${out.code}`}`);
+  if (!out.success && stdout === "") {
+    if (stderr.includes("no .proto files were targeted") && skip.size > 0) {
+      console.log(JSON.stringify([], null, 2));
+      return;
+    }
+    throw new Error(`buf breaking failed: ${stderr || `exit ${out.code}`}`);
+  }
 
   const found = findings(stdout);
   console.log(JSON.stringify(found, null, 2));

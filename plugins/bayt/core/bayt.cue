@@ -549,8 +549,8 @@ noop: #cmd & {
 	//                  FROM / scratch). Default.
 	//   [...string]  → exec form: ENTRYPOINT ["a", "b", "c"]. Preferred
 	//                  for production images — runs without a shell.
-	//                  Args go through naive `"arg"` quoting; embedded `"`
-	//                  is not escaped (ship a script if you need that).
+	//                  Each argument is emitted as a JSON string, quotes
+	//                  and backslashes escaped.
 	//   string       → shell form: ENTRYPOINT cmd args... Wraps the value
 	//                  in `/bin/sh -c` at runtime. Convenient for env-
 	//                  var substitution but loses signal forwarding.
@@ -1104,6 +1104,9 @@ _cacheScopeMax: _cacheTagBudget - (_cacheTagHash + 2)
 	skaffold?:   #skaffold
 	vscode?:     #vscode
 	bake?:       #bake
+	// The host projection's control and passthrough, for a target with an
+	// entrypoint.
+	"process-compose"?: #processCompose
 
 	// healthcheck — parameter holder for the bayt.healthcheck.<template>
 	// fragments. The fragments unify into the target, reading their
@@ -1111,6 +1114,14 @@ _cacheScopeMax: _cacheTagBudget - (_cacheTagHash + 2)
 	// dockerfile.healthcheck + compose.healthcheck. Open-typed because
 	// each template defines its own input schema.
 	healthcheck?: _
+
+	// The process this target runs and the ports it listens on, by name.
+	// Like healthcheck, sugar over every projection: Dockerfile ENTRYPOINT and
+	// EXPOSE, the compose service's environment and depends_on, and its
+	// process in .bayt/process-compose.yaml (process_compose.cue).
+	// A field set both here and in a projection block must agree.
+	entrypoint?: #entrypoint
+	expose?: [Name=string]: #port
 
 	// hmr — destination-side classification of srcs entries for the
 	// dev loop. Each kind maps to a compose.develop.watch action:
@@ -1178,16 +1189,28 @@ _cacheScopeMax: _cacheTagBudget - (_cacheTagHash + 2)
 _reservedNamePattern: "^bayt$|_(srcs|outs|bayt)$"
 
 #project: P={
-	// Relative to monorepo root; copybara-friendly. Primary identity
-	// — `name` defaults from `dir` via slash→underscore (with the
-	// empty-dir workspace-root case mapping to "workspaceroot",
-	// matching what generate-bayt.nu prints). Override only when the
-	// project's conventional name diverges from its directory.
+	// "." roots the project at its own directory, wherever it sits: an
+	// installed app, or a mirror's root, has no sibling projects, and bayt
+	// computes its paths from there in every checkout.
+	//
+	// Where the project sits, relative to its root; copybara-friendly.
+	// `name` is its identity, the key dependents address it by, and
+	// defaults from `dir` via slash→underscore (with the empty-dir
+	// workspace-root case mapping to "workspaceroot", matching what
+	// generate-bayt.nu prints). Override only when the project's
+	// conventional name diverges from its directory. A project
+	// rooted at itself has no dir to name it after, so it states its name.
 	dir:  string
-	name: *[
-		if dir == "" {"workspaceroot"},
-		if dir != "" {strings.Replace(dir, "/", "_", -1)},
-	][0] | string
+	name: string
+	if dir == "" {name: *"workspaceroot" | string}
+	if dir != "" && dir != "." {name: *strings.Replace(dir, "/", "_", -1) | string}
+
+	// Four random characters the author mints once, when the project is
+	// created, and never changes, like a proto field's tag. Opt-in: a
+	// dependent keys the project's Taskfile include as `<name>-<discriminator>`
+	// instead of its bare name, so the key cannot collide with a local
+	// target's. A collision without one fails as a CUE conflict.
+	discriminator?: =~"^[a-z0-9]{4}$"
 
 	// Toolchain activator; prefixes every emitted command. Emitters read
 	// it from here; targets don't carry it unless they need to override.

@@ -6,7 +6,9 @@ package pronto
 
 import (
 	"list"
+	"encoding/json"
 	"encoding/yaml"
+	"regexp"
 	"strings"
 
 	"bonisoft.org/plugins/pronto/scales"
@@ -23,6 +25,7 @@ import (
 // terminal's module loader. No scheme and no `..`: the source is read from the
 // app's own tree and embedded in emitted artifacts.
 #Jessie: string & =~"^([a-z0-9_-]+/)*[a-z0-9_-]+\\.js$"
+#SafeEndowment: "Intl" | "TextEncoder" | "TextDecoder" | "URL" | "URLSearchParams"
 
 // The seven pre-composed shadow inks. Open Props' elevation carries a real
 // dark story that light-dark() cannot take — --shadow-color is a bare
@@ -471,18 +474,6 @@ import (
 	// value. Its SQL CHECK body and its CUE constraint are derived from the
 	// parsed expression (program_cel.cue), never written beside it.
 	cel?: string
-	// An amount of money, counted in whole minor units. The column stays an
-	// integer — a currency is not a type, it is what an integer counts, and a
-	// new #Field.type member would move every app's DDL — and this is where the
-	// terminal's data-text-format="money" reads the code and the scale from.
-	// `minorUnits: 0` is a ledger in whole reais; 2 is the ordinary cents.
-	money?: {
-		currency:   string & =~"^[A-Z]{3}$" // ISO 4217
-		minorUnits: *2 | int & >=0 & <=4
-	}
-	if money != _|_ {
-		type: "int32" | "int64" | "int" | "bigint"
-	}
 }
 
 // Row visibility, enforced as RLS policies (006_policies.sql). Modeled after the
@@ -503,6 +494,7 @@ import (
 	on:     string
 } | {
 	scope: "public"
+	write?: bool
 } | {
 	scope: "internal"
 }
@@ -566,6 +558,16 @@ import (
 	}
 	if durability != "tab" && durability != "device" {
 		access?: #Access
+	}
+	// How a browser syncs the table: "eager" takes the whole shape before a
+	// screen reads it, "on-demand" only the rows a maintained view asks for.
+	// #App.#sync decides it for every server entity (sync.cue), so an authored
+	// value it contradicts fails to unify.
+	if server {
+		sync: "eager" | "on-demand"
+	}
+	if !server {
+		sync?: _|_
 	}
 	// "pipeline" entities are never mutated by forms; role-level enforcement
 	// is an open question in SPEC.md.
@@ -671,6 +673,21 @@ import (
 	edges?: [...{table: string, key: string, from: string}]
 	// The module split at its completion, for the plv8 body.
 	module?: {statements: string, completion: string}
+}
+
+// A numeric program (docs/pipelines-and-schedules.md#computations): a module
+// run by mecha's compute service, whose services/compute/main.ts states the
+// contract.
+#Computation: {
+	name: string
+	src:  *"computations/\(name).js" | string
+	// The live entities it alone writes, each with its whole output.
+	to: [...string] & [_, ...]
+	// Seconds between looks at whether its reads changed.
+	every: *60 | int & >0
+	// App-relative paths of the committed wasm modules its jobs call, each
+	// named in a job by its file's stem.
+	wasm: *[] | [...string]
 }
 
 #Pipeline: {
@@ -842,6 +859,105 @@ import (
 	}
 }
 
+// A Mecha statechart executed inside PostgreSQL — transactions, trigger reducers,
+// finite timeouts, and deterministic relational effects. Level 3 effect limit.
+#RelationalOp: "insert" | "ensure" | "upsert" | "accumulate" | "update" | "delete"
+
+#RelationalEffect: {
+	op:            #RelationalOp
+	table:         string
+	values?:       {[string]: _}
+	key?:          [...string]
+	where?:        {[string]: _}
+	rawWhere?:     string
+	accumulate?:   [...string]
+	updateValues?: {[string]: _}
+}
+
+#FunctionEffect: {
+	call:  string
+	args?: [..._] | {[string]: _}
+}
+
+#NotifyEffect: {
+	notify:  string
+	payload: string
+}
+
+#SagaEffect: {
+	saga:            string
+	idempotencyKey?: string | {raw: string}
+	payload?:        {[string]: _}
+}
+
+#StreamEffect: {
+	stream:  string
+	signal?: "refresh" | "checkpoint" | "flush"
+	key?:    string | {raw: string}
+}
+
+#MechaEffect: #RelationalEffect | #FunctionEffect | #NotifyEffect | #SagaEffect | #StreamEffect
+
+#MechaAction: {
+	assign?: {[string]: _}
+	effect?: #MechaEffect | [...#MechaEffect]
+	raise?:  string
+}
+
+#MechaTransition: {
+	target?:  string
+	guard?:   string
+	actions?: #MechaAction | [...#MechaAction]
+}
+
+#MechaTransitionValue: string | #MechaTransition | [...#MechaTransition]
+
+#MechaState: {
+	type?:    "final" | "normal"
+	on?: [Event=string]: #MechaTransitionValue
+	after?: [DelayMs=string]: #MechaTransitionValue
+	entry?: #MechaAction | [...#MechaAction]
+	exit?:  #MechaAction | [...#MechaAction]
+}
+
+#MechaMachine: {
+	name:    string
+	ir?:     string
+	entity:  string
+	timing?: "BEFORE" | "AFTER"
+	field?:   string
+	initial?: string
+	states?: [StateName=string]: #MechaState
+	on?: {
+		insert?: #MechaAction | [...#MechaAction]
+		update?: #MechaAction | [...#MechaAction]
+		delete?: #MechaAction | [...#MechaAction]
+	}
+}
+
+// A Cortex durable saga executed via DBOS over PostgreSQL — Level 4 exterior effects,
+// automatic step idempotency, and transactional compensation.
+#Saga: {
+	name:        string
+	ir:          *name | string
+	entity?:     string
+	steps?:      [...string]
+	timeout?:    string
+	maxRetries?: int
+}
+
+// A DuckStream streaming IVM pipeline executed via Feldera on the server
+// and emulated reactively via DuckDB-WASM in the client browser.
+#DuckStreamPipeline: {
+	name:       string
+	ir:         *name | string
+	sql:        string
+	sources:    [...string]
+	sink:       string
+	tempo:      *"hot" | "cold"
+	operators?: [...("tumble" | "hop" | "session" | "distinct" | "interval_join" | "cross_join")]
+}
+
 #FormField: {
 	name: string
 	// "file" (blobs on): the shell PUTs the picked file to
@@ -873,6 +989,45 @@ import (
 	fields: [...#FormField]
 }
 
+// One read a screen's markup makes, as the terminal reads and routes it
+// (omnishell lint.ts screenAccess, fragment.js routeOf). Derived, never
+// authored.
+#Read: {
+	table: string
+	// data-live, data-reads (a reduce's whole table) or data-read-<name>.
+	kind: "live" | "reads" | "named"
+	// Inside an enclosing region, its placeholders resolved against that
+	// region's row.
+	nested: bool
+	// The lists stamping it, as indices into the screen's reads: each region
+	// whose item template it is inside, each naming that template, and the
+	// lists stamping those in turn. It is read once per row of each; with
+	// none, once, as a slot binds one row.
+	lists: [...int]
+	// How the store serves it as far as the markup decides: computed by the
+	// server, filtered by the client ("snapshot"), the collection itself
+	// ("whole"), or maintained by the view engine ("view").
+	route: "server" | "snapshot" | "whole" | "view"
+	// The filter's clauses, and the tables its select embeds as the markup
+	// names them (a foreign-key hint names none); both absent where the server
+	// computes it.
+	clauses?: [...{col: string, op: string}]
+	embeds?: [...string]
+	limit?: int & >0
+	// Every column an order it can be in names.
+	orders: [...string]
+}
+
+// One write a screen's markup states: a form, a chart's effect, or a reduce
+// (data-on-<event>, a drag's data-handler), op "reduce" on its region's table,
+// whose updates and effects may write any table by any op. Derived, never
+// authored.
+#Write: {
+	table: string
+	op:     "create" | "update" | "delete" | "upsert" | "reduce" | "navigate"
+	filter?: string
+}
+
 #Screen: S={
 	name:  string
 	ir:    *name | string
@@ -898,6 +1053,8 @@ import (
 	// runs.
 	prerender: *false | bool
 	if S.prerender {route: =~"^[^:]*$"}
+	priority?:   number & >=0.0 & <=1.0
+	changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never"
 
 	// Rendering strategy:
 	//   ssg: static pre-render at build time (prerender: true)
@@ -909,19 +1066,19 @@ import (
 	// A slugged route's authored pattern is what the default locale's
 	// catalogue must agree with, so it needs a first segment to translate.
 	if S.slug != _|_ {route: =~"^/[a-z0-9][a-z0-9-]*(/|$)"}
-	// filter/select are PostgREST query fragments passed through verbatim;
-	// `{param.x}` placeholders resolve in the interpreter.
 	// Derived from the markup (program_derived.cue). An assembly screen's html
 	// exists before any derivation, so a screen the derived file misses is a
 	// stale generation and the export fails incomplete rather than shipping a
-	// screen whose reads and handlers are silently empty. A CUE-authored
+	// screen whose reads, writes and handlers are silently empty. A CUE-authored
 	// screen alone carries the bootstrap default: its html does not exist
 	// before the first export, so the first derivation cannot see it —
 	// write.ts's fixpoint re-derives after writing and re-exports until the
 	// derived file holds what the emitted markup says.
-	reads!: [...{entity: string, order?: string, filter?: string, select?: string}]
+	reads!: [...#Read]
+	writes!: [...#Write]
 	if S.markup != _|_ {
-		reads: *[] | [...{entity: string, order?: string, filter?: string, select?: string}]
+		reads:  *[] | [...#Read]
+		writes: *[] | [...#Write]
 	}
 	// A component-bearing screen is authored HERE, in CUE: `markup` is the
 	// screen's whole HTML, composed by interpolating component definitions
@@ -1032,7 +1189,78 @@ import (
 	_msg: {for tag, _ in I.locales {(tag): I.catalogues["messages/\(tag).json"]}}
 }
 
-#App: {
+#FaviconItem: {
+	href:   string & !~"\\.\\." & !~"^<svg"
+	rel:    *"icon" | string
+	type?:  string
+	sizes?: string
+}
+
+#Favicon: string | #FaviconItem | [...(string | #FaviconItem)]
+
+#PreconnectItem: {
+	href:         string & !~"\\.\\." & ( =~"^https?://" | =~"^//" )
+	crossorigin?: bool
+}
+
+#Preconnect: string | #PreconnectItem
+
+#ManifestIcon: {
+	src:      string
+	sizes?:   string
+	type?:    string
+	purpose?: *"any" | "maskable" | "monochrome" | "any maskable"
+}
+
+#Manifest: {
+	name?:             string
+	short_name?:       string
+	description?:      string
+	start_url?:        string
+	display?:          *"standalone" | "fullscreen" | "minimal-ui" | "browser"
+	background_color?: string
+	theme_color?:      string
+	icons?:            [...#ManifestIcon]
+	scope?:            string
+	orientation?:      string
+	dir?:              "auto" | "ltr" | "rtl"
+	lang?:             string
+	[string]:          _
+}
+
+#Social: {
+	title?:       string
+	description?: string
+	image?:       string
+	imageAlt?:    string
+	card?:        *"summary_large_image" | "summary" | "app" | "player"
+	type?:        *"website" | string
+	site?:        string
+	creator?:     string
+	url?:         string
+}
+
+#Llms: {
+	text?:     string
+	file?:     string
+	fullText?: string
+	fullFile?: string
+}
+
+#WellKnownItem: string | {
+	text?: string
+	file?: string
+}
+
+#Sitemap: bool | #SitemapConfig
+
+#SitemapConfig: {
+	enabled?: bool
+	exclude?: [...string]
+	extra?:   [...string]
+}
+
+#App: A={
 	state: {
 		entities: [Name=string]: #Entity & {name: Name}
 		// DDL table-order override: must list every entity, parents before
@@ -1064,8 +1292,27 @@ import (
 		// would not accept.
 		migrations?: [grammar.#Name]: grammar.#Migration
 		pipelines: [Name=string]: #Pipeline & {name: Name}
+		computations: [Name=string]: #Computation & {name: Name}
 		schedules: [Name=string]: #Schedule & {name: Name}
+		machines?: [Name=string]: #MechaMachine & {name: Name}
+		sagas?: [Name=string]: #Saga & {name: Name}
+		duckstreams?: [Name=string]: #DuckStreamPipeline & {name: Name}
+		// Seed rows held as data rather than stated: a JSON file beside the
+		// program, outside its package, keyed by entity name —
+		// {"<Entity>": [row, ...]}. A row in the package is re-judged by every
+		// evaluation of the program, so an archive of thousands taxes every
+		// export, vet and check; held here, its rows are judged against #Seed
+		// only when it or the entities change (seed.ts), and render into
+		// 900_seed.sql beside the stated ones. An entity's rows have one home:
+		// stated or held, never both.
+		seed?: {src: string}
 	}
+
+	// What state.seed.src must satisfy, for `cue vet -d`: a server entity's
+	// rows under every constraint its own `seed` carries. Closed, so a row of
+	// an entity that is not a server one, or of none, is refused — a tab
+	// entity's rows are the program's own and render into shell.yaml.
+	#Seed: {for n, e in A.state.entities if e.server {(n)?: e.seed}}
 
 	capabilities: {
 		// Passed through to shell.yaml verbatim: the terminal owns the login
@@ -1083,6 +1330,10 @@ import (
 			service:  string
 			mode:     *"passkey" | string
 			self?: {route: string, name?: {table: string, column: string}}
+			// Where sign-in is not required, the strip offers a guest a passkey:
+			// one gesture that signs in, or keeps the guest's identity under a
+			// new passkey.
+			promote: *false | bool
 		}
 		// The app ships a native host beside the web one, so every route owes
 		// its web affordances a native peer: check-parity reads this key to
@@ -1143,6 +1394,7 @@ import (
 		handlers: [Name=string]: {ir: *Name | string, of: string, src: #Jessie, note: string}
 		design: #Design
 		flows: [Name=string]: #Flow & {name: Name}
+		endowments?: [Path=string]: [...#SafeEndowment]
 	}
 
 	meta: {
@@ -1152,6 +1404,15 @@ import (
 		// One line for the entry page's meta description. The hash router gives
 		// every route this same description, so it names the app, not a screen.
 		description: string
+		favicon?:     #Favicon
+		manifest?:    bool | #Manifest
+		social?:      #Social
+		llms?:        bool | #Llms
+		wellKnown?:   [string]: #WellKnownItem
+		preconnect?:  string | #PreconnectItem | [...(string | #PreconnectItem)]
+		dnsPrefetch?: string | [...string]
+		themeColor?:  string
+		sitemap?:     #Sitemap
 		ir: {source: *"ir.html" | string, sha256: string} // the pinned IR this program was compiled from
 		targets: [...#Target]
 		// Targets where something outside the cluster pokes the ticker. The
@@ -1175,4 +1436,1120 @@ import (
 		// app that has never reached for the hatch should not have to say so.
 		design: pendingLiterals: *0 | int & >=0
 	}
+
+	// Static proof of the mutation loop: a cold pipeline cannot feed an active screen mutation loop D(E)
+	_hotViolations: [
+		if A.state.duckstreams != _|_
+		let eLookup = {
+			for eName, e in A.state.entities {
+				(eName): eName
+				if e.table != _|_ {
+					(e.table): eName
+				}
+			}
+		}
+		for plName, pl in A.state.duckstreams if pl.tempo == "cold"
+		let plSinkEntity = [if eLookup[pl.sink] != _|_ {eLookup[pl.sink]}, pl.sink][0]
+		let plSourceEntities = [for s in pl.sources {[if eLookup[s] != _|_ {eLookup[s]}, s][0]}]
+		for sName, s in A.surface.screens
+		let sReadsEntities = [if s.reads != _|_ for r in s.reads {[if eLookup[r.table] != _|_ {eLookup[r.table]}, r.table][0]}]
+		let sFormsEntities = [if s.forms != _|_ for f in s.forms if f.entity != _|_ {[if eLookup[f.entity] != _|_ {eLookup[f.entity]}, f.entity][0]}]
+		if list.Contains(sReadsEntities, plSinkEntity)
+		if len([for fe in sFormsEntities if list.Contains(plSourceEntities, fe) {fe}]) > 0
+		{
+			pipeline: plName
+			screen:   sName
+			sink:     pl.sink
+		}
+	]
+	_hotRefusal: [if len(_hotViolations) == 0 {true}, "cold pipeline cannot feed an active screen mutation loop: \(_hotViolations[0].pipeline) feeds \(_hotViolations[0].sink) on screen \(_hotViolations[0].screen)"][0] & true
+
+	_machineActions: [
+		if A.state.machines != _|_
+		for mName, m in A.state.machines {
+			machine: mName
+			actions: list.Concat([
+				[if m.on != _|_ for _, actList in m.on for act in [if (actList & [...]) != _|_ {actList}, [actList]][0] {act}],
+				[if m.states != _|_ for _, st in m.states if st.entry != _|_ for a in [if (st.entry & [...]) != _|_ {st.entry}, [st.entry]][0] {a}],
+				[if m.states != _|_ for _, st in m.states if st.exit != _|_ for a in [if (st.exit & [...]) != _|_ {st.exit}, [st.exit]][0] {a}],
+				[if m.states != _|_ for _, st in m.states if st.on != _|_ for _, tr in st.on for t in [if (tr & string) != _|_ {[]}, if (tr & [...]) != _|_ {tr}, [tr]][0] if t.actions != _|_ for a in [if (t.actions & [...]) != _|_ {t.actions}, [t.actions]][0] {a}],
+				[if m.states != _|_ for _, st in m.states if st.after != _|_ for _, tr in st.after for t in [if (tr & string) != _|_ {[]}, if (tr & [...]) != _|_ {tr}, [tr]][0] if t.actions != _|_ for a in [if (t.actions & [...]) != _|_ {t.actions}, [t.actions]][0] {a}],
+			])
+		}
+	]
+
+	_declaredSagas: [for sName, _ in [if A.state.sagas != _|_ {A.state.sagas}, {}][0] {sName}]
+	_undeclaredSagas: [
+		for ma in _machineActions
+		for act in ma.actions
+		for eff in [if act.effect != _|_ {[if (act.effect & [...]) != _|_ {act.effect}, [act.effect]][0]}, []][0]
+		if (eff & #SagaEffect) != _|_
+		if !list.Contains(_declaredSagas, eff.saga)
+		{
+			machine: ma.machine
+			saga:    eff.saga
+		}
+	]
+	_sagaRefusal: [if len(_undeclaredSagas) == 0 {true}, "machine \(_undeclaredSagas[0].machine) references undeclared saga: \(_undeclaredSagas[0].saga)"][0] & true
+
+	_declaredStreams: [for dsName, _ in [if A.state.duckstreams != _|_ {A.state.duckstreams}, {}][0] {dsName}]
+	_undeclaredStreams: [
+		for ma in _machineActions
+		for act in ma.actions
+		for eff in [if act.effect != _|_ {[if (act.effect & [...]) != _|_ {act.effect}, [act.effect]][0]}, []][0]
+		if (eff & #StreamEffect) != _|_
+		if !list.Contains(_declaredStreams, eff.stream)
+		{
+			machine: ma.machine
+			stream:  eff.stream
+		}
+	]
+	_streamRefusal: [if len(_undeclaredStreams) == 0 {true}, "machine \(_undeclaredStreams[0].machine) references undeclared duckstream: \(_undeclaredStreams[0].stream)"][0] & true
+
+	_deleteActions: [
+		if A.state.machines != _|_
+		for mName, m in A.state.machines {
+			machine: mName
+			actions: list.Concat([
+				[if m.on != _|_ if m.on.delete != _|_ for act in [if (m.on.delete & [...]) != _|_ {m.on.delete}, [m.on.delete]][0] {act}],
+				[
+					if m.states != _|_
+					for _, st in m.states
+					if st.on != _|_ if st.on.delete != _|_
+					for tr in [if (st.on.delete & string) != _|_ {[]}, if (st.on.delete & [...]) != _|_ {st.on.delete}, [st.on.delete]][0]
+					if tr.actions != _|_
+					for a in [if (tr.actions & [...]) != _|_ {tr.actions}, [tr.actions]][0]
+					{a}
+				],
+			])
+		}
+	]
+
+	_deleteNewViolations: [
+		for da in _deleteActions
+		for act in da.actions
+		if strings.Contains(json.Marshal(act), "NEW.")
+		{
+			machine: da.machine
+			action:  json.Marshal(act)
+		}
+	]
+	_deleteNewRefusal: [if len(_deleteNewViolations) == 0 {true}, "machine \(_deleteNewViolations[0].machine) references NEW in delete action: \(_deleteNewViolations[0].action)"][0] & true
+
+	_favicon: #faviconPlan & {
+		if A.meta.favicon != _|_ { raw: A.meta.favicon }
+	}
+	_faviconValidRefusal: [if len(_favicon._errors) == 0 { true }, _favicon._errors[0]][0] & true
+	_faviconSvgRefusal: [if _favicon._svgCount <= 1 { true }, "at most one SVG markup or emoji favicon may be declared"][0] & true
+	_faviconConflictRefusal: [if _favicon._svgCount == 0 || _favicon._pathConflict == 0 { true }, "cannot declare an emoji or SVG favicon alongside shell/favicon.svg"][0] & true
+
+	_envelope: #envelopePlan & {
+		meta:         A.meta
+		surface:      A.surface
+		state:        A.state
+		capabilities: A.capabilities
+	}
+	_envelopeRefusal: [if len(_envelope._errors) == 0 { true }, _envelope._errors[0]][0] & true
 }
+
+#faviconMime: {
+	".svg":  "image/svg+xml"
+	".png":  "image/png"
+	".ico":  "image/x-icon"
+	".webp": "image/webp"
+	".jpg":  "image/jpeg"
+	".jpeg": "image/jpeg"
+}
+
+#faviconPlan: F={
+	raw?: _
+	_rawItems: [
+		if F.raw != _|_ {
+			if (F.raw & [...]) != _|_ { F.raw }
+			if (F.raw & [...]) == _|_ { [F.raw] }
+		},
+		[],
+	][0]
+
+	items: [
+		for it in _rawItems {
+			let isStr = (it & string) != _|_
+			let rawHref = [
+				if isStr { it },
+				if !isStr && it.href != _|_ { it.href },
+				""
+			][0]
+
+			let isSvgMarkup = isStr && strings.HasPrefix(rawHref, "<svg")
+			let isDataUri = strings.HasPrefix(rawHref, "data:")
+			let isHttp = strings.HasPrefix(rawHref, "http://") || strings.HasPrefix(rawHref, "https://") || strings.HasPrefix(rawHref, "//")
+			let hasDotDot = strings.Contains(rawHref, "..")
+
+			let ext = [for e, _ in #faviconMime if strings.HasSuffix(rawHref, e) { e }, ""][0]
+			let hasValidExt = ext != ""
+
+			let isEmojiText = !strings.HasPrefix(rawHref, "<svg") && !isDataUri && !isHttp && !strings.Contains(rawHref, "/") && !strings.Contains(rawHref, ".") && len(strings.Runes(rawHref)) <= 8 && !regexp.Match("^[a-zA-Z0-9_-]+$", rawHref)
+			let isEmoji = isStr && isEmojiText
+
+			let rawRel = [
+				if !isStr if it.rel != _|_ { it.rel },
+				"icon",
+			][0]
+
+			let rawType = [
+				if !isStr if it.type != _|_ { it.type },
+				"",
+			][0]
+
+			let isAppleTouch = rawRel == "apple-touch-icon"
+			let isAppleTouchUnusable = ext == ".svg" || ext == ".webp" || ext == ".ico" || isSvgMarkup || isEmoji || strings.HasPrefix(rawHref, "data:image/svg") || strings.HasPrefix(rawHref, "data:image/webp") || strings.HasPrefix(rawHref, "data:image/x-icon")
+			let isAppleTouchUsable = !isAppleTouchUnusable && (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || strings.HasPrefix(rawHref, "data:image/png") || strings.HasPrefix(rawHref, "data:image/jpeg") || ((ext == "" || isHttp) && (rawType == "image/png" || rawType == "image/jpeg")))
+			let isAppleTouchInvalid = isAppleTouch && !isAppleTouchUsable
+
+			let isStructuredInvalid = !isStr && (strings.HasPrefix(rawHref, "<svg") || isEmojiText)
+			let isValid = !hasDotDot && !isStructuredInvalid && !isAppleTouchInvalid && (isSvgMarkup || isDataUri || isHttp || isEmoji || hasValidExt)
+
+			let isPath = !isSvgMarkup && !isDataUri && !isHttp && !isEmoji
+
+			let itemErr = [
+				if hasDotDot { "favicon path may not contain '..': '\(rawHref)'" },
+				if isStructuredInvalid { "structured favicon href must be a file path, data URI, or URL, not raw SVG markup or emoji: '\(rawHref)'" },
+				if isAppleTouchInvalid { "apple-touch-icon format not supported on Safari on iOS; must be PNG or JPEG: '\(rawHref)'" },
+				if !isValid { "unsupported favicon format or missing extension: '\(rawHref)' (supported: .ico, .png, .svg, .webp, .jpg, .jpeg, emoji, SVG markup, data:, https://)" },
+				"",
+			][0]
+
+			let clean = strings.TrimPrefix(strings.TrimPrefix(rawHref, "./"), "/")
+			let inShell = strings.HasPrefix(clean, "shell/")
+
+			let itemHref = [
+				if isSvgMarkup || isEmoji { "./favicon.svg" },
+				if isDataUri || isHttp { rawHref },
+				if inShell { "./" + strings.TrimPrefix(clean, "shell/") },
+				if !inShell { "/" + clean },
+				rawHref,
+			][0]
+
+			let inferredType = [
+				if isSvgMarkup || isEmoji || strings.HasPrefix(rawHref, "data:image/svg+xml") { "image/svg+xml" },
+				if hasValidExt { #faviconMime[ext] },
+				if strings.HasPrefix(rawHref, "data:image/x-icon") { "image/x-icon" },
+				if strings.HasPrefix(rawHref, "data:image/png") { "image/png" },
+				if strings.HasPrefix(rawHref, "data:image/webp") { "image/webp" },
+				if strings.HasPrefix(rawHref, "data:image/jpeg") { "image/jpeg" },
+				"",
+			][0]
+
+			let itemType = [
+				if rawType != "" { rawType },
+				if inferredType != "" { inferredType },
+				"",
+			][0]
+
+			let itemRel = rawRel
+
+			let itemSizes = [
+				if !isStr && it.sizes != _|_ { it.sizes },
+				"",
+			][0]
+
+			let escapedText = strings.Replace(strings.Replace(rawHref, "&", "&amp;", -1), "<", "&lt;", -1)
+			let itemSvg = [
+				if isSvgMarkup { rawHref },
+				if isEmoji { "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><text y=\".9em\" font-size=\"90\">\(escapedText)</text></svg>\n" },
+				"",
+			][0]
+
+			let staticFile = [
+				if isSvgMarkup || isEmoji { "shell/favicon.svg" },
+				if isPath && isValid { clean },
+				"",
+			][0]
+
+			let staticTarget = [
+				if staticFile != "" { "/srv/\(staticFile)" },
+				"",
+			][0]
+
+			let itemRelEsc = strings.Replace(strings.Replace(itemRel, "&", "&amp;", -1), "\"", "&quot;", -1)
+			let itemTypeEsc = strings.Replace(strings.Replace(itemType, "&", "&amp;", -1), "\"", "&quot;", -1)
+			let itemSizesEsc = strings.Replace(strings.Replace(itemSizes, "&", "&amp;", -1), "\"", "&quot;", -1)
+			let itemHrefEsc = strings.Replace(strings.Replace(itemHref, "&", "&amp;", -1), "\"", "&quot;", -1)
+
+			valid:   isValid
+			err:     itemErr
+			rel:     itemRel
+			href:    itemHref
+			type:    itemType
+			sizes:   itemSizes
+			svgText: itemSvg
+			file:    staticFile
+			target:  staticTarget
+			tag:     "<link rel=\"\(itemRelEsc)\"" + [if itemType != "" { " type=\"\(itemTypeEsc)\"" }, ""][0] + [if itemSizes != "" { " sizes=\"\(itemSizesEsc)\"" }, ""][0] + " href=\"\(itemHrefEsc)\">"
+		}
+	]
+
+	_explicitAppleTouch: [for x in items if x.valid if x.rel == "apple-touch-icon" { x }]
+	_pngOrJpegFavicons: [
+		for x in items
+		if x.valid
+		if x.rel != "apple-touch-icon"
+		if !strings.HasSuffix(x.href, ".svg") && !strings.HasSuffix(x.href, ".webp") && !strings.HasSuffix(x.href, ".ico")
+		if x.type == "image/png" || x.type == "image/jpeg" || strings.HasSuffix(x.href, ".png") || strings.HasSuffix(x.href, ".jpg") || strings.HasSuffix(x.href, ".jpeg") || strings.HasPrefix(x.href, "data:image/png") || strings.HasPrefix(x.href, "data:image/jpeg")
+		{ x }
+	]
+	_touchSizedFavicons: [
+		for x in _pngOrJpegFavicons
+		if strings.Contains(x.sizes, "180") || strings.Contains(x.sizes, "192") || strings.Contains(x.sizes, "512")
+		{ x }
+	]
+	_bestAppleTouch: [
+		if len(_touchSizedFavicons) > 0 { _touchSizedFavicons[0] },
+		if len(_pngOrJpegFavicons) > 0 { _pngOrJpegFavicons[0] },
+		null
+	][0]
+	_autoAppleTouchTag: [
+		if len(_explicitAppleTouch) == 0 && _bestAppleTouch != null {
+			let escHref = strings.Replace(strings.Replace(_bestAppleTouch.href, "&", "&amp;", -1), "\"", "&quot;", -1)
+			"<link rel=\"apple-touch-icon\" href=\"\(escHref)\">"
+		},
+		""
+	][0]
+
+	_svgItems: [for x in items if x.svgText != "" { x }]
+	_svgCount: len(_svgItems)
+	_pathConflict: len([for x in items if x.svgText == "" && x.file == "shell/favicon.svg" { x }])
+	_errors: [for x in items if !x.valid { x.err }]
+
+	svgFile: [if _svgCount == 1 { _svgItems[0].svgText }, ""][0]
+	links: strings.Join(list.Concat([
+		[for x in items if x.valid { x.tag }],
+		[if _autoAppleTouchTag != "" { _autoAppleTouchTag }]
+	]), "\n")
+
+	_staticMap: {
+		for x in items if x.valid && x.target != "" {
+			(x.target): {
+				file:   x.file
+				target: x.target
+				watch:  true
+			}
+		}
+	}
+	statics: [for _, s in _staticMap { s }]
+}
+
+#hintsPlan: H={
+	preconnect:  *[] | _
+	dnsPrefetch: *[] | _
+
+	_preconnectList: [if (H.preconnect & [...]) != _|_ { H.preconnect }, [H.preconnect]][0]
+	_dnsPrefetchList: [if (H.dnsPrefetch & [...]) != _|_ { H.dnsPrefetch }, [H.dnsPrefetch]][0]
+
+	_preconnectItems: [
+		for p in _preconnectList if p != _|_ {
+			let isStr = (p & string) != _|_
+			let hasHref = (p & {href: string}) != _|_
+			let isCross = [if !isStr for k, v in p if k == "crossorigin" if v == true { true }, false][0]
+			let rawHref = [if isStr { p }, if hasHref { p.href }, ""][0]
+			let isValid = (strings.HasPrefix(rawHref, "https://") || strings.HasPrefix(rawHref, "http://") || strings.HasPrefix(rawHref, "//")) && !strings.Contains(rawHref, "..") && !strings.Contains(rawHref, " ") && !strings.Contains(rawHref, "\t") && !strings.Contains(rawHref, "\n")
+			let err = [if !isValid { "preconnect href must begin with https://, http://, or // and contain no whitespace: '\(rawHref)'" }, ""][0]
+			let escHref = strings.Replace(strings.Replace(rawHref, "&", "&amp;", -1), "\"", "&quot;", -1)
+			let itemTag = "<link rel=\"preconnect\" href=\"\(escHref)\"" + [if isCross { " crossorigin" }, ""][0] + ">"
+			valid: isValid
+			href:  rawHref
+			error: err
+			tag:   itemTag
+		}
+	]
+
+	_dnsPrefetchItems: [
+		for d in _dnsPrefetchList if d != _|_ {
+			let rawHref = d
+			let isValid = (strings.HasPrefix(rawHref, "https://") || strings.HasPrefix(rawHref, "http://") || strings.HasPrefix(rawHref, "//")) && !strings.Contains(rawHref, "..") && !strings.Contains(rawHref, " ") && !strings.Contains(rawHref, "\t") && !strings.Contains(rawHref, "\n")
+			let err = [if !isValid { "dns-prefetch href must begin with https://, http://, or // and contain no whitespace: '\(rawHref)'" }, ""][0]
+			let escHref = strings.Replace(strings.Replace(rawHref, "&", "&amp;", -1), "\"", "&quot;", -1)
+			let itemTag = "<link rel=\"dns-prefetch\" href=\"\(escHref)\">"
+			valid: isValid
+			href:  rawHref
+			error: err
+			tag:   itemTag
+		}
+	]
+
+	_errors: [
+		for x in _preconnectItems if !x.valid { x.error },
+		for x in _dnsPrefetchItems if !x.valid { x.error },
+	]
+
+	tags: list.Concat([
+		[for x in _dnsPrefetchItems if x.valid { x.tag }],
+		[for x in _preconnectItems if x.valid { x.tag }],
+	])
+	links: strings.Join(tags, "\n")
+}
+
+#manifestPlan: M={
+	raw:          *null | _
+	meta:         _
+	favicon:      #faviconPlan
+	screens:      *null | _
+	design:       *null | _
+	capabilities: *null | _
+
+	_isAuthRequired: [
+		if M.capabilities != null if M.capabilities.auth != _|_ if M.capabilities.auth.required == true { true },
+		false
+	][0]
+
+	_enabled: M.raw != null && M.raw != false
+	_isObj:   _enabled && (M.raw & bool) == _|_ && (M.raw & {}) != _|_
+
+	_hasIcons: _isObj && M.raw.icons != _|_
+	_rawIcons: [if _hasIcons { M.raw.icons }, []][0]
+
+	_derivedIcons: [
+		if _hasIcons {
+			[
+				for ic in _rawIcons {
+					let s = ic.src
+					let isSvg = strings.HasSuffix(s, ".svg") || (ic.type != _|_ && ic.type == "image/svg+xml")
+					src: [
+						if strings.HasPrefix(s, "./shell/") { "/shell/" + strings.TrimPrefix(s, "./shell/") },
+						if strings.HasPrefix(s, "shell/") { "/shell/" + strings.TrimPrefix(s, "shell/") },
+						if strings.HasPrefix(s, "./") { "/" + strings.TrimPrefix(s, "./") },
+						if strings.HasPrefix(s, "//") || strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://") || strings.HasPrefix(s, "data:") { s },
+						if strings.HasPrefix(s, "/") { s },
+						"/" + s,
+					][0]
+					if ic.type != _|_ { type: ic.type }
+					if ic.sizes != _|_ { sizes: ic.sizes }
+					if (ic.sizes == _|_) && isSvg { sizes: "any" }
+					if ic.purpose != _|_ { purpose: ic.purpose }
+				}
+			]
+		},
+		[
+			for it in M.favicon.items if it.valid if it.href != "" if !strings.HasPrefix(it.href, "data:") {
+				let isRemote = strings.HasPrefix(it.href, "https://") || strings.HasPrefix(it.href, "http://") || strings.HasPrefix(it.href, "//")
+				src: [
+					if isRemote { it.href },
+					if strings.HasPrefix(it.href, "./") { "/shell/" + strings.TrimPrefix(it.href, "./") },
+					if strings.HasPrefix(it.href, "/") { it.href },
+					"/shell/" + it.href,
+				][0]
+				if it.type != "" { type: it.type }
+				if it.sizes != "" { sizes: it.sizes }
+				if it.sizes == "" && it.type == "image/svg+xml" { sizes: "any" }
+			}
+		],
+	][0]
+
+	_hasShortcuts: _isObj && M.raw.shortcuts != _|_
+	_rawShortcuts: [if _hasShortcuts { M.raw.shortcuts }, []][0]
+
+	_staticScreens: [
+		if M.screens != null && !_isAuthRequired
+		for sName, s in M.screens
+		if s.route != _|_ && s.route != "/" && !strings.Contains(s.route, ":") {
+			name: [if s.title != _|_ { s.title }, sName][0]
+			url:  s.route
+		}
+	]
+
+	_derivedShortcuts: [
+		if _hasShortcuts { _rawShortcuts },
+		[for idx, sc in _staticScreens if idx < 4 { sc }],
+	][0]
+
+	_hasTheme: _isObj && M.raw.theme_color != _|_
+	_hasBg:    _isObj && M.raw.background_color != _|_
+
+	_designLightColor: [
+		if M.design != null if M.design.colors != _|_ if M.design.colors.surface != _|_ { strings.ToLower(M.design.colors.surface) },
+		""
+	][0]
+	_bgColor: [if _hasBg { M.raw.background_color }, if _designLightColor != "" { _designLightColor }, "#ffffff"][0]
+	_designDarkColor: [
+		if M.design != null if M.design.dark != _|_ if M.design.dark.surface != _|_ { strings.ToLower(M.design.dark.surface) },
+		""
+	][0]
+
+	_explicitTheme: [
+		if _hasTheme { M.raw.theme_color },
+		if M.meta.themeColor != _|_ { M.meta.themeColor },
+		""
+	][0]
+
+	_themeColor: [
+		if _explicitTheme != "" { _explicitTheme },
+		if _enabled { _designLightColor },
+		"",
+	][0]
+
+	_manifestData: {
+		name: [if _isObj if M.raw.name != _|_ { M.raw.name }, M.meta.name][0]
+		short_name: [if _isObj if M.raw.short_name != _|_ { M.raw.short_name }, [if _isObj if M.raw.name != _|_ { M.raw.name }, M.meta.name][0]][0]
+		description: [if _isObj if M.raw.description != _|_ { M.raw.description }, M.meta.description][0]
+		start_url: [if _isObj if M.raw.start_url != _|_ { M.raw.start_url }, "/"][0]
+		scope: [if _isObj if M.raw.scope != _|_ { M.raw.scope }, "/"][0]
+		display: [if _isObj if M.raw.display != _|_ { M.raw.display }, "standalone"][0]
+		background_color: _bgColor
+		theme_color: _themeColor
+		if len(_derivedIcons) > 0 { icons: _derivedIcons }
+		if len(_derivedShortcuts) > 0 { shortcuts: _derivedShortcuts }
+		if _isObj if M.raw.orientation != _|_ { orientation: M.raw.orientation }
+		if _isObj if M.raw.dir != _|_ { dir: M.raw.dir }
+		if _isObj if M.raw.lang != _|_ { lang: M.raw.lang }
+		if _isObj {
+			for k, v in M.raw if !list.Contains(["name", "short_name", "description", "start_url", "display", "background_color", "theme_color", "icons", "shortcuts", "scope", "orientation", "dir", "lang"], k) {
+				(k): v
+			}
+		}
+	}
+
+	_iconErrors: [
+		for ic in _rawIcons
+		if ic.src != _|_
+		if strings.Contains(ic.src, "..")
+		{ "manifest icon src may not contain '..': '\(ic.src)'" }
+	]
+
+	_errors: _iconErrors
+
+	enabled:  _enabled && len(_errors) == 0
+	data:     _manifestData
+	jsonText: [if enabled { json.Marshal(_manifestData) + "\n" }, ""][0]
+
+	_appNameEsc: strings.Replace(strings.Replace(_manifestData.short_name, "&", "&amp;", -1), "\"", "&quot;", -1)
+	_themeColorEsc: strings.Replace(strings.Replace(_themeColor, "&", "&amp;", -1), "\"", "&quot;", -1)
+	_darkColorEsc: strings.Replace(strings.Replace(_designDarkColor, "&", "&amp;", -1), "\"", "&quot;", -1)
+
+	_themeTags: [
+		if _explicitTheme != "" {
+			["<meta name=\"theme-color\" content=\"\(_themeColorEsc)\">"]
+		},
+		if _explicitTheme == "" && _enabled {
+			if _designDarkColor != "" && _designDarkColor != _designLightColor {
+				[
+					"<meta name=\"theme-color\" media=\"(prefers-color-scheme: light)\" content=\"\(_themeColorEsc)\">",
+					"<meta name=\"theme-color\" media=\"(prefers-color-scheme: dark)\" content=\"\(_darkColorEsc)\">"
+				]
+			}
+			if _designDarkColor == "" || _designDarkColor == _designLightColor {
+				["<meta name=\"theme-color\" content=\"\(_themeColorEsc)\">"]
+			}
+		},
+		[]
+	][0]
+
+	tags: list.Concat([
+		[if enabled { "<link rel=\"manifest\" href=\"/manifest.webmanifest\">" }],
+		_themeTags,
+		[
+			if enabled { "<meta name=\"mobile-web-app-capable\" content=\"yes\">" },
+			if enabled { "<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\">" },
+			if enabled { "<meta name=\"apple-mobile-web-app-title\" content=\"\(_appNameEsc)\">" },
+		]
+	])
+	links: strings.Join(tags, "\n")
+
+	statics: [
+		if enabled
+		for ic in _derivedIcons
+		let s = ic.src
+		if !strings.HasPrefix(s, "data:") && !strings.HasPrefix(s, "http://") && !strings.HasPrefix(s, "https://") && !strings.HasPrefix(s, "//") && !strings.Contains(s, "..") {
+			let clean = strings.TrimPrefix(s, "/")
+			file:   clean
+			target: "/srv/" + clean
+			watch:  true
+		}
+	]
+}
+
+#socialPlan: S={
+	raw:  *null | _
+	meta: _
+
+	_enabled: S.raw != null
+	_isObj:   _enabled && (S.raw & bool) == _|_ && (S.raw & {}) != _|_
+
+	_title: [if _isObj if S.raw.title != _|_ { S.raw.title }, S.meta.name][0]
+	_desc: [if _isObj if S.raw.description != _|_ { S.raw.description }, S.meta.description][0]
+	_type: [if _isObj if S.raw.type != _|_ { S.raw.type }, "website"][0]
+	_card: [if _isObj if S.raw.card != _|_ { S.raw.card }, if _hasImage { "summary_large_image" }, "summary"][0]
+
+	_hasImage: _isObj && S.raw.image != _|_
+	_rawImage: [if _hasImage { S.raw.image }, ""][0]
+	_hasDotDot: strings.Contains(_rawImage, "..")
+	_isProtocolRelative: strings.HasPrefix(_rawImage, "//")
+	_isHttp: strings.HasPrefix(_rawImage, "http://") || strings.HasPrefix(_rawImage, "https://")
+	_isData: strings.HasPrefix(_rawImage, "data:")
+
+	_cleanImage: strings.TrimPrefix(strings.TrimPrefix(_rawImage, "./"), "/")
+
+	_hasUrl: _isObj && S.raw.url != _|_
+	_rawUrl: [if _hasUrl { S.raw.url }, ""][0]
+	_isUrlHttp: strings.HasPrefix(_rawUrl, "http://") || strings.HasPrefix(_rawUrl, "https://")
+
+	_origin: [
+		if strings.HasPrefix(_rawUrl, "https://") {
+			"https://" + strings.Split(strings.TrimPrefix(_rawUrl, "https://"), "/")[0]
+		},
+		if strings.HasPrefix(_rawUrl, "http://") {
+			"http://" + strings.Split(strings.TrimPrefix(_rawUrl, "http://"), "/")[0]
+		},
+		"",
+	][0]
+
+	_imageUrl: [
+		if !_hasImage { "" },
+		if _isHttp { _rawImage },
+		if _hasUrl && !_isHttp && _isUrlHttp {
+			_origin + "/" + _cleanImage
+		},
+		"",
+	][0]
+
+	_errors: [
+		if _hasDotDot { "social image path may not contain '..': '\(_rawImage)'" },
+		if _isProtocolRelative {
+			"social.image must not be protocol-relative ('\(_rawImage)'); OpenGraph and Twitter cards require explicit https:// or http://"
+		},
+		if _isData {
+			"social.image must not be a data URI ('\(_rawImage)'); OpenGraph and Twitter cards require explicit https:// or http://"
+		},
+		if _hasImage && !_isHttp && !_hasUrl && !_isProtocolRelative {
+			"social.image '\(_rawImage)' is a local path but social.url is not declared; OpenGraph and Twitter cards require absolute image URLs"
+		},
+		if _hasUrl && !_isUrlHttp {
+			"social.url must begin with https:// or http://: '\(_rawUrl)'"
+		},
+	]
+
+	_titleEsc: strings.Replace(strings.Replace(_title, "&", "&amp;", -1), "\"", "&quot;", -1)
+	_descEsc: strings.Replace(strings.Replace(_desc, "&", "&amp;", -1), "\"", "&quot;", -1)
+	_typeEsc: strings.Replace(strings.Replace(_type, "&", "&amp;", -1), "\"", "&quot;", -1)
+	_cardEsc: strings.Replace(strings.Replace(_card, "&", "&amp;", -1), "\"", "&quot;", -1)
+	_imgEsc: strings.Replace(strings.Replace(_imageUrl, "&", "&amp;", -1), "\"", "&quot;", -1)
+
+	tags: [
+		if _enabled { "<meta property=\"og:type\" content=\"\(_typeEsc)\">" },
+		if _enabled { "<meta property=\"og:title\" content=\"\(_titleEsc)\">" },
+		if _enabled { "<meta property=\"og:description\" content=\"\(_descEsc)\">" },
+		if _hasUrl {
+			let uEsc = strings.Replace(strings.Replace(_rawUrl, "&", "&amp;", -1), "\"", "&quot;", -1)
+			"<meta property=\"og:url\" content=\"\(uEsc)\">"
+		},
+		if _hasImage && _imageUrl != "" { "<meta property=\"og:image\" content=\"\(_imgEsc)\">" },
+		if _isObj if S.raw.imageAlt != _|_ if _hasImage && _imageUrl != "" {
+			let altEsc = strings.Replace(strings.Replace(S.raw.imageAlt, "&", "&amp;", -1), "\"", "&quot;", -1)
+			"<meta property=\"og:image:alt\" content=\"\(altEsc)\">"
+		},
+		if _enabled { "<meta name=\"twitter:card\" content=\"\(_cardEsc)\">" },
+		if _enabled { "<meta name=\"twitter:title\" content=\"\(_titleEsc)\">" },
+		if _enabled { "<meta name=\"twitter:description\" content=\"\(_descEsc)\">" },
+		if _hasImage && _imageUrl != "" { "<meta name=\"twitter:image\" content=\"\(_imgEsc)\">" },
+		if _isObj if S.raw.site != _|_ {
+			let sEsc = strings.Replace(strings.Replace(S.raw.site, "&", "&amp;", -1), "\"", "&quot;", -1)
+			"<meta name=\"twitter:site\" content=\"\(sEsc)\">"
+		},
+		if _isObj if S.raw.creator != _|_ {
+			let cEsc = strings.Replace(strings.Replace(S.raw.creator, "&", "&amp;", -1), "\"", "&quot;", -1)
+			"<meta name=\"twitter:creator\" content=\"\(cEsc)\">"
+		},
+	]
+	links: strings.Join(tags, "\n")
+
+	static: [
+		if _enabled && _hasImage && !_isHttp && !_hasDotDot && _hasUrl {
+			file:   _cleanImage
+			target: "/srv/\(_cleanImage)"
+			watch:  true
+		},
+	]
+}
+
+#llmsPlan: L={
+	raw:          *null | _
+	meta:         *null | _
+	surface:      *null | _
+	state:        *null | _
+	capabilities: *null | _
+
+	_enabled: L.raw != null && L.raw != false
+	_isObj:   _enabled && (L.raw & bool) == _|_ && (L.raw & {}) != _|_
+
+	_hasText:     _isObj && L.raw.text != _|_
+	_hasFullText: _isObj && L.raw.fullText != _|_
+	_hasFile:     _isObj && L.raw.file != _|_
+	_hasFullFile: _isObj && L.raw.fullFile != _|_
+
+	_rawFile:     [if _hasFile { L.raw.file }, ""][0]
+	_rawFullFile: [if _hasFullFile { L.raw.fullFile }, ""][0]
+
+	_isRawBool:      (L.raw & bool) != _|_
+	_synthBrief:     _isRawBool && L.raw == true
+	_synthFull:      _isRawBool && L.raw == true
+
+	_isAuthRequired: [
+		if L.capabilities != null if L.capabilities.auth != _|_ if L.capabilities.auth.required == true { true },
+		false
+	][0]
+
+	_appName: [if L.meta != null if L.meta.name != _|_ { L.meta.name }, "App"][0]
+	_appDesc: [if L.meta != null if L.meta.description != _|_ { L.meta.description }, ""][0]
+
+	_authSummary: [
+		if _isAuthRequired {
+			"Authentication is required to access protected routes."
+		},
+		"Publicly accessible web application."
+	][0]
+
+	_screenSummaries: [
+		if L.surface != null if L.surface.screens != _|_
+		for sName, s in L.surface.screens
+		if s.route != _|_ && !strings.Contains(s.route, ":") {
+			let title = [if s.title != _|_ { s.title }, sName][0]
+			let route = s.route
+			"- [\(title)](\(route)): \(sName) screen"
+		}
+	]
+
+	_publicEntityNames: [
+		if L.state != null if L.state.entities != _|_
+		for eName, ent in L.state.entities
+		let entAccess = [for k, v in ent if k == "access" { v }, {scope: ""}][0]
+		if entAccess.scope == "public" {
+			eName
+		}
+	]
+
+	_entitySummaries: [
+		for eName in _publicEntityNames {
+			"- `\(eName)`: domain entity"
+		}
+	]
+
+	_synthBriefText: strings.Join(list.Concat([
+		[
+			"# \(_appName)",
+			"",
+			if _appDesc != "" { "> \(_appDesc)\n" },
+			"## Overview",
+			_authSummary,
+			"",
+			"## Screens",
+		],
+		[if len(_screenSummaries) > 0 { strings.Join(_screenSummaries, "\n") }, "None declared."][0:1],
+		[
+			"",
+			"## Data Models",
+		],
+		[if len(_entitySummaries) > 0 { strings.Join(_entitySummaries, "\n") }, "None declared."][0:1],
+		[""]
+	]), "\n")
+
+	_tableToEntity: {
+		if L.state != null if L.state.entities != _|_
+		for eName, ent in L.state.entities {
+			(ent.table): eName
+		}
+	}
+
+	_screenDetails: [
+		if L.surface != null if L.surface.screens != _|_
+		for sName, s in L.surface.screens
+		if s.route != _|_ && !strings.Contains(s.route, ":") {
+			let title = [if s.title != _|_ { s.title }, sName][0]
+			let route = s.route
+			let publicReadsMap = {
+				if s.reads != _|_
+				for r in s.reads
+				if _tableToEntity[r.table] != _|_
+				let eName = _tableToEntity[r.table]
+				if list.Contains(_publicEntityNames, eName) {
+					(eName): true
+				}
+			}
+			let publicReads = [for eName, _ in publicReadsMap { eName }]
+			let reads = [if len(publicReads) > 0 { strings.Join(publicReads, ", ") }, "none"][0]
+			"""
+			### Screen: \(title)
+			- Route: `\(route)`
+			- Reads: \(reads)
+			"""
+		}
+	]
+
+	_entityDetails: [
+		if L.state != null if L.state.entities != _|_
+		for eName in _publicEntityNames {
+			let ent = L.state.entities[eName]
+			let fields = [
+				if ent.fields != _|_
+				for f in ent.fields
+				let fRetired = [for k, v in f if k == "retired" { v }, false][0]
+				if fRetired == false {
+					let fName = [if f.name != _|_ { f.name }, "field"][0]
+					let fType = [if f.type != _|_ { f.type }, "string"][0]
+					"  - `\(fName)` (\(fType))"
+				}
+			]
+			let fieldsStr = [if len(fields) > 0 { strings.Join(fields, "\n") }, "  - (no fields)"][0]
+			"""
+			### Entity: \(eName)
+			Fields:
+			\(fieldsStr)
+			"""
+		}
+	]
+
+	_synthFullText: strings.Join(list.Concat([
+		[
+			"# \(_appName) - Full Specification",
+			"",
+			if _appDesc != "" { "> \(_appDesc)\n" },
+			"## Architecture",
+			_authSummary,
+			"",
+			"## Screens Specification",
+		],
+		[if len(_screenDetails) > 0 { strings.Join(_screenDetails, "\n\n") }, "None declared."][0:1],
+		[
+			"",
+			"## Data Models Schema",
+		],
+		[if len(_entityDetails) > 0 { strings.Join(_entityDetails, "\n\n") }, "None declared."][0:1],
+		[""]
+	]), "\n")
+
+	_errors: [
+		if _hasText && _hasFile {
+			"llms cannot declare both text and file"
+		},
+		if _hasFullText && _hasFullFile {
+			"llms cannot declare both fullText and fullFile"
+		},
+		if _hasFile && (strings.Contains(_rawFile, "..") || strings.HasPrefix(_rawFile, "/")) {
+			"llms file may not contain '..' or begin with '/': '\(_rawFile)'"
+		},
+		if _hasFullFile && (strings.Contains(_rawFullFile, "..") || strings.HasPrefix(_rawFullFile, "/")) {
+			"llms fullFile may not contain '..' or begin with '/': '\(_rawFullFile)'"
+		},
+		if _isAuthRequired && _enabled && (_synthBrief || _synthFull) {
+			"llms auto-synthesis cannot be enabled when capabilities.auth.required is true"
+		},
+	]
+
+	files: {
+		if _hasText && !_hasFile {
+			"llms.txt": {
+				format: "text"
+				text:   L.raw.text
+			}
+		}
+		if _synthBrief {
+			"llms.txt": {
+				format: "text"
+				text:   _synthBriefText
+			}
+		}
+		if _hasFullText && !_hasFullFile {
+			"llms-full.txt": {
+				format: "text"
+				text:   L.raw.fullText
+			}
+		}
+		if _synthFull {
+			"llms-full.txt": {
+				format: "text"
+				text:   _synthFullText
+			}
+		}
+	}
+
+	statics: [
+		if (_hasText || _synthBrief) && !_hasFile {
+			file:   "llms.txt"
+			target: "/srv/llms.txt"
+			watch:  true
+		},
+		if _hasFile && !_hasText && !strings.Contains(_rawFile, "..") {
+			file:   _rawFile
+			target: "/srv/llms.txt"
+			watch:  true
+		},
+		if (_hasFullText || _synthFull) && !_hasFullFile {
+			file:   "llms-full.txt"
+			target: "/srv/llms-full.txt"
+			watch:  true
+		},
+		if _hasFullFile && !_hasFullText && !strings.Contains(_rawFullFile, "..") {
+			file:   _rawFullFile
+			target: "/srv/llms-full.txt"
+			watch:  true
+		},
+	]
+}
+
+#wellKnownPlan: W={
+	raw: *null | _
+
+	_enabled: W.raw != null
+	_rawMap: [if _enabled && (W.raw & bool) == _|_ && (W.raw & {}) != _|_ { W.raw }, {}][0]
+
+	_errors: list.Concat([
+		[
+			for name, _ in _rawMap
+			if name == "" || name == "." || strings.Contains(name, "..") || strings.Contains(name, "/")
+			{ "wellKnown key may not contain '..' or '/' and may not be empty or '.': '\(name)'" }
+		],
+		[
+			for name, item in _rawMap
+			if (item & {}) != _|_
+			if item.text != _|_ && item.file != _|_
+			{ "wellKnown '\(name)' cannot declare both text and file" }
+		],
+		[
+			for name, item in _rawMap
+			if (item & {}) != _|_
+			if item.text == _|_ && item.file == _|_
+			{ "wellKnown '\(name)' must declare either text or file" }
+		],
+		[
+			for _, item in _rawMap
+			if (item & {}) != _|_
+			if item.file != _|_
+			if strings.Contains(item.file, "..") || strings.HasPrefix(item.file, "/")
+			{ "wellKnown file may not contain '..' or begin with '/': '\(item.file)'" }
+		],
+	])
+
+	files: {
+		for name, item in _rawMap {
+			let isStr = (item & string) != _|_
+			let hasText = (item & {}) != _|_ && item.text != _|_
+			let hasFile = (item & {}) != _|_ && item.file != _|_
+			if (isStr || hasText) && !hasFile {
+				let content = [if isStr { item }, if hasText { item.text }, ""][0]
+				".well-known/\(name)": {
+					format: "text"
+					text:   content
+				}
+			}
+		}
+	}
+
+	statics: list.Concat([
+		[
+			for name, item in _rawMap
+			let isStr = (item & string) != _|_
+			let hasText = (item & {}) != _|_ && item.text != _|_
+			let hasFile = (item & {}) != _|_ && item.file != _|_
+			if (isStr || hasText) && !hasFile && name != "" && name != "." && !strings.Contains(name, "..") && !strings.Contains(name, "/")
+			{
+				file:   ".well-known/\(name)"
+				target: "/srv/.well-known/\(name)"
+				watch:  true
+			}
+		],
+		[
+			for name, item in _rawMap
+			let hasText = (item & {}) != _|_ && item.text != _|_
+			let hasFile = (item & {}) != _|_ && item.file != _|_
+			if hasFile && !hasText
+			if name != "" && name != "." && !strings.Contains(name, "..") && !strings.Contains(name, "/") && !strings.Contains(item.file, "..") && !strings.HasPrefix(item.file, "/")
+			{
+				file:   item.file
+				target: "/srv/.well-known/\(name)"
+				watch:  true
+			}
+		],
+	])
+}
+
+#sitemapPlan: S={
+	raw:          *null | _
+	meta:         *null | _
+	capabilities: *null | _
+
+	_isExplicitBool: (S.raw & bool) != _|_
+	_isExplicitObj:  (S.raw & {}) != _|_
+	_isDeclared:     S.raw != null
+
+	_isAuthRequired: [
+		if S.capabilities != null if S.capabilities.auth != _|_ if S.capabilities.auth.required == true { true },
+		false
+	][0]
+
+	enabled: [
+		if _isExplicitBool { S.raw },
+		if _isExplicitObj if S.raw.enabled != _|_ { S.raw.enabled },
+		true
+	][0]
+
+	declared: _isDeclared
+
+	_exclude: [if _isExplicitObj if S.raw.exclude != _|_ { S.raw.exclude }, []][0]
+	_extra:   [if _isExplicitObj if S.raw.extra != _|_ { S.raw.extra }, []][0]
+
+	_excludeErrors: [
+		for ex in _exclude
+		if !strings.HasPrefix(ex, "/")
+		{ "sitemap exclude path must begin with '/': '\(ex)'" }
+	]
+
+	_extraErrors: [
+		for ext in _extra
+		if !strings.HasPrefix(ext, "/") && !strings.HasPrefix(ext, "http://") && !strings.HasPrefix(ext, "https://")
+		{ "sitemap extra path must begin with '/', 'http://', or 'https://': '\(ext)'" },
+		for ext in _extra
+		if strings.Contains(ext, "{{") || strings.Contains(ext, "}}")
+		{ "sitemap extra path may not contain template delimiters '{{' or '}}': '\(ext)'" }
+	]
+
+	_authConflictErrors: [
+		if _isAuthRequired && _isDeclared && enabled {
+			"sitemap cannot be enabled when capabilities.auth.required is true"
+		}
+	]
+
+	_errors: list.Concat([_excludeErrors, _extraErrors, _authConflictErrors])
+
+	exclude: _exclude
+	extra:   _extra
+
+	tag: [
+		if enabled && _isDeclared { "<link rel=\"sitemap\" type=\"application/xml\" href=\"/sitemap.xml\">" },
+		""
+	][0]
+}
+
+#envelopePlan: P={
+	meta:         _
+	surface:      *null | _
+	state:        *null | _
+	capabilities: *null | _
+
+	favicon: #faviconPlan & {
+		if P.meta.favicon != _|_ { raw: P.meta.favicon }
+	}
+
+	hints: #hintsPlan & {
+		if P.meta.preconnect != _|_ { preconnect: P.meta.preconnect }
+		if P.meta.dnsPrefetch != _|_ { dnsPrefetch: P.meta.dnsPrefetch }
+	}
+
+	manifest: #manifestPlan & {
+		meta:         P.meta
+		favicon:      P.favicon
+		capabilities: P.capabilities
+		if P.surface != null {
+			if P.surface.screens != _|_ { screens: P.surface.screens }
+			if P.surface.design != _|_ { design: P.surface.design }
+		}
+		if P.meta.manifest != _|_ { raw: P.meta.manifest }
+	}
+
+	social: #socialPlan & {
+		meta: P.meta
+		if P.meta.social != _|_ { raw: P.meta.social }
+	}
+
+	llms: #llmsPlan & {
+		meta:         P.meta
+		surface:      P.surface
+		state:        P.state
+		capabilities: P.capabilities
+		if P.meta.llms != _|_ { raw: P.meta.llms }
+	}
+
+	wellKnown: #wellKnownPlan & {
+		if P.meta.wellKnown != _|_ { raw: P.meta.wellKnown }
+	}
+
+	sitemap: #sitemapPlan & {
+		meta:         P.meta
+		capabilities: P.capabilities
+		if P.meta.sitemap != _|_ { raw: P.meta.sitemap }
+	}
+
+	_errors: list.Concat([
+		P.hints._errors,
+		P.manifest._errors,
+		P.social._errors,
+		P.llms._errors,
+		P.wellKnown._errors,
+		P.sitemap._errors,
+	])
+
+	_hasEnvelopeInjections: P.meta.favicon != _|_ || P.hints.links != "" || P.manifest.links != "" || P.social.links != "" || P.sitemap.tag != ""
+
+	headLinks: [
+		if !_hasEnvelopeInjections {
+			"<link rel=\"icon\" href=\"data:,\">"
+		},
+		if _hasEnvelopeInjections {
+			strings.Join([
+				for s in [
+					P.hints.links,
+					[if P.meta.favicon != _|_ { P.favicon.links }, "<link rel=\"icon\" href=\"data:,\">"][0],
+					P.manifest.links,
+					P.social.links,
+					P.sitemap.tag,
+				] if s != "" { s }
+			], "\n")
+		},
+	][0]
+
+	files: {
+		if P.favicon.svgFile != "" {
+			"shell/favicon.svg": {
+				format: "text"
+				text:   P.favicon.svgFile
+			}
+		}
+		if P.manifest.jsonText != "" {
+			"shell/manifest.webmanifest": {
+				format: "text"
+				text:   P.manifest.jsonText
+			}
+		}
+		for k, f in P.llms.files {
+			(k): f
+		}
+		for k, f in P.wellKnown.files {
+			(k): f
+		}
+	}
+
+	_rawStatics: list.Concat([
+		P.favicon.statics,
+		[
+			if P.manifest.enabled {
+				file:   "shell/manifest.webmanifest"
+				target: "/srv/shell/manifest.webmanifest"
+				watch:  true
+			},
+			if P.manifest.enabled {
+				file:   "shell/manifest.webmanifest"
+				target: "/srv/manifest.webmanifest"
+				watch:  true
+			},
+		],
+		P.manifest.statics,
+		P.social.static,
+		P.llms.statics,
+		P.wellKnown.statics,
+	])
+
+	_staticMap: {
+		for s in _rawStatics if s != _|_ if s.target != "" {
+			(s.target): s
+		}
+	}
+	statics: [for _, s in _staticMap { s }]
+}
+

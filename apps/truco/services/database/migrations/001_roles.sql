@@ -26,4 +26,15 @@ GRANT USAGE ON SCHEMA public TO electric;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO electric;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO electric;
 
+-- Finite machine bounds: statement, lock, and idle timeouts.
+ALTER ROLE anon SET statement_timeout = '5s';
+ALTER ROLE anon SET lock_timeout = '2s';
+ALTER ROLE anon SET idle_in_transaction_session_timeout = '10s';
+ALTER ROLE app_user SET statement_timeout = '5s';
+ALTER ROLE app_user SET lock_timeout = '2s';
+ALTER ROLE app_user SET idle_in_transaction_session_timeout = '10s';
+ALTER ROLE service SET statement_timeout = '30s';
+ALTER ROLE service SET lock_timeout = '5s';
+ALTER ROLE service SET idle_in_transaction_session_timeout = '60s';
+
 COMMIT;

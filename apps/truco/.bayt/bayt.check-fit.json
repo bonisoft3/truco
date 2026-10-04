@@ -1,0 +1,305 @@
+{
+  "_generated_from": "bayt.cue (do not edit)",
+  "compose": {
+    "up": true,
+    "manual": true,
+    "build": {
+      "additional_contexts": {
+        "root": "../../.."
+      },
+      "secrets": [],
+      "args": {}
+    },
+    "command": [
+      "mise",
+      "x",
+      "--",
+      "sh",
+      "-c",
+      "deno run --unstable-sloppy-imports --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/fit.ts ."
+    ],
+    "depends_on": {
+      "apps_truco-launch": {
+        "condition": "service_healthy"
+      }
+    },
+    "environment": {
+      "APP_URL": "https://caddy:8443"
+    },
+    "ports": [],
+    "volumes": []
+  },
+  "dockerfile": {
+    "preamble": [],
+    "preambleCopyContexts": [],
+    "from": {
+      "ref": ":browser",
+      "name": "apps_truco-browser"
+    },
+    "add": [],
+    "mounts": [],
+    "secrets": {},
+    "extra_hosts": [],
+    "epilogue": [],
+    "copy": [
+      {
+        "from": {
+          "name": "root"
+        },
+        "srcs": [
+          "plugins/omnishell",
+          "libraries/mecha"
+        ],
+        "dst": "/monorepo/",
+        "link": true,
+        "parents": true,
+        "exclude": []
+      }
+    ],
+    "healthcheck": null,
+    "expose": [],
+    "entrypoint": null,
+    "incremental": false,
+    "cmd": null
+  },
+  "name": "check-fit",
+  "project": "apps_truco",
+  "dir": "apps/truco",
+  "activate": "",
+  "srcs": {
+    "globs": [
+      "tests/**"
+    ],
+    "exclude": []
+  },
+  "outs": {
+    "globs": [],
+    "exclude": []
+  },
+  "state": {
+    "globs": []
+  },
+  "env": {
+    "MISE_ALWAYS_KEEP_DOWNLOAD": "1"
+  },
+  "synthetics": {
+    "bayt": {
+      "name": "check-fit_bayt",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [
+          ".bayt/compose.check-fit.yaml",
+          ".bayt/Dockerfile.check-fit",
+          ".bayt/bayt.check-fit.json",
+          ".bayt/Taskfile.yml",
+          ".bayt/Taskfile.bayt.yml",
+          ".bayt/Taskfile.check-fit.yaml",
+          ".bayt/compose.check-fit.closure.yaml"
+        ],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "apps/truco/.bayt/compose.check-fit.yaml",
+        "apps/truco/.bayt/compose.browser.yaml",
+        "apps/truco/.bayt/compose.launch.yaml",
+        "apps/truco/.bayt/compose.caddy.yaml",
+        "apps/truco/.bayt/compose.database.yaml",
+        "libraries/mecha/.bayt/compose.database-image.yaml",
+        "apps/truco/.bayt/compose.crud.yaml",
+        "apps/truco/.bayt/compose.electric.yaml",
+        "apps/truco/.bayt/compose.auth.yaml",
+        "libraries/mecha/.bayt/compose.auth-image.yaml"
+      ]
+    },
+    "outs": {
+      "name": "check-fit_outs",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "apps/truco/.bayt/compose.check-fit.yaml",
+        "apps/truco/.bayt/compose.browser.yaml",
+        "apps/truco/.bayt/compose.launch.yaml",
+        "apps/truco/.bayt/compose.caddy.yaml",
+        "apps/truco/.bayt/compose.database.yaml",
+        "libraries/mecha/.bayt/compose.database-image.yaml",
+        "apps/truco/.bayt/compose.crud.yaml",
+        "apps/truco/.bayt/compose.electric.yaml",
+        "apps/truco/.bayt/compose.auth.yaml",
+        "libraries/mecha/.bayt/compose.auth-image.yaml"
+      ]
+    },
+    "srcs": {
+      "name": "check-fit_srcs",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [
+          "tests/**"
+        ],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [
+        "browser_srcs",
+        "launch_outs_srcs"
+      ],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "apps/truco/.bayt/compose.check-fit.yaml",
+        "apps/truco/.bayt/compose.browser.yaml",
+        "apps/truco/.bayt/compose.launch.yaml",
+        "apps/truco/.bayt/compose.caddy.yaml",
+        "apps/truco/.bayt/compose.database.yaml",
+        "libraries/mecha/.bayt/compose.database-image.yaml",
+        "apps/truco/.bayt/compose.crud.yaml",
+        "apps/truco/.bayt/compose.electric.yaml",
+        "apps/truco/.bayt/compose.auth.yaml",
+        "libraries/mecha/.bayt/compose.auth-image.yaml"
+      ]
+    }
+  },
+  "taskfile": {
+    "run": "once",
+    "incremental": true,
+    "preconditions": []
+  },
+  "visibility": "internal",
+  "emitsSrcs": true,
+  "deps": [
+    "browser",
+    "launch_outs"
+  ],
+  "sameProjectDeps": [
+    "browser",
+    "launch_outs"
+  ],
+  "transitiveDeps": [
+    "browser",
+    "launch_outs"
+  ],
+  "transitiveCrossDeps": [],
+  "upClosure": [
+    "apps/truco/.bayt/compose.check-fit.yaml",
+    "apps/truco/.bayt/compose.browser.yaml",
+    "apps/truco/.bayt/compose.launch.yaml",
+    "apps/truco/.bayt/compose.caddy.yaml",
+    "apps/truco/.bayt/compose.database.yaml",
+    "libraries/mecha/.bayt/compose.database-image.yaml",
+    "apps/truco/.bayt/compose.crud.yaml",
+    "apps/truco/.bayt/compose.electric.yaml",
+    "apps/truco/.bayt/compose.auth.yaml",
+    "libraries/mecha/.bayt/compose.auth-image.yaml"
+  ],
+  "chainedDeps": [
+    {
+      "name": "browser",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "launch_outs",
+      "project": "apps_truco",
+      "dir": "apps/truco",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    }
+  ],
+  "cmds": [
+    {
+      "srcs": {
+        "globs": [
+          "tests/**",
+          "[m]ise.toml",
+          "[.]mise.toml",
+          "[m]ise.lock",
+          "[.]tool-versions"
+        ],
+        "exclude": [],
+        "defaultGlobs": null,
+        "defaultExclude": null
+      },
+      "do": "mise install",
+      "dockerfile": {
+        "do": "d=/root/.local/share/mise/downloads; s=/mise-tarball-store; mkdir -p \"$d\" \"$s\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; mise install || exit; cd \"$d\" && for f in */*/*; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; :",
+        "mounts": [
+          {
+            "type": "cache",
+            "target": "/root/.local/share/mise/downloads",
+            "scope": "project",
+            "required": false
+          },
+          {
+            "type": "cache",
+            "target": "/mise-tarball-store",
+            "scope": "global",
+            "required": false
+          }
+        ],
+        "shell": "sh"
+      },
+      "name": "builtin",
+      "shell": "exec",
+      "stop": false
+    }
+  ],
+  "cache": {
+    "full": false,
+    "similar": false
+  }
+}

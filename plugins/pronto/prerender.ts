@@ -3,7 +3,12 @@
 // Run from the repo root; both directories are read as given:
 //
 //   deno run --no-lock --node-modules-dir=none --allow-read --allow-write=<outDir> \
-//     plugins/pronto/prerender.ts <appDir> <outDir> <origin>
+//     plugins/pronto/prerender.ts <appDir> <outDir> <origin> [<omnishellDir>]
+//
+// The renderer is omnishell's, read from <omnishellDir>: the installed
+// omnishell's root (mise where) where pronto is installed, the sibling tree in
+// the monorepo (the default), so nothing here names a path outside pronto's own
+// tree.
 //
 // A route declaring `prerender` is addressable at (tag == i18n.default ? "" :
 // "/" + i18n.locales[tag].path) + its pattern in that locale, and this writes
@@ -22,8 +27,6 @@
 
 import { parseHTML } from "npm:linkedom@0.18.4";
 import { parse as parseYaml } from "jsr:@std/yaml@1.0.5";
-import { renderStorybook } from "../omnishell/interpreter/storybook.js";
-import { directionOf } from "../omnishell/interpreter/fragment.js";
 
 // The terminal's served layout, the same literal emit.cue writes the bundle
 // under: shell.yaml, the entry document and the assets they reference all sit
@@ -73,12 +76,17 @@ const fail = (msg: string): never => {
   Deno.exit(1);
 };
 
-const [appArg, outArg, origin] = Deno.args;
+const [appArg, outArg, origin, omnishellArg] = Deno.args;
 if (!appArg || !outArg || !origin) {
-  fail("usage: prerender.ts <appDir> <outDir> <origin>");
+  fail("usage: prerender.ts <appDir> <outDir> <origin> [<omnishellDir>]");
 }
 const appDir = new URL(`${appArg.replace(/\/*$/, "")}/`, `file://${Deno.cwd()}/`);
 const outDir = new URL(`${outArg.replace(/\/*$/, "")}/`, `file://${Deno.cwd()}/`);
+const omnishell = omnishellArg
+  ? new URL(`${omnishellArg.replace(/\/*$/, "")}/`, `file://${Deno.cwd()}/`)
+  : new URL("../omnishell/", import.meta.url);
+const { renderStorybook } = await import(new URL("interpreter/storybook.js", omnishell).href);
+const { directionOf } = await import(new URL("interpreter/fragment.js", omnishell).href);
 // Absolute canonical and hreflang URLs, which is what a crawler is asked to
 // compare across locales; the origin is the app's, so nothing here can guess it.
 const site = new URL(origin);
@@ -191,6 +199,9 @@ async function document_(route: Route, tag: string, at: string, markup: string):
   // it is instead, in the language it is in.
   doc.querySelector("title")?.remove();
   doc.querySelector('meta[name="description"]')?.remove();
+  doc.querySelector('link[rel="canonical"]')?.remove();
+  const ogUrl = doc.querySelector('meta[property="og:url"]');
+  if (ogUrl) ogUrl.setAttribute("content", new URL(at, site).href);
   const heading = doc.createElement("title");
   const h1 = parse(`<body>${markup}</body>`).querySelector("h1");
   if (!h1) fail(`route ${route.screen} renders no h1 under [${tag}], so the document has no title`);

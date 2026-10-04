@@ -13,8 +13,11 @@ being the whole story. How to use them is [GUIDE.md](GUIDE.md).
 file that runs ([rejected](#rejected)). `shell/shell.yaml` carries no screen
 semantics: every one lives in the markup where a reviewer reads it. Being
 reviewed source, screen markup is not filtered by the renderer's allowlist, so
-the platform's own primitives — `popover`, `<dialog>`, `commandfor`, anchor
-positioning — need no vocabulary here.
+the platform's own primitives — `popover` (`popover="auto"` / `popovertarget`),
+`<dialog>` (`<form method="dialog">`), `commandfor`, anchor positioning, and
+W3C APG patterns — need no vocabulary here. Why native capabilities are
+preferred over custom framework shims is argued in
+[Native capabilities](docs/native-capabilities.md).
 
 ## Placeholders
 
@@ -33,16 +36,22 @@ A placeholder names one of four things, told apart by prefix in `lookup()`
 | `{msg.key}` | the message `key` in the active locale's catalogue, then the app's default catalogue; `a.b` descends into a nested catalogue. A key neither answers throws — the markup named a message nobody wrote |
 | `{msg[column]}` | the message whose key the ROW carries in `column`: a writer stored a key rather than a sentence, so the reader's locale chooses the text. A column holding nothing renders nothing, and a key no catalogue answers renders as the key itself, because row data never takes a screen down (`check i18n` reports it) |
 
+`data-machine` is a declaration: its placeholders remain intact during DOM
+binding. An effect resolves them against the machine row after its transition's
+assignments, so `{title}` inside `effect.values` reads the draft at submit time.
+
 Messages are text content and attribute values, never CSS generated content:
 the human, the screen reader and the test runner all read the DOM, and CSS
 `content` is invisible to the accessibility tree, to find-in-page, to the
 clipboard and to `getByRole`, and cannot reach a `placeholder`, an `<option>`
-or a submit value. A message that is a map of arms rather than one sentence
-needs `data-msg-plural` or `data-msg-select` to pick one; an arm is text and
-may interpolate `{col}`, never another `{msg.…}`. `Intl` is the interpreter's
-alone — no handler, renderer or validation can reach it, and only an adapter is
-endowed with a guarded one — which is why plural selection and the value
-formats below resolve here.
+or a submit value. Messages are authored in standard ICU MessageFormat syntax
+and compiled at build time into JSON ASTs; screens bind them with `{msg.key}`,
+evaluating arguments, plurals, and selects dynamically with zero runtime
+dependencies in pure SES via endowed `Intl.PluralRules` and `Intl.NumberFormat`.
+An arm is text and may interpolate `{col}`, never another `{msg.…}`. `Intl`
+is the interpreter's alone — no handler, renderer or validation can reach it,
+and only an adapter is endowed with a guarded one — which is why plural selection
+and the value formats below resolve here.
 
 The active locale is the most explicit thing the arrival carries: the
 address's locale prefix, then `?lang=`, then a bound row's own `locale`
@@ -64,8 +73,9 @@ Three exceptions, each because the empty string is not "absent":
   the moment the tree connects, 404ing before any row exists.
 - A **boolean attribute** (`disabled`, `checked`, `readonly`, `required`,
   `selected`, `hidden`, `open`, `multiple`) is absent when its bound value is
-  empty. `disabled=""` is disabled, so interpolating an empty string would pin
-  a control shut.
+  empty or `"false"`, and otherwise carries the value as bound. `disabled=""`
+  is disabled, and so is `checked="false"`, so interpolating either would pin
+  a control in the state its column denies.
 - A **declaration** is never interpolated in place: `REGION_ATTRS` in
   `interpreter/screen.js` and the `data-read-` family are read with their
   placeholders intact, against a row the binder is not the one holding. The
@@ -92,8 +102,8 @@ Three exceptions, each because the empty string is not "absent":
 | `data-order` | the ordering. Where it varies, it is a closed map the file states and a column picks a key of; a key the map lacks is a `ProgramError` ([vary over a closed set](docs/accessibility.md#vary-over-a-closed-set-never-over-a-name)) |
 | `data-when` | the same filter grammar, literals only, matched against the row itself. A template with no `data-when` admits every row |
 | `data-exit-motion="none"` | rows leave at once, removed in the pass that loses them — for a list whose filter selects one row, where a leaving row beside its replacement is a layout jump. `none` is the only value, and a slot has no rows to leave; either mistake is refused |
-| `data-empty` | the empty-state copy, shown when the query returns none. A slot nested in another region's item has no screen state to fall back on, so it owes a declaration: copy, `data-empty=""` for a probe whose output is its presence, or `data-empty-row`; one that states none is refused at generate and by the interpreter |
-| `data-empty-row` | the row a region binds when it has none. A machine region synthesizes one from `{...context, field: initial}`; where both are present they must agree, vetted at generate and never arbitrated at runtime |
+| `data-empty` | the empty-state copy, shown when the query returns none, as an element of class `empty` the region admits: an `li` in a list, a `span` in phrasing, a `tr` whose one cell spans the table's columns in a `thead`, `tbody` or `tfoot`, a `p` elsewhere. A slot nested in another region's item has no screen state to fall back on, so it owes a declaration: copy, `data-empty=""` for a probe whose output is its presence, or `data-empty-row`; one that states none is refused at generate and by the interpreter |
+| `data-empty-row` | the row a region binds when it has none, resolved against the enclosing row as `data-filter` is — a whole `{col}` keeps its type and null, so a draft nested in the row it edits starts from it. A machine region synthesizes one from `{...context, field: initial}`; where both are present they must agree, vetted at generate and never arbitrated at runtime |
 | `data-project` | [derived columns](#derived-columns) a region states about its own rows |
 | `data-text` | text interpolation from the bound row or singleton |
 | `data-reads="a,b"` | the foreign tables a reduce this region wakes receives as `state.rows`, read at each step and never subscribed: a change to one does not wake the region |
@@ -137,8 +147,6 @@ column ([focus and ARIA](docs/accessibility.md)).
 | `data-text-format="number"` | grouped and punctuated for the reader's language — `1.234,5` to a Brazilian, `1,234.5` to an American |
 | `data-text-format="money"` | the same, with the currency the bound column declares (`#Field.money`). The column is an integer count of minor units and the code and scale are the column's, never the attribute's; a column declaring none is refused at hydration and by `check markup` |
 | `data-text-format="<name>"` | an app renderer, resolved by basename out of the route's `files.renderers` — a pure `(value) => nodes` Jessie module. `interpreter/render.js` owns the node schema, the tag and attribute allowlists, the URL-scheme check and the DOM write, so a renderer emits no markup it was not granted. A name colliding with a built-in is refused |
-| `data-msg-plural="<column>"` | the bound message is a map of arms, and the arm is the CLDR category `Intl.PluralRules(locale).select()` gives the column. A column that is not a count is refused rather than left to answer `other` |
-| `data-msg-select="<column>"` | the same map, indexed by the column's own value — gender, or any closed set the author names. Refused together with `data-msg-plural` |
 | `data-value` | bind a form control's value from the row. A control the reader has touched is left alone until its form submits or resets — regions re-bind on any change to their table, so binding through would wipe an unsent edit. Checkboxes are exempt: their value is the state, and a refused toggle must roll back where the reader can see it. In a hidden input, `{now}` is the terminal's clock and `null` is JSON null |
 | `data-value-adapter="<module>"` | the [adapter](#adapters) a control's value crosses |
 
@@ -205,20 +213,12 @@ from the route table and the page's locale (`routeHref`,
 | `data-on-<type>` | a reduce woken by a DOM event type, resolved like any Jessie module; what it receives is [the reduce contract](GUIDE.md#the-reduce-contract) |
 | `data-on-mutation` | woken by a row changing rather than by a reader — the fold seat |
 | `data-handler` | the handler a binding site names |
-| `data-machine='[…]'` | one or more [machines](#machines) over one row, each mounted knowing nothing of its siblings and sharing only the row a transition states. Duplicate fields are refused at mount |
 | `data-key='{…}'` | a key in APG's set submits the form it names, the way a form with no submit button submits on change. A literal form id naming nothing throws; an interpolated one resolving to nothing is a no-op |
-| `data-focus="{column}"` | move focus to the member whose column reads true, leaving the tab order alone. Acts only when the reader is already inside the region and on another member, and is refused unless the region's chart hears `focusin` |
-| `data-rove="{column}"` | a roving tabstop: `tabindex` on every member the region owns, from one column. The member reading true is in the tab order and every other is out; two reading true throw, and with none nothing is a tabstop. Focus moves there only when the column differs between two views |
-| `data-open="{column}"` | on a `popover` element: shown while the column reads true, re-derived every bind; a program error on an element that declares no `popover` |
-| `data-interest` | the element a hover or focus opens after the terminal's clock (300 ms in, 200 ms out), storing no openness. An id naming no element, a surface that is not `popover="auto"`, or one whose openness is already a `data-open` column throws `InterestError` |
 | `data-drag-handle` | the grab point within a row template; its presence makes a region's items draggable |
 
-`roveLint` and `focusLint` refuse `data-rove` and `data-focus` over any row
-but a `tab` or `device` one, and a projected caret whose enclosing row is not
-one either. A default is cancelled only for a gesture the
+A default is cancelled only for a gesture the
 markup declared; the displacing set is `contextmenu` (`DISPLACING_EVENTS`,
-`screen.js`). Why each is so is [machines](docs/machines.md#gestures-and-cancels)
-and [focus and ARIA](docs/accessibility.md#the-tab-order-is-the-terminals).
+`screen.js`). Why each is so is [machines](docs/machines.md#gestures-and-cancels).
 
 ## Machines
 
@@ -257,7 +257,10 @@ entity?, token?, filter?, values?}`, its `values` literals, `{now}`, the event
 leaf or a module, interpolated against the post-assign row. The terminal
 performs it through the store and answers the region's charts with `sync_ack`
 (carrying `token`) when the store settles it, and with `refused` if the write is
-withdrawn, possibly after; a refusal aborts the rest of that batch.
+withdrawn, possibly after. An immediate store error also delivers `refused`:
+`NonRetriableError` carries `kind: "refused"`, and other failures carry
+`kind: "failed"`. Either aborts the rest of that batch. A chart that offers
+retry should handle `refused` in every state where a pending write can fail.
 
 | Level | Name | Guarantee | Durability |
 |---|---|---|---|

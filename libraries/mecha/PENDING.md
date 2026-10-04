@@ -65,9 +65,6 @@ in the stream.
 **Every list that names an entity is rendered from `Entities`**
 ([what else names an entity](docs/schema.md#what-else-names-an-entity)).
 
-**`task generate` ends in a migration, or fails.** It renders the HCL and
-stops. A check that `atlas migrate diff` would write nothing catches HCL that no
-migration carries.
 
 **Numbers keep their width and fraction**: reading the `anyOf`'s first arm
 gives `bigint`, `double precision` and enums their own types
@@ -122,6 +119,13 @@ backend before it starts ([what bites](docs/deployment.md#what-bites-on-cloud-ru
 ([what it gives up](docs/browser.md#what-it-gives-up)). Online, the page's
 PGlite would follow the server's shapes; offline, it answers reads and keeps
 writes; on reconnect, the outbox replays them.
+
+**A subset the page's cluster serves is its own reading of Electric's
+protocol** ([browser](docs/browser.md#the-one-user-cluster)). A real
+ShapeStream holds it to the client, and nothing holds it to Electric: the
+position a subset answers, and how a stream already past it takes that
+position, follow what @electric-sql/client 1.5.27 does with them rather than a
+statement of Electric's.
 
 **The page routes from the Caddyfile**, through `caddy-js`, so a route the
 Caddyfile gains reaches the page

@@ -23,7 +23,7 @@ package bayt
 lock: images: {
 	// The runtime tree consumers COPY onto their PATH — built by
 	// plugins/bayt/Dockerfile.runtime, released on the `runtime/v*` stream.
-	bayt:         "bonitao/bayt-runtime:1.0.1@sha256:e0f405ae5b1fdbb915ceeb114d79ea425a0955b2acd562edcfb92a15469dc8df"
+	bayt:         "bonitao/bayt-runtime:1.2.0@sha256:c308d331cc58cddb8c90cdbbec0562de86d8c0f17105bea63c8727f1d55e36ab"
 	lazybox:      "bonitao/lazybox:0.8.3@sha256:c896a6836673d8fd217f6021a2522351fd82d580ed985159feb2f10373018e73"
 	busybox:      "busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223"
 	// Visual lint runs a real browser against a served app, so the
@@ -31,7 +31,7 @@ lock: images: {
 	// must track the version check-visual.ts imports, or the client refuses
 	// the browsers it finds. Deno arrives as a binary because the playwright
 	// base ships node and the checker is a Deno script.
-	playwright:   "mcr.microsoft.com/playwright:v1.59.1-noble@sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53"
+	playwright:   "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48"
 	deno_bin:     "denoland/deno:bin-2.5.5@sha256:a8dd9a073b2b4d1beb77a8174830c5af54e32517808dcc28249ed6c04fdac979"
 	docker:       "docker:29.7.1-cli@sha256:27a51d5ab1cd38d9eeaba7b415b8c07bc10c31e1cf1ec8d78f6413fcfab3f44f"
 	alpine_socat: "mirror.gcr.io/alpine/socat:1.8.0.0@sha256:a6be4c0262b339c53ddad723cdd178a1a13271e1137c65e27f90a08c16de02b8"
@@ -51,5 +51,5 @@ lock: images: {
 	mockoon: "mockoon/cli:9.3.0@sha256:71b47e0ff0c4db496e63fc36a710ce971084e2e31f7504deb5cdf15555af598f"
 	// node:22-slim — glibc runtime base for Next.js standalone servers
 	// (`node server.js`). Multiplatform digest (linux/amd64 + arm64).
-	node: "node:22-slim@sha256:6c74791e557ce11fc957704f6d4fe134a7bc8d6f5ca4403205b2966bd488f6b3"
+	node: "node:22-slim@sha256:43ac6c60b8f89723f746e8a92ce91abd5017e627ce1ddfe4238355d3a30b772c"
 }

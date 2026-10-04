@@ -1,9 +1,7 @@
 // The acceptance driver: the brief's checklist walked against the running
 // table, in the browser, with the cluster up.
 //
-//   deno run -A --unsafely-ignore-certificate-errors tests/acceptance.ts .
-//
-// It is declared in program.cue as an `integrate` check, so the verb reaches
+// It is declared in program.cue as a build check, so the integrate verb reaches
 // it: a check no verb runs does not exist. Each case cites the acceptance id
 // it realizes, and the ids are the ones in acceptance.md — a case that cannot
 // fail is not a case, so every assertion names a value the table computes
@@ -927,13 +925,27 @@ const CASES: Case[] = [
           square: els.every((e) => ["0deg", "none"].includes(getComputedStyle(e).rotate)),
         };
       });
+      // Read once the rodada's own motion is over. The verdict squares it over
+      // --motion-settle and how much wall time that ease takes is the
+      // runner's: a fixed 600ms read a loaded runner's first card mid-turn
+      // ("the tie lies 19px apart, square: false"). Waited on the page, never
+      // by advancing the table's clock, which would deal on past the rodada.
+      const laid = async (t: number) => {
+        await p.waitForFunction((t: number) =>
+          !document.getAnimations().some((a) => {
+            const fx = a.effect as KeyframeEffect | null;
+            return a.playState === "running" && fx?.getTiming().iterations !== Infinity &&
+              fx?.target?.closest(`.trick[data-t="${t}"]`) != null;
+          }), t, { timeout: 5000 });
+        return lay(t);
+      };
       await p.locator('.seat-row.mine .card[data-card="6♠"]').click();
       await until(p, "both first cards down", 10000, async () => (await count(p, '.trick[data-t="1"] .played')) === 2);
+      await until(p, "the first card lands across", 2000, async () => (await lay(1)).gap < 0);
       const falling = await lay(1);
       assert(falling.gap < 0, `before the verdict the first rodada lies ${falling.gap}px apart, not across each other`);
       await until(p, "the tie", 10000, async () => (await attr(p, ".matcards", "data-v1")) === "tie");
-      await sleep(600);
-      const tied = await lay(1);
+      const tied = await laid(1);
       assert(tied.gap >= 0 && tied.square, `the tie lies ${tied.gap}px apart, square: ${tied.square}`);
 
       await until(p, "the second rodada to be yours", 10000, async () => {
@@ -942,8 +954,7 @@ const CASES: Case[] = [
       });
       await p.locator('.seat-row.mine .card[data-card="2♥"]').click();
       await until(p, "both second cards down", 10000, async () => (await count(p, '.trick[data-t="2"] .played')) === 2);
-      await sleep(600);
-      const deciding = await lay(2);
+      const deciding = await laid(2);
       assert(deciding.gap >= 0 && deciding.square, `the deciding rodada lies ${deciding.gap}px apart, square: ${deciding.square}`);
     },
   },
@@ -1427,14 +1438,13 @@ const CASES: Case[] = [
 ];
 
 async function main(): Promise<number> {
-  const { chromium } = await import("npm:playwright@1.59.1");
+  const { chromium } = await import("npm:playwright@1.61.1");
   const base = await baseUrl(APP);
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: ["--ignore-certificate-errors"] });
   // Every case below reads the table in Brazilian Portuguese, and an
   // unprefixed address takes its language from Accept-Language — so the driver
   // states the reader it is rather than inheriting the runner's.
   const context = await browser.newContext({
-    ignoreHTTPSErrors: true,
     locale: "pt-BR",
     viewport: { width: 1280, height: 900 },
   });

@@ -80,23 +80,16 @@ _expandCopy: {
 	// injection; any string key returns _ (unconstrained) rather than _|_.
 	depManifests: {[string]: _}
 
-	// Project depth from monorepo root. dir="" means workspace-root —
-	// strings.Split("", "/") returns [""] (len 1), which would emit one
-	// spurious `../` hop and double-slash COPY paths. The conditional
-	// keeps depth=0 the canonical workspace-root signal so every path
-	// helper (relRoot, rootFromBayt, COPY destinations, taskfile cross-
-	// includes) lands cleanly without bespoke per-site special-casing.
+	// Empty and dot name the workspace root, at depth zero.
 	_depth: [
-		if G.project.dir == "" {0},
-		if G.project.dir != "" {len(strings.Split(G.project.dir, "/"))},
+		if G.project.dir == "" || G.project.dir == "." {0},
+		if G.project.dir != "" && G.project.dir != "." {len(strings.Split(G.project.dir, "/"))},
 	][0]
 
-	// Project dir as a path-prefix segment: "" or "<dir>/". Used wherever
-	// emitters concatenate `<prefix><file>` and a workspace-root project
-	// (dir="") would otherwise produce a leading `/`.
+	// Prefix for emitted paths; a root project has no directory segment.
 	_dirPath: [
-		if G.project.dir == "" {""},
-		if G.project.dir != "" {"\(G.project.dir)/"},
+		if G.project.dir == "" || G.project.dir == "." {""},
+		if G.project.dir != "" && G.project.dir != "." {"\(G.project.dir)/"},
 	][0]
 
 	projectManifest: {
@@ -116,11 +109,12 @@ _expandCopy: {
 		// same-project deps)" — derived, not hand-listed. Used by the
 		// emitters (compose, taskfile bayt namespace) to wire
 		// cross-project includes / requires automatically.
-		crossProjectDirs: (_uniqStrings & {in: list.Concat([
-			[for n, t in G.project.targets if t != null
-			for d in _transitiveCrossDeps[n] {d.dir}],
-			_copyFedDirs,
-		])}).out
+		crossProjectDirs: [for p in crossProjects {p.dir}]
+		// The same deps with the project name each answers to, in the same
+		// order: a dep is addressed by name, which a mirror that relocates
+		// its dir leaves alone.
+		crossProjects: [for i, p in _crossProjectsAll
+			if !list.Contains(list.Slice(_crossProjectDirsAll, 0, i), p.dir) {p}]
 
 		// Gradle-stack targets pass `--init-script .bayt/init.gradle.kts`
 		// (stacks/gradle _initFlag). Emitters gate the file and its COPY
@@ -141,6 +135,7 @@ _expandCopy: {
 			_visibility: G.depManifests[ref].visibility & "public"
 			name:    G.depManifests[ref].name
 			project: G.depManifests[ref].project
+			if G.depManifests[ref].discriminator != _|_ {discriminator: G.depManifests[ref].discriminator}
 			dir:     G.depManifests[ref].dir
 			outs: {
 				globs:   G.depManifests[ref].outs.globs
@@ -316,6 +311,7 @@ _expandCopy: {
 		out: {
 			name:    N.name
 			project: G.project.name
+			if G.project.discriminator != _|_ {discriminator: G.project.discriminator}
 			dir:     G.project.dir
 			outs:    _sameProjectOutsByName[N.name]
 		}
@@ -333,6 +329,7 @@ _expandCopy: {
 		out: {
 			name:     "\(L.n)_\(L.view)"
 			project:  G.project.name
+			if G.project.discriminator != _|_ {discriminator: G.project.discriminator}
 			dir:      G.project.dir
 			activate: ""
 			srcs: {globs: [], exclude: []}
@@ -475,19 +472,36 @@ _expandCopy: {
 		}
 	}
 
-	// _copyFedDirs — cross-project dirs pulled in via typed copy.from.ref, so
+	// _copyFedProjects — cross-project deps pulled in via typed copy.from.ref, so
 	// the producer's compose is federated and its service: context resolves.
 	// Kept OUT of _targetCrossDeps by design: that list renders COPY edges, and
 	// a copy-ref there would duplicate the COPY the user already wrote.
-	_copyFedDirs: [
+	_crossProjectDirsAll: [for p in _crossProjectsAll {p.dir}]
+	_crossProjectsAll: list.Concat([
+		[for n, t in G.project.targets if t != null
+		for d in _transitiveCrossDeps[n] {(_projectOf & {in: d}).out}],
+		_copyFedProjects,
+	])
+
+	_copyFedProjects: [
 		for n, t in G.project.targets if t != null
 		if t.dockerfile != _|_
 		for c in list.Concat([t.dockerfile.copy, (_expandCopy & {in: t.dockerfile.defaultCopy}).out])
 		if c.from != null if c.from.ref != _|_
 		if strings.Contains(c.from.ref, ":") if !strings.HasPrefix(c.from.ref, ":")
 		let _m = G.depManifests[c.from.ref]
-		for _d in list.Concat([[_m.dir], [for x in _m.transitiveCrossDeps {x.dir}]]) {_d},
+		for _p in list.Concat([[_m], _m.transitiveCrossDeps]) {(_projectOf & {in: _p}).out},
 	]
+
+	// A dep's project identity: name, discriminator when it has one, dir.
+	_projectOf: P={
+		in: _
+		out: {
+			project: P.in.project
+			if P.in.discriminator != _|_ {discriminator: P.in.discriminator}
+			dir: P.in.dir
+		}
+	}
 
 	// Repo-root-relative compose-fragment path for a dep at (dir, name).
 	// Synthetic names map to their parent fragment — the `_srcs`/`_outs`
@@ -588,6 +602,7 @@ _expandCopy: {
 				// chainedDeps entry below.
 				name:    t.name
 				project: G.project.name
+				if G.project.discriminator != _|_ {discriminator: G.project.discriminator}
 				dir:     G.project.dir
 				// Target-level activate overrides project-level when
 				// explicitly set (e.g. setup wants `""` so its mise +
@@ -721,6 +736,32 @@ _expandCopy: {
 
 				// Output blocks (optional — only present if target emits them).
 				if t.taskfile != _|_ {taskfile: t.taskfile}
+
+				// Only a target with an entrypoint has a host process, so only its
+				// manifest records what the host projection reads, field by field:
+				// the #cmd it embeds, copied whole, costs every generator reading
+				// the manifest its evaluation again.
+				if t.entrypoint != _|_ {
+					let _e = t.entrypoint
+					entrypoint: {
+						do:    _e.do
+						shell: _e.shell
+						env:   _e.env
+						after: _e.after
+						host:  _e.host
+						for os in ["windows", "linux", "darwin"] if _e[os] != _|_ {(os): _e[os]}
+						if _e.dockerfile != _|_ {
+							dockerfile: {
+								if _e.dockerfile.do != _|_ {do: _e.dockerfile.do}
+								if _e.dockerfile.shell != _|_ {shell: _e.dockerfile.shell}
+							}
+						}
+					}
+					if t["process-compose"] != _|_ {"process-compose": t["process-compose"]}
+					// The host probe derives from it (gen_process_compose).
+					if t.healthcheck != _|_ {healthcheck: t.healthcheck}
+				}
+				if t.expose != _|_ if len(t.expose) > 0 {expose: t.expose}
 				if t.dockerfile != _|_ {
 					// Merge defaultPreamble (framework #MapAsList, keyed)
 					// + preamble (project-leaf list) at manifest emit
@@ -803,6 +844,7 @@ _expandCopy: {
 				(n): synthetics: srcs: {
 					name:    "\(n)_srcs"
 					project: G.project.name
+					if G.project.discriminator != _|_ {discriminator: G.project.discriminator}
 					dir:     G.project.dir
 					// Synthetic carries no toolchain; activate empty.
 					activate: ""
@@ -838,6 +880,7 @@ _expandCopy: {
 							if len(_sameProjectOutsByName[tn].globs) > 0 {
 								{
 									project: G.project.name
+									if G.project.discriminator != _|_ {discriminator: G.project.discriminator}
 									name:    tn
 									dir:     G.project.dir
 									outs:    _sameProjectOutsByName[tn]

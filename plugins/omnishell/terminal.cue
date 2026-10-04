@@ -12,6 +12,24 @@ import (
 	"strings"
 )
 
+// The running cluster's compose project, as a nushell expression: the
+// COMPOSE_PROJECT_NAME the app's mise env publishes, else the app's own name.
+// Everything that joins that cluster names it this way, or brings up a second.
+#ComposeProject: {
+	app: string
+	out: "(^mise exec -- printenv COMPOSE_PROJECT_NAME | complete | get stdout | str trim | str replace -r '^$' '\(app)')"
+}
+
+// A target's closure up as a verdict: its `bayt` service's exit code, with its
+// dependencies' output attached, so a runtime that fails to come up says why.
+// -p, not --project-directory: the closure's own directory is where its
+// includes and extends resolve, so only the project NAME may move.
+#ClosureUp: {
+	project: string
+	target:  string
+	out: "mise exec -- docker compose -p \(project) --profile '*' -f .bayt/compose.\(target).closure.yaml up bayt --abort-on-container-failure --exit-code-from bayt --build --remove-orphans --attach-dependencies"
+}
+
 #Path:   string
 #Jessie: #Path & =~"\\.js$"
 
@@ -101,21 +119,7 @@ _swJsAsset:      _ @embed(file="offline-first-sw.js", type=text)
 		"text-formats": plain:    {renders: "the column's text, placeholders interpolated", note: "the default when data-text-format is absent"}
 		"text-formats": datetime: {renders: "the moment in the reader's own language and clock (\"Aug 2, 09:00\" to an American, \"2 de ago., 09:00\" to a Brazilian)", note: "raw ISO / postgres timestamptz never reaches a reader; the zone is the reader's, except in the storybook, which pins UTC for the checks and for prerendered documents"}
 		"text-formats": number:   {renders: "the number in the reader's own digits and grouping (\"1.234,5\" to a Brazilian)", note: "the column's ASCII spelling is nobody's"}
-		"text-formats": money:    {renders: "the amount with its currency, placed and grouped for the reader (\"R$ 1.204\")", note: "the code and the minor-unit scale ride the column (#Field.money), never the attribute"}
 
-		// A message with more than one wording. A catalogue value may be a flat
-		// map of arm name to sentence, and the element names which arm it
-		// reads; the arm's own {column} bindings resolve against the same row
-		// the element's other bindings do. Selection is the terminal's because
-		// Intl is endowed here and in nothing a screen can reach otherwise —
-		// a Jessie compartment has no Intl and plv8 has none either. The list
-		// IS closed, unlike text-formats above: what indexes the map is the
-		// terminal's own arithmetic, so an unknown selector is not an app's to
-		// define. A map reaching a binding with no selector over it is refused
-		// rather than rendered, because it can only render as [object Object].
-		"message-arms": [Name=string]: {selects: string, note: string}
-		"message-arms": "data-msg-plural": {selects: "the CLDR category Intl.PluralRules gives the named column in the reader's language", note: "a column that is not a count is refused rather than left to answer \"other\""}
-		"message-arms": "data-msg-select": {selects: "the arm the named column's own value spells", note: "gender and any other closed set; every locale offers the same arms"}
 
 		// The renderer role, and the terminal's DOM mutation story. A renderer
 		// is a pure (value) => nodes function; interpreter/render.js states why
@@ -266,7 +270,7 @@ _swJsAsset:      _ @embed(file="offline-first-sw.js", type=text)
 					"{direction}", T.direction, 1),
 				"{modulepreload}", _preloadHtml, 1)
 			css:  _shellCssAsset
-			boot: _bootJsAsset
+			boot: *_bootJsAsset | string
 			sw:   _swJsAsset
 		}
 
@@ -296,16 +300,16 @@ _swJsAsset:      _ @embed(file="offline-first-sw.js", type=text)
 		runtime: *"" | string
 
 		// One leaf of that command line, run over the app's own directory.
-		// Both spellings are one word and a leaf, because which entry answers
-		// to the word is the toolchain's to say: a checkout answers with the
-		// task below, naming the tree it is standing in, and an install with
-		// the platform-native entry it put on PATH. Neither asks the rule
-		// which OS it woke up on.
+		// Which entry answers is the toolchain's to say: a checkout answers
+		// with the task below, naming the tree it is standing in, and an
+		// install with the entry its mise config resolves, through mise
+		// rather than PATH, where a shim is no promise (mise makes none for a
+		// `path:` version). Neither asks the rule which OS it woke up on.
 		_command: {
 			for leaf in ["check markup", "check handlers", "check machines", "check battery", "check i18n"] {
 				(leaf): [
 					if T.surface.runtime != "" {"mise run omnishell -- \(leaf) ."},
-					"omnishell \(leaf) .",
+					"use tools.nu [run-mise]; run-mise exec -- omnishell \(leaf) .",
 				][0]
 			}
 		}
@@ -359,6 +363,8 @@ _swJsAsset:      _ @embed(file="offline-first-sw.js", type=text)
 			"hatch-worker.js":        true
 			"jessie.js":              true
 			"vendor/morphlex.js":     true
+			"kinetic.js":             true
+			"prng.js":                true
 		}
 		_preloadHtml: strings.Join([for m in modules if _preloadSkip[m] == _|_ {
 			"<link rel=\"modulepreload\" href=\"/omnishell/interpreter/\(m)\">"
@@ -367,8 +373,9 @@ _swJsAsset:      _ @embed(file="offline-first-sw.js", type=text)
 		modules: [...#Path]
 		modules: [
 			"shell.js", "chrome.js", "screen.js", "fragment.js", "data-sync.js", "validate.js", "render.js",
-			"hatch.js", "hatch-worker.js", "storybook.js", "jessie.js",
+			"hatch.js", "hatch-worker.js", "storybook.js", "jessie.js", "kinetic.js", "prng.js",
 			"vendor/mecha-client.js", "vendor/js-yaml.js", "vendor/ses.umd.min.js", "vendor/morphlex.js",
+			"vendor/messages.js",
 		]
 
 		screens: [...{name: string, html: #Path, css: #Path}]
@@ -419,6 +426,7 @@ _swJsAsset:      _ @embed(file="offline-first-sw.js", type=text)
 		verbs: [Name=string]: {verb: "setup" | "generate" | "build" | "launch" | "release", cmds: [...string], note: string}
 		checks: [Name=string]: {verb: "lint" | "test" | "integrate", cmds: [...string], note: string}
 		checks: visual: {
+			let composeProject = (#ComposeProject & {app: T.app}).out
 			// A laid-out page over real content, so the cluster has to be up
 			// however cheap `lint` would look.
 			verb: "integrate"
@@ -428,22 +436,16 @@ _swJsAsset:      _ @embed(file="offline-first-sw.js", type=text)
 				// markup nobody is serving. Under mise exec, because the compose
 				// project name is published in the app's .mise.toml [env], and
 				// the tool-stub sayt runs rules through applies no [env].
-				"mise exec -- docker compose up -d --wait --build launch",
+				"mise exec -- docker compose -p \(composeProject) up -d --wait --build launch",
 				// No --force-recreate: it recreates the DEPENDENCIES too, so a
 				// data-backed app starts every run with an empty database and its
 				// rows-first screens never settle. --build is the part that
 				// matters, and it rebuilds without discarding state.
-				// -p, not --project-directory: the closure's own directory is
-				// where its includes and extends resolve, so only the project
-				// NAME may move. Without it the closure starts a second project
-				// named after .bayt, which brings up a second caddy and collides
-				// with the first on its port — and the runtime the line above
-				// started would not be the one the lint talks to. The name is
-				// the one the line above resolves, read from the same mise env:
-				// the published COMPOSE_PROJECT_NAME, else the app's own, which
-				// compose derives from the app directory. An empty one counts as
-				// unpublished.
-				"mise exec -- docker compose -p (^mise exec -- printenv COMPOSE_PROJECT_NAME | complete | get stdout | str trim | str replace -r '^$' '\(T.app)') --profile '*' -f .bayt/compose.integrate.closure.yaml up bayt --abort-on-container-failure --exit-code-from bayt --build --remove-orphans --attach-dependencies",
+				// The runtime's own project: under the closure's default, named
+				// after .bayt, a second caddy comes up and collides with the first
+				// on its port — and the runtime the line above started would not
+				// be the one the lint talks to.
+				(#ClosureUp & {project: composeProject, target: "integrate"}).out,
 			]
 			note: "DOM checks over every route at two viewports, run in a container beside the app; only critical findings fail"
 		}

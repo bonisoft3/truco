@@ -2577,3 +2577,47 @@ Deno.test({
     await m.stop();
   },
 });
+
+Deno.test({
+  name: "btn-encobrir arms modo_oculta and playing a card sets power 0 and said encoberta",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    const roundBefore = hand(m);
+    if (roundBefore.leader === "you") {
+      m.fire("#btn-encobrir");
+      await m.settle();
+      assert(hand(m).said === "modo_oculta", `encobrir should arm modo_oculta, got ${hand(m).said}`);
+
+      const cards = playable(m);
+      assert(cards.length > 0, "player has playable cards");
+      m.fire(cards[0]);
+      await m.settle();
+
+      const plays = m.rows("play").filter((p) => p.kind === "card" && p.seat === "you");
+      assert(plays.length === 1, "played card recorded");
+      assert(plays[0].power === "0", `encoberta card must have power 0, got ${plays[0].power}`);
+      assert(plays[0].said === "encoberta", `encoberta card must have said encoberta, got ${plays[0].said}`);
+    }
+    await m.stop();
+  },
+});
+
+Deno.test({
+  name: "quick shout triggers shout state and seeded bot dialogue",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#shout-chama");
+    await m.settle();
+    const r = hand(m);
+    assert(r.shout_done === "yes", `shout_done should be yes, got ${r.shout_done}`);
+    assert(r.shout_word === "CHAMA!", `shout_word should be CHAMA!, got ${r.shout_word}`);
+    assert((r.said ?? "").length > 0, "opponent should have responded with dialogue");
+    await m.stop();
+  },
+});

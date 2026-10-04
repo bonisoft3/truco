@@ -43,6 +43,7 @@ archives:
       - ".mise.toml"
       - "*.cue"
       - VERSION
+      - sayt.sh
 
   - id: bare
     formats:

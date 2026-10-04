@@ -61,4 +61,6 @@ windows-x64 = { url = 'https://github.com/duckdb/duckdb/releases/download/v{{ ve
 # The activated branch must not read the variable back: mise renders before it
 # drops its previous injection, so `get_env` there carries the last directory's
 # name across a cd. Unactivated, there is no hook and nothing stale to read.
-COMPOSE_PROJECT_NAME = '''{% if get_env(name='MISE_SHELL', default='') != '' %}{{ exec(command='mise tool-stub ../../plugins/sayt/nu.toml ../../plugins/sayt/compose.nu compose-project') }}{% else %}{{ get_env(name='COMPOSE_PROJECT_NAME', default='') }}{% endif %}'''
+# The exec's child runs without MISE_SHELL: a tool stub with a cold cache
+# resolves this `[env]` itself, and with the variable set would exec again.
+COMPOSE_PROJECT_NAME = '''{% if get_env(name='MISE_SHELL', default='') != '' %}{% if os() == 'windows' %}{{ exec(command='(set MISE_SHELL=) && mise tool-stub ../../plugins/sayt/nu.toml ../../plugins/sayt/compose.nu compose-project') }}{% else %}{{ exec(command='MISE_SHELL= mise tool-stub ../../plugins/sayt/nu.toml ../../plugins/sayt/compose.nu compose-project') }}{% endif %}{% else %}{{ get_env(name='COMPOSE_PROJECT_NAME', default='') }}{% endif %}'''

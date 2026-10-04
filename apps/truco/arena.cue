@@ -8,7 +8,7 @@ import (
 	omni "bonisoft.org/plugins/omnishell/components"
 )
 
-_wagerMachineAttr:     (omni.#attrJSON & {in: #WagerMachine}).out
+_wagerMachineAttr:     (omni.#attrJSON & {in: [#WagerMachine, #EnvidoMachine]}).out
 
 // What a rules change does to the sitting, carried on every variant/seats
 // arrow: the score goes back to nil and the seed respins, so the deal is new
@@ -217,8 +217,16 @@ _arenaMarkup: #"""
 
   <div class="board table-frame">
     <div class="mat">
+      <div class="beer-ring beer-ring-1" aria-hidden="true"></div>
+      <div class="beer-ring beer-ring-2" aria-hidden="true"></div>
+      <div class="ash-speck-1" aria-hidden="true"></div>
+      <div class="ash-speck-2" aria-hidden="true"></div>
 
       <header class="seatbar pad">
+        <div class="tavern-header-title">
+          <span class="live-dot" aria-hidden="true"></span>
+          <h1 class="tavern-name" data-text="{msg.tavern_title}">Boteco do Seu Nezinho · Mesa 1</h1>
+        </div>
         <span class="avatar" aria-hidden="true">V</span>
         <span class="who">
           <b data-text="{msg.you}">Você</b>
@@ -311,7 +319,7 @@ _arenaMarkup: #"""
            singleton: a singleton region hydrates no nested region and drives
            no screen state. -->
       <div class="hands" data-live="round" data-filter="current=eq.yes" data-order="created_at.desc"
-           data-empty-row='{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","truco_state":"none","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":""}'
+           data-empty-row='{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","truco_state":"none","envido_state":"none","trick_state":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":""}'
            data-on-mutation="table" data-reads="match,round,play,held,room_action">
         <template data-item>
           <article class="hand" data-phase="{phase}" data-result="{result}" data-round-id="{id}"
@@ -366,6 +374,22 @@ _arenaMarkup: #"""
           <div class="rope-fill" id="rope-fill"></div>
           <span class="timer-label" id="timer-label"></span>
         </div>
+        <div class="opponent-stage">
+          <div class="opponent-avatar-wrap">
+            <div class="opponent-avatar-ring">
+              <div class="opponent-avatar-img"></div>
+            </div>
+            <span class="opponent-turn-badge" id="opponent-turn-badge" data-text="{msg.turn_badge_them}">Vez dele</span>
+          </div>
+          <div class="opponent-dialogue-wrap">
+            <div class="speech-bubble" id="opponent-speech-bubble">
+              <div class="bubble-header">
+                <span class="bubble-speaker eles-name" data-text="{msg[opponent_name]}"></span>
+              </div>
+              <div class="opponent-talk" id="opponent-talk"></div>
+            </div>
+          </div>
+        </div>
         <!-- The seats across the table. Their cards are rows like yours; only
              the reading differs, so what they show is a back. Held rows are
              ordered by slot, which interleaves the seats, and a template
@@ -418,29 +442,41 @@ _arenaMarkup: #"""
               <div class="trick" data-t="1" data-live="play" data-order="seq.asc"
                    data-filter="round_id=eq.{id}&amp;vaza=eq.1&amp;kind=eq.card">
                 <template data-item>
-                  <div class="played" data-seat="{seat}" data-from-slot="{from_slot}" data-win="{win}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
+                  <div class="played" data-seat="{seat}" data-from-slot="{from_slot}" data-win="{win}" data-said="{said}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
                 </template>
               </div>
               <div class="trick" data-t="2" data-live="play" data-order="seq.asc"
                    data-filter="round_id=eq.{id}&amp;vaza=eq.2&amp;kind=eq.card">
                 <template data-item>
-                  <div class="played" data-seat="{seat}" data-from-slot="{from_slot}" data-win="{win}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
+                  <div class="played" data-seat="{seat}" data-from-slot="{from_slot}" data-win="{win}" data-said="{said}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
                 </template>
               </div>
               <div class="trick" data-t="3" data-live="play" data-order="seq.asc"
                    data-filter="round_id=eq.{id}&amp;vaza=eq.3&amp;kind=eq.card">
                 <template data-item>
-                  <div class="played" data-seat="{seat}" data-from-slot="{from_slot}" data-win="{win}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
+                  <div class="played" data-seat="{seat}" data-from-slot="{from_slot}" data-win="{win}" data-said="{said}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
                 </template>
               </div>
             </div>
           </template>
         </div>
-        <!-- The table's one voice. Chrome rather than a row's own element: it
-             is there between hands too, and a board that loses a line of its
-             own height when a hand ends is a board that jumps. -->
-        <div class="talk"></div>
-        <p class="refusal" role="status" data-text="{msg.play_refusal}">A mesa não conseguiu registrar a jogada.</p>
+        <div class="table-instruction-bar" id="table-instruction-bar">
+          <div class="talk"></div>
+          <p class="refusal" role="status" data-text="{msg.play_refusal}">A mesa não conseguiu registrar a jogada.</p>
+        </div>
+        <div class="player-dialogue-wrap" id="player-dialogue-wrap" aria-live="polite">
+          <div class="player-speech-bubble" id="player-speech-bubble">
+            <span class="player-talk" id="player-talk"></span>
+          </div>
+        </div>
+        <div class="encobrir-bar" data-live="round" data-filter="current=eq.yes"
+             data-reads="match,round,play,held,room_action"
+             data-empty-row='{"id":"","said":""}'>
+          <button type="button" class="btn-encobrir" id="btn-encobrir" data-on-click="table" title="{msg.encobrir_title_tip}">
+            <span aria-hidden="true">🙈</span>
+            <span data-text="{msg.encobrir_btn}">Encobrir</span>
+          </button>
+        </div>
         <!-- The hand the terminal renders. Item nodes persist across refreshes
              keyed by row id, so a card survives every unrelated redraw and can
              be animated out when it is spent (ir decision-29). -->
@@ -458,13 +494,20 @@ _arenaMarkup: #"""
           </template>
         </div>
 
+        <!-- Game over verdict lands above actions in the flow -->
+        <div class="over" id="over">
+          <p class="over-line" id="over-line"></p>
+          <p class="over-say" id="over-say"></p>
+          <a class="act ghost" data-route="regras" data-text="{msg.view_rules}">Ver as regras</a>
+        </div>
+
         <!-- The bet's affordances belong to the hand they are about, so they
              read it. Singleton regions rather than items: a list region sweeps
              away every child that is not one of its rows, and the fallback row
              keeps the buttons on the table before a hand exists. -->
         <div class="wager-controls" data-live="round" data-filter="current=eq.yes"
              data-reads="match,round,play,held,room_action"
-             data-empty-row='{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","truco_state":"none","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":""}'
+             data-empty-row='{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","truco_state":"none","envido_state":"none","trick_state":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":""}'
              data-machine='\#(_wagerMachineAttr)'
              style="display: contents;">
         <div class="actions" id="actions"
@@ -479,6 +522,8 @@ _arenaMarkup: #"""
             <span class="stood" data-text="{stake}"></span>
           </div>
           <div class="rail-label"><span data-text="{msg.rail_envido}">Responder o envido</span> <b class="wager-stood" data-text="{envido_rung}"></b></div>
+          <button type="button" class="act wager hot" id="btn-envido-take" data-on-click="table" data-text="{msg.envido_took}">Quero</button>
+          <button type="button" class="act wager risk" id="btn-envido-run" data-on-click="table" data-text="{msg.envido_ran}">Não quero</button>
           <button type="button" class="act wager" id="btn-envido" data-on-click="table" data-text="{msg.call_envido}">ENVIDO!</button>
           <button type="button" class="act wager" id="btn-envido-real" data-on-click="table" data-text="{msg.envido_real}">REAL ENVIDO!</button>
           <button type="button" class="act wager" id="btn-envido-falta" data-on-click="table" data-text="{msg.envido_falta}">FALTA ENVIDO!</button>
@@ -506,18 +551,17 @@ _arenaMarkup: #"""
           <!-- The raise and the fold are arithmetic on two fields and stay the
                dealer's to write. What accepting costs is the round's own rung,
                so it binds — and a price is where a language wants a plural. -->
-          <button type="button" class="act" id="btn-accept" data-on-click="table"><b data-text="{msg.accept}">Aceito</b><small data-text="{msg.worth_points}" data-msg-plural="rung"></small></button>
+          <button type="button" class="act" id="btn-accept" data-on-click="table"><b data-text="{msg.accept}">Aceito</b><small data-text="{msg.worth_points}"></small></button>
           <button type="button" class="act hot" id="btn-raise" data-on-click="table"><b data-text="{msg.raise}">Aumentar</b><small></small></button>
           <button type="button" class="act risk" id="btn-run" data-on-click="table"><b data-text="{msg.fold}">Corro</b><small></small></button>
-          <button type="button" class="act" id="btn-envido-take" data-on-click="table" data-text="{msg.envido_took}">Quero</button>
-          <button type="button" class="act risk" id="btn-envido-run" data-on-click="table" data-text="{msg.envido_ran}">Não quero</button>
-        </div>
         </div>
 
-        <div class="over" id="over">
-          <p class="over-line" id="over-line"></p>
-          <p class="over-say" id="over-say"></p>
-          <a class="act ghost" data-route="regras" data-text="{msg.view_rules}">Ver as regras</a>
+        <div class="boteco-shouts">
+          <button type="button" class="btn-quick-shout" id="shout-chama" data-on-click="table" data-text="{msg.shout_chama}">Chama!</button>
+          <button type="button" class="btn-quick-shout" id="shout-manda" data-on-click="table" data-text="{msg.shout_manda}">Manda vir!</button>
+          <button type="button" class="btn-quick-shout" id="shout-desce" data-on-click="table" data-text="{msg.shout_desce}">Desce a madeira!</button>
+          <button type="button" class="btn-quick-shout" id="shout-chorou" data-on-click="table" data-text="{msg.shout_chorou}">Chorou, parou!</button>
+        </div>
         </div>
 
         <div class="nomatch" id="nomatch">
@@ -819,13 +863,91 @@ _arenaMarkup: #"""
     anim.addEventListener("cancel", finish, { once: true });
   };
 
+  let handCardRects = new Map();
+  const getCardKey = (c) => c.dataset.row || (c.dataset.seat ? `${c.dataset.seat}-${c.dataset.slot}` : c.dataset.card);
+
+  const recordHandRects = () => {
+    if (still()) return;
+    handCardRects.clear();
+    for (const c of screen.querySelectorAll("#seat-you .card, .seat-row.house .card-back")) {
+      const id = getCardKey(c);
+      if (id) {
+        handCardRects.set(id, c.getBoundingClientRect());
+      }
+    }
+  };
+
+  let prevMineCount = 0;
+  let prevHouseCount = 0;
+
+  const animateRemainingHand = () => {
+    if (still()) return;
+    const isDealing = attrOf("data-phase") === "dealt" && !screen.querySelector(".matcards .played");
+    const mineCards = screen.querySelectorAll("#seat-you .card");
+    const houseCards = screen.querySelectorAll(".seat-row.house .card-back");
+    const curMineCount = mineCards.length;
+    const curHouseCount = houseCards.length;
+
+    if (isDealing || curMineCount === 0) {
+      handCardRects.clear();
+      prevMineCount = curMineCount;
+      prevHouseCount = curHouseCount;
+      return;
+    }
+
+    const mineLostCard = prevMineCount > 0 && curMineCount < prevMineCount;
+    const houseLostCard = prevHouseCount > 0 && curHouseCount < prevHouseCount;
+
+    if ((mineLostCard || houseLostCard) && handCardRects.size > 0) {
+      const cardsToAnimate = mineLostCard && houseLostCard
+        ? [...mineCards, ...houseCards]
+        : mineLostCard ? [...mineCards] : [...houseCards];
+
+      for (const c of cardsToAnimate) {
+        if (c.getAnimations().some((a) => a.animationName === "deal" || a.animationName === "deal-house")) continue;
+        const id = getCardKey(c);
+        if (id && handCardRects.has(id)) {
+          const prev = handCardRects.get(id);
+          const next = c.getBoundingClientRect();
+          const dx = prev.left - next.left;
+          const dy = prev.top - next.top;
+          if ((Math.abs(dx) > 1 || Math.abs(dy) > 1) && typeof c.animate === "function") {
+            c.animate([
+              { transform: `translate3d(${dx}px, ${dy}px, 0px)` },
+              { transform: "translate3d(0, 0, 0)" },
+            ], {
+              duration: 360,
+              delay: c.closest("#seat-you") ? 70 : 40,
+              easing: "cubic-bezier(.2, .86, .28, 1)",
+              fill: "none",
+            });
+          }
+        }
+      }
+    }
+
+    prevMineCount = curMineCount;
+    prevHouseCount = curHouseCount;
+
+    handCardRects.clear();
+    for (const c of [...mineCards, ...houseCards]) {
+      const id = getCardKey(c);
+      if (id) {
+        handCardRects.set(id, c.getBoundingClientRect());
+      }
+    }
+  };
+
   const wireHand = () => {
     const mine = $("#seat-you");
     if (!mine || mine.dataset.flightWired) return;
     mine.dataset.flightWired = "1";
     const capture = (e) => {
       const el = e.target.closest(".card");
-      if (el !== null && !el.disabled) flyFrom(el);
+      if (el !== null && !el.disabled) {
+        recordHandRects();
+        flyFrom(el);
+      }
     };
     mine.addEventListener("pointerdown", capture, { capture: true });
     mine.addEventListener("click", capture, { capture: true });
@@ -904,7 +1026,18 @@ _arenaMarkup: #"""
   const wireTable = () => {
     if (screen.dataset.table) return;
     screen.dataset.table = "1";
-    const again = () => { render(); };
+    const trucoBtn = $("#btn-truco");
+    if (trucoBtn) trucoBtn.removeAttribute("data-text");
+    let rendering = false;
+    const again = () => {
+      if (rendering) return;
+      rendering = true;
+      try {
+        render();
+      } finally {
+        rendering = false;
+      }
+    };
     // childList as well as attributes: an item's bindings are resolved before
     // the node is put in the tree, so a hand arriving for the first time is an
     // insertion and nothing else. Everything below writes only where it
@@ -915,6 +1048,7 @@ _arenaMarkup: #"""
       attributes: true,
       attributeFilter: [
         "data-v1", "data-v2", "data-v3", "data-result", "data-asked", "data-rung",
+        "data-said", "data-phase", "data-leader",
         "data-raised", "data-status", "data-hand", "data-stake", "data-variant",
         "data-envido", "data-envido-asked", "data-calls",
         "data-match-id", "data-opponent", "data-round-id", "data-turn-seat",
@@ -943,11 +1077,26 @@ _arenaMarkup: #"""
     for (const id of ["btn-next", "btn-again", "btn-start"]) {
       $(`#${id}`)?.addEventListener("click", () => hush());
     }
+    for (const b of screen.querySelectorAll(".btn-quick-shout")) {
+      b.addEventListener("click", () => {
+        const pWrap = $("#player-dialogue-wrap");
+        const pTalk = $("#player-talk");
+        if (pWrap && pTalk) {
+          pTalk.textContent = `“${b.textContent.trim().toUpperCase()}”`;
+          pWrap.dataset.active = "yes";
+          setTimeout(() => {
+            if (pWrap) pWrap.dataset.active = "no";
+          }, 1800);
+        }
+      });
+    }
   };
 
   const setText = (el, text) => { if (el !== null && el.textContent !== text) el.textContent = text; };
 
   let shoutTimer;
+  let shoutStart = 0;
+  const MIN_SHOUT_MS = 1400;
   const shout = (word, side, kind = "call") => {
     const el = $(".shout");
     if (!el || word === "") return;
@@ -955,14 +1104,25 @@ _arenaMarkup: #"""
     el.dataset.from = side;
     el.dataset.kind = kind;
     el.dataset.state = "live";
+    shoutStart = Date.now();
     clearTimeout(shoutTimer);
     if (kind === "run") shoutTimer = setTimeout(() => hush("run"), 2400);
   };
-  const hush = (kind) => {
+  const hush = (kind, immediate = false) => {
     const el = $(".shout");
-    if (el && el.dataset.state === "live" && (kind === undefined || el.dataset.kind === kind)) {
+    if (!el || el.dataset.state !== "live") return;
+    if (kind !== undefined && el.dataset.kind !== kind) return;
+    const elapsed = Date.now() - shoutStart;
+    const remaining = immediate ? 0 : Math.max(0, MIN_SHOUT_MS - elapsed);
+    clearTimeout(shoutTimer);
+    if (remaining > 0) {
+      shoutTimer = setTimeout(() => {
+        if (el && el.dataset.state === "live" && (kind === undefined || el.dataset.kind === kind)) {
+          el.dataset.state = "gone";
+        }
+      }, remaining);
+    } else {
       el.dataset.state = "gone";
-      if (kind === undefined) clearTimeout(shoutTimer);
     }
   };
 
@@ -1011,7 +1171,7 @@ _arenaMarkup: #"""
         st.lastRoundId = curRound;
         st.ran = "";
         st.shoutedRanRoundId = "";
-        hush();
+        hush(undefined, true);
       }
     }
     const loc = screen.dataset.locale || (typeof location !== "undefined" ? new URLSearchParams(location.search).get("lang") : null) || "pt-BR";
@@ -1030,11 +1190,21 @@ _arenaMarkup: #"""
       const off = ours || rung === 0 || asked !== "" || !yours;
       if (truco.disabled !== off) truco.disabled = off;
       const shout = rungWords()[rung];
-      setText(truco, ours
+      const targetText = ours
         ? ui.raise_them
         : rung === 0 ? ui.at_max
         : !yours ? (isOnline ? ui.opponent_turn : ui.their_turn)
-        : shout ? shout.toUpperCase() : ui.truco);
+        : shout ? shout.toUpperCase() : ui.truco;
+      if (truco.dataset.appliedText !== targetText) {
+        if (typeof truco.animate === "function" && !still() && truco.isConnected && truco.clientHeight > 0 && truco.dataset.appliedText) {
+          truco.animate([
+            { opacity: 0.35, transform: "scale(0.96)" },
+            { opacity: 1, transform: "scale(1)" }
+          ], { duration: 160, easing: "cubic-bezier(.2, .86, .28, 1)" });
+        }
+        truco.textContent = targetText;
+        truco.dataset.appliedText = targetText;
+      }
       truco.title = ours
         ? ui.title_ours
         : !yours ? (isOnline ? ui.title_waiting_online : ui.title_not_yours)
@@ -1111,11 +1281,52 @@ _arenaMarkup: #"""
     // restarts when its name changes — so the strip alternates between two
     // that are the same.
     const talk = $(".talk");
+    const oppBubble = $("#opponent-speech-bubble");
+    const oppTalk = $("#opponent-talk");
+    const turnBadge = $("#opponent-turn-badge");
+
+    const rawSaid = attrOf("data-said");
+    const line = sayOf(rawSaid, box, worth);
+
+    const isPersonaLine = rawSaid.startsWith("tell_") ||
+                          rawSaid.startsWith("call_") ||
+                          rawSaid.startsWith("retort_") ||
+                          rawSaid.includes("calma") ||
+                          rawSaid.includes("quente") ||
+                          rawSaid.includes("madeira") ||
+                          rawSaid.includes("risadinha") ||
+                          rawSaid.includes("peito") ||
+                          rawSaid.includes("mão espalmada") ||
+                          rawSaid.includes("ajeita") ||
+                          rawSaid.includes("mesa");
+
+    if (oppTalk && oppBubble) {
+      if (isPersonaLine && line) {
+        setText(oppTalk, line);
+        if (oppBubble.style.display !== "block") oppBubble.style.display = "block";
+      } else {
+        const opp = box.dataset.opponent ?? "nezinho";
+        const tell = voice().tells?.[opp] ?? "Ajeita as cartas na mesa com cuidado.";
+        setText(oppTalk, tell);
+        if (oppBubble.style.display !== "block") oppBubble.style.display = "block";
+      }
+    }
+
     if (talk !== null) {
-      const line = sayOf(attrOf("data-said"), box, worth);
       if (talk.textContent !== line) {
-        talk.textContent = line;
-        talk.dataset.t = talk.dataset.t === "1" ? "2" : "1";
+        setText(talk, line);
+        if (line !== "") {
+          talk.dataset.t = talk.dataset.t === "1" ? "2" : "1";
+        }
+      }
+    }
+
+    if (turnBadge) {
+      const turnSeat = attrOf("data-turn-seat");
+      const isHisTurn = turnSeat.startsWith("eles");
+      const targetDisplay = isHisTurn ? "block" : "none";
+      if (turnBadge.style.display !== targetDisplay) {
+        turnBadge.style.display = targetDisplay;
       }
     }
 
@@ -1157,6 +1368,8 @@ _arenaMarkup: #"""
     if (modalAbandonBanner) {
       modalAbandonBanner.style.display = (box.dataset.status === "playing" && box.dataset.opponent === "online") ? "flex" : "none";
     }
+
+    animateRemainingHand();
   };
 
   // Whoever is on turn acts: you wait for a tap, the house answers on a beat.

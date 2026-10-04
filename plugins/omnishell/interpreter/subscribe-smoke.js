@@ -10,12 +10,14 @@
 // wrong costs a stale screen.
 import {
   createStore,
+  embedDeps,
   embedTables,
   isMaintainable,
   parseFilter,
   parseFilterSpec,
   parseLimit,
   parseSelect,
+  routeOf,
   touches,
 } from "./data-sync.js";
 import * as fragment from "./fragment.js";
@@ -25,6 +27,12 @@ const { parseReadSpec } = fragment;
 
 const assert = (cond, msg) => {
   if (!cond) throw new Error(`smoke failed: ${msg}`);
+};
+
+const waitWake = async (wakes) => {
+  for (let i = 0; i < 20 && wakes.length === 0; i++) {
+    await new Promise((r) => setTimeout(r, 10));
+  }
 };
 
 // The grammar has one reader: the store adapter re-exports fragment.js's
@@ -91,17 +99,37 @@ Deno.test("a wake carrying no change set is always relevant", () => {
   assert(touches(preds, null), "no batch");
 });
 
-// Which reads may become a maintained view. The dangerous direction is a
-// false yes: the view is built without what the region binds, and the region
-// renders blank instead of failing. `*,author:app_user(handle)` is the case
-// that actually shipped broken — parseSelect rejects the alias syntax and
-// returns null, which read as "no embeds" instead of "server-computed".
-const can = (filter, select, access, embedAccess = {}) =>
-  isMaintainable(parseFilterSpec(filter), parseSelect(select), access, (t) => embedAccess[t]);
+// pronto's derive decides which tables a browser loads on demand from the
+// markup's routing; the store serves reads by the same function, so the two
+// cannot disagree about which reads are views.
+Deno.test("the store routes a read by the markup's own routeOf", () => {
+  assert(routeOf === fragment.routeOf, "data-sync re-exports fragment.js's routeOf");
+  const route = (filter, select) => routeOf(parseFilterSpec(filter), parseSelect(select), parseLimit(filter));
+  assert(route("id=eq.a", "*") === "view", "an eq");
+  assert(route("", "*") === "whole", "nothing");
+  assert(route("limit=3", "*") === "view", "a cap");
+  assert(route("done=is.true", "*") === "snapshot", "a boolean");
+  assert(route("n=lte.3", "*") === "snapshot", "a range");
+  assert(route("t=ilike.*a*", "*") === "snapshot", "a pattern");
+  assert(route("t=fts.a", "*") === "server", "an fts");
+  assert(route("id=eq.a", "*,note_label!inner(label(name))") === "server", "a nested embed");
+});
+
+// Which reads may become a maintained view: routeOf's "view", and the
+// program's half. The dangerous direction is a false yes: the view is built
+// without what the region binds, and the region renders blank instead of
+// failing. `*,author:app_user(handle)` is the case that actually shipped
+// broken — parseSelect rejects the alias syntax and returns null, which read
+// as "no embeds" instead of "server-computed".
+const can = (filter, select, access, embedAccess = {}) => {
+  const embeds = parseSelect(select);
+  return routeOf(parseFilterSpec(filter), embeds, parseLimit(filter)) === "view" &&
+    isMaintainable(embeds, access, (t) => embedAccess[t]);
+};
 
 Deno.test("a plain read on a public table is maintainable", () => {
   assert(can("article_id=eq.a1", undefined, { scope: "public" }), "eq on public");
-  assert(can(undefined, undefined, undefined), "unfiltered, no access rule");
+  assert(!can(undefined, undefined, undefined), "unfiltered is the collection itself");
   assert(can("deleted_at=is.null", undefined, undefined), "is.null");
 });
 
@@ -185,6 +213,16 @@ Deno.test("an embed is parsed with its alias and its table", () => {
   // The dependency set is tables, never aliases: a region deaf to app_user
   // would never see a byline change.
   eq2(embedTables("*,author:app_user(handle)"), ["app_user"], "dep set names the table");
+  // An embed naming its foreign-key column wakes on the table the column refers
+  // to, nested ones included.
+  const schema = {
+    game: { fields: [{ name: "home_id", ref: "team" }, { name: "phase_id", ref: "phase" }] },
+    phase: { fields: [{ name: "championship_id", ref: "championship" }] },
+  };
+  eq2(embedDeps("*,home:home_id(name),phase(name,championship(full_name))", "game", schema),
+    ["team", "phase", "championship"], "column-named and nested embeds");
+  eq2(embedDeps("*,author:app_user!inner(handle,follow!followed_id!inner(follower_id))", "article", {}),
+    ["app_user", "follow"], "hinted embeds wake on their tables");
 });
 
 // A cap is not a predicate. It used to make the whole filter untranslatable,
@@ -300,14 +338,13 @@ Deno.test({
     // Spy through the seam: the same read must come back out of this view.
     const real = entry.view;
     let served = 0;
-    entry.view = {
-      isReady: () => real.isReady?.() ?? true,
-      toArrayWhenReady: () => real.toArrayWhenReady?.(),
-      get toArray() {
-        served++;
-        return real.toArray;
+    entry.view = new Proxy(real, {
+      get(target, prop) {
+        if (prop === "toArray") served++;
+        const value = Reflect.get(target, prop, target);
+        return typeof value === "function" ? value.bind(target) : value;
       },
-    };
+    });
     const rows = await store.query(spec.table, spec.order, opts);
     entry.view = real;
     assert(served === 1, `the held view served the read, served ${served}`);
@@ -345,7 +382,7 @@ Deno.test({
     const rows = await store.query("row", "ord.asc", { order: "ord.asc" });
     assert(JSON.stringify(rows.map((r) => r.id)) === JSON.stringify(["b", "a"]), "ordered at read");
     await store.patch("row", [{ key: "a", changes: { ord: 0 } }]);
-    await new Promise((r) => setTimeout(r, 5));
+    await waitWake(wakes);
     assert(wakes.length === 1, `one wake, got ${wakes.length}`);
     assert(Array.isArray(wakes[0]) && wakes[0].some((c) => String(c.value?.id) === "a"), "the wake names the row");
     stop();
@@ -367,7 +404,7 @@ Deno.test({
     await store.drop("row", ["a"]);
     await store.write("row", [{ key: "b", row: { ord: 2 } }, { key: "c", row: { ord: 3 } }]);
     assert(wakes.length === 0, "the wake is a task of its own, after every write of the fold");
-    await new Promise((r) => setTimeout(r, 5));
+    await waitWake(wakes);
     assert(wakes.length === 1, `one wake for the fold, got ${wakes.length}`);
     const ids = [...new Set(wakes[0].map((c) => String(c.value?.id ?? c.previousValue?.id)))].sort();
     assert(JSON.stringify(ids) === JSON.stringify(["a", "b", "c"]), `every write in it, got ${ids}`);
@@ -391,7 +428,7 @@ Deno.test({
     await new Promise((r) => setTimeout(r, 5));
     assert(wakes.length === 0, "subscribing alone wakes nothing: the standing rows are no burst");
     await store.drop("row", ["old"]);
-    await new Promise((r) => setTimeout(r, 5));
+    await waitWake(wakes);
     assert(wakes.length === 1, `the delete woke the region, got ${wakes.length}`);
     assert(wakes[0].every((c) => c.type !== "insert"), "nothing of the standing state rides in the wake");
     assert(wakes[0].some((c) => c.type === "delete" && String(c.key) === "old"), "and named the row");
@@ -417,7 +454,7 @@ Deno.test({
     const second = store.subscribe("row", (changes) => wakes.push(changes), opts);
     assert(globalThis.__prontoViews.size === 1, "one view between them");
     await store.drop("row", ["a"]);
-    await new Promise((r) => setTimeout(r, 5));
+    await waitWake(wakes);
     assert(wakes.length === 1, `the late joiner woke, got ${wakes.length}`);
     assert(wakes[0].some((c) => c.type === "delete" && String(c.key) === "a"), "and heard the delete");
     second();

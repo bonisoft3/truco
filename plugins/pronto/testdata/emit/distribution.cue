@@ -1,6 +1,7 @@
 package emit
 
 import (
+	"list"
 	"strings"
 	pronto "bonisoft.org/plugins/pronto"
 	dist "bonisoft.org/plugins/pronto/distribution"
@@ -19,11 +20,19 @@ externalBuild:          _external.surface.sayYaml.say.build.do & dist.#Project.w
 _project:               dist.#Project
 sourcePin:              _project.mise.tools."github:bonisoft3/pronto" & dist.#Version
 bootstrapHasNoTerminal: strings.Contains(_project.write, "omnishell") & false
-_externalBuild: (pronto.#DefaultBuild & {code: _code, loop: _external, cluster: _cluster}).out.project
+_externalBuild: (pronto.#DefaultBuild & {code: _code, loop: _external, cluster: _cluster, terminal: _terminal}).out.project
 externalDirectory:   _externalBuild.dir & "."
 externalProjectName: (_externalBuild.name == _code.meta.name) & true
 localProjectName: ((pronto.#DefaultBuild & {code: _code, loop: _loop, cluster: _cluster}).out.project.name == "apps_\(_code.meta.name)") & true
-externalVisualContext: _externalBuild.targets.integrate.compose.build.additional_contexts.root & ".."
+externalVisualContext: (_externalBuild.targets.integrate.compose.build.additional_contexts.root == _|_) & true
 externalModuleSources: _externalBuild.targets.build.srcs.defaultGlobs["pronto-module"].glob & "cue.mod/**"
 externalConfigSources: _externalBuild.targets.build.srcs.defaultGlobs["pronto-config"].glob & "pronto/**"
 externalSaytSources:   _externalBuild.targets.build.srcs.defaultGlobs["pronto-sayt"].glob & ".say.yaml"
+// Held seed rows are a build input: the writer judges and renders them, and a
+// build image without them refuses the program.
+_seededBuild: (pronto.#DefaultBuild & {code: _code & {state: seed: src: "seed.json"}, loop: _loop, cluster: _cluster}).out.project
+seedSources: list.Contains(_seededBuild.targets.build.srcs.globs, "seed.json") & true
+// Installed apps verify releases as the monorepo's do: off, globally and per
+// backend, since mise reads attestations from a rate-limited GitHub API.
+_settings: _project.mise.settings
+attestationsOff: [_settings.github_attestations, _settings.slsa, _settings.github.slsa, _settings.github.github_attestations, _settings.aqua.github_attestations, _settings.aqua.cosign, _settings.aqua.slsa, _settings.aqua.minisign] & [false, false, false, false, false, false, false, false]

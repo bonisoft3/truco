@@ -83,6 +83,11 @@ def stub-path [name: string] {
   if (is-glibc) or not ($musl | path exists) { $glibc } else { $musl }
 }
 
+# sayt.sh's MISE_VERSION, which sayt.zig pins alike.
+def pinned-mise []: nothing -> string {
+  open --raw ($path_self | path dirname | path join "sayt.sh") | parse -r 'MISE_VERSION="(?<v>[^"]+)"' | get 0.v
+}
+
 export def mise-bin [] {
   let bootstrapped = $env.SAYT_MISE_BIN? | default ""
   if ($bootstrapped | is-not-empty) {
@@ -95,22 +100,20 @@ export def mise-bin [] {
   # 1. Check for mise binary next to tools.nu
   let local = $base | path join $exe
   if ($local | path exists) { return $local }
-  # 2. Check for mise-* versioned directory next to tools.nu
-  let dirs = ls $base | where { |row| ($row.name | path basename) starts-with "mise-" } | get name | sort
-  if ($dirs | is-not-empty) { return ($dirs | last | path join $exe) }
-  # 3. Check sayt cache directories (where sayt.sh installs mise)
-  let cache_dir = if $is_windows {
-    $env.LOCALAPPDATA? | default "" | path join "sayt"
+  # 2. The launchers' pinned mise, next to tools.nu or in their caches: sayt.zig
+  # caches under ~/Library/Caches on macOS, sayt.sh under XDG's everywhere.
+  let pinned = $"mise-(pinned-mise)"
+  let xdg = $env.XDG_CACHE_HOME? | default ($env.HOME? | default "" | path join ".cache") | path join "sayt"
+  let caches = if $is_windows {
+    [($env.LOCALAPPDATA? | default "" | path join "sayt")]
   } else if ((uname | get kernel-name) == "Darwin") {
-    $env.HOME | path join "Library" "Caches" "sayt"
+    [($env.HOME | path join "Library" "Caches" "sayt") $xdg]
   } else {
-    $env.XDG_CACHE_HOME? | default ($env.HOME | path join ".cache") | path join "sayt"
+    [$xdg]
   }
-  if ($cache_dir | path exists) {
-    let cache_dirs = ls $cache_dir | where { |row| ($row.name | path basename) starts-with "mise-" } | get name | sort
-    if ($cache_dirs | is-not-empty) { return ($cache_dirs | last | path join $exe) }
-  }
-  # 4. Fall back to PATH
+  let candidates = [$base ...$caches] | each { |d| $d | path join $pinned $exe } | where { path exists }
+  if ($candidates | is-not-empty) { return ($candidates | first) }
+  # 3. Fall back to PATH
   let found = which mise
   if ($found | is-empty) { error make {msg: "Mise is unavailable; start Sayt through saytw or sayt.sh"} }
   $found | first | get path
@@ -187,9 +190,13 @@ export def --wrapped run-git-cliff [...args] {
   run-mise tool-stub $stub ...$args
 }
 
+# goreleaser's builders and hooks run in the project's mise environment.
 export def --wrapped run-goreleaser [...args] {
   let stub = stub-path "goreleaser"
-  run-mise tool-stub $stub ...$args
+  let project = (run-mise env --json | from json)
+  # Windows names it Path.
+  let path_key = ($project | columns | where { |c| ($c | str downcase) == "path" } | first)
+  with-env ($project | update $path_key { split row (char esep) }) { run-mise tool-stub $stub ...$args }
 }
 
 export def --wrapped run-nu [...args] {
