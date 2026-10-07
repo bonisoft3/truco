@@ -13,11 +13,15 @@
           <span class="live-dot" aria-hidden="true"></span>
           <h1 class="tavern-name" data-text="{msg.tavern_title}">Boteco do Seu Nezinho · Mesa 1</h1>
         </div>
-        <span class="avatar" aria-hidden="true">V</span>
+        <span class="avatar" id="seatbar-avatar" aria-hidden="true">V</span>
         <span class="who">
-          <b data-text="{msg.you}">Você</b>
+          <span class="who-title-wrap">
+            <b id="seatbar-player-name" data-text="{msg.you}">Você</b>
+            <button type="button" class="btn-edit-handle" id="btn-edit-seatbar-handle" popovertarget="modal-online" popovertargetaction="show" title="{msg.edit_name}" aria-label="{msg.edit_name}">✎</button>
+            <input type="text" id="seatbar-handle-input" class="boteco-input inline-name-input" maxlength="20" placeholder="{msg.handle_placeholder}" style="display: none;" autocomplete="off" />
+          </span>
           <span class="who-sub">
-            <span class="sect" data-text="{msg.player_subtitle}">Pé de valsa · convidado</span>
+            <span class="sect" data-text="{msg.player_subtitle}">Truqueiro nato · convidado</span>
             <span class="seat-role" title="{msg.lead_title}"><i data-r="mao" data-text="{msg.hand_role_mao}">mão</i><i data-r="pe" data-text="{msg.hand_role_pe}">pé</i></span>
           </span>
         </span>
@@ -1398,8 +1402,19 @@
 
   const updateSeatPerspective = () => {
     screen.dataset.mySeat = getMySeat();
-    const whoTitle = $(".who b");
-    if (whoTitle) setText(whoTitle, "Você");
+    const whoTitle = $("#seatbar-player-name") || $(".who b");
+    const avatar = $("#seatbar-avatar") || $(".seatbar .avatar");
+    const custom = sessionStorage.getItem("truco-handle") || localStorage.getItem("truco-handle");
+    if (custom && custom.trim() && custom !== "Você" && custom !== "Vos" && custom !== "Tu") {
+      if (whoTitle) setText(whoTitle, custom.trim());
+      if (avatar) setText(avatar, custom.trim()[0].toUpperCase());
+    } else {
+      if (whoTitle) {
+        const def = whoTitle.dataset.text || "Você";
+        setText(whoTitle, def);
+      }
+      if (avatar) setText(avatar, "V");
+    }
   };
 
   const updateInviteField = () => {
@@ -1440,13 +1455,21 @@
   };
 
   const getMyHandle = () => {
-    let h = sessionStorage.getItem("truco-handle");
+    let h = sessionStorage.getItem("truco-handle") || localStorage.getItem("truco-handle");
     if (!h) {
       const u = getSessionUser();
-      h = u?.handle || u?.name || ("Jogador #" + Math.floor(100 + Math.random() * 900));
+      h = u?.handle || u?.name || "Truqueiro nato";
       sessionStorage.setItem("truco-handle", h);
     }
     return h;
+  };
+
+  const getShortSlug = (id) => {
+    if (!id) return "";
+    const clean = id.replace(/^p_/, "");
+    const parts = clean.split("_");
+    const last = parts[parts.length - 1];
+    return (last && last.length >= 3) ? last.slice(-4) : clean.slice(-4);
   };
 
   const sendLobbyHeartbeat = async () => {
@@ -1489,13 +1512,15 @@
     const myId = getMyPlayerId();
     const myHandle = getMyHandle();
     const seenIds = new Set();
+    const handleCounts = new Map();
+    const activeRows = [];
 
     for (const row of rows) {
       const rowId = row.dataset.id;
       const updatedAt = row.dataset.updatedAt;
       const btn = row.querySelector(".btn-challenge");
       const handleEl = row.querySelector(".player-handle");
-      const rawHandle = (row.dataset.handle || btn?.dataset?.handle || handleEl?.textContent || "").replace(/\s*\(Você\)\s*$/, "").trim();
+      const rawHandle = (row.dataset.handle || btn?.dataset?.handle || handleEl?.textContent || "").replace(/\s*\(Você\)\s*$/, "").replace(/\s*#[\w-]+\s*$/, "").trim();
 
       if (!rowId || rowId.includes("{") || seenIds.has(rowId)) {
         row.style.display = "none";
@@ -1503,15 +1528,8 @@
       }
       seenIds.add(rowId);
 
-      if (rowId === myId) {
-        row.style.display = "";
-        row.dataset.isMe = "true";
-        if (handleEl) setText(handleEl, `${myHandle} (Você)`);
-        if (btn) btn.style.display = "none";
-        continue;
-      }
-
-      if (updatedAt && !updatedAt.includes("{")) {
+      const isMe = (rowId === myId);
+      if (!isMe && updatedAt && !updatedAt.includes("{")) {
         const safeDateStr = updatedAt.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00");
         const itemTime = new Date(safeDateStr).getTime();
         if (!isNaN(itemTime) && itemTime > 0) {
@@ -1527,10 +1545,24 @@
         }
       }
 
+      const activeHandle = isMe ? myHandle : rawHandle;
+      handleCounts.set(activeHandle, (handleCounts.get(activeHandle) || 0) + 1);
+      activeRows.push({ row, rowId, isMe, handle: activeHandle, handleEl, btn });
+    }
+
+    for (const { row, rowId, isMe, handle, handleEl, btn } of activeRows) {
       row.style.display = "";
-      row.dataset.isMe = "false";
-      if (handleEl && rawHandle) setText(handleEl, rawHandle);
-      if (btn) btn.style.display = "";
+      row.dataset.isMe = isMe ? "true" : "false";
+      const slug = getShortSlug(rowId);
+      const isDuplicate = (handleCounts.get(handle) || 0) > 1;
+      row.dataset.slug = slug;
+      row.dataset.hasConflict = isDuplicate ? "true" : "false";
+      if (slug) row.title = `${handle} (${slug})`;
+
+      const slugPart = (isDuplicate && slug) ? ` #${slug}` : "";
+      const label = isMe ? `${handle}${slugPart} (Você)` : `${handle}${slugPart}`;
+      if (handleEl) setText(handleEl, label);
+      if (btn) btn.style.display = isMe ? "none" : "";
     }
   };
 
@@ -1879,6 +1911,8 @@
       if (v) {
         if (heartbeatDebounce) clearTimeout(heartbeatDebounce);
         sessionStorage.setItem("truco-handle", v);
+        localStorage.setItem("truco-handle", v);
+        updateSeatPerspective();
         await sendLobbyHeartbeat();
         filterAndMarkRows();
         if (btnSaveHandle) {
@@ -1903,6 +1937,8 @@
         const v = handleInput.value.trim();
         if (v) {
           sessionStorage.setItem("truco-handle", v);
+          localStorage.setItem("truco-handle", v);
+          updateSeatPerspective();
           filterAndMarkRows();
           if (heartbeatDebounce) clearTimeout(heartbeatDebounce);
           heartbeatDebounce = setTimeout(() => {
@@ -1997,6 +2033,69 @@
     window.addEventListener("pagehide", cleanLobby);
   };
 
+  const wireSeatbarIdentity = () => {
+    const editBtn = $("#btn-edit-seatbar-handle");
+    const whoTitle = $("#seatbar-player-name") || $(".who b");
+    const input = $("#seatbar-handle-input");
+    if (!editBtn || !input || editBtn.dataset.wired) return;
+    editBtn.dataset.wired = "1";
+
+    const startEditing = () => {
+      const cur = sessionStorage.getItem("truco-handle") || localStorage.getItem("truco-handle") || "";
+      input.value = cur;
+      if (whoTitle) whoTitle.style.display = "none";
+      editBtn.style.display = "none";
+      input.style.display = "inline-block";
+      input.focus();
+      input.select();
+    };
+
+    const stopEditing = (save) => {
+      if (save) {
+        const val = input.value.trim();
+        if (val) {
+          sessionStorage.setItem("truco-handle", val);
+          localStorage.setItem("truco-handle", val);
+        } else {
+          sessionStorage.removeItem("truco-handle");
+          localStorage.removeItem("truco-handle");
+        }
+        updateSeatPerspective();
+        const handleInp = $("#my-handle-input");
+        if (handleInp) handleInp.value = getMyHandle();
+        sendLobbyHeartbeat();
+        filterAndMarkRows();
+      }
+      input.style.display = "none";
+      if (whoTitle) whoTitle.style.display = "";
+      editBtn.style.display = "inline-flex";
+    };
+
+    editBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      startEditing();
+    });
+
+    if (whoTitle) {
+      whoTitle.style.cursor = "pointer";
+      whoTitle.addEventListener("click", () => startEditing());
+    }
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        stopEditing(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        stopEditing(false);
+      }
+    });
+
+    input.addEventListener("blur", () => {
+      stopEditing(true);
+    });
+  };
+
   // A returning screen (keep: 0, so this runs on every visit) finds the
   // engine state where it left it; a first visit finds an empty store and
   // deals into it.
@@ -2067,6 +2166,7 @@
   wireTable();
   wireFlight();
   wireOnlineModal();
+  wireSeatbarIdentity();
 
   let tries = 0;
   const settle = () => {

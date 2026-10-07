@@ -1461,7 +1461,7 @@ Deno.test({
     assert(mPt.one("#btn-run b").textContent?.trim() === "Corro", "pt: btn-run");
     assert(mPt.one(".score.us .sect").textContent?.trim() === "Nós", "pt: score us");
     assert(mPt.one(".who b").textContent?.trim() === "Você", "pt: you");
-    assert(mPt.one(".who .sect").textContent?.trim() === "Pé de valsa · convidado", "pt: player subtitle");
+    assert(mPt.one(".who .sect").textContent?.trim() === "Truqueiro nato · convidado", "pt: player subtitle");
 
     // Every truco-playing country's own address, composed from data-route +
     // data-locale (fragment.js routeHref) — a real link on every render, not
@@ -1504,9 +1504,9 @@ Deno.test({
     // app actually carries prose in: the subtitle under the reader's seat.
     for (
       const [tag, subtitle] of [
-        ["es-AR", "De buen bailar, che · invitado"],
-        ["es-UY", "De buen bailar, bo · invitado"],
-        ["es-PY", "De buen bailar voi' · invitado"],
+        ["es-AR", "Truquero de ley, che · invitado"],
+        ["es-UY", "Truquero de ley, bo · invitado"],
+        ["es-PY", "Truquero de ley voi' · invitado"],
       ] as const
     ) {
       const m = await table({ locale: tag });

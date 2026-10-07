@@ -254,11 +254,9 @@ body:has([data-screen="arena"]) > nav a {
 @keyframes heroRaisePulse {
   0%, 100% {
     box-shadow: 0 0 16px rgba(220, 38, 38, 0.6), 0 0 10px rgba(245, 158, 11, 0.45), 0 6px 14px rgba(0,0,0,0.6);
-    translate: 0 -3px;
   }
   50% {
     box-shadow: 0 0 26px rgba(239, 68, 68, 0.85), 0 0 16px rgba(251, 191, 36, 0.75), 0 8px 20px rgba(0,0,0,0.8);
-    translate: 0 -5px;
   }
 }
 
@@ -351,12 +349,49 @@ body:has([data-screen="arena"]) > nav a {
   }
 
   & .seatbar .who { display: grid; min-inline-size: 0; }
+  & .seatbar .who-title-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-inline-size: 0;
+  }
   & .seatbar .who b {
     font-size: clamp(0.75rem, 1.7dvh, 0.9375rem);
     color: var(--pad-ink);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  & .seatbar .btn-edit-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 16px;
+    block-size: 16px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--pad-dim);
+    cursor: pointer;
+    border-radius: var(--r-full);
+    opacity: 0.6;
+    transition: opacity var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
+  }
+  & .seatbar .btn-edit-handle:hover, & .seatbar .who-title-wrap:hover .btn-edit-handle {
+    opacity: 1;
+    color: var(--pad-ink);
+  }
+  & .seatbar .inline-name-input {
+    display: inline-block;
+    font-size: clamp(0.75rem, 1.7dvh, 0.9375rem);
+    font-weight: 700;
+    color: var(--pad-ink);
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--rim-hi);
+    border-radius: 4px;
+    padding: 1px 6px;
+    inline-size: clamp(90px, 18vw, 140px);
+    outline: none;
   }
   & .seatbar .who-sub {
     display: flex;
@@ -1189,7 +1224,7 @@ body:has([data-screen="arena"]) > nav a {
 
       /* Subdued cards dim smoothly into the cloth without alpha bleed or broken outlines */
       & .played:not([data-win="yes"]) .card {
-        opacity: 0.9;
+        opacity: 1;
         filter: brightness(0.88) contrast(0.95);
       }
       & .played[data-win="yes"] .card {
@@ -2297,6 +2332,11 @@ body:has([data-screen="arena"]) > nav a {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  & .player-handle .player-slug {
+    opacity: 0.6;
+    font-weight: 400;
+    font-size: 0.8em;
   }
   & .player-status-tag {
     font-size: 0.6875rem;
