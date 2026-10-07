@@ -1,0 +1,167 @@
+{
+  "_generated_from": "bayt.cue (do not edit)",
+  "compose": {
+    "up": false,
+    "manual": false,
+    "build": {
+      "additional_contexts": {
+        "libraries_mecha-auth-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-auth:0.6.3@sha256:93c0b936e90694e745290e219410cc30d09f077d7d7c15051cfc98ef42efe79a}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-auth-image}"
+      },
+      "secrets": [],
+      "args": {}
+    },
+    "environment": {
+      "DATABASE_URL": "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-truco}",
+      "PGRST_JWT_SECRET": "${PGRST_JWT_SECRET:-mecha-dev-secret-please-override-32ch}",
+      "WEBAUTHN_RP_ID": "${WEBAUTHN_RP_ID:-localhost}",
+      "WEBAUTHN_ORIGIN": "${WEBAUTHN_ORIGIN:-https://localhost:*}"
+    },
+    "ports": [],
+    "volumes": [],
+    "depends_on": {
+      "truco-database": {
+        "condition": "service_healthy"
+      }
+    },
+    "networks": {
+      "default": {
+        "aliases": [
+          "auth"
+        ]
+      }
+    }
+  },
+  "dockerfile": {
+    "preamble": [],
+    "preambleCopyContexts": [],
+    "from": {
+      "name": "libraries_mecha-auth-image"
+    },
+    "workdir": "/app",
+    "add": [],
+    "mounts": [],
+    "secrets": {},
+    "extra_hosts": [],
+    "epilogue": [],
+    "copy": [],
+    "healthcheck": null,
+    "expose": [],
+    "entrypoint": null,
+    "incremental": false,
+    "cmd": null
+  },
+  "name": "auth",
+  "project": "truco",
+  "dir": ".",
+  "activate": "",
+  "srcs": {
+    "globs": [],
+    "exclude": []
+  },
+  "outs": {
+    "globs": [],
+    "exclude": []
+  },
+  "state": {
+    "globs": []
+  },
+  "env": {},
+  "synthetics": {
+    "bayt": {
+      "name": "auth_bayt",
+      "project": "truco",
+      "dir": ".",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [
+          ".bayt/compose.auth.yaml",
+          ".bayt/Dockerfile.auth",
+          ".bayt/bayt.auth.json",
+          ".bayt/Taskfile.yml",
+          ".bayt/Taskfile.bayt.yml"
+        ],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.database.yaml"
+      ]
+    },
+    "outs": {
+      "name": "auth_outs",
+      "project": "truco",
+      "dir": ".",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.database.yaml"
+      ]
+    }
+  },
+  "visibility": "internal",
+  "emitsSrcs": false,
+  "deps": [
+    "database_outs"
+  ],
+  "sameProjectDeps": [
+    "database_outs"
+  ],
+  "transitiveDeps": [
+    "database_outs"
+  ],
+  "transitiveCrossDeps": [],
+  "upClosure": [
+    "./.bayt/compose.auth.yaml",
+    "./.bayt/compose.database.yaml"
+  ],
+  "chainedDeps": [
+    {
+      "name": "database_outs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    }
+  ],
+  "cmds": [],
+  "cache": {
+    "full": false,
+    "similar": false
+  }
+}

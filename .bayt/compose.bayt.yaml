@@ -1,0 +1,32 @@
+# generated from bayt.cue — do not edit
+include:
+- path: ./compose.browser.yaml
+  required: false
+- path: ./compose.caddy.yaml
+  required: false
+- path: ./compose.setup.yaml
+  required: false
+- path: ./compose.lint.yaml
+  required: false
+- path: ./compose.build.yaml
+  required: false
+- path: ./compose.test.yaml
+  required: false
+- path: ./compose.launch.yaml
+  required: false
+- path: ./compose.integrate.yaml
+  required: false
+- path: ./compose.check-acceptance.yaml
+  required: false
+- path: ./compose.check-fit.yaml
+  required: false
+- path: ./compose.check-window.yaml
+  required: false
+- path: ./compose.database.yaml
+  required: false
+- path: ./compose.crud.yaml
+  required: false
+- path: ./compose.auth.yaml
+  required: false
+- path: ./compose.electric.yaml
+  required: false

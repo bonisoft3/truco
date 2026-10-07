@@ -1,0 +1,60 @@
+# generated from bayt.cue — do not edit
+services:
+  truco-launch:
+    build:
+      additional_contexts:
+        truco-caddy: service:truco-caddy
+        truco-database: service:truco-database
+        truco-crud: service:truco-crud
+        truco-electric: service:truco-electric
+        truco-auth: service:truco-auth
+      context: ..
+      dockerfile: .bayt/Dockerfile.launch
+      target: launch
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    depends_on:
+      truco-caddy:
+        condition: service_healthy
+        restart: true
+      truco-database:
+        condition: service_healthy
+        restart: true
+      truco-crud:
+        condition: service_healthy
+        restart: true
+      truco-electric:
+        condition: service_healthy
+        restart: true
+      truco-auth:
+        condition: service_started
+    healthcheck:
+      test:
+      - CMD
+      - echo
+      - truco is healthy
+      interval: 5s
+      timeout: 2s
+      retries: 3
+    image: bayt-truco-launch:${BAYT_IMAGE_TAG:-latest}
+    networks:
+      default:
+        aliases:
+        - launch
+  truco-launch_bayt:
+    build:
+      additional_contexts:
+        truco-caddy_bayt: service:truco-caddy_bayt
+        truco-database_bayt: service:truco-database_bayt
+        truco-crud_bayt: service:truco-crud_bayt
+        truco-electric_bayt: service:truco-electric_bayt
+        truco-auth_bayt: service:truco-auth_bayt
+      context: ..
+      dockerfile: .bayt/Dockerfile.launch
+      target: launch_bayt
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: bayt-truco-launch_bayt:latest
+    scale: 0

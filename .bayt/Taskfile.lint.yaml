@@ -1,0 +1,18 @@
+# generated from bayt.cue — do not edit
+tasks:
+  default:
+    deps:
+    - "::bayt:setup"
+    run: always
+    status:
+    - >-
+      mise x -- bayt fingerprint --manifest '{{.TASKFILE_DIR}}/bayt.lint.json'
+      --stamp-file .task/bayt/lint.hash
+    vars:
+      BAYTW: >-
+        mise x -- bayt cache run --manifest '{{.TASKFILE_DIR}}/bayt.lint.json' -- mise
+        x --
+    cmds:
+    - "{{.BAYTW}} cue vet ./..."
+    - defer: "{{if not .EXIT_CODE}}mise x -- bayt fingerprint --manifest '{{.TASKFILE_DIR}}/bayt.lint.json' --stamp-file .task/bayt/lint.hash --update-stamp{{end}}"
+version: "3"

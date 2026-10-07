@@ -1,0 +1,42 @@
+# generated from bayt.cue — do not edit
+include:
+- path: .././.bayt/compose.browser.yaml
+  required: false
+- path: .././.bayt/compose.caddy.yaml
+  required: false
+- path: .././.bayt/compose.setup.yaml
+  required: false
+- path: .././.bayt/compose.lint.yaml
+  required: false
+- path: .././.bayt/compose.build.yaml
+  required: false
+- path: .././.bayt/compose.test.yaml
+  required: false
+- path: .././.bayt/compose.launch.yaml
+  required: false
+- path: .././.bayt/compose.database.yaml
+  required: false
+- path: .././.bayt/compose.crud.yaml
+  required: false
+- path: .././.bayt/compose.electric.yaml
+  required: false
+- path: .././.bayt/compose.auth.yaml
+  required: false
+- path: .././.bayt/compose.integrate.yaml
+  required: false
+- path: .././.bayt/compose.check-acceptance.yaml
+  required: false
+- path: .././.bayt/compose.check-fit.yaml
+  required: false
+- path: .././.bayt/compose.check-window.yaml
+  required: false
+- path: ../mecha/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml
+  required: false
+- path: ../omnishell/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml
+  required: false
+services:
+  bayt:
+    extends:
+      file: ./compose.launch.yaml
+      service: truco-launch
+    scale: 1

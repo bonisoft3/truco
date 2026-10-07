@@ -1,0 +1,12 @@
+# generated from bayt.cue — do not edit
+tasks:
+  default:
+    deps:
+    - "::bayt:browser"
+    - "::bayt:launch"
+    run: once
+    status:
+    - >-
+      mise x -- bayt fingerprint --manifest
+      '{{.TASKFILE_DIR}}/bayt.check-window.json' --stamp-file .task/bayt/check-window.hash
+version: "3"

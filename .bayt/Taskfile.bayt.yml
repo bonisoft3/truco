@@ -1,0 +1,39 @@
+# generated from bayt.cue — do not edit
+includes:
+  browser:
+    taskfile: ./Taskfile.browser.yaml
+    dir: ../
+    optional: true
+  setup:
+    taskfile: ./Taskfile.setup.yaml
+    dir: ../
+    optional: true
+  lint:
+    taskfile: ./Taskfile.lint.yaml
+    dir: ../
+    optional: true
+  build:
+    taskfile: ./Taskfile.build.yaml
+    dir: ../
+    optional: true
+  test:
+    taskfile: ./Taskfile.test.yaml
+    dir: ../
+    optional: true
+  integrate:
+    taskfile: ./Taskfile.integrate.yaml
+    dir: ../
+    optional: true
+  check-acceptance:
+    taskfile: ./Taskfile.check-acceptance.yaml
+    dir: ../
+    optional: true
+  check-fit:
+    taskfile: ./Taskfile.check-fit.yaml
+    dir: ../
+    optional: true
+  check-window:
+    taskfile: ./Taskfile.check-window.yaml
+    dir: ../
+    optional: true
+version: "3"

@@ -1,0 +1,50 @@
+# generated from bayt.cue — do not edit
+services:
+  truco-electric:
+    build:
+      additional_contexts:
+        truco-database: service:truco-database
+      context: ..
+      dockerfile: .bayt/Dockerfile.electric
+      target: electric
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    depends_on:
+      truco-database:
+        condition: service_healthy
+        restart: true
+    environment:
+      DATABASE_URL: >-
+        postgresql://electric:electric@database:5432/${POSTGRES_DB:-truco}?sslmode=disable
+      ELECTRIC_SECRET: ${ELECTRIC_SECRET:-dev-electric-secret}
+      ELECTRIC_MANUAL_TABLE_PUBLISHING: "true"
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:3000/v1/health
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+      start_interval: 500ms
+    image: bayt-truco-electric:${BAYT_IMAGE_TAG:-latest}
+    networks:
+      default:
+        aliases:
+        - electric
+    restart: on-failure
+  truco-electric_bayt:
+    build:
+      additional_contexts:
+        truco-database_bayt: service:truco-database_bayt
+      context: ..
+      dockerfile: .bayt/Dockerfile.electric
+      target: electric_bayt
+      args:
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: bayt-truco-electric_bayt:latest
+    scale: 0

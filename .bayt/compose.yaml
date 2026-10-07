@@ -1,0 +1,105 @@
+# generated from bayt.cue — do not edit
+include:
+- path: ./compose.bayt.yaml
+  required: false
+services:
+  browser:
+    extends:
+      file: ./compose.browser.yaml
+      service: truco-browser
+    profiles:
+    - browser
+  caddy:
+    extends:
+      file: ./compose.caddy.yaml
+      service: truco-caddy
+    profiles:
+    - caddy
+    scale: 1
+  setup:
+    extends:
+      file: ./compose.setup.yaml
+      service: truco-setup
+    profiles:
+    - setup
+  lint:
+    extends:
+      file: ./compose.lint.yaml
+      service: truco-lint
+    profiles:
+    - lint
+  build:
+    extends:
+      file: ./compose.build.yaml
+      service: truco-build
+    profiles:
+    - build
+  test:
+    extends:
+      file: ./compose.test.yaml
+      service: truco-test
+    profiles:
+    - test
+  launch:
+    extends:
+      file: ./compose.launch.yaml
+      service: truco-launch
+    profiles:
+    - launch
+    scale: 1
+  integrate:
+    extends:
+      file: ./compose.integrate.yaml
+      service: truco-integrate
+    profiles:
+    - integrate
+    scale: 1
+  check-acceptance:
+    extends:
+      file: ./compose.check-acceptance.yaml
+      service: truco-check-acceptance
+    profiles:
+    - check-acceptance
+    scale: 1
+  check-fit:
+    extends:
+      file: ./compose.check-fit.yaml
+      service: truco-check-fit
+    profiles:
+    - check-fit
+    scale: 1
+  check-window:
+    extends:
+      file: ./compose.check-window.yaml
+      service: truco-check-window
+    profiles:
+    - check-window
+    scale: 1
+  database:
+    extends:
+      file: ./compose.database.yaml
+      service: truco-database
+    profiles:
+    - database
+    scale: 1
+  crud:
+    extends:
+      file: ./compose.crud.yaml
+      service: truco-crud
+    profiles:
+    - crud
+    scale: 1
+  auth:
+    extends:
+      file: ./compose.auth.yaml
+      service: truco-auth
+    profiles:
+    - auth
+    scale: 1
+  electric:
+    extends:
+      file: ./compose.electric.yaml
+      service: truco-electric
+    profiles:
+    - electric
+    scale: 1

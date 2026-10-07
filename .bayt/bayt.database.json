@@ -1,0 +1,305 @@
+{
+  "_generated_from": "bayt.cue (do not edit)",
+  "compose": {
+    "up": false,
+    "manual": false,
+    "build": {
+      "additional_contexts": {
+        "libraries_mecha-database-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-database:0.6.3@sha256:54f5bc93c38c2c742988d8a112863bfc6841ba364cfefc4f5bf5ae000c55347f}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image}"
+      },
+      "secrets": [],
+      "args": {}
+    },
+    "environment": {
+      "POSTGRES_USER": "${POSTGRES_USER:-postgres}",
+      "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD:-postgres}",
+      "POSTGRES_DB": "${POSTGRES_DB:-truco}",
+      "POSTGRES_INITDB_ARGS": "--no-sync --encoding=UTF8 --auth=trust --locale-provider=icu --icu-locale=und --locale=C"
+    },
+    "ports": [
+      "5432"
+    ],
+    "volumes": [],
+    "depends_on": {},
+    "networks": {
+      "default": {
+        "aliases": [
+          "database"
+        ]
+      }
+    },
+    "healthcheck": {
+      "test": [
+        "CMD",
+        "pg_isready",
+        "-h",
+        "localhost",
+        "-p",
+        "5432",
+        "-d",
+        "${POSTGRES_DB:-truco}",
+        "-U",
+        "${POSTGRES_USER:-postgres}"
+      ],
+      "interval": "1s",
+      "timeout": "5s",
+      "retries": 30,
+      "start_period": "5m",
+      "start_interval": "100ms"
+    },
+    "develop": {
+      "watch": [
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/000_extensions.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/001_roles.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/002_grants.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/004_types.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/005_create_tables.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/006_policies.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/007_txid.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/008_publication.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/010_machines.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/012_lobby.sql",
+          "target": "/docker-entrypoint-initdb.d"
+        }
+      ]
+    }
+  },
+  "dockerfile": {
+    "preamble": [],
+    "preambleCopyContexts": [],
+    "from": {
+      "name": "libraries_mecha-database-image"
+    },
+    "add": [],
+    "mounts": [],
+    "secrets": {},
+    "extra_hosts": [],
+    "epilogue": [],
+    "copy": [
+      {
+        "from": null,
+        "srcs": [
+          "services/database/migrations/000_extensions.sql",
+          "services/database/migrations/001_roles.sql",
+          "services/database/migrations/002_grants.sql",
+          "services/database/migrations/004_types.sql",
+          "services/database/migrations/005_create_tables.sql",
+          "services/database/migrations/006_policies.sql",
+          "services/database/migrations/007_txid.sql",
+          "services/database/migrations/008_publication.sql",
+          "services/database/migrations/010_machines.sql",
+          "services/database/migrations/012_lobby.sql"
+        ],
+        "dst": "/docker-entrypoint-initdb.d/",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      }
+    ],
+    "healthcheck": {
+      "test": [
+        "CMD",
+        "pg_isready",
+        "-h",
+        "localhost",
+        "-p",
+        "5432",
+        "-d",
+        "${POSTGRES_DB:-truco}",
+        "-U",
+        "${POSTGRES_USER:-postgres}"
+      ],
+      "interval": "1s",
+      "timeout": "5s",
+      "retries": 30,
+      "start_period": "5m"
+    },
+    "expose": [],
+    "entrypoint": null,
+    "incremental": false,
+    "cmd": null
+  },
+  "name": "database",
+  "project": "truco",
+  "dir": ".",
+  "activate": "",
+  "srcs": {
+    "globs": [
+      "services/database/migrations/000_extensions.sql",
+      "services/database/migrations/001_roles.sql",
+      "services/database/migrations/002_grants.sql",
+      "services/database/migrations/004_types.sql",
+      "services/database/migrations/005_create_tables.sql",
+      "services/database/migrations/006_policies.sql",
+      "services/database/migrations/007_txid.sql",
+      "services/database/migrations/008_publication.sql",
+      "services/database/migrations/010_machines.sql",
+      "services/database/migrations/012_lobby.sql"
+    ],
+    "exclude": []
+  },
+  "outs": {
+    "globs": [],
+    "exclude": []
+  },
+  "state": {
+    "globs": []
+  },
+  "env": {},
+  "synthetics": {
+    "bayt": {
+      "name": "database_bayt",
+      "project": "truco",
+      "dir": ".",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [
+          ".bayt/compose.database.yaml",
+          ".bayt/Dockerfile.database",
+          ".bayt/bayt.database.json",
+          ".bayt/Taskfile.yml",
+          ".bayt/Taskfile.bayt.yml"
+        ],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "./.bayt/compose.database.yaml"
+      ]
+    },
+    "outs": {
+      "name": "database_outs",
+      "project": "truco",
+      "dir": ".",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "./.bayt/compose.database.yaml"
+      ]
+    },
+    "srcs": {
+      "name": "database_srcs",
+      "project": "truco",
+      "dir": ".",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [
+          "services/database/migrations/000_extensions.sql",
+          "services/database/migrations/001_roles.sql",
+          "services/database/migrations/002_grants.sql",
+          "services/database/migrations/004_types.sql",
+          "services/database/migrations/005_create_tables.sql",
+          "services/database/migrations/006_policies.sql",
+          "services/database/migrations/007_txid.sql",
+          "services/database/migrations/008_publication.sql",
+          "services/database/migrations/010_machines.sql",
+          "services/database/migrations/012_lobby.sql"
+        ],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "./.bayt/compose.database.yaml"
+      ]
+    }
+  },
+  "visibility": "internal",
+  "emitsSrcs": true,
+  "deps": [],
+  "sameProjectDeps": [],
+  "transitiveDeps": [],
+  "transitiveCrossDeps": [],
+  "upClosure": [
+    "./.bayt/compose.database.yaml"
+  ],
+  "chainedDeps": [],
+  "cmds": [],
+  "cache": {
+    "full": false,
+    "similar": false
+  }
+}
