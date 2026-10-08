@@ -2281,7 +2281,6 @@
           "services/database/migrations/006_policies.sql",
           "services/database/migrations/007_txid.sql",
           "services/database/migrations/008_publication.sql",
-          "services/database/migrations/010_machines.sql",
           "services/database/migrations/012_lobby.sql"
         ],
         "defaultGlobs": null,
@@ -2325,7 +2324,6 @@
               "services/database/migrations/006_policies.sql",
               "services/database/migrations/007_txid.sql",
               "services/database/migrations/008_publication.sql",
-              "services/database/migrations/010_machines.sql",
               "services/database/migrations/012_lobby.sql"
             ],
             "dst": "/docker-entrypoint-initdb.d/",
@@ -2445,11 +2443,6 @@
             {
               "action": "rebuild",
               "path": "../services/database/migrations/008_publication.sql",
-              "target": "/docker-entrypoint-initdb.d"
-            },
-            {
-              "action": "rebuild",
-              "path": "../services/database/migrations/010_machines.sql",
               "target": "/docker-entrypoint-initdb.d"
             },
             {

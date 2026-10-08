@@ -2314,6 +2314,10 @@ body:has([data-screen="arena"]) > nav a {
     border: 1px solid var(--rim);
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+    &[data-is-me="true"] .btn-challenge {
+      display: none !important;
+    }
   }
   & .player-avatar-mini {
     font-size: 1.25rem;

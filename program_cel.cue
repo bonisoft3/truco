@@ -27,7 +27,7 @@ code: state: entities: {
 			hand_no?: >=1
 			status?: ("playing" | "over")
 			winner?: ("" | "us" | "them" | "others")
-			opponent?: ("nezinho" | "cida" | "tiao" | "ze" | "online")
+			opponent?: ("nezinho" | "cida" | "tiao" | "ze" | "xiru" | "osvaldo" | "tiao_queijo" | "tabare" | "jordi" | "online")
 			opponent_name?: strings.MinRunes(1)
 			partner_name?: strings.MinRunes(1)
 			seed?: strings.MaxRunes(12)
@@ -42,7 +42,7 @@ code: state: entities: {
 			stake: ["1","2","3","4","6","8","9","10","12"]
 			status: ["playing","over"]
 			winner: ["","us","them","others"]
-			opponent: ["nezinho","cida","tiao","ze","online"]
+			opponent: ["nezinho","cida","tiao","ze","xiru","osvaldo","tiao_queijo","tabare","jordi","online"]
 			my_seat: ["","you","eles1"]
 			current: ["yes","no"]
 			locale: ["","pt-BR","es-AR","es-UY","es-PY","ca-ES"]

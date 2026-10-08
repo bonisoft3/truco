@@ -117,7 +117,7 @@
     jordi: { name: "L'Oncle Jordi", call: 8.3, take: 7.3, tell: "L'Oncle Jordi mira de reüll…", line: "Truc, noi!" },
     online: { name: "Adversário Online", call: 0, take: 0, tell: "", line: "" },
   };
-  const CAST_KEYS = ["nezinho", "cida", "tiao", "ze"];
+  const CAST_KEYS = ["nezinho", "cida", "tiao", "ze", "xiru", "osvaldo", "tiao_queijo", "tabare", "jordi"];
   const BOT_SHOUT_RETORTS = {
     nezinho: [
       "Pode vir quente que o café tá pronto!",
@@ -194,6 +194,76 @@
   const all = rows.match ?? [];
   const match = all.find((m) => m.status === "playing");
   const retired = (m) => ({ op: "patch", entity: "match", id: m.id, row: { current: "no" } });
+
+  if (event.type === "click" && event.from === "btn-set-seat") {
+    const seat = event.detail?.seat ?? event.seat ?? "you";
+    const targetSeed = event.detail?.seed !== undefined ? String(event.detail.seed) : (event.seed !== undefined ? String(event.seed) : undefined);
+    const targetOpponent = event.detail?.opponent ?? "online";
+    const targetOpponentName = event.detail?.opponent_name ?? (CAST[targetOpponent] ?? CAST.online).name;
+    const seed = targetSeed ? (Number(targetSeed) >>> 0) : 1;
+    const retireUpdates = [
+      ...all.filter((m) => m.current === "yes").map(retired),
+      ...(rows.held ?? []).filter((h) => h.current === "yes").map((h) => ({ op: "patch", entity: "held", id: h.id, row: { current: "no" } })),
+      ...(rows.round ?? []).filter((r) => r.current === "yes").map((r) => ({ op: "patch", entity: "round", id: r.id, row: { current: "no" } })),
+    ];
+    if (match === undefined) {
+      const wantVariant = "mineiro";
+      return {
+        updates: [
+          ...retireUpdates,
+          {
+            op: "put",
+            entity: "match",
+            id: `m${seed.toString(36)}`,
+            row: {
+              id: `m${seed.toString(36)}`,
+              variant: wantVariant, seats: "1v1", theme: "xadrez",
+              locale: "",
+              us_score: "0", them_score: "0", others_score: "0",
+              stake: String(opening(wantVariant)), hand_no: "1",
+              status: "playing", winner: "",
+              opponent: targetOpponent, opponent_name: targetOpponentName, partner_name: "Bigode",
+              seed: String(targetSeed || seed), current: "yes",
+              my_seat: seat,
+            },
+          },
+        ],
+      };
+    }
+    if (targetSeed !== undefined && (match.seed !== targetSeed || match.opponent !== targetOpponent || match.my_seat !== seat || match.opponent_name !== targetOpponentName)) {
+      return {
+        updates: [
+          ...retireUpdates,
+          {
+            op: "patch",
+            entity: "match",
+            id: match.id,
+            row: {
+              seed: targetSeed,
+              opponent: targetOpponent,
+              opponent_name: targetOpponentName,
+              my_seat: seat,
+              hand_no: "1",
+              us_score: "0",
+              them_score: "0",
+              others_score: "0",
+              stake: String(opening(match.variant)),
+              winner: "",
+              status: "playing",
+            },
+          },
+        ],
+      };
+    }
+    if (match.my_seat !== seat) {
+      return {
+        updates: [
+          { op: "patch", entity: "match", id: match.id, row: { my_seat: seat } },
+        ],
+      };
+    }
+    return { updates: [] };
+  }
   if (match === undefined) {
     // What the last sitting was played under is what the next one opens under,
     // and a rule picked while closing it was written onto it — so the choice
@@ -248,7 +318,7 @@
             us_score: "0", them_score: "0", others_score: "0",
             stake: String(opening(want.variant)), hand_no: "1",
             status: "playing", winner: "",
-            opponent: eles, opponent_name: CAST[eles].name, partner_name: "Bigode",
+            opponent: eles, opponent_name: isOnline ? "opponent_online" : `opponent_${eles}`, partner_name: "Bigode",
             seed: String(seed), current: "yes",
             my_seat: chosenSeat,
           },
@@ -458,13 +528,14 @@
   if (event.type === "bot_shout_retort") {
     const standing = (rows.round ?? []).find((r) => r.current === "yes");
     if (!standing) return { updates: [] };
+    const retortText = event.with?.reply ?? event.reply ?? "";
     return {
       updates: [{
         op: "patch",
         entity: "round",
         id: standing.id,
         row: {
-          said: event.reply ?? "",
+          said: retortText,
         },
       }],
       then: { type: "close_shout", delay: 1800 },
@@ -1141,61 +1212,6 @@
   // it becomes a row and stops there. What follows from it is read off the log
   // like everything else, on the wake the row itself raises.
   if (event.type === "click") {
-    if (event.from === "btn-set-seat") {
-      const seat = event.detail?.seat ?? event.seat ?? "you";
-      const targetSeed = event.detail?.seed !== undefined ? String(event.detail.seed) : undefined;
-      // Seating with a seed names the table it is seating at. It named the
-      // online one and nothing else, which is the one table the second wager
-      // is refused at — so a deal chosen for what its counts do could never be
-      // played for them.
-      const targetOpponent = event.detail?.opponent ?? "online";
-      const targetOpponentName = event.detail?.opponent_name ??
-        (CAST[targetOpponent] ?? CAST.online).name;
-      if (targetSeed !== undefined && (match.seed !== targetSeed || match.opponent !== targetOpponent || match.my_seat !== seat || match.opponent_name !== targetOpponentName)) {
-        const retire = [];
-        for (const h of rows.held ?? []) {
-          if (h.current === "yes") {
-            retire.push({ op: "patch", entity: "held", id: h.id, row: { current: "no" } });
-          }
-        }
-        for (const r of rows.round ?? []) {
-          if (r.current === "yes") {
-            retire.push({ op: "patch", entity: "round", id: r.id, row: { current: "no" } });
-          }
-        }
-        return {
-          updates: [
-            ...retire,
-            {
-              op: "patch",
-              entity: "match",
-              id: match.id,
-              row: {
-                seed: targetSeed,
-                opponent: targetOpponent,
-                opponent_name: targetOpponentName,
-                my_seat: seat,
-                hand_no: "1",
-                us_score: "0",
-                them_score: "0",
-                others_score: "0",
-                stake: String(opening(match.variant)),
-                winner: "",
-                status: "playing",
-              },
-            },
-          ],
-        };
-      }
-      if (match.my_seat !== seat) {
-        return {
-          updates: [
-            { op: "patch", entity: "match", id: match.id, row: { my_seat: seat } },
-          ],
-        };
-      }
-      return { updates: [] };
-    }
     const CALL_OF = {
       "btn-envido": "envido",
       "btn-envido-real": "envido_real",
@@ -1252,7 +1268,7 @@
       if (shouldRetort) {
         return {
           updates: baseUpdates,
-          then: { type: "bot_shout_retort", reply: botReply, delay: 850 + Math.floor(prng() * 300) },
+          then: { type: "bot_shout_retort", with: { reply: botReply }, reply: botReply, delay: 850 + Math.floor(prng() * 300) },
         };
       }
       return {

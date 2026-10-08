@@ -8,7 +8,7 @@ import (
 	omni "github.com/bonisoft3/omnishell/components"
 )
 
-_wagerMachineAttr:     (omni.#attrJSON & {in: [#WagerMachine, #EnvidoMachine]}).out
+_wagerMachineAttr: (omni.#attrJSON & {in: [#WagerMachine, #EnvidoMachine]}).out
 
 // What a rules change does to the sitting, carried on every variant/seats
 // arrow: the score goes back to nil and the seed respins, so the deal is new
@@ -51,15 +51,15 @@ _pickerVariant: omni.#Picker & {
 	// deals that country's truco (the felt's followCountry, below). What each table
 	// costs to win rides inside its label, in the reader's language.
 	options: [
-		{name: "paulista", label: "Paulista", item: "Truco Paulista · até 12 pontos", msg: "msg.variant_paulista_item", msgLabel: "msg.variant_paulista_short", group: "br", assign: _reset & {stake: "1", seats: {type: "seats2"}}},
-		{name: "mineiro", label: "Mineiro", item: "Truco Mineiro · até 12 pontos", msg: "msg.variant_mineiro_item", msgLabel: "msg.variant_mineiro_short", group: "br", assign: _reset & {stake: "2", seats: {type: "seats2"}}},
-		{name: "gaucho", label: "Gaúcho", item: "Truco Gaúcho · 18 pontos, 24 em dupla", msg: "msg.variant_gaucho_item", msgLabel: "msg.variant_gaucho_short", group: "br", assign: _reset & {stake: "1", seats: {type: "seats2"}}},
-		{name: "argentino", label: "Argentino", item: "Truco Argentino · até 30 pontos", msg: "msg.variant_argentino_item", msgLabel: "msg.variant_argentino_short", group: "ar", assign: _reset & {stake: "1", seats: {type: "seats2"}}},
-		{name: "uruguayo", label: "Uruguayo", item: "Truco Uruguaio · até 30 pontos", msg: "msg.variant_uruguayo_item", msgLabel: "msg.variant_uruguayo_short", group: "uy", assign: _reset & {stake: "1", seats: {type: "seats2"}}},
-		{name: "paraguayo", label: "Paraguayo", item: "Truco Paraguaio · até 30 pontos", msg: "msg.variant_paraguayo_item", msgLabel: "msg.variant_paraguayo_short", group: "py", assign: _reset & {stake: "1", seats: {type: "seats2"}}},
-		{name: "truc", label: "Truc", item: "Truc Catalão · até 12 pontos", msg: "msg.variant_truc_item", msgLabel: "msg.variant_truc_short", group: "es", assign: _reset & {stake: "1", seats: {type: "seats2"}}},
-		{name: "douradinha", label: "Douradinha", item: "Douradinha · até 12 pontos", msg: "msg.variant_douradinha_item", msgLabel: "msg.variant_douradinha_short", group: "br", assign: _reset & {stake: "2", seats: "2v2v2"}},
-		{name: "douradao", label: "Dourad\u00e3o", item: "Douradão · até 12 pontos", msg: "msg.variant_douradao_item", msgLabel: "msg.variant_douradao_short", group: "br", assign: _reset & {stake: "2", seats: "2v2v2"}},
+		{name: "paulista", label: "Paulista", item: "Truco Paulista · até 12 pontos", msg: "msg.variant_paulista_item", msgLabel: "msg.variant_paulista_short", group: "br", assign: _reset & {stake: "1", seats: {type: "seats2"}, theme: "xadrez", opponent: "nezinho", opponent_name: "opponent_nezinho"}},
+		{name: "mineiro", label: "Mineiro", item: "Truco Mineiro · até 12 pontos", msg: "msg.variant_mineiro_item", msgLabel: "msg.variant_mineiro_short", group: "br", assign: _reset & {stake: "2", seats: {type: "seats2"}, theme: "madeira", opponent: "tiao_queijo", opponent_name: "opponent_tiao_queijo"}},
+		{name: "gaucho", label: "Gaúcho", item: "Truco Gaúcho · 18 pontos, 24 em dupla", msg: "msg.variant_gaucho_item", msgLabel: "msg.variant_gaucho_short", group: "br", assign: _reset & {stake: "1", seats: {type: "seats2"}, theme: "madeira", opponent: "xiru", opponent_name: "opponent_xiru"}},
+		{name: "argentino", label: "Argentino", item: "Truco Argentino · até 30 pontos", msg: "msg.variant_argentino_item", msgLabel: "msg.variant_argentino_short", group: "ar", assign: _reset & {stake: "1", seats: {type: "seats2"}, theme: "formica", opponent: "osvaldo", opponent_name: "opponent_osvaldo"}},
+		{name: "uruguayo", label: "Uruguayo", item: "Truco Uruguaio · até 30 pontos", msg: "msg.variant_uruguayo_item", msgLabel: "msg.variant_uruguayo_short", group: "uy", assign: _reset & {stake: "1", seats: {type: "seats2"}, theme: "formica", opponent: "tabare", opponent_name: "opponent_tabare"}},
+		{name: "paraguayo", label: "Paraguayo", item: "Truco Paraguaio · até 30 pontos", msg: "msg.variant_paraguayo_item", msgLabel: "msg.variant_paraguayo_short", group: "py", assign: _reset & {stake: "1", seats: {type: "seats2"}, theme: "madeira", opponent: "osvaldo", opponent_name: "opponent_osvaldo"}},
+		{name: "truc", label: "Truc", item: "Truc Catalão · até 12 pontos", msg: "msg.variant_truc_item", msgLabel: "msg.variant_truc_short", group: "es", assign: _reset & {stake: "1", seats: {type: "seats2"}, theme: "neon", opponent: "jordi", opponent_name: "opponent_jordi"}},
+		{name: "douradinha", label: "Douradinha", item: "Douradinha · até 12 pontos", msg: "msg.variant_douradinha_item", msgLabel: "msg.variant_douradinha_short", group: "br", assign: _reset & {stake: "2", seats: "2v2v2", theme: "madeira", opponent: "tiao_queijo", opponent_name: "opponent_tiao_queijo"}},
+		{name: "douradao", label: "Dourad\u00e3o", item: "Douradão · até 12 pontos", msg: "msg.variant_douradao_item", msgLabel: "msg.variant_douradao_short", group: "br", assign: _reset & {stake: "2", seats: "2v2v2", theme: "madeira", opponent: "tiao_queijo", opponent_name: "opponent_tiao_queijo"}},
 	]
 	// The country headings are the endonyms the country picker already reads —
 	// a country's name is the same literal in every catalogue. Only the
@@ -116,7 +116,15 @@ _pickerOpponent: omni.#Picker & {
 	// opponent's handle goes through the same {msg[opponent_name]} binding
 	// unmatched and renders as itself.
 	options: [
-		{name: "nezinho", label: "Robôs", item: "Robôs do Bar", msg: "msg.bar_bots", msgLabel: "msg.bots", assign: _reset & {opponent: "nezinho", opponent_name: "opponent_nezinho", stake: {type: "stake0"}}},
+		{name: "nezinho", label: "Robôs", item: "Seu Nezinho · Paulista", msg: "msg.opponent_nezinho_item", msgLabel: "msg.bots", assign: _reset & {opponent: "nezinho", opponent_name: "opponent_nezinho", stake: {type: "stake0"}}},
+		{name: "tiao_queijo", label: "Robôs", item: "Tião do Queijo · Mineiro", msg: "msg.opponent_tiao_queijo_item", msgLabel: "msg.bots", assign: _reset & {opponent: "tiao_queijo", opponent_name: "opponent_tiao_queijo", stake: {type: "stake0"}}},
+		{name: "xiru", label: "Robôs", item: "Xirú Velho · Gaúcho", msg: "msg.opponent_xiru_item", msgLabel: "msg.bots", assign: _reset & {opponent: "xiru", opponent_name: "opponent_xiru", stake: {type: "stake0"}}},
+		{name: "osvaldo", label: "Robôs", item: "Don Osvaldo · Argentino", msg: "msg.opponent_osvaldo_item", msgLabel: "msg.bots", assign: _reset & {opponent: "osvaldo", opponent_name: "opponent_osvaldo", stake: {type: "stake0"}}},
+		{name: "tabare", label: "Robôs", item: "Don Tabaré · Uruguaio", msg: "msg.opponent_tabare_item", msgLabel: "msg.bots", assign: _reset & {opponent: "tabare", opponent_name: "opponent_tabare", stake: {type: "stake0"}}},
+		{name: "jordi", label: "Robôs", item: "L'Oncle Jordi · Truc", msg: "msg.opponent_jordi_item", msgLabel: "msg.bots", assign: _reset & {opponent: "jordi", opponent_name: "opponent_jordi", stake: {type: "stake0"}}},
+		{name: "cida", label: "Robôs", item: "Dona Cida · Bar", msg: "msg.opponent_cida_item", msgLabel: "msg.bots", assign: _reset & {opponent: "cida", opponent_name: "opponent_cida", stake: {type: "stake0"}}},
+		{name: "tiao", label: "Robôs", item: "Tião Pandeiro · Bar", msg: "msg.opponent_tiao_item", msgLabel: "msg.bots", assign: _reset & {opponent: "tiao", opponent_name: "opponent_tiao", stake: {type: "stake0"}}},
+		{name: "ze", label: "Robôs", item: "Zé da Bicicleta · Bar", msg: "msg.opponent_ze_item", msgLabel: "msg.bots", assign: _reset & {opponent: "ze", opponent_name: "opponent_ze", stake: {type: "stake0"}}},
 		{name: "online", label: "Online", item: "Mesa Online", msg: "msg.online_table", msgLabel: "msg.online_short", assign: _reset & {opponent: "online", opponent_name: "opponent_online", stake: {type: "stake0"}}},
 	]
 }
@@ -733,38 +741,38 @@ _arenaMarkup: #"""
   const VOICE = {
     sp: {
       ladder: { 3: "Truco!", 6: "Seis!", 9: "Nove!", 12: "Doze!" }, ran: "CORRI", we_won: "É NOSSA!", they_won: "LEVAMOS!",
-      calls: { nezinho: "Truco, meu filho. Vale {worth}.", cida: "Truco, meu bem! Vale {worth}.", tiao: "Truuuco, seu moço! Vale {worth}.", ze: "Truco. Vale {worth}.", bigode: "Truco! Vale {worth}." },
-      closing: { nezinho: { lost: "Tá com a mão boa, hein. Outra?", won: "Devagar se vai longe, menino." }, cida: { lost: "Ai, meu bem. Hoje foi seu.", won: "Vem cá que a tia te ensina de novo." }, tiao: { lost: "Eita! Levou, seu moço.", won: "Ó a viola! Doze pra nós." }, ze: { lost: "Zé só balança a cabeça.", won: "Zé guarda as cartas sem dizer nada." } },
+      calls: { nezinho: "Truco, meu filho. Vale {worth}.", cida: "Truco, meu bem! Vale {worth}.", tiao: "Truuuco, seu moço! Vale {worth}.", ze: "Truco. Vale {worth}.", xiru: "Truco, vivente! Vale {worth}.", osvaldo: "¡Truco, carajo! Vale {worth}.", tiao_queijo: "Truco, uai! Vale {worth}.", tabare: "¡Truco, bo! Vale {worth}.", jordi: "Truc, noi! Val {worth}.", bigode: "Truco! Vale {worth}." },
+      closing: { nezinho: { lost: "Tá com a mão boa, hein. Outra?", won: "Devagar se vai longe, menino." }, cida: { lost: "Ai, meu bem. Hoje foi seu.", won: "Vem cá que a tia te ensina de novo." }, tiao: { lost: "Eita! Levou, seu moço.", won: "Ó a viola! Doze pra nós." }, ze: { lost: "Zé só balança a cabeça.", won: "Zé guarda as cartas sem dizer nada." }, xiru: { lost: "Bah, tu tá com a mão tri boa, vivente. Mais uma?", won: "Te apruma, vivente! Doze pra nós, tchê!" }, osvaldo: { lost: "¡Buena mano tuviste, carajo! ¿Otra?", won: "¡El truco se juega con coraje! Doce para nosotros." }, tiao_queijo: { lost: "Trem bão, cê jogou bem demais, sô! Mais uma?", won: "Mineiro come quieto, uai! Levamos essa!" }, tabare: { lost: "¡Buena mano tuviste, bo! ¿Otra vuelta?", won: "¡Garra y corazón, bo! Doce para nosotros." }, jordi: { lost: "Bona mà has tingut, noi. Una altra?", won: "Val més maña que força, noi! Dotze per a nosaltres." } },
     },
     mg: {
       ladder: { 4: "Truco!", 8: "Seis!", 10: "Nove!", 12: "Doze!" }, ran: "CORRI, SÔ", we_won: "É NÓIS, SÔ!", they_won: "LEVAMO, UAI!",
-      calls: { nezinho: "Truco, meu fio! Vale {worth}, uai.", cida: "Truco, meu bem! Cê guenta? Vale {worth}.", tiao: "Truuuco, sô! Vale {worth}.", ze: "Truco. Vale {worth}.", bigode: "Truco, uai! Vale {worth}." },
-      closing: { nezinho: { lost: "Uai, cê tá com a mão boa, sô. Mais uma?", won: "Devagar se vai longe, meu fio." }, cida: { lost: "Ô trem bão! Hoje foi seu, meu bem.", won: "Vem cá que a tia te ensina de novo, uai." }, tiao: { lost: "Nó! Levou, cumpadi.", won: "Ó a viola! Doze pra nóis, sô." }, ze: { lost: "Zé só balança a cabeça.", won: "Zé guarda as carta calado." } },
+      calls: { nezinho: "Truco, meu fio! Vale {worth}, uai.", cida: "Truco, meu bem! Cê guenta? Vale {worth}.", tiao: "Truuuco, sô! Vale {worth}.", ze: "Truco. Vale {worth}.", tiao_queijo: "Truco, uai! Vale {worth}, sô.", xiru: "Truco, vivente! Vale {worth}.", osvaldo: "¡Truco, carajo! Vale {worth}.", tabare: "¡Truco, bo! Vale {worth}.", jordi: "Truc, noi! Val {worth}.", bigode: "Truco, uai! Vale {worth}." },
+      closing: { nezinho: { lost: "Uai, cê tá com a mão boa, sô. Mais uma?", won: "Devagar se vai longe, meu fio." }, cida: { lost: "Ô trem bão! Hoje foi seu, meu bem.", won: "Vem cá que a tia te ensina de novo, uai." }, tiao: { lost: "Nó! Levou, cumpadi.", won: "Ó a viola! Doze pra nóis, sô." }, ze: { lost: "Zé só balança a cabeça.", won: "Zé guarda as carta calado." }, tiao_queijo: { lost: "Trem bão, cê jogou bem demais, sô! Mais uma?", won: "Mineiro come quieto, uai! Levamos essa!" }, xiru: { lost: "Bah, tu tá com a mão tri boa, vivente. Mais uma?", won: "Te apruma, vivente! Doze pra nós, tchê!" }, osvaldo: { lost: "¡Buena mano tuviste, carajo! ¿Otra?", won: "¡El truco se juega con coraje! Doce para nosotros." }, tabare: { lost: "¡Buena mano tuviste, bo! ¿Otra vuelta?", won: "¡Garra y corazón, bo! Doce para nosotros." }, jordi: { lost: "Bona mà has tingut, noi. Una altra?", won: "Val més maña que força, noi! Dotze per a nosaltres." } },
     },
     rs: {
       ladder: { 2: "Truco!", 3: "Retruco!", 4: "Vale quatro!" }, ran: "CORRI, TCHÊ", we_won: "É NOSSA, TCHÊ!", they_won: "LEVAMOS, BAH!",
-      calls: { nezinho: "Truco, tchê! Vale {worth}.", cida: "Truco, meu guri! Vale {worth}.", tiao: "Truuuco, bagual! Vale {worth}.", ze: "Truco. Vale {worth}.", bigode: "Truco, tchê! Vale {worth}." },
-      closing: { nezinho: { lost: "Bah, tu tá com a mão tri boa, tchê. Mais uma?", won: "Devagar se vai ao longe, guri." }, cida: { lost: "Ai, meu guri, hoje foi teu.", won: "Vem cá que a tia te ensina de novo, tchê." }, tiao: { lost: "Barbaridade! Levaste, parceiro.", won: "Doze pra nós, tchê! Bah!" }, ze: { lost: "Zé solo mueve la cabeza.", won: "Zé guarda las cartas sin decir nada." } },
+      calls: { nezinho: "Truco, tchê! Vale {worth}.", cida: "Truco, meu guri! Vale {worth}.", tiao: "Truuuco, bagual! Vale {worth}.", ze: "Truco. Vale {worth}.", xiru: "Truco, vivente! Vale {worth}.", osvaldo: "¡Truco, che! Vale {worth}.", tiao_queijo: "Truco, uai! Vale {worth}.", tabare: "¡Truco, bo! Vale {worth}.", jordi: "Truc, noi! Val {worth}.", bigode: "Truco, tchê! Vale {worth}." },
+      closing: { nezinho: { lost: "Bah, tu tá com a mão tri boa, tchê. Mais uma?", won: "Devagar se vai ao longe, guri." }, cida: { lost: "Ai, meu guri, hoje foi teu.", won: "Vem cá que a tia te ensina de novo, tchê." }, tiao: { lost: "Barbaridade! Levaste, parceiro.", won: "Doze pra nós, tchê! Bah!" }, ze: { lost: "Zé solo mueve la cabeza.", won: "Zé guarda las cartas sin decir nada." }, xiru: { lost: "Mas bah, tu tá com a mão tri boa, vivente. Mais uma?", won: "Te apruma, vivente! Ganhamos nós, tchê!" }, osvaldo: { lost: "¡Buena mano tuviste, carajo! ¿Otra?", won: "¡El truco se juega con coraje! Doce para nosotros." }, tiao_queijo: { lost: "Trem bão, cê jogou bem demais, sô! Mais uma?", won: "Mineiro come quieto, uai! Levamos essa!" }, tabare: { lost: "¡Buena mano tuviste, bo! ¿Otra vuelta?", won: "¡Garra y corazón, bo! Doce para nosotros." }, jordi: { lost: "Bona mà has tingut, noi. Una altra?", won: "Val més maña que força, noi! Dotze per a nosaltres." } },
     },
     ar: {
       ladder: { 2: "¡Truco!", 3: "¡Retruco!", 4: "¡Vale cuatro!" }, ran: "ME VOY", we_won: "¡ES NUESTRA!", they_won: "¡NOS LO LLEVAMOS!",
-      calls: { nezinho: "¡Truco, che! Vale {worth}.", cida: "¡Truco, mi bien! Vale {worth}.", tiao: "¡Truuuco, señor! Vale {worth}.", ze: "Truco. Vale {worth}.", bigode: "¡Truco! Vale {worth}." },
-      closing: { nezinho: { lost: "Buena mano tuviste, che, ¿otra?", won: "Despacio se llega lejos, che." }, cida: { lost: "Ay cariño, hoy fue tuya.", won: "Vení que la tía te enseña de nuevo." }, tiao: { lost: "¡Apa! Ganaste, amigo.", won: "¡A cantar! Doce para nosotros." }, ze: { lost: "Zé solo mueve la cabeza.", won: "Zé guarda las cartas sin decir nada." } },
+      calls: { nezinho: "¡Truco, che! Vale {worth}.", cida: "¡Truco, mi bien! Vale {worth}.", tiao: "¡Truuuco, señor! Vale {worth}.", ze: "Truco. Vale {worth}.", osvaldo: "¡Truco, carajo! Vale {worth}.", xiru: "Truco, vivente! Vale {worth}.", tiao_queijo: "Truco, uai! Vale {worth}.", tabare: "¡Truco, bo! Vale {worth}.", jordi: "Truc, noi! Val {worth}.", bigode: "¡Truco! Vale {worth}." },
+      closing: { nezinho: { lost: "Buena mano tuviste, che, ¿otra?", won: "Despacio se llega lejos, che." }, cida: { lost: "Ay cariño, hoy fue tuya.", won: "Vení que la tía te enseña de nuevo." }, tiao: { lost: "¡Apa! Ganaste, amigo.", won: "¡A cantar! Doce para nosotros." }, ze: { lost: "Zé solo mueve la cabeza.", won: "Zé guarda las cartas sin decir nada." }, osvaldo: { lost: "¡Buena mano tuviste, carajo! ¿Otra?", won: "¡El truco se juega con coraje! Nos lo llevamos nosotros." }, xiru: { lost: "Bah, tu tá com a mão tri boa, vivente. Mais uma?", won: "Te apruma, vivente! Ganhamos nós, tchê!" }, tiao_queijo: { lost: "Trem bão, cê jogou bem demais, sô! Mais uma?", won: "Mineiro come quieto, uai! Levamos essa!" }, tabare: { lost: "¡Buena mano tuviste, bo! ¿Otra vuelta?", won: "¡Garra y corazón, bo! Doce para nosotros." }, jordi: { lost: "Bona mà has tingut, noi. Una altra?", won: "Val més maña que força, noi! Dotze per a nosaltres." } },
     },
     uy: {
       ladder: { 2: "¡Truco!", 3: "¡Retruco!", 4: "¡Vale cuatro!" }, ran: "ME VOY", we_won: "¡ES NUESTRA!", they_won: "¡NOS LO LLEVAMOS!",
-      calls: { nezinho: "¡Truco, bo! Vale {worth}.", cida: "¡Truco, mi bien! Vale {worth}.", tiao: "¡Truuuco, ta! Vale {worth}.", ze: "Truco. Vale {worth}.", bigode: "¡Truco! Vale {worth}." },
-      closing: { nezinho: { lost: "Buena mano tuviste, bo, ¿otra?", won: "Despacio se llega lejos, bo." }, cida: { lost: "Ay cariño, hoy fue tuya.", won: "Vení que la tía te enseña de nuevo." }, tiao: { lost: "¡Ta, ganaste, amigo!", won: "¡A cantar! Doce para nosotros." }, ze: { lost: "Zé solo mueve la cabeza.", won: "Zé guarda las cartas sin decir nada." } },
+      calls: { nezinho: "¡Truco, bo! Vale {worth}.", cida: "¡Truco, mi bien! Vale {worth}.", tiao: "¡Truuuco, ta! Vale {worth}.", ze: "Truco. Vale {worth}.", tabare: "¡Truco, bo! Vale {worth}.", osvaldo: "¡Truco, carajo! Vale {worth}.", xiru: "Truco, vivente! Vale {worth}.", tiao_queijo: "Truco, uai! Vale {worth}.", jordi: "Truc, noi! Val {worth}.", bigode: "¡Truco! Vale {worth}." },
+      closing: { nezinho: { lost: "Buena mano tuviste, bo, ¿otra?", won: "Despacio se llega lejos, bo." }, cida: { lost: "Ay cariño, hoy fue tuya.", won: "Vení que la tía te enseña de nuevo." }, tiao: { lost: "¡Ta, ganaste, amigo!", won: "¡A cantar! Doce para nosotros." }, ze: { lost: "Zé solo mueve la cabeza.", won: "Zé guarda las cartas sin decir nada." }, tabare: { lost: "¡Buena mano tuviste, bo! ¿Otra vuelta?", won: "¡Garra y corazón, bo! Nos la llevamos nosotros." }, osvaldo: { lost: "¡Buena mano tuviste, carajo! ¿Otra?", won: "¡El truco se juega con coraje! Nos lo llevamos nosotros." }, xiru: { lost: "Bah, tu tá com a mão tri boa, vivente. Mais uma?", won: "Te apruma, vivente! Ganhamos nós, tchê!" }, tiao_queijo: { lost: "Trem bão, cê jogou bem demais, sô! Mais uma?", won: "Mineiro come quieto, uai! Levamos essa!" }, jordi: { lost: "Bona mà has tingut, noi. Una altra?", won: "Val més maña que força, noi! Dotze per a nosaltres." } },
     },
     py: {
       ladder: { 2: "¡Truco!", 3: "¡Retruco!", 4: "¡Vale cuatro!" }, ran: "ME VOY", we_won: "¡ES NUESTRA!", they_won: "¡NOS LO LLEVAMOS!",
-      calls: { nezinho: "¡Truco, voi'! Vale {worth}.", cida: "¡Truco, mi bien! Vale {worth}.", tiao: "¡Truuuco, voi'! Vale {worth}.", ze: "Truco. Vale {worth}.", bigode: "¡Truco! Vale {worth}." },
-      closing: { nezinho: { lost: "Buena mano tuviste voi', ¿otra?", won: "Despacio se llega lejos voi'." }, cida: { lost: "Ay cariño, hoy fue tuya.", won: "Vení que la tía te enseña de nuevo." }, tiao: { lost: "¡Apa! Ganaste voi', amigo.", won: "¡A cantar! Doce para nosotros." }, ze: { lost: "Zé solo mueve la cabeza.", won: "Zé guarda las cartas sin decir nada." } },
+      calls: { nezinho: "¡Truco, voi'! Vale {worth}.", cida: "¡Truco, mi bien! Vale {worth}.", tiao: "¡Truuuco, voi'! Vale {worth}.", ze: "Truco. Vale {worth}.", osvaldo: "¡Truco, carajo! Vale {worth}.", tabare: "¡Truco, bo! Vale {worth}.", xiru: "Truco, vivente! Vale {worth}.", tiao_queijo: "Truco, uai! Vale {worth}.", jordi: "Truc, noi! Val {worth}.", bigode: "¡Truco! Vale {worth}." },
+      closing: { nezinho: { lost: "Buena mano tuviste voi', ¿otra?", won: "Despacio se llega lejos voi'." }, cida: { lost: "Ay cariño, hoy fue tuya.", won: "Vení que la tía te enseña de nuevo." }, tiao: { lost: "¡Apa! Ganaste voi', amigo.", won: "¡A cantar! Doce para nosotros." }, ze: { lost: "Zé solo mueve la cabeza.", won: "Zé guarda las cartas sin decir nada." }, osvaldo: { lost: "¡Buena mano tuviste, carajo! ¿Otra?", won: "¡El truco se juega con coraje! Nos lo llevamos nosotros." }, tabare: { lost: "¡Buena mano tuviste, bo! ¿Otra vuelta?", won: "¡Garra y corazón, bo! Doce para nosotros." }, xiru: { lost: "Bah, tu tá com a mão tri boa, vivente. Mais uma?", won: "Te apruma, vivente! Ganhamos nós, tchê!" }, tiao_queijo: { lost: "Trem bão, cê jogou bem demais, sô! Mais uma?", won: "Mineiro come quieto, uai! Levamos essa!" }, jordi: { lost: "Bona mà has tingut, noi. Una altra?", won: "Val més maña que força, noi! Dotze per a nosaltres." } },
     },
     ca: {
       ladder: { 2: "Truc!", 3: "Retruc!" }, ran: "ME'N VAIG", we_won: "ÉS NOSTRA!", they_won: "ENS L'ENDUEM!",
-      calls: { nezinho: "Truc, noi! Val {worth}.", cida: "Truc, rei meu! Val {worth}.", tiao: "Truuuc, senyor! Val {worth}.", ze: "Truc. Val {worth}.", bigode: "Truc! Val {worth}." },
-      closing: { nezinho: { lost: "Bona mà has tingut, noi. Una altra?", won: "A poc a poc s'arriba lluny, noi." }, cida: { lost: "Ai, rei meu, avui ha estat teva.", won: "Vine, que la tieta t'ho torna a ensenyar." }, tiao: { lost: "Ep! Has guanyat, amic.", won: "A cantar! Dotze per a nosaltres." }, ze: { lost: "En Zé només fa que sí amb el cap.", won: "En Zé desa les cartes sense dir res." } },
+      calls: { nezinho: "Truc, noi! Val {worth}.", cida: "Truc, rei meu! Val {worth}.", tiao: "Truuuc, senyor! Val {worth}.", ze: "Truc. Val {worth}.", jordi: "Truc, noi! Val {worth}.", xiru: "Truco, vivente! Vale {worth}.", osvaldo: "¡Truco, carajo! Vale {worth}.", tiao_queijo: "Truco, uai! Vale {worth}.", tabare: "¡Truco, bo! Vale {worth}.", bigode: "Truc! Val {worth}." },
+      closing: { nezinho: { lost: "Bona mà has tingut, noi. Una altra?", won: "A poc a poc s'arriba lluny, noi." }, cida: { lost: "Ai, rei meu, avui ha estat teva.", won: "Vine, que la tieta t'ho torna a ensenyar." }, tiao: { lost: "Ep! Has guanyat, amic.", won: "A cantar! Dotze per a nosaltres." }, ze: { lost: "En Zé només fa que sí amb el cap.", won: "En Zé desa les cartes sense dir res." }, jordi: { lost: "Bona mà has tingut, noi. Una altra partida?", won: "Val més maña que força, noi! Dotze per a nosaltres." }, xiru: { lost: "Bah, tu tá com a mão tri boa, vivente. Mais uma?", won: "Te apruma, vivente! Ganhamos nós, tchê!" }, osvaldo: { lost: "¡Buena mano tuviste, carajo! ¿Otra?", won: "¡El truco se juega con coraje! Nos lo llevamos nosotros." }, tiao_queijo: { lost: "Trem bão, cê jogou bem demais, sô! Mais uma?", won: "Mineiro come quieto, uai! Levamos essa!" }, tabare: { lost: "¡Buena mano tuviste, bo! ¿Otra vuelta?", won: "¡Garra y corazón, bo! Doce para nosotros." } },
     },
   };
   const voice = () => {
@@ -1055,7 +1063,7 @@ _arenaMarkup: #"""
         "data-said", "data-phase", "data-leader",
         "data-raised", "data-status", "data-hand", "data-stake", "data-variant",
         "data-envido", "data-envido-asked", "data-calls",
-        "data-match-id", "data-opponent", "data-round-id", "data-turn-seat",
+        "data-match-id", "data-opponent", "data-round-id", "data-turn-seat", "data-theme",
       ],
     });
     // Watched where the cards are and nowhere wider: the ladder button carries
@@ -1168,6 +1176,28 @@ _arenaMarkup: #"""
     followCountry(box);
     if (box.dataset.variant && !box.dataset.variant.includes("{")) {
       st.variant = box.dataset.variant;
+    }
+    const v = (box.dataset.variant && !box.dataset.variant.includes("{")) ? box.dataset.variant : "paulista";
+    const opp = (box.dataset.opponent && !box.dataset.opponent.includes("{")) ? box.dataset.opponent : "nezinho";
+    const th = (box.dataset.theme && !box.dataset.theme.includes("{")) ? box.dataset.theme : "xadrez";
+    if (screen.dataset.variant !== v) screen.dataset.variant = v;
+    if (screen.dataset.opponent !== opp) screen.dataset.opponent = opp;
+    if (screen.dataset.theme !== th) screen.dataset.theme = th;
+
+    const tavernEl = $(".tavern-name");
+    if (tavernEl) {
+      const cat = globalThis.__prontoMessages ?? {};
+      const curLoc = screen.dataset.locale || "pt-BR";
+      const msgs = cat[curLoc] ?? cat["pt-BR"] ?? {};
+      const tavernKey = `tavern_${v === "douradinha" || v === "douradao" ? "mineiro" : (v === "paraguayo" ? "argentino" : v)}`;
+      const title = msgs[tavernKey] ?? msgs.tavern_title ?? "Boteco do Seu Nezinho · Mesa 1";
+      setText(tavernEl, title);
+    }
+
+    const oppImg = $(".opponent-avatar-img");
+    if (oppImg) {
+      const botKey = opp === "online" ? "bigode" : opp;
+      oppImg.style.backgroundImage = `url("/shell/assets/${botKey}.png")`;
     }
     const curRound = attrOf("data-round-id");
     if (curRound && !curRound.includes("{")) {
@@ -1310,7 +1340,18 @@ _arenaMarkup: #"""
         if (oppBubble.style.display !== "block") oppBubble.style.display = "block";
       } else {
         const opp = box.dataset.opponent ?? "nezinho";
-        const tell = voice().tells?.[opp] ?? "Ajeita as cartas na mesa com cuidado.";
+        const TELLS = {
+          nezinho: "Seu Nezinho ajeita as cartas na mesa com cuidado.",
+          cida: "Dona Cida bate duas vezes com o anel na mesa.",
+          tiao: "Tião Pandeiro cantarola e tamborila os dedos.",
+          ze: "Zé da Bicicleta fica quieto e ajeita o boné.",
+          xiru: "Xirú Velho ajeita o lenço no pescoço com calma.",
+          osvaldo: "Don Osvaldo acaricia el bigote pensativo.",
+          tiao_queijo: "Tião do Queijo corta uma fatia com a faquinha.",
+          tabare: "Don Tabaré toma un mate amargo mirando de reojo.",
+          jordi: "L'Oncle Jordi mira de reüll amb un mig somriure.",
+        };
+        const tell = TELLS[opp] ?? voice().tells?.[opp] ?? "Ajeita as cartas na mesa com cuidado.";
         setText(oppTalk, tell);
         if (oppBubble.style.display !== "block") oppBubble.style.display = "block";
       }
@@ -1391,6 +1432,8 @@ _arenaMarkup: #"""
   // Which option is in force: aria-checked follows the value the row binds.
   // Openness, dismissal, Escape and focus return are the popover's own.
   screen.querySelector('[data-picker="opponent"] [data-opt="online"]')?.addEventListener("click", () => {
+    const seed = getOrCreateRoomSeed();
+    startOnlineMatch(seed, "you", "Adversário Online");
     updateInviteField();
     const modal = $("#modal-online");
     if (modal && !modal.matches(":popover-open")) modal.showPopover?.();
@@ -1434,18 +1477,17 @@ _arenaMarkup: #"""
   /* --- boot -------------------------------------------------------------- */
 
   const getMySeat = () => {
-    const box = $(".matchbox");
-    if (box?.dataset.mySeat) return box.dataset.mySeat;
+    const qOpp = new URLSearchParams(location.search).get("opponent");
     const qSeat = new URLSearchParams(location.search).get("seat");
-    if (qSeat) {
+    if (qOpp === "online" && qSeat) {
       sessionStorage.setItem("truco-seat", qSeat);
       return qSeat;
     }
-    const qMatch = new URLSearchParams(location.search).get("match");
-    if (qMatch) {
-      return sessionStorage.getItem("truco-seat") || "you";
-    }
-    return sessionStorage.getItem("truco-seat") || "you";
+    const box = $(".matchbox");
+    if (box?.dataset.mySeat && !box.dataset.mySeat.includes("{")) return box.dataset.mySeat;
+    const sSeat = sessionStorage.getItem("truco-seat");
+    if (sSeat) return sSeat;
+    return "you";
   };
 
   const updateSeatPerspective = () => {
@@ -1465,15 +1507,26 @@ _arenaMarkup: #"""
     }
   };
 
+  const getOrCreateRoomSeed = () => {
+    const box = $(".matchbox");
+    if (box?.dataset.opponent === "online" && box.dataset.seed && !box.dataset.seed.includes("{") && box.dataset.seed !== "1") {
+      return box.dataset.seed;
+    }
+    let s = sessionStorage.getItem("truco-room-seed");
+    if (!s || s === "1") {
+      s = String(Math.floor(100000 + Math.random() * 900000));
+      sessionStorage.setItem("truco-room-seed", s);
+    }
+    return s;
+  };
+
   const updateInviteField = () => {
     const field = $("#invite-url-field");
     if (!field) return;
-    const matchId = st.matchId || boundMatch() || "";
+    const seed = getOrCreateRoomSeed();
     const isEles = getMySeat() === "eles1";
     const targetSeat = isEles ? "you" : "eles1";
-    const box = $(".matchbox");
-    const seed = box?.dataset.seed || "";
-    const url = `${location.origin}${location.pathname}?seed=${encodeURIComponent(seed || matchId)}&opponent=online&seat=${targetSeat}`;
+    const url = `${location.origin}${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${targetSeat}`;
     field.value = url;
   };
 
@@ -1525,10 +1578,7 @@ _arenaMarkup: #"""
     const client = globalThis.__mechaClient;
     if (!client) return;
     const box = $(".matchbox");
-    let seed = box?.dataset.seed;
-    if (!seed || seed.includes("{")) {
-      seed = String(Math.floor(100000 + Math.random() * 900000));
-    }
+    const seed = getOrCreateRoomSeed();
     const isOnlineMatch = box?.dataset.opponent === "online";
     const isPlaying = box?.dataset.status === "playing" && attrOf("data-result") === "";
     const myId = getMyPlayerId();
@@ -1541,10 +1591,7 @@ _arenaMarkup: #"""
       updated_at: new Date().toISOString(),
     };
     const col = client.collections?.lobby;
-    if (col && !col.isReady?.()) {
-      await col.toArrayWhenReady?.();
-    }
-    const exists = col?.toArray?.some((r) => String(r.id) === String(myId));
+    const exists = col?.state?.has?.(myId);
     if (exists) {
       await client.update("lobby", [{ key: myId, changes: payload }]);
     } else {
@@ -1556,7 +1603,6 @@ _arenaMarkup: #"""
     const listEl = $("#lobby-players-list");
     if (!listEl) return;
     const rows = listEl.querySelectorAll(".lobby-player-row");
-    const now = Date.now();
     const myId = getMyPlayerId();
     const myHandle = getMyHandle();
     const seenIds = new Set();
@@ -1565,7 +1611,6 @@ _arenaMarkup: #"""
 
     for (const row of rows) {
       const rowId = row.dataset.id;
-      const updatedAt = row.dataset.updatedAt;
       const btn = row.querySelector(".btn-challenge");
       const handleEl = row.querySelector(".player-handle");
       const rawHandle = (row.dataset.handle || btn?.dataset?.handle || handleEl?.textContent || "").replace(/\s*\(Você\)\s*$/, "").replace(/\s*#[\w-]+\s*$/, "").trim();
@@ -1577,22 +1622,6 @@ _arenaMarkup: #"""
       seenIds.add(rowId);
 
       const isMe = (rowId === myId);
-      if (!isMe && updatedAt && !updatedAt.includes("{")) {
-        const safeDateStr = updatedAt.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00");
-        const itemTime = new Date(safeDateStr).getTime();
-        if (!isNaN(itemTime) && itemTime > 0) {
-          const age = now - itemTime;
-          if (age > 25000) {
-            row.style.display = "none";
-            const client = globalThis.__mechaClient;
-            if (age > 45000 && client?.collections?.lobby?.state?.has?.(rowId)) {
-              client.remove("lobby", [rowId]);
-            }
-            continue;
-          }
-        }
-      }
-
       const activeHandle = isMe ? myHandle : rawHandle;
       handleCounts.set(activeHandle, (handleCounts.get(activeHandle) || 0) + 1);
       activeRows.push({ row, rowId, isMe, handle: activeHandle, handleEl, btn });
@@ -1610,26 +1639,12 @@ _arenaMarkup: #"""
       const slugPart = (isDuplicate && slug) ? ` #${slug}` : "";
       const label = isMe ? `${handle}${slugPart} (Você)` : `${handle}${slugPart}`;
       if (handleEl) setText(handleEl, label);
-      if (btn) btn.style.display = isMe ? "none" : "";
     }
   };
 
   let activeChallengeId = null;
   let activeChallengeTargetName = "";
-  let challengePollTimer = null;
   let checkChallenges = () => {};
-
-  const startChallengePoll = () => {
-    if (challengePollTimer) clearInterval(challengePollTimer);
-    challengePollTimer = setInterval(() => checkChallenges(), 250);
-  };
-
-  const stopChallengePoll = () => {
-    if (challengePollTimer) {
-      clearInterval(challengePollTimer);
-      challengePollTimer = null;
-    }
-  };
 
   const wireLobbyList = () => {
     const listEl = $("#lobby-players-list");
@@ -1665,8 +1680,6 @@ _arenaMarkup: #"""
       if (targetNameEl) setText(targetNameEl, `Desafiando ${targetHandle}...`);
       if (overlay) overlay.style.display = "flex";
 
-      startChallengePoll();
-
       const payload = {
         id: challengeId,
         challenger_id: myId,
@@ -1683,7 +1696,6 @@ _arenaMarkup: #"""
           await client.insert("challenge", [payload]);
         }
       } catch (err) {
-        stopChallengePoll();
         if (overlay) overlay.style.display = "none";
         throw err;
       }
@@ -1692,7 +1704,6 @@ _arenaMarkup: #"""
     const btnCancel = $("#btn-cancel-challenge");
     if (btnCancel) {
       btnCancel.addEventListener("click", async () => {
-        stopChallengePoll();
         const overlay = $("#challenge-waiting-overlay");
         if (overlay) overlay.style.display = "none";
         const modal = $("#modal-online");
@@ -1711,12 +1722,6 @@ _arenaMarkup: #"""
       });
     }
 
-    new MutationObserver(filterAndMarkRows).observe(listEl, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["data-handle", "data-updated-at", "data-id"],
-    });
     const client = globalThis.__mechaClient;
     if (client?.collections?.lobby?.subscribeChanges) {
       client.collections.lobby.subscribeChanges(() => filterAndMarkRows());
@@ -1731,16 +1736,8 @@ _arenaMarkup: #"""
     const newUrl = `${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${seat}`;
     history.replaceState(null, "", newUrl);
 
-    const box = $(".matchbox");
-    if (box) {
-      box.dataset.seed = String(seed);
-      box.dataset.opponent = "online";
-      box.dataset.opponentName = opp;
-      box.dataset.mySeat = seat;
-    }
-
     const modal = $("#modal-online");
-    if (modal?.matches?.(":popover-open")) {
+    if (modal?.matches?.(":popover-open") && opponentName !== "Adversário Online") {
       modal.hidePopover();
     }
     const banner = $("#incoming-challenge-banner");
@@ -1751,7 +1748,7 @@ _arenaMarkup: #"""
     const btnSetSeat = $("#btn-set-seat");
     if (btnSetSeat) {
       btnSetSeat.dispatchEvent(new CustomEvent("click", {
-        bubbles: true,
+        bubbles: false,
         detail: { seat, seed, opponent: "online", opponent_name: opp },
       }));
     }
@@ -1766,33 +1763,20 @@ _arenaMarkup: #"""
     let currentIncoming = null;
 
     if (btnAccept) {
-      btnAccept.addEventListener("click", async () => {
+      btnAccept.addEventListener("click", () => {
         if (!currentIncoming) return;
         const challenge = currentIncoming;
         currentIncoming = null;
         if (banner) banner.style.display = "none";
-
-        const client = globalThis.__mechaClient;
-        if (client?.update) {
-          await client.update("challenge", [{ key: challenge.id, changes: { status: "accepted" } }]);
-        }
-
         startOnlineMatch(challenge.seed, "eles1", challenge.challenger_name);
       });
     }
 
     if (btnDecline) {
-      btnDecline.addEventListener("click", async () => {
+      btnDecline.addEventListener("click", () => {
         if (!currentIncoming) return;
-        const challenge = currentIncoming;
         currentIncoming = null;
         if (banner) banner.style.display = "none";
-
-        const client = globalThis.__mechaClient;
-        if (client?.update) {
-          await client.update("challenge", [{ key: challenge.id, changes: { status: "declined" } }]);
-        }
-
         const modal = $("#modal-online");
         if (modal && !modal.matches?.(":popover-open")) {
           modal.showPopover();
@@ -1813,30 +1797,17 @@ _arenaMarkup: #"""
     checkChallenges = () => {
       ensureChallengeSub();
       const client = globalThis.__mechaClient;
-      const syncEl = $("#mp-sync-challenge");
       const now = Date.now();
       const myId = getMyPlayerId();
 
       const itemsMap = new Map();
-      if (syncEl) {
-        for (const el of syncEl.querySelectorAll("[data-id]")) {
-          const id = el.dataset.id;
-          if (id && !id.includes("{")) {
-            itemsMap.set(id, {
-              id,
-              challenger_id: el.dataset.challengerId,
-              challenger_name: el.dataset.challengerName,
-              target_id: el.dataset.targetId,
-              seed: el.dataset.seed,
-              status: el.dataset.status,
-              created_at: el.dataset.createdAt,
-            });
-          }
-        }
-      }
       const col = client?.collections?.challenge;
       if (col?.toArray && Array.isArray(col.toArray)) {
         for (const it of col.toArray) {
+          if (it?.id) itemsMap.set(it.id, it);
+        }
+      } else if (col?.state?.values) {
+        for (const it of col.state.values()) {
           if (it?.id) itemsMap.set(it.id, it);
         }
       }
@@ -1864,13 +1835,11 @@ _arenaMarkup: #"""
             const opp = activeChallengeTargetName || item.challenger_name || "Adversário";
             activeChallengeId = null;
             activeChallengeTargetName = "";
-            stopChallengePoll();
             if (overlay) overlay.style.display = "none";
             startOnlineMatch(seed, "you", opp);
           } else if (item.status === "declined") {
             activeChallengeId = null;
             activeChallengeTargetName = "";
-            stopChallengePoll();
             if (overlay) overlay.style.display = "none";
             const modal = $("#modal-online");
             if (modal && !modal.matches?.(":popover-open")) {
@@ -1883,6 +1852,7 @@ _arenaMarkup: #"""
 
       if (pendingIncoming) {
         currentIncoming = pendingIncoming;
+        if (banner) banner.dataset.id = pendingIncoming.id;
         if (challengerNameEl) setText(challengerNameEl, pendingIncoming.challenger_name || "Jogador");
         const modal = $("#modal-online");
         if (modal?.matches?.(":popover-open")) {
@@ -1891,21 +1861,13 @@ _arenaMarkup: #"""
         if (banner && banner.style.display !== "flex") banner.style.display = "flex";
       } else {
         if (banner && banner.style.display !== "none") banner.style.display = "none";
+        if (banner) banner.dataset.id = "";
         currentIncoming = null;
       }
     };
 
-    const syncEl = $("#mp-sync-challenge");
-    if (syncEl) {
-      new MutationObserver(checkChallenges).observe(syncEl, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-      });
-    }
     ensureChallengeSub();
     checkChallenges();
-    setInterval(checkChallenges, 1000);
   };
 
   const getActiveRoom = () => {
@@ -1921,23 +1883,7 @@ _arenaMarkup: #"""
   };
 
   const wireRoomActionSync = () => {
-    const syncSeatAndSeed = () => {
-      const room = getActiveRoom();
-      if (!room) return;
-      const box = $(".matchbox");
-      const opp = sessionStorage.getItem("truco-opponent-name") || "opponent_online";
-      if (!box || box.dataset.seed !== room.seed || box.dataset.opponent !== "online" || box.dataset.mySeat !== room.seat) {
-        const btnSetSeat = $("#btn-set-seat");
-        if (btnSetSeat) {
-          btnSetSeat.dispatchEvent(new CustomEvent("click", {
-            bubbles: true,
-            detail: { seat: room.seat, seed: room.seed, opponent: "online", opponent_name: opp },
-          }));
-        }
-      }
-    };
-    syncSeatAndSeed();
-    setTimeout(syncSeatAndSeed, 300);
+    ensureOnlineMode();
   };
 
   const wireOnlineModal = () => {
@@ -1948,6 +1894,7 @@ _arenaMarkup: #"""
     wireLobbyList();
     wireChallengeSync();
     wireRoomActionSync();
+    updateInviteField();
 
     const handleInput = $("#my-handle-input");
     if (handleInput) handleInput.value = getMyHandle();
@@ -2005,8 +1952,6 @@ _arenaMarkup: #"""
         sendLobbyHeartbeat();
         filterAndMarkRows();
         updateInviteField();
-        const modal = $("#modal-online");
-        if (modal && !modal.matches(":popover-open")) modal.showPopover?.();
       });
     }
 
@@ -2015,12 +1960,15 @@ _arenaMarkup: #"""
         if (handleInput) handleInput.value = getMyHandle();
         sendLobbyHeartbeat();
         filterAndMarkRows();
+        updateInviteField();
       }
     });
 
     sendLobbyHeartbeat();
 
     $("#btn-copy-invite")?.addEventListener("click", () => {
+      const seed = getOrCreateRoomSeed();
+      startOnlineMatch(seed, "you", "Adversário Online");
       updateInviteField();
       const field = $("#invite-url-field");
       const status = $("#copy-status");
@@ -2061,24 +2009,6 @@ _arenaMarkup: #"""
         sendLobbyHeartbeat();
       }
     });
-
-    setInterval(() => {
-      if (alive() && typeof navigator !== "undefined" && navigator.onLine) {
-        sendLobbyHeartbeat();
-      }
-      filterAndMarkRows();
-    }, 5000);
-
-    const cleanLobby = () => {
-      const myId = getMyPlayerId();
-      if (!myId) return;
-      const client = globalThis.__mechaClient;
-      if (client?.collections?.lobby?.state?.has?.(myId)) {
-        client.remove("lobby", [myId]);
-      }
-    };
-    window.addEventListener("beforeunload", cleanLobby);
-    window.addEventListener("pagehide", cleanLobby);
   };
 
   const wireSeatbarIdentity = () => {
@@ -2190,11 +2120,13 @@ _arenaMarkup: #"""
 
   const ensureOnlineMode = () => {
     const qOpp = new URLSearchParams(location.search).get("opponent");
-    if (qOpp === "online") {
+    const qSeed = new URLSearchParams(location.search).get("seed");
+    const qSeat = new URLSearchParams(location.search).get("seat") || "you";
+    if (qOpp === "online" && qSeed) {
       const box = $(".matchbox");
-      if (box && box.dataset.opponent !== "online") {
-        box.dataset.opponent = "online";
-        box.dataset.opponentName = "opponent_online";
+      const opp = sessionStorage.getItem("truco-opponent-name") || "Adversário Online";
+      if (!box || box.dataset.seed !== qSeed || box.dataset.opponent !== "online" || box.dataset.mySeat !== qSeat) {
+        startOnlineMatch(qSeed, qSeat, opp);
       }
     }
   };
@@ -2207,6 +2139,7 @@ _arenaMarkup: #"""
     adopt();
     ensureOnlineMode();
     render();
+    updateInviteField();
     wireHand();
   };
 
@@ -2220,9 +2153,10 @@ _arenaMarkup: #"""
   const settle = () => {
     if (!alive()) return;
     wireHand();
-    if (adopt()) { boot(); return; }
+    if (adopt()) { boot(); ensureOnlineMode(); return; }
     if (tries++ < 50) { setTimeout(settle, 50); return; }
     boot();
+    ensureOnlineMode();
   };
   settle();
 })();

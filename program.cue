@@ -49,7 +49,7 @@ code: pronto.#App & {
 					{name: "hand_no", type: "int", cel: "this >= 1"},
 					{name: "status", type: "text", cel: "this in ['playing', 'over']"},
 					{name: "winner", type: "text", required: false, cel: "this in ['', 'us', 'them', 'others']"},
-					{name: "opponent", type: "text", cel: "this in ['nezinho', 'cida', 'tiao', 'ze', 'online']"},
+					{name: "opponent", type: "text", cel: "this in ['nezinho', 'cida', 'tiao', 'ze', 'xiru', 'osvaldo', 'tiao_queijo', 'tabare', 'jordi', 'online']"},
 					{name: "opponent_name", type: "text", cel: "this.size() > 0"},
 					{name: "partner_name", type: "text", cel: "this.size() > 0"},
 					// The sitting's one draw, kept. Every shuffle after it is derived
@@ -229,28 +229,6 @@ code: pronto.#App & {
 				]
 			}
 		}
-		machines: {
-			ChallengeMachine: {
-				name:    "ChallengeMachine"
-				entity:  "Challenge"
-				field:   "status"
-				initial: "pending"
-				states: {
-					pending: {
-						after: {
-							"60000": "expired"
-						}
-						on: {
-							accept:  "accepted"
-							decline: "declined"
-						}
-					}
-					accepted: {type: "final"}
-					declined: {type: "final"}
-					expired: {type: "final"}
-				}
-			}
-		}
 		// No pipeline: a tab entity has no table to publish (ir decision-04).
 		pipelines: {}
 	}
@@ -329,9 +307,10 @@ code: pronto.#App & {
 
 	meta: {
 		name:        "truco"
+		domain:      "truco.bonisoft3.com"
 		description: "Uma arena de truco — placar, mãos, viras e apostas, rodada a rodada."
 		ir: {sha256: "d81fc153d7eda05d50c9f82eadcfb0ccb9ba4a3e39e7e150c9a6c7072ffadac7"}
-		targets: ["pages"]
+		targets: ["pages", "cloudflare"]
 		i18n: {
 			default: "pt-BR"
 			// One truco-playing country each, not a language list: an Argentine,

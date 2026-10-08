@@ -479,6 +479,11 @@
             "cida",
             "tiao",
             "ze",
+            "xiru",
+            "osvaldo",
+            "tiao_queijo",
+            "tabare",
+            "jordi",
             "online"
           ],
           "name": "opponent",
@@ -1878,7 +1883,6 @@
     "services/database/migrations/006_policies.sql",
     "services/database/migrations/007_txid.sql",
     "services/database/migrations/008_publication.sql",
-    "services/database/migrations/010_machines.sql",
     "services/database/migrations/012_lobby.sql"
   ],
   "pipelines": []
