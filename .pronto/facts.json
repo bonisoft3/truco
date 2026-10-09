@@ -1881,7 +1881,7 @@
     {"path":"acceptance.md","sha256":"0b267b0d6477cf5938f89e6c3916cec953c38275d266a77a83edc9d87729d9e6","derived":false},
     {"path":".pronto/cel.json","sha256":"68e2cabde233d4819cf4a0ec926aa0eb1f78f000b5067de5387f4b47e1274812","derived":true},
     {"path":"program_cel.cue","sha256":"e39a3163ad85ba233352272f5eebbd8c96495cb03138c8902fad9fa32373e018","derived":true},
-    {"path":"program_derived.cue","sha256":"e9527cf56a3c4fd94d7b1c67c78ac73f11ed7bcab907727121d2b04ce7eaa8ac","derived":true},
+    {"path":"program_derived.cue","sha256":"c6918bf19ad10dfda17ffe6650846f5fbfae75589f24081f8586b452ec171ad1","derived":true},
     {"path":"shell/screens/arena.css","sha256":"96e5dd550af8a354a4c9b819f4ee635040a76080b52c2ca525a236dfbd6382b7","derived":false},
     {"path":"shell/screens/regras.css","sha256":"fbfb3623fc44f62ed7e649c58da2b1d74e4ddc8117e2a68310d9b5c01799da54","derived":false},
     {"path":"shell/shared/table.css","sha256":"b0f825c9cde3e3c5fb389efb38c0ce5caf28383ee3dfcf5c42190e093a125a9e","derived":false},

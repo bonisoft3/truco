@@ -127,7 +127,11 @@ _irNotes: {
 	"decision-34": "34 — a tie is laid side by side, and so is the rodada that breaks it. Cards played to a rodada land across each other, each at its own angle, because that is how they fall on a table. A tie is the exception players make by hand: the rodada that settles it is played by showing the highest card, and cards being compared are set down next to each other, square, rather than on top. Three treatments were shot on the real table: only the deciding rodada opened; the deciding rodada and the tie it settles both opened; and the deciding rodada stood upright with a lit edge, as a card held up to be seen. The second was chosen. Opening the tie as well means a finished hand reads off the felt as what happened — a tie, then the rodada that broke it — without the phase tracker. Only the look changes: the verdict, the order of play and the rules are the same"
 }
 
-code: meta: decisions: [Id=string]: note: _irNotes[Id]
+_deriving: *false | bool @tag(derive,type=bool)
+
+if !_deriving {
+	code: meta: decisions: [Id=string]: note: _irNotes[Id]
+}
 
 _irAccepts: {
 	"test-card-order": ["accept-card-order"]
@@ -176,4 +180,6 @@ _irAccepts: {
 	"test-vaza-winner": ["accept-vaza-winner","accept-play-card"]
 }
 
-code: meta: tests: [Id=string]: accepts: _irAccepts[Id]
+if !_deriving {
+	code: meta: tests: [Id=string]: accepts: _irAccepts[Id]
+}
