@@ -7,3 +7,5 @@ regional play into one offline-first experience.
 
 It is a reference app for the cultural and local character that an independent
 author can carry all the way into a working product.
+
+The [[brief.md|brief]] defines the variants, table conventions, and play modes.
