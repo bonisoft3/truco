@@ -30,6 +30,7 @@
     "services/database/migrations/007_txid.sql",
     "services/database/migrations/008_publication.sql",
     "services/database/migrations/012_lobby.sql",
+    "services/database/migrations/013_networked_shouts.sql",
     "shell/boot.js",
     "shell/design.css",
     "shell/index.html",

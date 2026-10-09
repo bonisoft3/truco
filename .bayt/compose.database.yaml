@@ -40,6 +40,9 @@ services:
       - action: rebuild
         path: ../services/database/migrations/012_lobby.sql
         target: /docker-entrypoint-initdb.d
+      - action: rebuild
+        path: ../services/database/migrations/013_networked_shouts.sql
+        target: /docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}

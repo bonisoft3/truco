@@ -23,6 +23,7 @@ _reset: {
 	winner:       ""
 	status:       "playing"
 	seed: {type: "spun"}
+	my_seat: "you"
 }
 
 // Every arrow is guarded on a sitting existing: before the fold's first match
@@ -125,9 +126,12 @@ _pickerOpponent: omni.#Picker & {
 		{name: "cida", label: "Robôs", item: "Dona Cida · Bar", msg: "msg.opponent_cida_item", msgLabel: "msg.bots", assign: _reset & {opponent: "cida", opponent_name: "opponent_cida", stake: {type: "stake0"}}},
 		{name: "tiao", label: "Robôs", item: "Tião Pandeiro · Bar", msg: "msg.opponent_tiao_item", msgLabel: "msg.bots", assign: _reset & {opponent: "tiao", opponent_name: "opponent_tiao", stake: {type: "stake0"}}},
 		{name: "ze", label: "Robôs", item: "Zé da Bicicleta · Bar", msg: "msg.opponent_ze_item", msgLabel: "msg.bots", assign: _reset & {opponent: "ze", opponent_name: "opponent_ze", stake: {type: "stake0"}}},
-		{name: "online", label: "Online", item: "Mesa Online", msg: "msg.online_table", msgLabel: "msg.online_short", assign: _reset & {opponent: "online", opponent_name: "opponent_online", stake: {type: "stake0"}}},
+	]
+	readouts: [
+		{name: "online", label: "Online", msgLabel: "msg.online_short"},
 	]
 }
+
 
 _pickerTheme: omni.#Picker & {
 	collection: "match"
@@ -261,10 +265,10 @@ _arenaMarkup: #"""
 \#(_pickerSeats.markup)
 \#(_pickerOpponent.markup)
 \#(_pickerTheme.markup)
-          <button type="button" class="btn-online-status" id="btn-open-online" popovertarget="modal-online" popovertargetaction="show" title="{msg.online_bar_title}">
+          <button type="button" class="btn-online-status" id="btn-open-online" popovertarget="modal-online" popovertargetaction="show" title="{msg.balcao_title}" data-online="false">
             <span class="online-pulse" aria-hidden="true"></span>
-            <span class="online-label-full" data-text="{msg.online_table}">Mesa Online</span>
-            <span class="online-label-short" data-text="{msg.online_short}">Online</span>
+            <span class="online-label-full" data-text="{msg.balcao}">Balcão</span>
+            <span class="online-label-short" data-text="{msg.balcao}">Balcão</span>
           </button>
           <a class="rules-link" data-route="regras" data-text="{msg.rules}">Regras</a>
         </div>
@@ -337,8 +341,9 @@ _arenaMarkup: #"""
           <article class="hand" data-phase="{phase}" data-result="{result}" data-round-id="{id}"
                      data-v1="{v1}" data-v2="{v2}" data-v3="{v3}"
                      data-asked="{asked}" data-rung="{rung}" data-said="{said}" data-stake="{stake}"
+                     data-shout-word="{shout_word}" data-shout-from="{shout_from}" data-shout-state="{shout_state}" data-shout-kind="{shout_kind}" data-shout-seat="{shout_seat}" data-shout-t="{shout_t}"
                      data-envido="{envido}" data-envido-asked="{envido_asked}" data-calls="{envido_calls}"
-                     data-leader="{leader}" data-raised="{raised}" data-brink="{brink}"
+                     data-leader="{leader}" data-raised="{raised}" data-brink="{brink}" data-ran="{ran}"
                      data-turn-seat="{turn_seat}" data-ui-deadline="{ui_deadline}" data-backend-deadline="{backend_deadline}">
 
             <ol class="spine pad" data-phase="{phase}">
@@ -454,19 +459,19 @@ _arenaMarkup: #"""
               <div class="trick" data-t="1" data-live="play" data-order="seq.asc"
                    data-filter="round_id=eq.{id}&amp;vaza=eq.1&amp;kind=eq.card">
                 <template data-item>
-                  <div class="played" data-seat="{seat}" data-from-slot="{from_slot}" data-win="{win}" data-said="{said}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
+                  <div class="played" data-seat="{seat}" data-display-seat="{display_seat}" data-from-slot="{from_slot}" data-win="{win}" data-said="{said}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
                 </template>
               </div>
               <div class="trick" data-t="2" data-live="play" data-order="seq.asc"
                    data-filter="round_id=eq.{id}&amp;vaza=eq.2&amp;kind=eq.card">
                 <template data-item>
-                  <div class="played" data-seat="{seat}" data-from-slot="{from_slot}" data-win="{win}" data-said="{said}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
+                  <div class="played" data-seat="{seat}" data-display-seat="{display_seat}" data-from-slot="{from_slot}" data-win="{win}" data-said="{said}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
                 </template>
               </div>
               <div class="trick" data-t="3" data-live="play" data-order="seq.asc"
                    data-filter="round_id=eq.{id}&amp;vaza=eq.3&amp;kind=eq.card">
                 <template data-item>
-                  <div class="played" data-seat="{seat}" data-from-slot="{from_slot}" data-win="{win}" data-said="{said}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
+                  <div class="played" data-seat="{seat}" data-display-seat="{display_seat}" data-from-slot="{from_slot}" data-win="{win}" data-said="{said}" style="view-transition-name: card-{card}; --lie:{lie}"><span class="card" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
                 </template>
               </div>
             </div>
@@ -611,9 +616,15 @@ _arenaMarkup: #"""
               <button type="button" id="btn-save-handle" class="act brass btn-compact" commandfor="copy-status" data-text="{msg.save}">Salvar</button>
             </div>
           </div>
-          <div class="identity-badge">
-            <span class="status-dot-green"></span>
-            <span data-text="{msg.online_short}">Online</span>
+          <div class="identity-toggle-wrap">
+            <button type="button" class="btn-online-toggle" id="btn-toggle-online" role="switch" aria-checked="false" data-online="false" title="{msg.online_bar_title}" aria-label="{msg.online_bar_title}" commandfor="copy-status">
+              <span class="toggle-track" aria-hidden="true">
+                <span class="toggle-thumb"></span>
+              </span>
+              <span class="online-pulse" aria-hidden="true"></span>
+              <span class="toggle-label-off" data-text="{msg.offline}">Offline</span>
+              <span class="toggle-label-on" data-text="{msg.online_short}">Online</span>
+            </button>
           </div>
         </section>
 
@@ -628,10 +639,10 @@ _arenaMarkup: #"""
               <div class="lobby-player-row" data-id="{id}" data-handle="{handle}" data-updated-at="{updated_at}">
                 <span class="player-avatar-mini" aria-hidden="true">👤</span>
                 <div class="player-info-wrap">
-                  <b class="player-handle">{handle}</b>
+                  <b class="player-handle" data-text="{handle}"></b>
                   <span class="player-status-tag" data-status="{status}"></span>
                 </div>
-                <button type="button" class="act brass btn-challenge" data-target-id="{id}" data-handle="{handle}" data-seed="{room_seed}" commandfor="copy-status">
+                <button type="button" class="act brass btn-challenge" commandfor="copy-status">
                   <span data-text="{msg.challenge}">⚔️ Desafiar</span>
                 </button>
               </div>
@@ -643,6 +654,12 @@ _arenaMarkup: #"""
 
         <section class="modal-sec">
           <label for="invite-url-field" data-text="{msg.invite_by_link}">Convidar Amigo por Link</label>
+          <div class="invite-seat-picker" id="invite-seat-picker" role="group">
+            <button type="button" class="btn-invite-seat" data-seat="you" commandfor="invite-url-field" data-text="{msg.you}">Você</button>
+            <button type="button" class="btn-invite-seat active" data-seat="eles1" commandfor="invite-url-field" data-text="{msg.invite_opp1}">Adversário 1</button>
+            <button type="button" class="btn-invite-seat" data-seat="parca" commandfor="invite-url-field" data-text="{msg.invite_partner}">Parça (Dupla)</button>
+            <button type="button" class="btn-invite-seat" data-seat="eles2" commandfor="invite-url-field" data-text="{msg.invite_opp2}">Adversário 2</button>
+          </div>
           <p class="modal-hint"><span data-text="{msg.invite_hint_before}">Envie este link para qualquer amigo entrar diretamente nesta mesa. Para testar no mesmo computador, abra o link em uma </span><b data-text="{msg.incognito_window}">janela anônima</b><span data-text="{msg.invite_hint_after}"> ou em outro navegador.</span></p>
           <div class="invite-box">
             <input type="text" id="invite-url-field" class="boteco-input" readonly value="" />
@@ -668,7 +685,7 @@ _arenaMarkup: #"""
 
   <div id="mp-sync-challenge" class="sr-only" data-live="challenge" data-order="created_at.desc">
     <template data-item>
-      <span data-id="{id}" data-challenger-id="{challenger_id}" data-challenger-name="{challenger_name}" data-target-id="{target_id}" data-seed="{seed}" data-status="{status}" data-created-at="{created_at}"></span>
+      <span data-id="{id}" data-challenger-id="{challenger_id}" data-challenger-name="{challenger_name}" data-target-id="{target_id}" data-seed="{seed}" data-variant="{variant}" data-status="{status}" data-created-at="{created_at}"></span>
     </template>
   </div>
   <div id="mp-sync-action" class="sr-only" data-live="room_action" data-order="created_at.asc"
@@ -720,20 +737,35 @@ _arenaMarkup: #"""
   const DEFAULT_VARIANT = "mineiro";
 
   const RIVER = {
-    raise_them: "SUBIR ES DE ELLOS", at_max: "AL MÁXIMO", their_turn: "EN SU TURNO", opponent_turn: "TURNO DEL RIVAL", truco: "¡TRUCO!",
-    title_ours: "Quien pidió no aumenta: les toca a ellos subir.", title_not_yours: "Solo pide quien tiene el turno.", title_waiting_online: "Esperando la jugada del rival en línea.", title_raise: "Aumentar la apuesta de esta mano",
+    raise_them: "SUBIR ES DE ELLOS", at_max: "AL MÁXIMO", their_turn: "EN SU TURNO", opponent_turn: "TURNO DEL RIVAL",
+    turn_parca: "TURNO DEL COMPAÑERO", turn_eles1: "TURNO DEL RIVAL (1)", turn_eles2: "TURNO DEL RIVAL (2)",
+    truco: "¡TRUCO!",
+    title_ours: "Quien pidió no aumenta: les toca a ellos subir.", title_not_yours: "Solo pide quien tiene el turno.",
+    title_waiting_online: "Esperando la jugada del rival en línea.",
+    title_waiting_parca: "Esperando la jugada de tu compañero.", title_waiting_eles1: "Esperando la jugada del Rival 1.", title_waiting_eles2: "Esperando la jugada del Rival 2.",
+    title_raise: "Aumentar la apuesta de esta mano",
     ceiling: "doce es el techo", raise_to: (c) => `sube a ${c}`, they_take: (s) => `ellos se llevan ${s}`, we_take: (s) => `nosotros nos llevamos ${s}`, match_yours: "¡Partida tuya!", match_theirs: (n) => `${n} ganó.`,
   };
   const UI_I18N = {
     "es-AR": RIVER, "es-UY": RIVER, "es-PY": RIVER,
     "pt-BR": {
-      raise_them: "SUBIR É COM ELES", at_max: "NO MÁXIMO", their_turn: "NA VEZ DELES", opponent_turn: "VEZ DO ADVERSÁRIO", truco: "TRUCO!",
-      title_ours: "Quem pediu não aumenta: a vez de subir é deles.", title_not_yours: "Só pede quem está na vez de jogar.", title_waiting_online: "Aguardando jogada do adversário online.", title_raise: "Aumentar a aposta desta mão",
+      raise_them: "SUBIR É COM ELES", at_max: "NO MÁXIMO", their_turn: "NA VEZ DELES", opponent_turn: "VEZ DO ADVERSÁRIO",
+      turn_parca: "VEZ DO PARÇA", turn_eles1: "VEZ DELES (1)", turn_eles2: "VEZ DELES (2)",
+      truco: "TRUCO!",
+      title_ours: "Quem pediu não aumenta: a vez de subir é deles.", title_not_yours: "Só pede quem está na vez de jogar.",
+      title_waiting_online: "Aguardando jogada do adversário online.",
+      title_waiting_parca: "Aguardando jogada do seu parça.", title_waiting_eles1: "Aguardando jogada do Adversário 1.", title_waiting_eles2: "Aguardando jogada do Adversário 2.",
+      title_raise: "Aumentar a aposta desta mão",
       ceiling: "doze é o teto", raise_to: (c) => `sobe pra ${c}`, they_take: (s) => `eles levam ${s}`, we_take: (s) => `nós levamos ${s}`, match_yours: "Partida sua!", match_theirs: (n) => `${n} levou.`,
     },
     "ca-ES": {
-      raise_them: "PUJAR ÉS COSA SEVA", at_max: "AL MÀXIM", their_turn: "ÉS EL SEU TORN", opponent_turn: "TORN DEL RIVAL", truco: "TRUC!",
-      title_ours: "Qui ha cantat no puja: els toca a ells pujar.", title_not_yours: "Només canta qui té el torn.", title_waiting_online: "Esperant la jugada del rival en línia.", title_raise: "Pujar l'aposta d'aquesta mà",
+      raise_them: "PUJAR ÉS COSA SEVA", at_max: "AL MÀXIM", their_turn: "ÉS EL SEU TORN", opponent_turn: "TORN DEL RIVAL",
+      turn_parca: "TORN DEL COMPANY", turn_eles1: "TORN DEL RIVAL (1)", turn_eles2: "TORN DEL RIVAL (2)",
+      truco: "TRUC!",
+      title_ours: "Qui ha cantat no puja: els toca a ells pujar.", title_not_yours: "Només canta qui té el torn.",
+      title_waiting_online: "Esperant la jugada del rival en línia.",
+      title_waiting_parca: "Esperant la jugada del teu company.", title_waiting_eles1: "Esperant la jugada del Rival 1.", title_waiting_eles2: "Esperant la jugada del Rival 2.",
+      title_raise: "Pujar l'aposta d'aquesta mà",
       ceiling: "dotze és el sostre", raise_to: (c) => `puja a ${c}`, they_take: (s) => `ells s'enduen ${s}`, we_take: (s) => `nosaltres ens enduem ${s}`, match_yours: "Partida teva!", match_theirs: (n) => `${n} ha guanyat.`,
     },
   };
@@ -781,6 +813,9 @@ _arenaMarkup: #"""
     return v;
   };
 
+  const bound = (v, fallback) => (!v || v.includes("{") ? fallback : v);
+  const currentVariant = () => bound($(".matchbox")?.dataset.variant, st.variant);
+
   const sayOf = (key, box, worth) => {
     if (!key) return "";
     const cat = globalThis.__prontoMessages ?? {};
@@ -807,10 +842,88 @@ _arenaMarkup: #"""
     variant: DEFAULT_VARIANT, opponent: "nezinho", partner: "bigode",
     seats: "1v1", theme: "xadrez", hand: 1,
     stake: baseStake(DEFAULT_VARIANT),
+    lastShoutSaid: "",
   });
 
+  let updateSeatPerspective = () => {};
+
   const alive = () => screen.isConnected;
-  const seatsOf = (mode) => (mode === "2v2" ? ["you", "eles1", "parca", "eles2"] : ["you", "eles1"]);
+  const validateVariantForSeats = (v, s) => {
+    if (s !== "2v2v2" && (v === "douradinha" || v === "douradao")) {
+      throw new Error(`Variant "${v}" is only supported in "2v2v2" seats mode`);
+    }
+    return v;
+  };
+  const SEATS = {
+    "1v1": ["you", "eles1"],
+    "2v2": ["you", "eles1", "parca", "eles2"],
+    "2v2v2": ["you", "eles1", "eles2", "parca", "eles3", "eles4"],
+  };
+  const seatsOf = (mode = "1v1") => {
+    const s = SEATS[mode];
+    if (!s) throw new Error(`Unknown seats mode "${mode}"`);
+    return s;
+  };
+  const currentOnlineSeats = (box = $(".matchbox")) => {
+    if (!box || box.dataset.opponent !== "online") return "1v1";
+    const rawSeats = box.dataset.seats;
+    if (!rawSeats || rawSeats.includes("{")) return "1v1";
+    if (!SEATS[rawSeats]) throw new Error(`Unknown online seats mode "${rawSeats}"`);
+    return rawSeats;
+  };
+  const seatsFor = (seat, current = "1v1") => {
+    if (!SEATS[current]) throw new Error(`Unknown seats mode "${current}" in seatsFor`);
+    return current === "2v2v2" ? "2v2v2" : (seat === "parca" || seat === "eles2" ? "2v2" : current);
+  };
+  const hand = () => screen.querySelector(".hand[data-round-id]");
+  const attrOf = (name) => hand()?.getAttribute(name) ?? "";
+  let cachedMySeat = null;
+  const getMySeat = () => {
+    if (cachedMySeat) return cachedMySeat;
+    const box = $(".matchbox");
+    if (box && box.dataset.opponent && !box.dataset.opponent.includes("{") && box.dataset.opponent !== "online") {
+      const seat = (box.dataset.mySeat && !box.dataset.mySeat.includes("{")) ? box.dataset.mySeat : "you";
+      if (!["you", "eles1"].includes(seat)) throw new Error(`Invalid bot seat "${seat}"`);
+      return seat;
+    }
+    if (typeof location !== "undefined" && location.search) {
+      const sp = new URLSearchParams(location.search);
+      const qOpp = sp.get("opponent");
+      const qSeat = sp.get("seat");
+      if (qOpp === "online" && qSeat) {
+        if (!["you", "eles1", "parca", "eles2"].includes(qSeat)) {
+          throw new Error(`Unknown seat "${qSeat}" in URL`);
+        }
+        if (sessionStorage.getItem("truco-seat") !== qSeat) {
+          sessionStorage.setItem("truco-seat", qSeat);
+        }
+        return qSeat;
+      }
+    }
+    if (box?.dataset.mySeat && !box.dataset.mySeat.includes("{")) {
+      const seat = box.dataset.mySeat;
+      if (!["you", "eles1", "parca", "eles2"].includes(seat)) {
+        throw new Error(`Unknown seat "${seat}" in box dataset`);
+      }
+      return seat;
+    }
+    const sSeat = sessionStorage.getItem("truco-seat");
+    if (sSeat) {
+      if (!["you", "eles1", "parca", "eles2"].includes(sSeat)) {
+        throw new Error(`Unknown seat "${sSeat}" in sessionStorage`);
+      }
+      return sSeat;
+    }
+    return "you";
+  };
+  const displaySeatOf = (seat, order = seatsOf($(".matchbox")?.dataset.seats && !$(".matchbox").dataset.seats.includes("{") ? $(".matchbox").dataset.seats : "1v1"), mySeat = getMySeat()) => {
+    if (!seat) return "";
+    const fromIdx = order.indexOf(seat);
+    const myIdx = order.indexOf(mySeat);
+    if (fromIdx === -1) throw new Error(`Unknown seat "${seat}" for seats mode`);
+    if (myIdx === -1) throw new Error(`Unknown mySeat "${mySeat}" for seats mode`);
+    return order[(fromIdx - myIdx + order.length) % order.length];
+  };
 
   /* --- rendering --------------------------------------------------------- */
 
@@ -1035,6 +1148,15 @@ _arenaMarkup: #"""
     }
   };
 
+  const clearOnlineSession = () => {
+    sessionStorage.removeItem("truco-seat");
+    sessionStorage.removeItem("truco-opponent-name");
+    sessionStorage.removeItem("truco-room-seed");
+    if (location.search.includes("opponent=online") || location.search.includes("seed=")) {
+      history.replaceState(null, "", location.pathname);
+    }
+  };
+
   const wireTable = () => {
     if (screen.dataset.table) return;
     screen.dataset.table = "1";
@@ -1061,6 +1183,7 @@ _arenaMarkup: #"""
       attributeFilter: [
         "data-v1", "data-v2", "data-v3", "data-result", "data-asked", "data-rung",
         "data-said", "data-phase", "data-leader",
+        "data-shout-word", "data-shout-from", "data-shout-state", "data-shout-kind", "data-shout-seat", "data-shout-t",
         "data-raised", "data-status", "data-hand", "data-stake", "data-variant",
         "data-envido", "data-envido-asked", "data-calls",
         "data-match-id", "data-opponent", "data-round-id", "data-turn-seat", "data-theme",
@@ -1072,15 +1195,10 @@ _arenaMarkup: #"""
     const mine = $("#seat-you");
     if (mine) new MutationObserver(again).observe(mine, { subtree: true, attributes: true, attributeFilter: ["disabled", "data-exit"] });
 
-    const clearOnlineSession = () => {
-      sessionStorage.removeItem("truco-seat");
-      sessionStorage.removeItem("truco-opponent-name");
-      if (location.search.includes("opponent=online") || location.search.includes("seed=")) {
-        history.replaceState(null, "", location.pathname);
-      }
-    };
-
     for (const id of ["btn-resign", "btn-again"]) $(`#${id}`)?.addEventListener("click", clearOnlineSession);
+    for (const el of screen.querySelectorAll('[data-picker="variant"] [data-opt], [data-picker="seats"] [data-opt], [data-picker="opponent"] [data-opt], [data-picker="country"] a[data-locale]')) {
+      el.addEventListener("click", clearOnlineSession);
+    }
     $("#btn-modal-resign")?.addEventListener("click", () => {
       clearOnlineSession();
       $("#btn-resign")?.click();
@@ -1088,19 +1206,6 @@ _arenaMarkup: #"""
     });
     for (const id of ["btn-next", "btn-again", "btn-start"]) {
       $(`#${id}`)?.addEventListener("click", () => hush());
-    }
-    for (const b of screen.querySelectorAll(".btn-quick-shout")) {
-      b.addEventListener("click", () => {
-        const pWrap = $("#player-dialogue-wrap");
-        const pTalk = $("#player-talk");
-        if (pWrap && pTalk) {
-          pTalk.textContent = `“${b.textContent.trim().toUpperCase()}”`;
-          pWrap.dataset.active = "yes";
-          setTimeout(() => {
-            if (pWrap) pWrap.dataset.active = "no";
-          }, 1800);
-        }
-      });
     }
   };
 
@@ -1118,7 +1223,7 @@ _arenaMarkup: #"""
     el.dataset.state = "live";
     shoutStart = Date.now();
     clearTimeout(shoutTimer);
-    if (kind === "run") shoutTimer = setTimeout(() => hush("run"), 2400);
+    if (kind === "run" || kind === "quick") shoutTimer = setTimeout(() => hush(kind), 1800);
   };
   const hush = (kind, immediate = false) => {
     const el = $(".shout");
@@ -1171,8 +1276,10 @@ _arenaMarkup: #"""
   };
 
   const render = () => {
-    const box = $(".matchbox");
-    if (!box) return;
+    cachedMySeat = getMySeat();
+    try {
+      const box = $(".matchbox");
+      if (!box) return;
     followCountry(box);
     if (box.dataset.variant && !box.dataset.variant.includes("{")) {
       st.variant = box.dataset.variant;
@@ -1213,21 +1320,38 @@ _arenaMarkup: #"""
     updateSeatPerspective();
     const rung = Number(attrOf("data-rung"));
     const asked = attrOf("data-asked");
-    const isEles = getMySeat() === "eles1";
     const yours = screen.querySelector(".seat-row.mine .card:not([disabled]):not([data-exit])") !== null;
     const ours = attrOf("data-raised") === "us";
     const worth = asked !== "" ? (attrOf("data-rung") || attrOf("data-stake")) : attrOf("data-stake");
 
-    const isOnline = screen.querySelector(".matchbox")?.dataset.opponent === "online";
+    const isOnline = box?.dataset.opponent === "online";
+    if (isOnline && typeof location !== "undefined" && typeof history !== "undefined" && location.search && box.dataset.variant && !box.dataset.variant.includes("{")) {
+      const sp = new URLSearchParams(location.search);
+      const urlVariant = sp.get("variant");
+      const urlSeed = sp.get("seed");
+      if (urlSeed === box.dataset.seed && urlVariant && urlVariant !== box.dataset.variant) {
+        sp.set("variant", box.dataset.variant);
+        history.replaceState(null, "", `${location.pathname}?${sp.toString()}`);
+      }
+    }
+    const turnSeat = attrOf("data-turn-seat");
+    const seatsMode = currentOnlineSeats(box);
+    const displayTurnSeat = turnSeat ? displaySeatOf(turnSeat) : "";
     const truco = $("#btn-truco");
     if (truco) {
       const off = ours || rung === 0 || asked !== "" || !yours;
       if (truco.disabled !== off) truco.disabled = off;
       const shout = rungWords()[rung];
+      const onlineTurnText = seatsMode === "2v2"
+        ? (displayTurnSeat === "parca" ? ui.turn_parca : displayTurnSeat === "eles2" ? ui.turn_eles2 : ui.turn_eles1)
+        : ui.opponent_turn;
+      const onlineTurnTitle = seatsMode === "2v2"
+        ? (displayTurnSeat === "parca" ? ui.title_waiting_parca : displayTurnSeat === "eles2" ? ui.title_waiting_eles2 : ui.title_waiting_eles1)
+        : ui.title_waiting_online;
       const targetText = ours
         ? ui.raise_them
         : rung === 0 ? ui.at_max
-        : !yours ? (isOnline ? ui.opponent_turn : ui.their_turn)
+        : !yours ? (isOnline ? onlineTurnText : ui.their_turn)
         : shout ? shout.toUpperCase() : ui.truco;
       if (truco.dataset.appliedText !== targetText) {
         if (typeof truco.animate === "function" && !still() && truco.isConnected && truco.clientHeight > 0 && truco.dataset.appliedText) {
@@ -1241,7 +1365,7 @@ _arenaMarkup: #"""
       }
       truco.title = ours
         ? ui.title_ours
-        : !yours ? (isOnline ? ui.title_waiting_online : ui.title_not_yours)
+        : !yours ? (isOnline ? onlineTurnTitle : ui.title_not_yours)
         : ui.title_raise;
     }
 
@@ -1258,7 +1382,7 @@ _arenaMarkup: #"""
       setText($("#btn-raise b"), maxed ? ui.at_max : wordOf(climb));
       setText($("#btn-raise small"), maxed ? ui.ceiling : ui.raise_to(climb));
     }
-    setText($("#btn-run small"), isEles ? ui.we_take(stood) : ui.they_take(stood));
+    setText($("#btn-run small"), ui.they_take(stood));
 
     // Read off the row rather than off the click, so the house's call shouts
     // the same way yours does. The first reading after a load is not a
@@ -1334,7 +1458,71 @@ _arenaMarkup: #"""
                           rawSaid.includes("ajeita") ||
                           rawSaid.includes("mesa");
 
-    if (oppTalk && oppBubble) {
+    const shoutWord = attrOf("data-shout-word");
+    const shoutFrom = attrOf("data-shout-from");
+    const shoutState = attrOf("data-shout-state");
+    const shoutKind = attrOf("data-shout-kind");
+    const shoutSeat = attrOf("data-shout-seat");
+
+    if (shoutState === "live" && shoutWord && shoutKind === "quick") {
+      const cat = globalThis.__prontoMessages ?? {};
+      const loc = screen.dataset.locale || "pt-BR";
+      const trans = (cat[loc] ?? cat["pt-BR"] ?? {})[shoutWord] ?? shoutWord;
+      const localized = trans.toUpperCase();
+      const shoutT = attrOf("data-shout-t") || "";
+      const shoutKey = `${shoutFrom}_${shoutWord}_${shoutT}`;
+
+      if (st.lastShoutSaid !== shoutKey) {
+        st.lastShoutSaid = shoutKey;
+        const isMyOwnShout = shoutSeat === getMySeat();
+        if (isMyOwnShout) {
+          const pWrap = $("#player-dialogue-wrap");
+          const pTalk = $("#player-talk");
+          if (pWrap && pTalk) {
+            setText(pTalk, `“${localized}”`);
+            pWrap.dataset.active = "no";
+            void pWrap.offsetWidth;
+            pWrap.dataset.active = "yes";
+            clearTimeout(st.playerQuickBubbleTimer);
+            st.playerQuickBubbleTimer = setTimeout(() => {
+              pWrap.dataset.active = "no";
+            }, 1800);
+          }
+        } else if (asked === "" && !closed) {
+          shout(localized, shoutFrom, "quick");
+        }
+      }
+      if (oppTalk && oppBubble && shoutFrom === "them") {
+        setText(oppTalk, `“${localized}”`);
+        if (oppBubble.style.display !== "block") oppBubble.style.display = "block";
+        clearTimeout(st.oppQuickBubbleTimer);
+        st.oppQuickBubbleTimer = setTimeout(() => {
+          if (attrOf("data-shout-state") === "live" && attrOf("data-shout-kind") === "quick") {
+            hush("quick", true);
+          }
+        }, 1800);
+      }
+    } else {
+      if (st.oppQuickBubbleTimer) {
+        clearTimeout(st.oppQuickBubbleTimer);
+        st.oppQuickBubbleTimer = null;
+      }
+      if (st.playerQuickBubbleTimer) {
+        clearTimeout(st.playerQuickBubbleTimer);
+        st.playerQuickBubbleTimer = null;
+      }
+      const pWrap = $("#player-dialogue-wrap");
+      if (pWrap && pWrap.dataset.active === "yes") pWrap.dataset.active = "no";
+      if (Boolean(st.lastShoutSaid)) {
+        st.lastShoutSaid = "";
+        hush("quick", true);
+        if (asked !== "") {
+          shout(wordOf(rung), sideOf(asked));
+        }
+      }
+    }
+
+    if (oppTalk && oppBubble && !(shoutState === "live" && shoutKind === "quick" && shoutFrom === "them")) {
       if (isPersonaLine && line) {
         setText(oppTalk, line);
         if (oppBubble.style.display !== "block") oppBubble.style.display = "block";
@@ -1368,7 +1556,7 @@ _arenaMarkup: #"""
 
     if (turnBadge) {
       const turnSeat = attrOf("data-turn-seat");
-      const isHisTurn = turnSeat.startsWith("eles");
+      const isHisTurn = Boolean(turnSeat) && !turnSeat.includes("{") && sideOf(turnSeat) !== "us";
       const targetDisplay = isHisTurn ? "block" : "none";
       if (turnBadge.style.display !== targetDisplay) {
         turnBadge.style.display = targetDisplay;
@@ -1388,7 +1576,7 @@ _arenaMarkup: #"""
         ? "over"
         : (hand() === null && !hasCards) ? "idle"
         : attrOf("data-result") !== "" ? "resolved"
-        : sideOf(asked) === "them" && asked !== "" ? "raised"
+        : asked !== "" && sideOf(asked) === "them" ? "raised"
         : yours || attrOf("data-calls").split(" ").includes("brink") ? "your-turn" : "waiting";
       if (play.dataset.phase !== targetPhase) {
         play.dataset.phase = targetPhase;
@@ -1415,29 +1603,26 @@ _arenaMarkup: #"""
     }
 
     animateRemainingHand();
+    } finally {
+      cachedMySeat = null;
+    }
   };
 
   // Whoever is on turn acts: you wait for a tap, the house answers on a beat.
-  const hand = () => screen.querySelector(".hand[data-round-id]");
-  const attrOf = (name) => hand()?.getAttribute(name) ?? "";
   const sideOf = (seat) => {
-    if (getMySeat() === "eles1") {
-      return (seat === "eles1" || seat === "eles2") ? "us" : "them";
-    }
-    return (seat === "you" || seat === "parca") ? "us" : "them";
+    if (!seat) return "";
+    const box = $(".matchbox");
+    const rawMode = box?.dataset.seats;
+    const mode = (rawMode && !rawMode.includes("{")) ? rawMode : "1v1";
+    const order = seatsOf(mode);
+    const my = getMySeat();
+    const sides = order.length === 6 ? ["us", "them", "others"] : ["us", "them"];
+    const seatIdx = order.indexOf(seat);
+    const myIdx = order.indexOf(my);
+    if (seatIdx === -1) throw new Error(`Unknown seat "${seat}" for seats mode "${mode}"`);
+    if (myIdx === -1) throw new Error(`Unknown mySeat "${my}" for seats mode "${mode}"`);
+    return sides[(seatIdx - myIdx + order.length) % sides.length];
   };
-
-  /* --- controls ---------------------------------------------------------- */
-
-  // Which option is in force: aria-checked follows the value the row binds.
-  // Openness, dismissal, Escape and focus return are the popover's own.
-  screen.querySelector('[data-picker="opponent"] [data-opt="online"]')?.addEventListener("click", () => {
-    const seed = getOrCreateRoomSeed();
-    startOnlineMatch(seed, "you", "Adversário Online");
-    updateInviteField();
-    const modal = $("#modal-online");
-    if (modal && !modal.matches(":popover-open")) modal.showPopover?.();
-  });
 
   /* --- posed frames ------------------------------------------------------ */
 
@@ -1476,25 +1661,34 @@ _arenaMarkup: #"""
 
   /* --- boot -------------------------------------------------------------- */
 
-  const getMySeat = () => {
-    const qOpp = new URLSearchParams(location.search).get("opponent");
-    const qSeat = new URLSearchParams(location.search).get("seat");
-    if (qOpp === "online" && qSeat) {
-      sessionStorage.setItem("truco-seat", qSeat);
-      return qSeat;
+  const getStoredHandle = () => {
+    for (const store of [sessionStorage, localStorage]) {
+      const h = store.getItem("truco-handle");
+      if (h === "{handle}") {
+        store.removeItem("truco-handle");
+        continue;
+      }
+      if (h) return h;
     }
-    const box = $(".matchbox");
-    if (box?.dataset.mySeat && !box.dataset.mySeat.includes("{")) return box.dataset.mySeat;
-    const sSeat = sessionStorage.getItem("truco-seat");
-    if (sSeat) return sSeat;
-    return "you";
+    return null;
   };
 
-  const updateSeatPerspective = () => {
-    screen.dataset.mySeat = getMySeat();
+  const setStoredHandle = (v) => {
+    if (!v || v === "{handle}") {
+      sessionStorage.removeItem("truco-handle");
+      localStorage.removeItem("truco-handle");
+      return;
+    }
+    sessionStorage.setItem("truco-handle", v);
+    localStorage.setItem("truco-handle", v);
+  };
+
+  updateSeatPerspective = () => {
+    const seat = getMySeat();
+    if (screen.dataset.mySeat !== seat) screen.dataset.mySeat = seat;
     const whoTitle = $("#seatbar-player-name") || $(".who b");
     const avatar = $("#seatbar-avatar") || $(".seatbar .avatar");
-    const custom = sessionStorage.getItem("truco-handle") || localStorage.getItem("truco-handle");
+    const custom = getStoredHandle();
     if (custom && custom.trim() && custom !== "Você" && custom !== "Vos" && custom !== "Tu") {
       if (whoTitle) setText(whoTitle, custom.trim());
       if (avatar) setText(avatar, custom.trim()[0].toUpperCase());
@@ -1509,24 +1703,71 @@ _arenaMarkup: #"""
 
   const getOrCreateRoomSeed = () => {
     const box = $(".matchbox");
-    if (box?.dataset.opponent === "online" && box.dataset.seed && !box.dataset.seed.includes("{") && box.dataset.seed !== "1") {
+    if (box?.dataset.opponent === "online" && box.dataset.seed && !box.dataset.seed.includes("{") && box.dataset.seed !== "1" && box.dataset.status !== "over") {
       return box.dataset.seed;
     }
-    let s = sessionStorage.getItem("truco-room-seed");
-    if (!s || s === "1") {
-      s = String(Math.floor(100000 + Math.random() * 900000));
-      sessionStorage.setItem("truco-room-seed", s);
+    const storageKey = "truco-room-seed";
+    const s = sessionStorage.getItem(storageKey);
+    const stale = Boolean(s && box?.dataset.status === "over" && box?.dataset.seed === s);
+    if (s && s !== "1" && !stale) {
+      return s;
     }
-    return s;
+    const fresh = String(Math.floor(100000 + Math.random() * 900000));
+    sessionStorage.setItem(storageKey, fresh);
+    return fresh;
   };
 
+  let selectedInviteSeat = "eles1";
   const updateInviteField = () => {
     const field = $("#invite-url-field");
     if (!field) return;
+    const box = $(".matchbox");
+    const isOnlineMatch = box?.dataset.opponent === "online";
+    const seatsMode = currentOnlineSeats(box);
+    const mySeat = getMySeat();
+
+    const modal = $("#modal-online");
+    if (modal) {
+      for (const b of modal.querySelectorAll(".btn-invite-seat")) {
+        const isSelf = b.dataset.seat === mySeat;
+        const is2v2Only = b.dataset.seat === "parca" || b.dataset.seat === "eles2";
+        if (isSelf || (isOnlineMatch && seatsMode === "1v1" && is2v2Only)) {
+          b.style.display = "none";
+          b.classList.remove("active");
+        } else {
+          b.style.display = "";
+        }
+      }
+    }
+
+    const allowed = ["you", "eles1", "parca", "eles2"].filter((s) => s !== mySeat);
+    if (isOnlineMatch && seatsMode === "1v1" && (selectedInviteSeat === "parca" || selectedInviteSeat === "eles2")) {
+      selectedInviteSeat = allowed[0];
+    } else if (selectedInviteSeat === mySeat) {
+      selectedInviteSeat = allowed[0];
+    }
+
+    if (modal) {
+      for (const b of modal.querySelectorAll(".btn-invite-seat")) {
+        b.classList.toggle("active", b.dataset.seat === selectedInviteSeat);
+      }
+    }
+
+    const is2v2 = seatsFor(selectedInviteSeat, seatsMode) === "2v2";
+    let targetSeat = selectedInviteSeat;
+    if (!is2v2 && selectedInviteSeat !== "you" && (mySeat === "eles1" || mySeat === "eles2")) {
+      targetSeat = "you";
+    }
     const seed = getOrCreateRoomSeed();
-    const isEles = getMySeat() === "eles1";
-    const targetSeat = isEles ? "you" : "eles1";
-    const url = `${location.origin}${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${targetSeat}`;
+    const curV = currentVariant();
+    if (curV === "douradinha" || curV === "douradao") {
+      field.value = "";
+      return;
+    }
+    const seatsParam = is2v2 ? "&seats=2v2" : "";
+    const variant = validateVariantForSeats(curV, is2v2 ? "2v2" : "1v1");
+    const variantParam = `&variant=${encodeURIComponent(variant)}`;
+    const url = `${location.origin}${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${targetSeat}${seatsParam}${variantParam}`;
     field.value = url;
   };
 
@@ -1542,25 +1783,27 @@ _arenaMarkup: #"""
   };
 
   const getMyPlayerId = () => {
-    let id = sessionStorage.getItem("truco-player-id");
+    let id = localStorage.getItem("truco-player-id") || sessionStorage.getItem("truco-player-id");
     const u = getSessionUser();
     if (u?.id && (!id || id.startsWith("p_"))) {
       id = u.id;
+      localStorage.setItem("truco-player-id", id);
       sessionStorage.setItem("truco-player-id", id);
     }
     if (!id) {
       id = u?.id || ("p_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7));
+      localStorage.setItem("truco-player-id", id);
       sessionStorage.setItem("truco-player-id", id);
     }
     return id;
   };
 
   const getMyHandle = () => {
-    let h = sessionStorage.getItem("truco-handle") || localStorage.getItem("truco-handle");
+    let h = getStoredHandle();
     if (!h) {
       const u = getSessionUser();
-      h = u?.handle || u?.name || "Truqueiro nato";
-      sessionStorage.setItem("truco-handle", h);
+      h = u?.handle || u?.name || `truqueiro-${Math.random().toString(36).slice(2, 6)}`;
+      setStoredHandle(h);
     }
     return h;
   };
@@ -1574,7 +1817,7 @@ _arenaMarkup: #"""
   };
 
   const sendLobbyHeartbeat = async () => {
-    if (typeof navigator !== "undefined" && !navigator.onLine) return;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
     const client = globalThis.__mechaClient;
     if (!client) return;
     const box = $(".matchbox");
@@ -1583,10 +1826,13 @@ _arenaMarkup: #"""
     const isPlaying = box?.dataset.status === "playing" && attrOf("data-result") === "";
     const myId = getMyPlayerId();
     const myHandle = getMyHandle();
+    const seatsMode = currentOnlineSeats(box);
     const payload = {
       id: myId,
       handle: myHandle,
       room_seed: seed,
+      variant: currentVariant(),
+      seats: seatsMode,
       status: (isOnlineMatch && isPlaying) ? "playing" : "waiting",
       updated_at: new Date().toISOString(),
     };
@@ -1599,51 +1845,61 @@ _arenaMarkup: #"""
     }
   };
 
+  const leaveLobby = async (force = false) => {
+    const client = globalThis.__mechaClient;
+    if (!client?.remove) return;
+    const box = $(".matchbox");
+    const isOnlineMatch = box?.dataset.opponent === "online";
+    const isPlaying = box?.dataset.status === "playing" && attrOf("data-result") === "";
+    if (!force && isOnlineMatch && isPlaying) return;
+    const myId = getMyPlayerId();
+    if (!myId) return;
+    const col = client.collections?.lobby;
+    const exists = col?.state?.has ? col.state.has(myId) : true;
+    if (exists) {
+      await client.remove("lobby", [myId]);
+    }
+  };
+
   const filterAndMarkRows = () => {
     const listEl = $("#lobby-players-list");
     if (!listEl) return;
     const rows = listEl.querySelectorAll(".lobby-player-row");
     const myId = getMyPlayerId();
     const myHandle = getMyHandle();
-    const seenIds = new Set();
-    const handleCounts = new Map();
-    const activeRows = [];
 
-    for (const row of rows) {
+    const rowData = Array.from(rows).map((row) => {
       const rowId = row.dataset.id;
-      const btn = row.querySelector(".btn-challenge");
-      const handleEl = row.querySelector(".player-handle");
-      const rawHandle = (row.dataset.handle || btn?.dataset?.handle || handleEl?.textContent || "").replace(/\s*\(Você\)\s*$/, "").replace(/\s*#[\w-]+\s*$/, "").trim();
+      const isMe = rowId === myId;
+      const handle = isMe ? myHandle : (row.dataset.handle || "");
+      return { row, rowId, isMe, handle };
+    });
 
-      if (!rowId || rowId.includes("{") || seenIds.has(rowId)) {
-        row.style.display = "none";
-        continue;
+    const handleCounts = new Map();
+    for (const { handle } of rowData) {
+      if (handle) {
+        handleCounts.set(handle, (handleCounts.get(handle) || 0) + 1);
       }
-      seenIds.add(rowId);
-
-      const isMe = (rowId === myId);
-      const activeHandle = isMe ? myHandle : rawHandle;
-      handleCounts.set(activeHandle, (handleCounts.get(activeHandle) || 0) + 1);
-      activeRows.push({ row, rowId, isMe, handle: activeHandle, handleEl, btn });
     }
 
-    for (const { row, rowId, isMe, handle, handleEl, btn } of activeRows) {
-      row.style.display = "";
+    for (const { row, rowId, isMe, handle } of rowData) {
       row.dataset.isMe = isMe ? "true" : "false";
-      const slug = getShortSlug(rowId);
-      const isDuplicate = (handleCounts.get(handle) || 0) > 1;
-      row.dataset.slug = slug;
-      row.dataset.hasConflict = isDuplicate ? "true" : "false";
-      if (slug) row.title = `${handle} (${slug})`;
 
+      const isDuplicate = (handleCounts.get(handle) || 0) > 1;
+      row.dataset.duplicate = isDuplicate ? "true" : "false";
+      const slug = getShortSlug(rowId);
       const slugPart = (isDuplicate && slug) ? ` #${slug}` : "";
       const label = isMe ? `${handle}${slugPart} (Você)` : `${handle}${slugPart}`;
+      row.title = slug ? `${handle} (${slug})` : handle;
+
+      const handleEl = row.querySelector(".player-handle");
       if (handleEl) setText(handleEl, label);
     }
   };
 
   let activeChallengeId = null;
   let activeChallengeTargetName = "";
+  let inFlightInsertPromise = null;
   let checkChallenges = () => {};
 
   const wireLobbyList = () => {
@@ -1651,19 +1907,45 @@ _arenaMarkup: #"""
     if (!listEl || listEl.dataset.wired) return;
     listEl.dataset.wired = "1";
 
+    const observer = new MutationObserver((mutations) => {
+      const hasRelevant = mutations.some((m) => {
+        if (m.type === "childList" && m.target === listEl) return true;
+        if (m.type === "attributes") {
+          return m.oldValue !== m.target.getAttribute(m.attributeName);
+        }
+        return false;
+      });
+      if (hasRelevant) filterAndMarkRows();
+    });
+    observer.observe(listEl, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeOldValue: true,
+      attributeFilter: ["data-id", "data-handle"],
+    });
+
     listEl.addEventListener("click", async (e) => {
       const btn = e.target.closest(".btn-challenge");
       if (!btn) return;
       const row = btn.closest(".lobby-player-row");
-      const targetId = btn.dataset.targetId || row?.dataset.id;
-      const targetHandle = (row?.dataset.handle || btn.dataset.handle || row?.querySelector(".player-handle")?.textContent || "Jogador").replace(/\s*\(Você\)\s*$/, "").trim();
-      const myId = getMyPlayerId();
+      if (!row) return;
 
-      if (!targetId || targetId.includes("{")) return;
-      if (targetId === myId) {
-        alert("Você não pode desafiar a si mesmo. Para testar dois jogadores no mesmo computador, abra uma Janela Anônima.");
-        return;
+      const myId = getMyPlayerId();
+      const targetId = row.dataset.id;
+      if (!targetId) throw new Error("Missing target player ID for challenge");
+      if (targetId === myId) return;
+
+      const client = globalThis.__mechaClient;
+      if (!client?.insert) {
+        throw new Error("Mecha client unavailable for challenge insert");
       }
+
+      const targetHandle = row.dataset.handle;
+      const targetVariant = validateVariantForSeats(currentVariant(), "1v1");
+      const slug = getShortSlug(targetId);
+      const isDuplicate = row.dataset.duplicate === "true";
+      const targetDisplay = (isDuplicate && slug) ? `${targetHandle} #${slug}` : targetHandle;
 
       const seed = String(Math.floor(100000 + Math.random() * 900000));
       const challengeId = `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
@@ -1677,7 +1959,7 @@ _arenaMarkup: #"""
 
       const overlay = $("#challenge-waiting-overlay");
       const targetNameEl = $("#waiting-target-name");
-      if (targetNameEl) setText(targetNameEl, `Desafiando ${targetHandle}...`);
+      if (targetNameEl) setText(targetNameEl, `Desafiando ${targetDisplay}...`);
       if (overlay) overlay.style.display = "flex";
 
       const payload = {
@@ -1686,18 +1968,30 @@ _arenaMarkup: #"""
         challenger_name: getMyHandle(),
         target_id: targetId,
         seed: seed,
+        variant: targetVariant,
         status: "pending",
         created_at: new Date().toISOString(),
       };
 
+      const insertPromise = client.insert("challenge", [payload]);
+      inFlightInsertPromise = insertPromise;
+
       try {
-        const client = globalThis.__mechaClient;
-        if (client?.insert) {
-          await client.insert("challenge", [payload]);
-        }
+        await insertPromise;
       } catch (err) {
-        if (overlay) overlay.style.display = "none";
+        if (activeChallengeId === challengeId) {
+          activeChallengeId = null;
+          activeChallengeTargetName = "";
+          if (overlay) overlay.style.display = "none";
+          if (modal && !modal.matches?.(":popover-open")) {
+            modal.showPopover();
+          }
+        }
         throw err;
+      } finally {
+        if (inFlightInsertPromise === insertPromise) {
+          inFlightInsertPromise = null;
+        }
       }
     });
 
@@ -1715,25 +2009,38 @@ _arenaMarkup: #"""
           activeChallengeId = null;
           activeChallengeTargetName = "";
           const client = globalThis.__mechaClient;
-          if (client?.update) {
-            await client.update("challenge", [{ key: cid, changes: { status: "declined" } }]);
+          if (!client?.update) throw new Error("Mecha client unavailable for challenge update");
+          if (inFlightInsertPromise) {
+            try {
+              await inFlightInsertPromise;
+            } catch {
+              return;
+            }
           }
+          await client.update("challenge", [{ key: cid, changes: { status: "declined" } }]);
         }
       });
     }
 
-    const client = globalThis.__mechaClient;
-    if (client?.collections?.lobby?.subscribeChanges) {
-      client.collections.lobby.subscribeChanges(() => filterAndMarkRows());
-    }
     filterAndMarkRows();
   };
 
-  const startOnlineMatch = (seed, seat, opponentName) => {
+  const startOnlineMatch = (seed, seat, opponentName, seats, variant = currentVariant()) => {
+    const box = $(".matchbox");
+    const currentSeats = currentOnlineSeats(box);
+    const targetSeats = seats || seatsFor(seat, currentSeats);
+    if (!seatsOf(targetSeats).includes(seat)) {
+      throw new Error(`Seat "${seat}" is not a valid player seat in seats mode "${targetSeats}"`);
+    }
+    const boxVariant = (box?.dataset?.variant && !box.dataset.variant.includes("{")) ? box.dataset.variant : undefined;
+    const targetVariant = validateVariantForSeats(variant || boxVariant || currentVariant(), targetSeats);
+    const seatsParam = targetSeats === "2v2" ? `&seats=2v2` : "";
+    const variantParam = `&variant=${encodeURIComponent(targetVariant)}`;
+    const newUrl = `${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${seat}${seatsParam}${variantParam}`;
+    sessionStorage.setItem("truco-room-seed", seed);
     sessionStorage.setItem("truco-seat", seat);
     const opp = opponentName || "opponent_online";
     sessionStorage.setItem("truco-opponent-name", opp);
-    const newUrl = `${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${seat}`;
     history.replaceState(null, "", newUrl);
 
     const modal = $("#modal-online");
@@ -1749,8 +2056,17 @@ _arenaMarkup: #"""
     if (btnSetSeat) {
       btnSetSeat.dispatchEvent(new CustomEvent("click", {
         bubbles: false,
-        detail: { seat, seed, opponent: "online", opponent_name: opp },
+        detail: { seat, seed, opponent: "online", opponent_name: opp, seats: targetSeats, variant: targetVariant },
       }));
+    }
+    const client = globalThis.__mechaClient;
+    if (client?.insert) {
+      client.insert("room_action", [{
+        id: `${seed}/touch/${seat}`,
+        room_seed: seed,
+        player_id: seat,
+        action: "touch_card",
+      }]).catch(() => {});
     }
     updateSeatPerspective();
   };
@@ -1763,18 +2079,29 @@ _arenaMarkup: #"""
     let currentIncoming = null;
 
     if (btnAccept) {
-      btnAccept.addEventListener("click", () => {
+      btnAccept.addEventListener("click", async () => {
         if (!currentIncoming) return;
         const challenge = currentIncoming;
+        const client = globalThis.__mechaClient;
+        if (!client?.update) throw new Error("Mecha client unavailable for challenge update");
+
+        await client.update("challenge", [{ key: challenge.id, changes: { status: "accepted" } }]);
+
         currentIncoming = null;
         if (banner) banner.style.display = "none";
-        startOnlineMatch(challenge.seed, "eles1", challenge.challenger_name);
+        startOnlineMatch(challenge.seed, "eles1", challenge.challenger_name, "1v1", challenge.variant);
       });
     }
 
     if (btnDecline) {
-      btnDecline.addEventListener("click", () => {
+      btnDecline.addEventListener("click", async () => {
         if (!currentIncoming) return;
+        const client = globalThis.__mechaClient;
+        if (!client?.update) throw new Error("Mecha client unavailable for challenge update");
+
+        const challenge = currentIncoming;
+        await client.update("challenge", [{ key: challenge.id, changes: { status: "declined" } }]);
+
         currentIncoming = null;
         if (banner) banner.style.display = "none";
         const modal = $("#modal-online");
@@ -1787,10 +2114,10 @@ _arenaMarkup: #"""
     let challengeSubscribed = false;
     const ensureChallengeSub = () => {
       if (challengeSubscribed) return;
+      challengeSubscribed = true;
       const client = globalThis.__mechaClient;
       if (client?.collections?.challenge?.subscribeChanges) {
         client.collections.challenge.subscribeChanges(() => checkChallenges());
-        challengeSubscribed = true;
       }
     };
 
@@ -1836,7 +2163,7 @@ _arenaMarkup: #"""
             activeChallengeId = null;
             activeChallengeTargetName = "";
             if (overlay) overlay.style.display = "none";
-            startOnlineMatch(seed, "you", opp);
+            startOnlineMatch(seed, "you", opp, "1v1", item.variant);
           } else if (item.status === "declined") {
             activeChallengeId = null;
             activeChallengeTargetName = "";
@@ -1894,25 +2221,22 @@ _arenaMarkup: #"""
     wireLobbyList();
     wireChallengeSync();
     wireRoomActionSync();
-    updateInviteField();
 
     const handleInput = $("#my-handle-input");
     if (handleInput) handleInput.value = getMyHandle();
 
-    let heartbeatDebounce = null;
     const saveHandle = async () => {
       if (!handleInput) return;
       const v = handleInput.value.trim();
       if (v) {
-        if (heartbeatDebounce) clearTimeout(heartbeatDebounce);
-        sessionStorage.setItem("truco-handle", v);
-        localStorage.setItem("truco-handle", v);
+        setStoredHandle(v);
         updateSeatPerspective();
-        await sendLobbyHeartbeat();
+        if (isOnline) {
+          await sendLobbyHeartbeat();
+        }
         filterAndMarkRows();
         if (btnSaveHandle) {
           btnSaveHandle.textContent = "✓ Salvo";
-          setTimeout(() => { if (btnSaveHandle) btnSaveHandle.textContent = "Salvar"; }, 2000);
         }
       }
     };
@@ -1931,55 +2255,122 @@ _arenaMarkup: #"""
       handleInput.addEventListener("input", () => {
         const v = handleInput.value.trim();
         if (v) {
-          sessionStorage.setItem("truco-handle", v);
-          localStorage.setItem("truco-handle", v);
+          setStoredHandle(v);
           updateSeatPerspective();
           filterAndMarkRows();
-          if (heartbeatDebounce) clearTimeout(heartbeatDebounce);
-          heartbeatDebounce = setTimeout(() => {
-            sendLobbyHeartbeat();
-          }, 600);
+        }
+        if (btnSaveHandle && btnSaveHandle.textContent !== "Salvar") {
+          btnSaveHandle.textContent = "Salvar";
         }
       });
       handleInput.addEventListener("change", saveHandle);
       handleInput.addEventListener("blur", saveHandle);
     }
 
-    const btnOpen = $("#btn-open-online");
-    if (btnOpen) {
-      btnOpen.addEventListener("click", () => {
+    let isOnline = false;
+
+    const setOnlineVisual = (online) => {
+      isOnline = online;
+      const toggle = $("#btn-toggle-online");
+      if (toggle) {
+        toggle.dataset.online = online ? "true" : "false";
+        toggle.setAttribute("aria-checked", online ? "true" : "false");
+      }
+      const openBtn = $("#btn-open-online");
+      if (openBtn) {
+        openBtn.dataset.online = online ? "true" : "false";
+      }
+    };
+
+    const goOnline = async () => {
+      setOnlineVisual(true);
+      if (handleInput) handleInput.value = getMyHandle();
+      await sendLobbyHeartbeat();
+      filterAndMarkRows();
+      updateInviteField();
+    };
+
+    const goOffline = async () => {
+      setOnlineVisual(false);
+      clearOnlineSession();
+      await leaveLobby(true);
+      filterAndMarkRows();
+      const box = $(".matchbox");
+      if (box?.dataset.opponent === "online") {
+        const btnSetSeat = $("#btn-set-seat");
+        if (btnSetSeat) {
+          btnSetSeat.dispatchEvent(new CustomEvent("click", {
+            bubbles: false,
+            detail: {
+              seat: "you",
+              seed: "1",
+              opponent: "nezinho",
+              opponent_name: "opponent_nezinho",
+              seats: "1v1",
+              variant: validateVariantForSeats(currentVariant(), "1v1"),
+            },
+          }));
+        }
+        updateSeatPerspective();
+      }
+    };
+
+    const btnToggleOnline = $("#btn-toggle-online");
+    if (btnToggleOnline) {
+      btnToggleOnline.addEventListener("click", async () => {
+        if (isOnline) {
+          await goOffline();
+        } else {
+          await goOnline();
+        }
+      });
+    }
+
+    modal.addEventListener("toggle", async (e) => {
+      if (e.newState === "open") {
         if (handleInput) handleInput.value = getMyHandle();
-        sendLobbyHeartbeat();
         filterAndMarkRows();
+        updateInviteField();
+        if (isOnline) {
+          await sendLobbyHeartbeat();
+        }
+      }
+    });
+
+    window.addEventListener("pagehide", () => {
+      leaveLobby();
+    });
+
+    for (const b of modal.querySelectorAll(".btn-invite-seat")) {
+      b.addEventListener("click", () => {
+        const seat = b.dataset.seat;
+        if (!seat) throw new Error("Missing data-seat on invite seat button");
+        selectedInviteSeat = seat;
         updateInviteField();
       });
     }
 
-    modal.addEventListener("toggle", (e) => {
-      if (e.newState === "open") {
-        if (handleInput) handleInput.value = getMyHandle();
-        sendLobbyHeartbeat();
-        filterAndMarkRows();
-        updateInviteField();
-      }
-    });
-
-    sendLobbyHeartbeat();
-
     $("#btn-copy-invite")?.addEventListener("click", () => {
+      const box = $(".matchbox");
+      const isOnlineMatch = box?.dataset.opponent === "online";
+      const seatsMode = currentOnlineSeats(box);
+      const targetSeats = seatsFor(selectedInviteSeat, seatsMode);
       const seed = getOrCreateRoomSeed();
-      startOnlineMatch(seed, "you", "Adversário Online");
+      const mySeat = getMySeat();
+      if (!isOnlineMatch || box?.dataset.status === "over" || box?.dataset.seed !== seed) {
+        startOnlineMatch(seed, mySeat, "Adversário Online", targetSeats, currentVariant());
+      }
       updateInviteField();
       const field = $("#invite-url-field");
       const status = $("#copy-status");
       if (field?.value) {
-        const fallback = () => { field.select(); document.execCommand("copy"); };
-        (navigator.clipboard ? navigator.clipboard.writeText(field.value) : Promise.reject())
-          .catch(fallback)
-          .finally(() => {
-            if (status) setText(status, "✓ Link copiado para a área de transferência!");
-            setTimeout(() => { if (status) setText(status, ""); }, 3000);
-          });
+        if (!navigator.clipboard?.writeText) {
+          throw new Error("Clipboard API unavailable");
+        }
+        navigator.clipboard.writeText(field.value).then(() => {
+          if (status) setText(status, "✓ Link copiado para a área de transferência!");
+          setTimeout(() => { if (status) setText(status, ""); }, 3000);
+        });
       }
     });
 
@@ -1988,25 +2379,85 @@ _arenaMarkup: #"""
       btnSubmit.addEventListener("click", () => {
         const input = $("#input-join-code");
         const err = $("#join-err");
+        const getJoinMsg = (k) => {
+          const loc = screen.dataset.locale || "pt-BR";
+          const cat = globalThis.__prontoMessages?.[loc];
+          if (!cat) throw new Error(`Missing message catalogue for locale "${loc}"`);
+          const msg = cat[k];
+          if (!msg) throw new Error(`Missing join message "${k}" for locale "${loc}"`);
+          return msg;
+        };
         const val = input ? input.value.trim() : "";
         if (!val) {
-          if (err) setText(err, "Por favor, digite ou cole um link ou código de mesa.");
+          if (err) setText(err, getJoinMsg("join_err_empty"));
           return;
         }
         let targetSeed = val;
         let seat = "eles1";
+        let seats = undefined;
+        let variant;
         if (val.includes("?")) {
           const u = new URL(val, location.origin);
           targetSeed = u.searchParams.get("seed") || u.searchParams.get("match") || targetSeed;
           seat = u.searchParams.get("seat") || seat;
+          seats = u.searchParams.get("seats") ? seatsFor(seat, u.searchParams.get("seats")) : undefined;
+          variant = u.searchParams.get("variant") || undefined;
         }
-        startOnlineMatch(targetSeed, seat);
+        const numSeed = Number(targetSeed);
+        if (!Number.isInteger(numSeed) || numSeed <= 0) {
+          if (err) setText(err, getJoinMsg("join_err_invalid"));
+          return;
+        }
+        const strSeed = String(numSeed);
+        const client = globalThis.__mechaClient;
+        if (!variant) {
+          const lobbyRows = Array.from(client?.collections?.lobby?.state?.values?.() || []);
+          const host = lobbyRows.find((r) => String(r.room_seed) === strSeed);
+          if (host?.variant) {
+            variant = host.variant;
+            if (!seats && host.seats) seats = host.seats;
+          }
+        }
+        if (!variant) {
+          if (err) setText(err, getJoinMsg("join_err_invalid"));
+          return;
+        }
+        const targetSeats = seats || seatsFor(seat, "1v1");
+        if (!val.includes("?") && targetSeats === "2v2") {
+          const roomActions = Array.from(client?.collections?.room_action?.state?.values?.() || [])
+            .filter((a) => String(a.room_seed) === strSeed);
+          const takenSeats = new Set(roomActions.map((a) => a.player_id).filter(Boolean));
+          const availableSeat = ["eles1", "parca", "eles2"].find((s) => !takenSeats.has(s));
+          if (availableSeat) {
+            seat = availableSeat;
+          } else {
+            if (err) setText(err, getJoinMsg("join_err_invalid"));
+            return;
+          }
+        }
+        if (!seatsOf(targetSeats).includes(seat)) {
+          if (err) setText(err, getJoinMsg("join_err_invalid"));
+          return;
+        }
+        if (err) setText(err, "");
+        let targetVariant;
+        try {
+          targetVariant = validateVariantForSeats(variant, targetSeats);
+        } catch {
+          if (err) setText(err, getJoinMsg("join_err_invalid"));
+          return;
+        }
+        startOnlineMatch(strSeed, seat, undefined, targetSeats, targetVariant);
       });
     }
 
+    updateInviteField();
+
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
-        sendLobbyHeartbeat();
+        if (isOnline && (navigator.onLine !== false)) {
+          sendLobbyHeartbeat();
+        }
       }
     });
   };
@@ -2019,7 +2470,7 @@ _arenaMarkup: #"""
     editBtn.dataset.wired = "1";
 
     const startEditing = () => {
-      const cur = sessionStorage.getItem("truco-handle") || localStorage.getItem("truco-handle") || "";
+      const cur = getStoredHandle() || "";
       input.value = cur;
       if (whoTitle) whoTitle.style.display = "none";
       editBtn.style.display = "none";
@@ -2031,17 +2482,15 @@ _arenaMarkup: #"""
     const stopEditing = (save) => {
       if (save) {
         const val = input.value.trim();
-        if (val) {
-          sessionStorage.setItem("truco-handle", val);
-          localStorage.setItem("truco-handle", val);
-        } else {
-          sessionStorage.removeItem("truco-handle");
-          localStorage.removeItem("truco-handle");
-        }
+        setStoredHandle(val);
         updateSeatPerspective();
         const handleInp = $("#my-handle-input");
         if (handleInp) handleInp.value = getMyHandle();
-        sendLobbyHeartbeat();
+        const toggle = $("#btn-toggle-online");
+        const isOnline = toggle?.dataset.online === "true" || box?.dataset.opponent === "online";
+        if (isOnline) {
+          sendLobbyHeartbeat();
+        }
         filterAndMarkRows();
       }
       input.style.display = "none";
@@ -2081,10 +2530,6 @@ _arenaMarkup: #"""
   // reload empties the store, and a write from a screen already replaced never
   // landed. The bound match id is the store's own answer, so the dealer asks
   // it before trusting its memory.
-  // A bound attribute still holds its "{field}" template until the region
-  // first renders, so every read off the DOM is filtered through this: an
-  // unresolved placeholder is not a value, it is the absence of one.
-  const bound = (v, fallback) => (!v || v.includes("{") ? fallback : v);
 
   const boundMatch = () => {
     const target = new URLSearchParams(location.search).get("match");
@@ -2122,11 +2567,33 @@ _arenaMarkup: #"""
     const qOpp = new URLSearchParams(location.search).get("opponent");
     const qSeed = new URLSearchParams(location.search).get("seed");
     const qSeat = new URLSearchParams(location.search).get("seat") || "you";
+    const qSeats = seatsFor(qSeat, new URLSearchParams(location.search).get("seats") || "1v1");
+    const qVariantRaw = new URLSearchParams(location.search).get("variant");
     if (qOpp === "online" && qSeed) {
+      let resolvedVariant = qVariantRaw;
+      if (!resolvedVariant) {
+        if (qSeat === "you") {
+          resolvedVariant = currentVariant();
+        } else {
+          const client = globalThis.__mechaClient;
+          const lobbyRows = Array.from(client?.collections?.lobby?.state?.values?.() || []);
+          const host = lobbyRows.find((r) => String(r.room_seed) === String(qSeed));
+          if (host?.variant) {
+            resolvedVariant = host.variant;
+          } else {
+            if (client?.collections?.lobby?.subscribeChanges && !screen.dataset.lobbySubscribedForOnline) {
+              screen.dataset.lobbySubscribedForOnline = "1";
+              client.collections.lobby.subscribeChanges(() => ensureOnlineMode());
+            }
+            return;
+          }
+        }
+      }
+      const qVariant = validateVariantForSeats(resolvedVariant, qSeats);
       const box = $(".matchbox");
       const opp = sessionStorage.getItem("truco-opponent-name") || "Adversário Online";
-      if (!box || box.dataset.seed !== qSeed || box.dataset.opponent !== "online" || box.dataset.mySeat !== qSeat) {
-        startOnlineMatch(qSeed, qSeat, opp);
+      if (!box || box.dataset.seed !== qSeed || box.dataset.opponent !== "online" || box.dataset.mySeat !== qSeat || box.dataset.seats !== qSeats || box.dataset.variant !== qVariant) {
+        startOnlineMatch(qSeed, qSeat, opp, qSeats, qVariant);
       }
     }
   };

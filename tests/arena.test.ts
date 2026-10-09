@@ -86,6 +86,12 @@ async function playOut(m: Mounted) {
   throw new Error(`hand ${from} never ended`);
 }
 
+const setOnlineTable = async (m: Mounted, seat: string = "you", seed: string = "424242") => {
+  await m.settle();
+  m.fire("#btn-set-seat", "click", { detail: { seat, seed, opponent: "online", opponent_name: "opponent_online" } });
+  await m.settle();
+};
+
 Deno.test({
   name: "the whole arena opens exactly one sitting",
   sanitizeOps: false,
@@ -1147,10 +1153,7 @@ Deno.test({
     await m.settle();
     m.fire(variantOption(m, "Truco Argentino"));
     await m.settle();
-    const opts = m.byRole("option", "Mesa Online");
-    assert(opts.length === 1, `expected 1 Mesa Online option, got ${opts.length}`);
-    m.fire(opts[0]);
-    await m.settle();
+    await setOnlineTable(m);
     assert(sitting(m).opponent === "online", `the table is still against ${sitting(m).opponent}`);
     const round = hand(m);
 
@@ -1707,11 +1710,7 @@ Deno.test({
   sanitizeResources: false,
   async fn() {
     const m = await table();
-    await m.settle();
-    const opts = m.byRole("option", "Mesa Online");
-    assert(opts.length === 1, `expected 1 Mesa Online option, got ${opts.length}`);
-    m.fire(opts[0]);
-    await m.settle();
+    await setOnlineTable(m);
     const match = sitting(m);
     assert(match.opponent === "online", `expected opponent 'online', got ${match.opponent}`);
     // The column carries a message key, not a sentence: a bot's name is app
@@ -1731,10 +1730,7 @@ Deno.test({
   sanitizeResources: false,
   async fn() {
     const m = await table();
-    await m.settle();
-    const opts = m.byRole("option", "Mesa Online");
-    m.fire(opts[0]);
-    await m.settle();
+    await setOnlineTable(m);
 
     const cards = playable(m);
     assert(cards.length === 3, `hand opened with ${cards.length} cards`);
@@ -1764,10 +1760,7 @@ Deno.test({
   sanitizeResources: false,
   async fn() {
     const m = await table();
-    await m.settle();
-    const opts = m.byRole("option", "Mesa Online");
-    m.fire(opts[0]);
-    await m.settle();
+    await setOnlineTable(m);
 
     m.fire("#btn-set-seat", "click", { detail: { seat: "eles1" } });
     await m.settle();
@@ -1809,10 +1802,7 @@ Deno.test({
   sanitizeResources: false,
   async fn() {
     const m = await table();
-    await m.settle();
-    const opts = m.byRole("option", "Mesa Online");
-    m.fire(opts[0]);
-    await m.settle();
+    await setOnlineTable(m);
 
     m.fire("#btn-truco");
     await m.settle();
@@ -1947,9 +1937,7 @@ Deno.test({
     const m = await table();
     await m.settle();
 
-    const opts = m.byRole("option", "Mesa Online");
-    m.fire(opts[0]);
-    await m.settle();
+    await setOnlineTable(m);
 
     let round = hand(m);
     assert(round.turn_seat === "you", `expected turn_seat you, got ${round.turn_seat}`);
@@ -2009,9 +1997,7 @@ Deno.test({
     const m = await table();
     await m.settle();
 
-    const opts = m.byRole("option", "Mesa Online");
-    m.fire(opts[0]);
-    await m.settle();
+    await setOnlineTable(m);
 
     let curr = sitting(m);
     assert(curr.opponent === "online", `expected opponent online, got ${curr.opponent}`);
@@ -2086,7 +2072,7 @@ Deno.test({
     assert(overMatch.them_score === "12", `expected them_score 12, got ${overMatch.them_score}`);
 
     const round = hand(m);
-    assert(round.said === "Você abandonou a partida.", `expected resignation said line, got ${round.said}`);
+    assert(round.said === "resigned_you", `expected resignation said line, got ${round.said}`);
     assert(round.result === "them", `expected round result them, got ${round.result}`);
     await m.stop();
   },
@@ -2100,9 +2086,7 @@ Deno.test({
     const m = await table();
     await m.settle();
 
-    const opts = m.byRole("option", "Mesa Online");
-    m.fire(opts[0]);
-    await m.settle();
+    await setOnlineTable(m);
 
     const curr = sitting(m);
     assert(curr.opponent === "online", `expected online opponent, got ${curr.opponent}`);
@@ -2126,9 +2110,7 @@ Deno.test({
     const m = await table();
     await m.settle();
 
-    const opts = m.byRole("option", "Mesa Online");
-    m.fire(opts[0]);
-    await m.settle();
+    await setOnlineTable(m);
 
     const curr = sitting(m);
     assert(curr.opponent === "online", `expected online opponent, got ${curr.opponent}`);
@@ -2347,8 +2329,7 @@ Deno.test({
     // person the house would be deciding for.
     const m = await table();
     await m.settle();
-    m.fire(m.byRole("option", "Mesa Online")[0]);
-    await m.settle();
+    await setOnlineTable(m);
     assert(sitting(m).opponent === "online", `the table is still against ${sitting(m).opponent}`);
     const round = await dealAt(m, "Truco Mineiro", 0, 10);
     assert((round.brink ?? "") === "", `an online table dealt a brink for "${round.brink}"`);
@@ -2616,8 +2597,1740 @@ Deno.test({
     await m.settle();
     const r = hand(m);
     assert(r.shout_done === "yes", `shout_done should be yes, got ${r.shout_done}`);
-    assert(r.shout_word === "CHAMA!", `shout_word should be CHAMA!, got ${r.shout_word}`);
+    assert(r.shout_word === "shout_chama", `shout_word should be shout_chama, got ${r.shout_word}`);
     assert((r.said ?? "").length > 0, "opponent should have responded with dialogue");
     await m.stop();
   },
 });
+
+// Regression rationale: online quick shouts must emit room_action over CDC without bot retorts, and remote shouts must trigger incoming speech and banner state.
+Deno.test({
+  name: "online quick shout emits room_action and remote shout updates round state",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    const s = sitting(m);
+    await m.store.update("match", s.id, { opponent: "online", seed: "998877" });
+    await m.settle();
+
+    m.fire("#shout-chama");
+    await m.settle();
+    const r = hand(m);
+    assert(r.shout_word === "shout_chama", `expected shout_chama, got ${r.shout_word}`);
+    assert(r.shout_from === "us", `expected shout_from us, got ${r.shout_from}`);
+
+    const actions = m.rows("room_action").filter((a: any) => a.room_seed === "998877");
+    const shoutAction = actions.find((a: any) => a.action === "shout");
+    assert(shoutAction, "expected room_action for shout");
+    assert(Number(shoutAction.slot) === 1, `expected slot 1 for shout-chama, got ${shoutAction.slot}`);
+
+    const remoteActId = `998877/h${r.hand_no}/shout/0001/eles1`;
+    await m.store.put("room_action", {
+      id: remoteActId,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 2,
+    });
+    await m.settle();
+
+    const rAfter = hand(m);
+    assert(rAfter.shout_word === "shout_manda", `expected shout_manda, got ${rAfter.shout_word}`);
+    assert(rAfter.shout_from === "them", `expected shout_from them, got ${rAfter.shout_from}`);
+    assert(rAfter.last_remote_shout.includes("eles1:1"), "expected last_remote_shout recorded");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: 2v2 multiplayer matches must rotate display_seat so each client views the table with their cards at the bottom ("you"), partner opposite ("parca"), and opponents on the flanks.
+Deno.test({
+  name: "multiplayer 2v2 online table configures 4 seats and rotates display_seat perspective relative to each client",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const mYou = await table();
+    await mYou.settle();
+    mYou.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "888111", opponent: "online", seats: "2v2" } });
+    await mYou.settle();
+
+    const mParca = await table();
+    await mParca.settle();
+    mParca.fire("#btn-set-seat", "click", { detail: { seat: "parca", seed: "888111", opponent: "online", seats: "2v2" } });
+    await mParca.settle();
+
+    const mEles2 = await table();
+    await mEles2.settle();
+    mEles2.fire("#btn-set-seat", "click", { detail: { seat: "eles2", seed: "888111", opponent: "online", seats: "2v2" } });
+    await mEles2.settle();
+
+    assert(sitting(mYou).seats === "2v2", `expected 2v2 seats for you, got ${sitting(mYou).seats}`);
+    assert(sitting(mParca).seats === "2v2", `expected 2v2 seats for parca, got ${sitting(mParca).seats}`);
+    assert(sitting(mEles2).seats === "2v2", `expected 2v2 seats for eles2, got ${sitting(mEles2).seats}`);
+
+    const heldYou = mYou.rows("held").filter((h: any) => h.current === "yes");
+    assert(heldYou.length === 12, `expected 12 held cards across 4 seats, got ${heldYou.length}`);
+
+    const parcaHeld = mParca.rows("held").filter((h: any) => h.current === "yes");
+    const parcaMyCards = parcaHeld.filter((h: any) => h.seat === "parca");
+    assert(parcaMyCards.every((h: any) => h.display_seat === "you"), "parca's cards must display as 'you'");
+    const parcaPartnerCards = parcaHeld.filter((h: any) => h.seat === "you");
+    assert(parcaPartnerCards.every((h: any) => h.display_seat === "parca"), "you's cards must display as 'parca' for partner");
+    const parcaEles2Cards = parcaHeld.filter((h: any) => h.seat === "eles2");
+    assert(parcaEles2Cards.every((h: any) => h.display_seat === "eles1"), "eles2 cards must display as 'eles1' for parca");
+
+    const eles2Held = mEles2.rows("held").filter((h: any) => h.current === "yes");
+    const eles2MyCards = eles2Held.filter((h: any) => h.seat === "eles2");
+    assert(eles2MyCards.every((h: any) => h.display_seat === "you"), "eles2 cards must display as 'you'");
+    const eles2PartnerCards = eles2Held.filter((h: any) => h.seat === "eles1");
+    assert(eles2PartnerCards.every((h: any) => h.display_seat === "parca"), "eles1 cards must display as 'parca' for eles2");
+
+    await mYou.stop();
+    await mParca.stop();
+    await mEles2.stop();
+  },
+});
+
+// Regression rationale: 2v2 online matches must rotate turns through all 4 seats (you -> eles1 -> parca -> eles2) via CDC room_actions.
+Deno.test({
+  name: "multiplayer 2v2 online matches rotate turns across you, eles1, parca, and eles2 via room_action",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "777222", opponent: "online", seats: "2v2" } });
+    await m.settle();
+
+    let r = hand(m);
+    assert(r.turn_seat === "you", `expected turn you, got ${r.turn_seat}`);
+
+    const myCards = playable(m);
+    assert(myCards.length === 3, `expected 3 playable cards for you, got ${myCards.length}`);
+    const card1 = myCards[0].getAttribute("data-card");
+    m.fire(myCards[0]);
+    await m.settle();
+
+    const myAction = m.rows("room_action").find((a: any) => a.action === "play_card" && a.player_id === "you");
+    assert(myAction !== undefined, "expected room_action from you");
+    assert(myAction.card === card1, `expected card ${card1}, got ${myAction.card}`);
+
+    r = hand(m);
+    assert(r.turn_seat === "eles1", `expected turn eles1, got ${r.turn_seat}`);
+
+    const eles1Held = m.rows("held").filter((h: any) => h.seat === "eles1" && h.current === "yes");
+    const card2 = eles1Held[0].card;
+    await m.store.put("room_action", {
+      id: `777222/h1/v1/eles1/card`,
+      room_seed: "777222",
+      player_id: "eles1",
+      action: "play_card",
+      card: card2,
+      slot: 0,
+    });
+    await m.settle();
+
+    r = hand(m);
+    assert(r.turn_seat === "parca", `expected turn parca, got ${r.turn_seat}`);
+
+    const parcaHeld = m.rows("held").filter((h: any) => h.seat === "parca" && h.current === "yes");
+    const card3 = parcaHeld[0].card;
+    await m.store.put("room_action", {
+      id: `777222/h1/v1/parca/card`,
+      room_seed: "777222",
+      player_id: "parca",
+      action: "play_card",
+      card: card3,
+      slot: 0,
+    });
+    await m.settle();
+
+    r = hand(m);
+    assert(r.turn_seat === "eles2", `expected turn eles2, got ${r.turn_seat}`);
+
+    const eles2Held = m.rows("held").filter((h: any) => h.seat === "eles2" && h.current === "yes");
+    const card4 = eles2Held[0].card;
+    await m.store.put("room_action", {
+      id: `777222/h1/v1/eles2/card`,
+      room_seed: "777222",
+      player_id: "eles2",
+      action: "play_card",
+      card: card4,
+      slot: 0,
+    });
+    await m.settle();
+
+    const rodada1Plays = m.rows("play").filter((p: any) => p.kind === "card" && p.vaza === "1");
+    assert(rodada1Plays.length === 4, `expected 4 plays in rodada 1, got ${rodada1Plays.length}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: in 2v2 online matches, partner (parca) calling truco and opponent partner (eles2) accepting must be correctly recognized by all seats across room_action CDC.
+Deno.test({
+  name: "multiplayer 2v2 online allows remote partner (parca) to call truco and remote opponent (eles2) to accept",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "555333", opponent: "online", seats: "2v2" } });
+    await m.settle();
+
+    const myCards = playable(m);
+    m.fire(myCards[0]);
+    await m.settle();
+
+    const eles1Held = m.rows("held").filter((h: any) => h.seat === "eles1" && h.current === "yes");
+    await m.store.put("room_action", {
+      id: `555333/h1/v1/eles1/card`,
+      room_seed: "555333",
+      player_id: "eles1",
+      action: "play_card",
+      card: eles1Held[0].card,
+      slot: 0,
+    });
+    await m.settle();
+
+    let r = hand(m);
+    assert(r.turn_seat === "parca", `expected turn parca, got ${r.turn_seat}`);
+
+    await m.store.put("room_action", {
+      id: `555333/h1/v1/parca/truco/4`,
+      room_seed: "555333",
+      player_id: "parca",
+      action: "truco",
+      card: "",
+      slot: 4,
+    });
+    await m.settle();
+
+    r = hand(m);
+    assert(r.asked === "parca", `expected asked parca, got ${r.asked}`);
+    assert(r.shout_from === "us", `expected shout_from us, got ${r.shout_from}`);
+
+    await m.store.put("room_action", {
+      id: `555333/h1/v1/eles2/accept/4`,
+      room_seed: "555333",
+      player_id: "eles2",
+      action: "accept",
+      card: "",
+      slot: 4,
+    });
+    await m.settle();
+
+    r = hand(m);
+    assert(r.asked === "", `expected asked cleared after accept, got ${r.asked}`);
+    assert(Number(r.stake) === 4, `expected stake 4 after truco accept, got ${r.stake}`);
+    assert(r.shout_from === "them", `expected shout_from them, got ${r.shout_from}`);
+    assert(Number(sitting(m).stake) === 4, `expected match stake 4, got ${sitting(m).stake}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: remote opponent running in response to truco in 2v2 online matches must settle the hand with runner side folded and stake restored to rung before call, outranking any concurrent accept.
+Deno.test({
+  name: "multiplayer 2v2 online processes remote opponent run answering truco and restores pre-call stake",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "555334", opponent: "online", seats: "2v2" } });
+    await m.settle();
+
+    const myCards = playable(m);
+    m.fire(myCards[0]);
+    await m.settle();
+
+    const eles1Held = m.rows("held").filter((h: any) => h.seat === "eles1" && h.current === "yes");
+    await m.store.put("room_action", {
+      id: "555334/h1/v1/eles1/card",
+      room_seed: "555334",
+      player_id: "eles1",
+      action: "play_card",
+      card: eles1Held[0].card,
+      slot: 0,
+    });
+    await m.settle();
+
+    await m.store.put("room_action", {
+      id: "555334/h1/v1/parca/truco/4",
+      room_seed: "555334",
+      player_id: "parca",
+      action: "truco",
+      card: "",
+      slot: 4,
+    });
+    await m.settle();
+
+    let r = hand(m);
+    assert(r.asked === "parca", `expected asked parca, got ${r.asked}`);
+
+    // Remote opponent eles2 runs answering truco
+    await m.store.put("room_action", {
+      id: "555334/h1/v1/eles2/run/4",
+      room_seed: "555334",
+      player_id: "eles2",
+      action: "run",
+      card: "",
+      slot: 0,
+    });
+    await m.settle();
+
+    const r1 = m.rows("round").find((r: any) => r.id.endsWith("/s555334/h1"));
+    assert(r1 !== undefined, "hand 1 round row not found");
+    assert(r1.ran === "them", `expected hand 1 ran them, got ${r1.ran}`);
+    assert(r1.result === "us", `expected hand 1 result us, got ${r1.result}`);
+    assert(Number(r1.stake) === 2, `expected stake restored to 2 before truco call, got ${r1.stake}`);
+    assert(Number(sitting(m).us_score) === 2, `expected match us_score 2, got ${sitting(m).us_score}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: shouting or receiving a remote shout while modo_oculta is armed must not cancel hidden mode; the card must still be played face down (encoberta, power 0).
+Deno.test({
+  name: "shouting while encobrir is armed preserves oculta mode and card is laid face down",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    const myHeld = m.rows("held").filter((h) => h.seat === "you" && h.current === "yes");
+    assert(myHeld.length === 3, "expected 3 cards for you");
+
+    m.fire("#btn-encobrir");
+    await m.settle();
+    let r = hand(m);
+    assert(r.oculta === "yes", "expected encobrir armed");
+
+    m.fire("#shout-chama");
+    await m.settle();
+    r = hand(m);
+    assert(r.shout_word === "shout_chama", "expected shout shout_chama");
+    assert(r.oculta === "yes", "expected oculta preserved across shout");
+
+    m.fire(`#seat-you button[data-card='${myHeld[0].card}']`);
+    await m.settle();
+
+    const played = m.rows("play").filter((p) => p.seat === "you" && p.kind === "card");
+    assert(played.length === 1, "expected 1 played card");
+    assert(played[0].said === "encoberta", `expected said encoberta, got ${played[0].said}`);
+    assert(Number(played[0].power) === 0, `expected power 0, got ${played[0].power}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: remote shouts with unknown slots or malformed IDs from untrusted peers must be ignored rather than crashing the client for every player in the room.
+Deno.test({
+  name: "remote quick shout with out-of-range slot or malformed id is ignored without crashing table",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    const r = hand(m);
+
+    const invalidActId = `998877/h${r.hand_no}/shout/0001/eles1`;
+    await m.store.put("room_action", {
+      id: invalidActId,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 9,
+    });
+    await m.store.put("room_action", {
+      id: `998877/h${r.hand_no}/x/eles1`,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 0,
+    });
+    await m.settle();
+
+    assert(hand(m).shout_state !== "live", "malformed shout should not become live");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: remote shout mutation must not preempt or drop concurrent local button clicks or card plays.
+Deno.test({
+  name: "remote quick shout arrival does not drop user card play event",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    const r = hand(m);
+    const myHeld = m.rows("held").filter((h) => h.seat === "you" && h.current === "yes");
+
+    await m.store.put("room_action", {
+      id: `998877/h${r.hand_no}/shout/0001/eles1`,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 1,
+    });
+
+    m.fire(`#seat-you button[data-card='${myHeld[0].card}']`);
+    await m.settle();
+
+    const plays = m.rows("play").filter((p) => p.seat === "you" && p.kind === "card");
+    assert(plays.length === 1, "expected card play to be processed without being dropped by shout");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: In 2v2 online match, when one opponent has shouted multiple times, another player's first shout must not be ignored due to ID comparison.
+Deno.test({
+  name: "2v2 remote shouts across different players are processed without being shadowed by higher sequence",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    const r = hand(m);
+
+    for (let seq = 1; seq <= 3; seq++) {
+      await m.store.put("room_action", {
+        id: `998877/h${r.hand_no}/shout/${String(seq).padStart(4, "0")}/eles1`,
+        room_seed: "998877",
+        player_id: "eles1",
+        action: "shout",
+        card: "",
+        slot: 1,
+      });
+      await m.settle();
+    }
+    assert(hand(m).last_remote_shout.includes("eles1:3"), "expected eles1:3 in last_remote_shout");
+
+    await m.store.put("room_action", {
+      id: `998877/h${r.hand_no}/shout/0001/parca`,
+      room_seed: "998877",
+      player_id: "parca",
+      action: "shout",
+      card: "",
+      slot: 2,
+    });
+    await m.settle();
+
+    const rAfter = hand(m);
+    assert(rAfter.shout_word === "shout_manda", `expected parca shout_manda, got ${rAfter.shout_word}`);
+    assert(rAfter.last_remote_shout.includes("parca:1"), "expected parca:1 in last_remote_shout");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: shouting while said is your_turn or match over must not clear said back to empty after shout closes.
+Deno.test({
+  name: "quick shout does not overwrite or clear round.said during your_turn",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    await m.settle();
+    const r = hand(m);
+    const originalSaid = r.said;
+    assert(originalSaid === "lead_your_turn" || originalSaid === "your_turn", `expected said=lead_your_turn or your_turn, got ${originalSaid}`);
+
+    m.fire("#shout-chama");
+    await m.settle();
+
+    const rShouting = hand(m);
+    assert(rShouting.shout_word === "shout_chama", "expected shout_chama");
+    assert(rShouting.said === originalSaid, `said should remain ${originalSaid} during shout, got ${rShouting.said}`);
+
+    m.fire(m.screen, "close_shout");
+    await m.settle();
+
+    const rAfter = hand(m);
+    assert(rAfter.shout_state === "gone", "expected shout_state gone");
+    assert(rAfter.said === originalSaid, `said should still be ${originalSaid} after shout closes, got ${rAfter.said}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: remote accept for previous rung must not auto-accept a subsequent raise in the same hand.
+Deno.test({
+  name: "remote accept for previous rung does not answer subsequent raise",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    const r = hand(m);
+
+    await m.store.put("room_action", {
+      id: `998877/h${r.hand_no}/v1/eles1/accept/2`,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "accept",
+      card: "",
+      slot: 0,
+    });
+
+    m.fire("#btn-truco");
+    await m.settle();
+    const rAsked = hand(m);
+    assert(rAsked.asked === "you", "expected truco asked by you");
+    const rungTruco = Number(rAsked.rung);
+    assert(rungTruco > 2, `expected truco rung > 2, got ${rungTruco}`);
+
+    assert(rAsked.shout_kind !== "accept", "truco should remain pending without being answered by old accept");
+
+    await m.store.put("room_action", {
+      id: `998877/h${r.hand_no}/v1/eles1/accept/${rungTruco}`,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "accept",
+      card: "",
+      slot: 0,
+    });
+    await m.settle();
+
+    const rAccepted = hand(m);
+    assert(rAccepted.asked === "", "expected truco accepted when matching rung accept arrives");
+    assert(rAccepted.shout_kind === "accept", "expected shout_kind accept");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: Playing an oculta card online must emit /card/oculta and remote client must lay it with power 0 and said encoberta.
+Deno.test({
+  name: "playing oculta card online syncs power 0 and encoberta to remote client",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    const r = hand(m);
+
+    m.fire("#btn-encobrir");
+    await m.settle();
+
+    const myHeld = m.rows("held").filter((h) => h.seat === "you" && h.current === "yes");
+    const cardToPlay = myHeld[0];
+
+    m.fire(`#seat-you button[data-card='${cardToPlay.card}']`);
+    await m.settle();
+
+    const localPlay = m.rows("play").find((p) => p.seat === "you" && p.kind === "card");
+    assert(localPlay.power === "0", `expected power 0, got ${localPlay.power}`);
+    assert(localPlay.said === "encoberta", `expected said encoberta, got ${localPlay.said}`);
+
+    const actions = m.rows("room_action").filter((a) => a.player_id === "you" && a.action === "play_card");
+    assert(actions.length === 1, "expected 1 play_card action");
+    assert(actions[0].id.endsWith("/card/oculta"), `expected actId ending with /card/oculta, got ${actions[0].id}`);
+    assert(actions[0].card === "", `expected oculta action card to be empty string for secrecy, got ${actions[0].card}`);
+
+    await m.stop();
+
+    const mRemote = await table();
+    await setOnlineTable(mRemote, "eles1", "998877");
+    const rRemote = hand(mRemote);
+
+    await mRemote.store.put("room_action", {
+      id: `998877/h${rRemote.hand_no}/v1/you/card/oculta`,
+      room_seed: "998877",
+      player_id: "you",
+      action: "play_card",
+      card: cardToPlay.card,
+      slot: Number(cardToPlay.slot ?? 0),
+    });
+    await mRemote.settle();
+
+    const remotePlay = mRemote.rows("play").find((p) => p.seat === "you" && p.kind === "card");
+    assert(remotePlay, "expected remote card play to be recorded");
+    assert(remotePlay.power === "0", `expected remote play power 0, got ${remotePlay.power}`);
+    assert(remotePlay.said === "encoberta", `expected remote play said encoberta, got ${remotePlay.said}`);
+
+    await mRemote.stop();
+  },
+});
+
+// Regression rationale: AGENTS.md no fallback paths: Setting 1v1 seats when active match is douradinha must throw loudly rather than silently demoting to mineiro.
+Deno.test({
+  name: "dourado variant with 1v1 seats throws loudly without fallback per AGENTS.md",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire(variantOption(m, "Douradinha"));
+    await m.settle();
+    assert(sitting(m).variant === "douradinha", `expected douradinha, got ${sitting(m).variant}`);
+
+    let threw = false;
+    try {
+      m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "888111", opponent: "online", seats: "1v1" } });
+      await m.settle();
+    } catch {
+      threw = true;
+    }
+    assert(threw, "expected btn-set-seat to throw loudly when seats mode is incompatible with douradinha");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: Switching seat in the same room preserves match hand_no and swaps scores only when flipping sides, avoiding replaying room actions.
+Deno.test({
+  name: "switching seat preserves match progress and inverts scores only when flipping sides",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "555123", opponent: "online", seats: "2v2" } });
+    await m.settle();
+
+    await m.store.patch("match", [{ key: sitting(m).id, changes: { hand_no: "2", us_score: "9", them_score: "3" } }]);
+    await m.settle();
+    assert(sitting(m).hand_no === "2", "expected hand_no 2");
+    assert(sitting(m).us_score === "9", "expected us_score 9");
+
+    m.fire("#btn-set-seat", "click", { detail: { seat: "eles1", seed: "555123", opponent: "online", seats: "2v2" } });
+    await m.settle();
+
+    assert(sitting(m).my_seat === "eles1", `expected seat eles1, got ${sitting(m).my_seat}`);
+    assert(sitting(m).hand_no === "2", `expected hand_no 2 preserved, got ${sitting(m).hand_no}`);
+    assert(sitting(m).us_score === "3", `expected us_score 3 for flipped side, got ${sitting(m).us_score}`);
+    assert(sitting(m).them_score === "9", `expected them_score 9 for flipped side, got ${sitting(m).them_score}`);
+
+    m.fire("#btn-set-seat", "click", { detail: { seat: "eles2", seed: "555123", opponent: "online", seats: "2v2" } });
+    await m.settle();
+    assert(sitting(m).my_seat === "eles2", `expected seat eles2, got ${sitting(m).my_seat}`);
+    assert(sitting(m).hand_no === "2", `expected hand_no 2 preserved, got ${sitting(m).hand_no}`);
+    assert(sitting(m).us_score === "3", `expected us_score 3 preserved for partner side, got ${sitting(m).us_score}`);
+    assert(sitting(m).them_score === "9", `expected them_score 9 preserved for partner side, got ${sitting(m).them_score}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: Dealing a round via deal event must not mark peer's live shouts as seen, allowing shouts sent before deal to be received.
+Deno.test({
+  name: "deal event initializes empty last_remote_shout so peer live shouts are not dropped",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "777222", opponent: "online", seats: "1v1" } });
+    await m.settle();
+
+    m.fire("#btn-next", "click");
+    await m.settle();
+
+    const r = hand(m);
+    assert(r.last_remote_shout === "", `expected empty last_remote_shout on deal, got ${r.last_remote_shout}`);
+
+    await m.store.put("room_action", {
+      id: `777222/h${r.hand_no}/shout/0001/eles1`,
+      room_seed: "777222",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 1,
+    });
+    await m.settle();
+
+    const rAfter = hand(m);
+    assert(rAfter.shout_word === "shout_chama", `expected shout_chama, got ${rAfter.shout_word}`);
+    assert(rAfter.last_remote_shout.includes("eles1:1"), "expected last_remote_shout to record eles1:1");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: btn-set-seat must reject invalid seeds (non-integer, <= 0) and throw loudly per AGENTS.md rather than falling back silently.
+Deno.test({
+  name: "btn-set-seat with invalid seed throws loudly per AGENTS.md",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+
+    let threw = false;
+    try {
+      m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "invalid_seed", opponent: "online" } });
+      await m.settle();
+    } catch (err: any) {
+      threw = true;
+      assert(err.message.includes("Invalid room seed"), `expected invalid seed error, got ${err.message}`);
+    }
+    assert(threw, "expected invalid seed to throw loudly");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: btn-set-seat must update opponent_name when a challenge changes the opponent label.
+Deno.test({
+  name: "btn-set-seat updates opponent_name when seat matches or changes",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "888111", opponent: "online", opponent_name: "Adversário Online" } });
+    await m.settle();
+    assert(sitting(m).opponent_name === "Adversário Online", "initial opponent_name should be Adversário Online");
+
+    m.fire("#btn-set-seat", "click", { detail: { seat: "eles1", seed: "888111", opponent: "online", opponent_name: "Ana" } });
+    await m.settle();
+    assert(sitting(m).opponent_name === "Ana", `expected opponent_name Ana, got ${sitting(m).opponent_name}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: In 2v2 online game, teammate (parca on 'us') quick shout must be recorded and processed from 'us'.
+Deno.test({
+  name: "2v2 online teammate quick shout displays in central banner",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "654321", opponent: "online", seats: "2v2" } });
+    await m.settle();
+
+    const r = hand(m);
+    await m.store.put("room_action", {
+      id: `654321/h${r.hand_no}/shout/0001/parca`,
+      room_seed: "654321",
+      player_id: "parca",
+      action: "shout",
+      card: "",
+      slot: 1,
+    });
+    await m.settle();
+
+    const rAfter = hand(m);
+    assert(rAfter.shout_done === "yes", "expected shout_done yes");
+    assert(rAfter.shout_from === "us", `expected shout_from us, got ${rAfter.shout_from}`);
+    assert(rAfter.shout_word === "shout_chama", `expected shout_word shout_chama, got ${rAfter.shout_word}`);
+    assert(rAfter.last_remote_shout.includes("parca:1"), "expected last_remote_shout to include parca:1");
+
+    await m.stop();
+  },
+});
+// Regression rationale: btn-set-seat must reject seats not present in SEATS[targetSeats] (e.g. parca on 1v1).
+Deno.test({
+  name: "btn-set-seat rejects seats not present in SEATS mode",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+
+    let threw = false;
+    try {
+      m.fire("#btn-set-seat", "click", { detail: { seat: "parca", seed: "888111", opponent: "online", seats: "1v1" } });
+      await m.settle();
+    } catch (err: any) {
+      threw = true;
+      assert(err.message.includes("does not exist in seats mode"), `expected seat mode error, got ${err.message}`);
+    }
+    assert(threw, "expected invalid seat for mode to throw loudly");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: btn-set-seat must accept variant via detail and reject douradinha for non-six-seat tables.
+Deno.test({
+  name: "btn-set-seat accepts variant via detail and rejects douradinha for non-six-seat tables",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "888222", opponent: "online", variant: "paulista" } });
+    await m.settle();
+    assert(sitting(m).variant === "paulista", `expected variant paulista, got ${sitting(m).variant}`);
+
+    let threw = false;
+    try {
+      m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "888223", opponent: "online", variant: "douradinha", seats: "1v1" } });
+      await m.settle();
+    } catch (err: any) {
+      threw = true;
+      assert(err.message.includes("is only supported in \"2v2v2\" seats mode"), `expected douradinha error, got ${err.message}`);
+    }
+    assert(threw, "expected douradinha for 1v1 to throw loudly");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: local quick shout clicks must be refused while round is busy with call or result (including close/run/accept shouts) to avoid clobbering game-over or call shouts.
+Deno.test({
+  name: "quick shout clicks are refused when round is busy with result or non-quick live shout",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    const s = sitting(m);
+    await m.store.update("match", s.id, { opponent: "online", seed: "998877" });
+    await m.settle();
+
+    m.fire("#btn-truco");
+    await m.settle();
+
+    const rCall = hand(m);
+    assert(rCall.asked === "you", `expected asked to be you, got ${rCall.asked}`);
+
+    m.fire("#shout-chama");
+    await m.settle();
+
+    const rAfter = hand(m);
+    assert(rAfter.shout_word !== "shout_chama", `expected quick shout to be refused while call is asked, got ${rAfter.shout_word}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: local shout sequence must be tracked monotonically from room_action rows for each hand.
+Deno.test({
+  name: "quick shout tracks sequence monotonically in room_action IDs",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    await m.settle();
+
+    m.fire("#shout-chama");
+    await m.settle();
+
+    const actions1 = m.rows("room_action").filter((a: any) => a.action === "shout" && a.player_id === "you");
+    assert(actions1.length === 1, `expected 1 shout action, got ${actions1.length}`);
+    assert(actions1[0].id.includes("/shout/0001/you"), `expected sequence 1 in action id, got ${actions1[0].id}`);
+
+    m.fire("#shout-manda");
+    await m.settle();
+
+    const actions2 = m.rows("room_action").filter((a: any) => a.action === "shout" && a.player_id === "you");
+    assert(actions2.length === 2, `expected 2 shout actions, got ${actions2.length}`);
+    assert(actions2[1].id.includes("/shout/0002/you"), `expected sequence 2 in action id, got ${actions2[1].id}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: remote quick shouts arriving while round is busy are dropped and do not replay after the call resolves.
+Deno.test({
+  name: "remote quick shouts arriving while round is busy are dropped and do not replay later",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    await m.settle();
+
+    m.fire("#btn-truco");
+    await m.settle();
+
+    const rAsked = hand(m);
+    assert(rAsked.asked === "you", "expected truco asked by you");
+
+    await m.store.put("room_action", {
+      id: `998877/h${rAsked.hand_no}/shout/0001/eles1`,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 1,
+    });
+    await m.settle();
+
+    assert(hand(m).last_remote_shout.includes("eles1:1"), "expected last_remote_shout advanced while busy");
+    assert(hand(m).shout_word !== "shout_chama", "expected busy round to not display remote shout");
+
+    await m.store.put("room_action", {
+      id: `998877/h${rAsked.hand_no}/v1/eles1/accept/4`,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "accept",
+      card: "",
+      slot: 4,
+    });
+    await m.settle();
+
+    assert(hand(m).asked === "", "expected truco accepted");
+    assert(hand(m).shout_word !== "shout_chama", "expected dropped shout not to replay after call resolves");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: mid-hand seat change on the same match preserves cards in hand and plays on felt without redealing.
+Deno.test({
+  name: "mid-hand seat change preserves cards in hand and on felt without redealing",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    await m.settle();
+
+    const roundBefore = hand(m);
+    const initialHeld = m.rows("held").filter((h) => h.round_id === roundBefore.id && h.current === "yes");
+    assert(initialHeld.length > 0, "expected dealt cards");
+
+    m.fire(".card[data-slot='0']");
+    await m.settle();
+
+    const playsBefore = m.rows("play").filter((p) => p.round_id === roundBefore.id && p.kind === "card");
+    assert(playsBefore.length === 1, "expected one played card on felt");
+
+    m.fire("#btn-set-seat", "click", { detail: { seat: "eles1", seed: "998877", opponent: "online", opponent_name: "opponent_online" } });
+    await m.settle();
+
+    const roundAfter = hand(m);
+    assert(roundAfter.id === roundBefore.id, "expected round id unchanged on seat swap");
+    const playsAfter = m.rows("play").filter((p) => p.round_id === roundAfter.id && p.kind === "card");
+    assert(playsAfter.length === 1, "expected played card still on felt");
+    const heldAfter = m.rows("held").filter((h) => h.round_id === roundAfter.id && h.current === "yes");
+    const slot0Held = heldAfter.find((h) => h.seat === "you" && h.slot === "0");
+    assert(!slot0Held, "played card must not return to hand as current held card");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: 2v2v2 seat change rotates scores across all three sides.
+Deno.test({
+  name: "2v2v2 seat swap rotates scores across all three sides",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "554433", opponent: "nezinho", opponent_name: "opponent_nezinho", seats: "2v2v2", variant: "douradinha" } });
+    await m.settle();
+
+    const currentMatch = sitting(m);
+    await m.store.patch("match", [{
+      key: currentMatch.id,
+      changes: {
+        us_score: "2",
+        them_score: "4",
+        others_score: "6",
+      },
+    }]);
+    await m.settle();
+
+    m.fire("#btn-set-seat", "click", { detail: { seat: "eles2", seed: "554433", opponent: "nezinho", opponent_name: "opponent_nezinho", seats: "2v2v2", variant: "douradinha" } });
+    await m.settle();
+
+    const updated = sitting(m);
+    assert(updated.us_score === "6", `expected new us_score to be 6, got ${updated.us_score}`);
+    assert(updated.them_score === "2", `expected new them_score to be 2, got ${updated.them_score}`);
+    assert(updated.others_score === "4", `expected new others_score to be 4, got ${updated.others_score}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: quick shouts arriving during a call when an earlier hand had a call are dropped without replaying.
+Deno.test({
+  name: "quick shouts during pending call with prior hand truco are dropped and do not replay",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "998877");
+    await m.settle();
+
+    await m.store.put("room_action", {
+      id: "998877/h1/v1/eles1/truco/3",
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "truco",
+      card: "",
+      slot: 3,
+    });
+    await m.settle();
+
+    m.fire("#btn-truco");
+    await m.settle();
+
+    const r = hand(m);
+    assert(r.asked === "you", "expected truco asked by you");
+
+    await m.store.put("room_action", {
+      id: `998877/h${r.hand_no}/shout/0001/eles1`,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 1,
+    });
+    await m.settle();
+
+    assert(hand(m).last_remote_shout.includes("eles1:1"), "expected last_remote_shout saved despite prior hand truco");
+    assert(hand(m).shout_word !== "shout_chama", "expected shout suppressed while busy");
+
+    await m.store.put("room_action", {
+      id: `998877/h${r.hand_no}/v1/eles1/accept/4`,
+      room_seed: "998877",
+      player_id: "eles1",
+      action: "accept",
+      card: "",
+      slot: 4,
+    });
+    await m.settle();
+
+    assert(hand(m).asked === "", "expected truco accepted");
+    assert(hand(m).shout_word !== "shout_chama", "expected stale shout not to replay after call resolution");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: when multiple quick shouts arrive in a single batch, the latest shout is shown and older ones do not flash for a single frame.
+Deno.test({
+  name: "batch of remote quick shouts displays the latest shout and marks preceding shouts as seen",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "882211");
+    await m.settle();
+
+    const r = hand(m);
+    await m.store.put("room_action", {
+      id: `882211/h${r.hand_no}/shout/0001/eles1`,
+      room_seed: "882211",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 1, // CHAMA
+    });
+    await m.store.put("room_action", {
+      id: `882211/h${r.hand_no}/shout/0002/eles1`,
+      room_seed: "882211",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 2, // MANDA VIR
+    });
+    await m.settle();
+
+    const h = hand(m);
+    assert(h.shout_word === "shout_manda", `expected latest shout_manda, got ${h.shout_word}`);
+    assert(h.last_remote_shout.includes("eles1:2"), "expected both shouts marked seen up to seq 2");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: remote quick shout arriving after match is over must not replace match conclusion winner banner.
+Deno.test({
+  name: "in-flight quick shout arriving after match ends does not overwrite match conclusion banner",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "773322");
+    await m.settle();
+
+    // Resign match to trigger game over
+    m.fire("#btn-resign");
+    await m.settle();
+
+    assert(sitting(m).status === "over", "match should be over");
+    assert(hand(m).shout_kind === "close", `expected close shout kind, got ${hand(m).shout_kind}`);
+
+    // Remote quick shout arrives after game is over
+    await m.store.put("room_action", {
+      id: "773322/h1/shout/0001/eles1",
+      room_seed: "773322",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 1,
+    });
+    await m.settle();
+
+    assert(hand(m).shout_kind === "close", `shout kind should remain close, got ${hand(m).shout_kind}`);
+    assert(hand(m).shout_word !== "shout_chama", "shout word should not be replaced by quick shout");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: remote quick shout after opponent played a card must be displayed and not consumed silently.
+Deno.test({
+  name: "remote quick shout after card play in hand is displayed",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "665544");
+    await m.settle();
+
+    const r = hand(m);
+    // eles1 plays card in vaza 1
+    await m.store.put("room_action", {
+      id: `665544/h${r.hand_no}/v1/eles1/card`,
+      room_seed: "665544",
+      player_id: "eles1",
+      action: "play_card",
+      card: "4♣",
+      slot: 0,
+    });
+    await m.settle();
+
+    // Now eles1 shouts Chama
+    await m.store.put("room_action", {
+      id: `665544/h${r.hand_no}/shout/0001/eles1`,
+      room_seed: "665544",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 1,
+    });
+    await m.settle();
+
+    const h = hand(m);
+    assert(h.shout_word === "shout_chama", `expected shout_chama to be displayed, got ${h.shout_word}`);
+    assert(h.last_remote_shout.includes("eles1:1"), "expected shout recorded in last_remote_shout");
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: rejoining an online match that has finished must restart play (status 'playing') rather than staying over.
+Deno.test({
+  name: "rejoining online match after match over restarts play",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "332211");
+    await m.settle();
+
+    const currentMatch = sitting(m);
+    await m.store.patch("match", [{
+      key: currentMatch.id,
+      changes: {
+        status: "over",
+        winner: "us",
+        us_score: "12",
+        them_score: "6",
+        current: "yes",
+      },
+    }]);
+    await m.settle();
+
+    // Rejoin the same match seed via btn-set-seat
+    m.fire("#btn-set-seat", "click", {
+      detail: {
+        seat: "you",
+        seed: "332211",
+        opponent: "online",
+        opponent_name: "opponent_online",
+        seats: "1v1",
+        variant: "mineiro",
+      },
+    });
+    await m.settle();
+
+    const updated = sitting(m);
+    assert(updated.status === "playing", `expected status playing, got ${updated.status}`);
+    assert(updated.winner === "", `expected winner cleared, got ${updated.winner}`);
+    assert(updated.us_score === "0", `expected us_score 0, got ${updated.us_score}`);
+    assert(updated.them_score === "0", `expected them_score 0, got ${updated.them_score}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: non-numeric shout room_action id does not crash seqOfShout or local quick shout.
+Deno.test({
+  name: "malformed shout id in room_action does not crash local quick shout",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "221144");
+    await m.settle();
+
+    const r = hand(m);
+    await m.store.put("room_action", {
+      id: `221144/h${r.hand_no}/shout/x/eles1`,
+      room_seed: "221144",
+      player_id: "eles1",
+      action: "shout",
+      card: "",
+      slot: 1,
+    });
+    await m.settle();
+
+    // Local player clicks shout-chama
+    m.fire("#shout-chama");
+    await m.settle();
+
+    const h = hand(m);
+    assert(h.shout_word === "shout_chama", `expected local shout_chama, got ${h.shout_word}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: rotating seat perspective swaps envido_us and envido_them and rotates envido_result.
+Deno.test({
+  name: "rotating seat perspective rotates envido_result and swaps envido scores",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "554433");
+    await m.settle();
+
+    const r = hand(m);
+    await m.store.patch("round", [{
+      key: r.id,
+      changes: {
+        envido_result: "us",
+        envido_us: 29,
+        envido_them: 24,
+      },
+    }]);
+    await m.settle();
+
+    // Switch viewer seat to eles1 (swaps us and them)
+    m.fire("#btn-set-seat", "click", {
+      detail: {
+        seat: "eles1",
+        seed: "554433",
+        opponent: "online",
+        opponent_name: "opponent_online",
+        seats: "1v1",
+        variant: "mineiro",
+      },
+    });
+    await m.settle();
+
+    const updated = hand(m);
+    assert(updated.envido_result === "them", `expected envido_result them, got ${updated.envido_result}`);
+    assert(updated.envido_us === 24, `expected envido_us 24, got ${updated.envido_us}`);
+    assert(updated.envido_them === 29, `expected envido_them 29, got ${updated.envido_them}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: missing or unknown variant in table throws loudly without fallback paths.
+Deno.test({
+  name: "unknown variant throws loudly without fallback path",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "665544");
+    await m.settle();
+
+    const currentMatch = sitting(m);
+    await m.store.patch("match", [{
+      key: currentMatch.id,
+      changes: {
+        variant: "nonexistent_variant",
+      },
+    }]);
+    let threw = false;
+    try {
+      await m.settle();
+    } catch {
+      threw = true;
+    }
+    assert(threw, "expected unknown variant to throw error loudly");
+    await m.stop();
+  },
+});
+
+// Regression rationale: changing seat perspective in table handler must rotate rodada verdicts v1, v2, v3.
+Deno.test({
+  name: "seat switch rotates rodada verdicts v1, v2, v3",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "778899");
+    await m.settle();
+
+    const r = hand(m);
+    await m.store.patch("round", [{
+      key: r.id,
+      changes: {
+        v1: "us",
+        v2: "them",
+        v3: "draw",
+      },
+    }]);
+    await m.settle();
+
+    m.fire("#btn-set-seat", "click", {
+      detail: {
+        seat: "eles1",
+        seed: "778899",
+        opponent: "online",
+        opponent_name: "opponent_online",
+        seats: "1v1",
+        variant: "mineiro",
+      },
+    });
+    await m.settle();
+
+    const updated = hand(m);
+    assert(updated.v1 === "them", `expected v1 them, got ${updated.v1}`);
+    assert(updated.v2 === "us", `expected v2 us, got ${updated.v2}`);
+    assert(updated.v3 === "draw", `expected v3 draw, got ${updated.v3}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: invalid seat names must be rejected loudly without fallback paths.
+Deno.test({
+  name: "btn-set-seat rejects invalid seat loudly",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "889900");
+    await m.settle();
+
+    let threw = false;
+    let errorMessage = "";
+    try {
+      m.fire("#btn-set-seat", "click", {
+        detail: {
+          seat: "eles3",
+          seed: "889900",
+          opponent: "online",
+          opponent_name: "opponent_online",
+          seats: "2v2v2",
+          variant: "douradinha",
+        },
+      });
+      await m.settle();
+    } catch (err) {
+      threw = true;
+      errorMessage = (err as Error).message;
+    }
+    assert(threw, "expected invalid seat eles3 to throw");
+    assert(
+      errorMessage.includes("is not a valid player seat in seats mode"),
+      `expected seat error message, got: ${errorMessage}`,
+    );
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: played card rows must carry display_seat mapped to viewer seat perspective.
+Deno.test({
+  name: "played cards carry display_seat mapped to viewer seat",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "eles1", "332211");
+    await m.settle();
+
+    // From eles1's perspective: it is you's turn initially. Opponent 'you' plays a card via btn-bot-play.
+    const youHeld = m.rows("held").filter((h) => h.seat === "you" && h.current === "yes");
+    m.fire("#btn-bot-play", "click", { detail: { card: youHeld[0].card } });
+    await m.settle();
+
+    // The card played by 'you' should have display_seat 'eles1' from viewer eles1's perspective.
+    const oppPlay = m.rows("play").find((p) => p.kind === "card" && p.seat === "you");
+    assert(oppPlay, "expected played card row for opponent 'you'");
+    assert(oppPlay.display_seat === "eles1", `expected display_seat eles1 for opponent play, got ${oppPlay.display_seat}`);
+
+    // Now turn is eles1's. eles1 plays their card.
+    const p2Cards = playable(m);
+    assert(p2Cards.length === 3, "expected playable cards for eles1");
+    m.fire(p2Cards[0]);
+    await m.settle();
+
+    const myPlay = m.rows("play").find((p) => p.kind === "card" && p.seat === "eles1");
+    assert(myPlay, "expected played card row for eles1");
+    assert(myPlay.display_seat === "you", `expected display_seat you for local player play, got ${myPlay.display_seat}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: remote partner resign in 2v2 online must report resigned_partner to avoid blaming the opponent or local player.
+Deno.test({
+  name: "2v2 online partner resign reports resigned_partner to player",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "556677");
+    await m.settle();
+
+    const match = sitting(m);
+    await m.store.patch("match", [{
+      key: match.id,
+      changes: { seats: "2v2" },
+    }]);
+    await m.settle();
+
+    // Partner 'parca' posts a resign room_action
+    await m.store.put("room_action", {
+      id: `${match.seed}/resign/parca`,
+      room_seed: String(match.seed),
+      player_id: "parca",
+      action: "resign",
+      card: "",
+      slot: 0,
+    });
+    await m.settle();
+
+    const round = hand(m);
+    assert(round.said === "resigned_partner", `expected resigned_partner for partner resign, got ${round.said}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: subsequent quick shout in a round must reset shout_done to 'no' so close_shout re-arms.
+Deno.test({
+  name: "subsequent quick shout resets shout_done and arms close_shout",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "667788");
+    await m.settle();
+
+    // First shout
+    m.fire("#shout-chama");
+    await m.settle();
+
+    const rClosed = hand(m);
+    assert(rClosed.shout_done === "yes", `expected shout_done yes, got ${rClosed.shout_done}`);
+
+    // Second shout in same hand resets shout_done to 'no' while live
+    m.fire("#shout-manda");
+    await m.quiet();
+
+    const r2 = hand(m);
+    assert(r2.shout_done === "no", `expected shout_done reset to no, got ${r2.shout_done}`);
+    assert(r2.shout_state === "live", `expected shout_state live, got ${r2.shout_state}`);
+
+    await m.settle();
+    const r2Closed = hand(m);
+    assert(r2Closed.shout_done === "yes", `expected shout_done yes after settle, got ${r2Closed.shout_done}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: switching seats mid-hand must update display_seat on cards already on the felt.
+Deno.test({
+  name: "seat switch updates display_seat on existing played cards",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "778899");
+    await m.settle();
+
+    // Play a card as 'you'
+    const cards = playable(m);
+    m.fire(cards[0]);
+    await m.settle();
+
+    let play = m.rows("play").find((p) => p.kind === "card" && p.seat === "you");
+    assert(play, "expected played card row for 'you'");
+    assert(play.display_seat === "you", `expected display_seat you, got ${play.display_seat}`);
+
+    // Switch viewer seat to eles1 in 1v1
+    m.fire("#btn-set-seat", "click", {
+      detail: {
+        seat: "eles1",
+        seed: "778899",
+        opponent: "online",
+        opponent_name: "opponent_online",
+        seats: "1v1",
+        variant: "mineiro",
+      },
+    });
+    await m.settle();
+
+    play = m.rows("play").find((p) => p.kind === "card" && p.seat === "you");
+    assert(play.display_seat === "eles1", `expected display_seat eles1 after switching to eles1, got ${play.display_seat}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: seat and variant helper definitions must stay synchronized between table.js and arena.cue.
+Deno.test({
+  name: "seat and variant helper definitions stay synchronized between handler and screen",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const handler = await Deno.readTextFile(new URL("shell/handlers/table.js", APP));
+    const screen = await Deno.readTextFile(new URL("arena.cue", APP));
+    const css = await Deno.readTextFile(new URL("shell/screens/arena.css", APP));
+
+    for (const seatMode of ["1v1", "2v2", "2v2v2"]) {
+      assert(handler.includes(`"${seatMode}"`), `table.js missing seat mode ${seatMode}`);
+      assert(screen.includes(`"${seatMode}"`), `arena.cue missing seat mode ${seatMode}`);
+    }
+    assert(handler.includes("douradinha") && handler.includes("douradao"), "table.js missing 2v2v2 variants");
+    assert(screen.includes("douradinha") && screen.includes("douradao"), "arena.cue missing 2v2v2 variants");
+
+    // data-ran attribute must be bound on .hand article in arena.cue
+    assert(screen.includes('data-ran="{ran}"'), "arena.cue .hand must bind data-ran=\"{ran}\"");
+
+    // isRoundBusy busy conditions must check the 7 states in table.js
+    for (const cond of [
+      "asked",
+      "envido_asked",
+      "result",
+      'phase === "result"',
+      "ran",
+      'said === "ran"',
+      'shout_state === "live"',
+    ]) {
+      assert(handler.includes(cond), `table.js isRoundBusy missing condition ${cond}`);
+    }
+    assert(screen.includes("player-dialogue-wrap"), "arena.cue missing player dialogue wrap rendering");
+
+    // arena.css must have ordinal content for vaza and scoped 1v1 label for eles1
+    assert(css.includes('& .log .v::after { content: "ª"; }'), "arena.css missing log ordinal symbol");
+    assert(css.includes(':not(:has(.matchbox[data-seats="2v2"]))'), "arena.css missing 1v1 scope for eles1 perspective");
+  },
+});
+
+// Regression rationale: in 2v2 online truco either partner on the defending side may accept, run, or counter-raise.
+Deno.test({
+  name: "2v2 online truco answering allows either defending partner to answer",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "778899");
+    await m.settle();
+
+    const currentMatch = sitting(m);
+    await m.store.patch("match", [{
+      key: currentMatch.id,
+      changes: { seats: "2v2" },
+    }]);
+    await m.settle();
+
+    // Call truco as local player 'you'
+    m.fire("#btn-truco");
+    await m.settle();
+
+    const r1 = hand(m);
+    assert(r1.asked === "you", `expected asked you, got ${r1.asked}`);
+
+    // Opponent partner 'eles2' answers; should succeed because eles2 is on defending side
+    const eles2Accept = {
+      id: `${currentMatch.seed}/h1/v1/eles2/accept/${r1.rung}`,
+      room_seed: String(currentMatch.seed),
+      player_id: "eles2",
+      action: "accept",
+      card: "",
+      slot: r1.rung,
+    };
+    await m.store.put("room_action", eles2Accept);
+    await m.settle();
+
+    const rAnswered = hand(m);
+    assert(rAnswered.asked === "", `expected asked cleared after defending partner answer, got ${rAnswered.asked}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: local and remote resign must schedule close_shout so the win banner does not stay permanently.
+Deno.test({
+  name: "resign schedules close_shout and closes shout on match end",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "334455");
+    await m.settle();
+
+    m.fire("#btn-resign");
+    await m.settle();
+
+    const rResigned = hand(m);
+    assert(rResigned.shout_state === "gone", `expected shout_state gone after settle, got ${rResigned.shout_state}`);
+    assert(rResigned.shout_done === "yes", `expected shout_done yes after settle, got ${rResigned.shout_done}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: switching seat perspective mid-hand must rotate brink obligations if set.
+Deno.test({
+  name: "seat switch rotates brink side obligation",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "445566");
+    await m.settle();
+
+    const r = hand(m);
+    await m.store.patch("round", [{
+      key: r.id,
+      changes: {
+        brink: "us",
+      },
+    }]);
+    await m.settle();
+
+    m.fire("#btn-set-seat", "click", {
+      detail: {
+        seat: "eles1",
+        seed: "445566",
+        opponent: "online",
+        opponent_name: "opponent_online",
+        seats: "1v1",
+        variant: "mineiro",
+      },
+    });
+    await m.settle();
+
+    const updated = hand(m);
+    assert(updated.brink === "them", `expected brink to rotate to them, got ${updated.brink}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: in 2v2v2 online tables with 3 sides, truco answering resolves next answering seat without throwing theOther error.
+Deno.test({
+  name: "2v2v2 online truco answering resolves next answering seat across 3 sides",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "778899");
+    await m.settle();
+
+    const curr = sitting(m);
+    await m.store.patch("match", [{
+      key: curr.id,
+      changes: { seats: "2v2v2", variant: "douradao" },
+    }]);
+    await m.settle();
+
+    const r = hand(m);
+    await m.store.patch("round", [{
+      key: r.id,
+      changes: { asked: "you", rung: "2" },
+    }]);
+    await m.settle();
+
+    await m.store.put("room_action", {
+      id: `${curr.seed}/h1/v1/eles1/accept/2`,
+      room_seed: String(curr.seed),
+      player_id: "eles1",
+      action: "accept",
+      card: "",
+      slot: 2,
+    });
+    await m.settle();
+
+    const updated = hand(m);
+    assert(updated.asked === "", `expected asked to clear, got ${updated.asked}`);
+    assert(updated.stake === "2", `expected stake to be 2, got ${updated.stake}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: win shout remains live on round result even if an earlier shout set shout_done to yes.
+Deno.test({
+  name: "hand win shout remains live even after prior close_shout in same hand",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await setOnlineTable(m, "you", "889900");
+    await m.settle();
+
+    const r = hand(m);
+    await m.store.patch("round", [{
+      key: r.id,
+      changes: {
+        shout_done: "yes",
+        shout_state: "gone",
+        result: "us",
+        phase: "result",
+      },
+    }]);
+    await m.settle();
+
+    const r1 = m.rows("round").find((x) => x.id === r.id);
+    assert(r1?.shout_state === "live", `expected win shout to be live on r1, got ${r1?.shout_state}`);
+    assert(r1?.shout_kind === "win", `expected shout_kind win on r1, got ${r1?.shout_kind}`);
+
+    await m.stop();
+  },
+});
+
+// Regression rationale: btn-set-seat must reject rule changes (variant or seats) for an active online room to prevent corrupting room actions across clients.
+Deno.test({
+  name: "btn-set-seat rejects rule changes for active online room loudly per AGENTS.md",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await table();
+    await m.settle();
+    m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "667788", opponent: "online", variant: "mineiro", seats: "1v1" } });
+    await m.settle();
+
+    let threw = false;
+    try {
+      m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed: "667788", opponent: "online", variant: "paulista", seats: "1v1" } });
+      await m.settle();
+    } catch {
+      threw = true;
+    }
+    assert(threw, "expected btn-set-seat to throw loudly when attempting to change variant on active online room");
+    await m.stop();
+  },
+});
+
+
+
+
+

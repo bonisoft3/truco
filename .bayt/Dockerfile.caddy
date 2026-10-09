@@ -26,50 +26,15 @@ COPY --from=plugins_omnishell-runtime-image interpreter/vendor/ses.umd.min.js /o
 COPY --chmod=755 --from=tarampampam/microcheck:1@sha256:79c187c05bfa67518078bf4db117771942fa8fe107dc79a905861c75ddf28dfa /bin/httpcheck /usr/local/bin/httpcheck
 COPY docker/Caddyfile /etc/caddy/Caddyfile
 COPY .cert[s] /certs/
-COPY shell/index.html /srv/shell/index.html
-COPY shell/shell.css /srv/shell/shell.css
-COPY shell/boot.js /srv/shell/boot.js
-COPY offline-first-sw.js /srv/offline-first-sw.js
-COPY shell/shell.yaml /srv/shell/shell.yaml
-COPY shell/shell.json /srv/shell/shell.json
-COPY shell/design.css /srv/shell/design.css
-COPY shell/screens/arena.html /srv/shell/screens/arena.html
-COPY shell/screens/arena.css /srv/shell/screens/arena.css
-COPY shell/screens/regras.html /srv/shell/screens/regras.html
-COPY shell/screens/regras.css /srv/shell/screens/regras.css
-COPY shell/handlers/seats2.js /srv/shell/handlers/seats2.js
-COPY shell/handlers/sitting.js /srv/shell/handlers/sitting.js
-COPY shell/handlers/spun.js /srv/shell/handlers/spun.js
-COPY shell/handlers/stake0.js /srv/shell/handlers/stake0.js
-COPY shell/handlers/table.js /srv/shell/handlers/table.js
-COPY shell/handlers/variant2.js /srv/shell/handlers/variant2.js
-COPY shell/handlers/variant3.js /srv/shell/handlers/variant3.js
-COPY shell/shared/table.css /srv/shell/shared/table.css
-COPY messages/pt-BR.json /srv/messages/pt-BR.json
-COPY messages/es-AR.json /srv/messages/es-AR.json
-COPY messages/es-UY.json /srv/messages/es-UY.json
-COPY messages/es-PY.json /srv/messages/es-PY.json
-COPY messages/ca-ES.json /srv/messages/ca-ES.json
+COPY --parents shell/index.html shell/shell.css shell/boot.js offline-first-sw.js shell/shell.yaml shell/shell.json shell/design.css shell/screens/arena.html shell/screens/arena.css shell/screens/regras.html shell/screens/regras.css shell/handlers/seats2.js shell/handlers/sitting.js shell/handlers/spun.js shell/handlers/stake0.js shell/handlers/table.js shell/handlers/variant2.js shell/handlers/variant3.js shell/shared/table.css messages/pt-BR.json messages/es-AR.json messages/es-UY.json messages/es-PY.json messages/ca-ES.json /srv/
 COPY documents/ar/reglas/index.html /srv/ar/reglas/index.html
 COPY documents/ca/regles/index.html /srv/ca/regles/index.html
 COPY documents/py/reglas/index.html /srv/py/reglas/index.html
 COPY documents/regras/index.html /srv/regras/index.html
 COPY documents/uy/reglas/index.html /srv/uy/reglas/index.html
-COPY shell/assets/bigode.png /srv/shell/assets/bigode.png
-COPY shell/assets/cida.png /srv/shell/assets/cida.png
-COPY shell/assets/jordi.png /srv/shell/assets/jordi.png
-COPY shell/assets/nezinho.png /srv/shell/assets/nezinho.png
-COPY shell/assets/osvaldo.png /srv/shell/assets/osvaldo.png
-COPY shell/assets/tabare.png /srv/shell/assets/tabare.png
-COPY shell/assets/tiao.png /srv/shell/assets/tiao.png
-COPY shell/assets/tiao_queijo.png /srv/shell/assets/tiao_queijo.png
-COPY shell/assets/xiru.png /srv/shell/assets/xiru.png
-COPY brief.html /srv/docs/brief.html
-COPY ir.html /srv/docs/ir.html
-COPY acceptance.md /srv/docs/acceptance.md
-COPY DESIGN.md /srv/docs/DESIGN.md
-COPY robots.txt /srv/robots.txt
-COPY sitemap.xml /srv/sitemap.xml
+COPY --parents shell/assets/bigode.png shell/assets/cida.png shell/assets/jordi.png shell/assets/nezinho.png shell/assets/osvaldo.png shell/assets/tabare.png shell/assets/tiao.png shell/assets/tiao_queijo.png shell/assets/xiru.png /srv/
+COPY --parents brief.html ir.html acceptance.md DESIGN.md /srv/docs/
+COPY --parents robots.txt sitemap.xml /srv/
 COPY --parents docker/Caddyfile shell/index.html shell/shell.css shell/boot.js offline-first-sw.js shell/shell.yaml shell/shell.json shell/design.css shell/screens/arena.html shell/screens/arena.css shell/screens/regras.html shell/screens/regras.css shell/handlers/seats2.js shell/handlers/sitting.js shell/handlers/spun.js shell/handlers/stake0.js shell/handlers/table.js shell/handlers/variant2.js shell/handlers/variant3.js shell/shared/table.css messages/pt-BR.json messages/es-AR.json messages/es-UY.json messages/es-PY.json messages/ca-ES.json documents/ar/reglas/index.html documents/ca/regles/index.html documents/py/reglas/index.html documents/regras/index.html documents/uy/reglas/index.html shell/assets/bigode.png shell/assets/cida.png shell/assets/jordi.png shell/assets/nezinho.png shell/assets/osvaldo.png shell/assets/tabare.png shell/assets/tiao.png shell/assets/tiao_queijo.png shell/assets/xiru.png brief.html ir.html acceptance.md DESIGN.md robots.txt sitemap.xml ./
 COPY .bayt/Taskfile.yml .bayt/Taskfile.bayt.yml .bayt/bayt.caddy.json ./.bayt/
 HEALTHCHECK --interval=5s --timeout=5s --retries=30 --start-period=10s CMD ["httpcheck","http://127.0.0.1:8080/health"]

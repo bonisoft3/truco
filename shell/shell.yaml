@@ -87,7 +87,25 @@ optional:
       type: text
     - name: said
       type: text
+    - name: shout_state
+      type: text
+    - name: shout_word
+      type: text
+    - name: shout_from
+      type: text
+    - name: shout_kind
+      type: text
+    - name: shout_t
+      type: text
+    - name: shout_done
+      type: text
+    - name: last_remote_shout
+      type: text
+    - name: oculta
+      type: text
     - name: turn_seat
+      type: text
+    - name: shout_seat
       type: text
     - name: ui_deadline
       type: timestamptz
@@ -115,6 +133,8 @@ optional:
     - name: lie
       type: int
     - name: win
+      type: text
+    - name: display_seat
       type: text
   held:
     - name: rank
@@ -331,6 +351,8 @@ schema:
           - ''
           - you
           - eles1
+          - parca
+          - eles2
         name: my_seat
         type: text
         required: false
@@ -596,6 +618,58 @@ schema:
         required: false
       - enum:
           - ''
+          - live
+          - gone
+        name: shout_state
+        type: text
+        required: false
+      - bounds:
+          sizeMax: 60
+        name: shout_word
+        type: text
+        required: false
+      - bounds:
+          sizeMax: 16
+        name: shout_from
+        type: text
+        required: false
+      - enum:
+          - ''
+          - call
+          - accept
+          - run
+          - win
+          - close
+          - quick
+        name: shout_kind
+        type: text
+        required: false
+      - bounds:
+          sizeMax: 16
+        name: shout_t
+        type: text
+        required: false
+      - enum:
+          - ''
+          - 'yes'
+          - 'no'
+        name: shout_done
+        type: text
+        required: false
+      - bounds:
+          sizeMax: 64
+        name: last_remote_shout
+        type: text
+        required: false
+      - enum:
+          - ''
+          - 'yes'
+          - 'no'
+        name: oculta
+        type: text
+        required: false
+      - enum:
+          - ''
           - you
           - parca
           - eles1
@@ -603,6 +677,17 @@ schema:
           - eles3
           - eles4
         name: turn_seat
+        type: text
+        required: false
+      - enum:
+          - ''
+          - you
+          - parca
+          - eles1
+          - eles2
+          - eles3
+          - eles4
+        name: shout_seat
         type: text
         required: false
       - name: ui_deadline
@@ -737,6 +822,17 @@ schema:
         name: win
         type: text
         required: false
+      - enum:
+          - ''
+          - you
+          - parca
+          - eles1
+          - eles2
+          - eles3
+          - eles4
+        name: display_seat
+        type: text
+        required: false
       - bounds:
           sizeMin: 2
           sizeMax: 2
@@ -853,6 +949,26 @@ schema:
         type: text
         required: true
       - enum:
+          - paulista
+          - mineiro
+          - gaucho
+          - truc
+          - douradinha
+          - douradao
+          - argentino
+          - uruguayo
+          - paraguayo
+        name: variant
+        type: text
+        required: false
+      - enum:
+          - 1v1
+          - 2v2
+          - 2v2v2
+        name: seats
+        type: text
+        required: false
+      - enum:
           - waiting
           - playing
         name: status
@@ -892,6 +1008,19 @@ schema:
         type: text
         required: true
       - enum:
+          - paulista
+          - mineiro
+          - gaucho
+          - truc
+          - douradinha
+          - douradao
+          - argentino
+          - uruguayo
+          - paraguayo
+        name: variant
+        type: text
+        required: true
+      - enum:
           - pending
           - accepted
           - declined
@@ -928,6 +1057,7 @@ schema:
           - run
           - touch_card
           - resign
+          - shout
         name: action
         type: text
         required: true
@@ -1335,4 +1465,5 @@ migrations:
   - services/database/migrations/007_txid.sql
   - services/database/migrations/008_publication.sql
   - services/database/migrations/012_lobby.sql
+  - services/database/migrations/013_networked_shouts.sql
 pipelines: []

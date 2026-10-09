@@ -546,241 +546,34 @@
       {
         "from": null,
         "srcs": [
-          "shell/index.html"
-        ],
-        "dst": "/srv/shell/index.html",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/shell.css"
-        ],
-        "dst": "/srv/shell/shell.css",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/boot.js"
-        ],
-        "dst": "/srv/shell/boot.js",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "offline-first-sw.js"
-        ],
-        "dst": "/srv/offline-first-sw.js",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/shell.yaml"
-        ],
-        "dst": "/srv/shell/shell.yaml",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/shell.json"
-        ],
-        "dst": "/srv/shell/shell.json",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/design.css"
-        ],
-        "dst": "/srv/shell/design.css",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/screens/arena.html"
-        ],
-        "dst": "/srv/shell/screens/arena.html",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/screens/arena.css"
-        ],
-        "dst": "/srv/shell/screens/arena.css",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/screens/regras.html"
-        ],
-        "dst": "/srv/shell/screens/regras.html",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/screens/regras.css"
-        ],
-        "dst": "/srv/shell/screens/regras.css",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/handlers/seats2.js"
-        ],
-        "dst": "/srv/shell/handlers/seats2.js",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/handlers/sitting.js"
-        ],
-        "dst": "/srv/shell/handlers/sitting.js",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/handlers/spun.js"
-        ],
-        "dst": "/srv/shell/handlers/spun.js",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/handlers/stake0.js"
-        ],
-        "dst": "/srv/shell/handlers/stake0.js",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/handlers/table.js"
-        ],
-        "dst": "/srv/shell/handlers/table.js",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/handlers/variant2.js"
-        ],
-        "dst": "/srv/shell/handlers/variant2.js",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/handlers/variant3.js"
-        ],
-        "dst": "/srv/shell/handlers/variant3.js",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/shared/table.css"
-        ],
-        "dst": "/srv/shell/shared/table.css",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "messages/pt-BR.json"
-        ],
-        "dst": "/srv/messages/pt-BR.json",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "messages/es-AR.json"
-        ],
-        "dst": "/srv/messages/es-AR.json",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "messages/es-UY.json"
-        ],
-        "dst": "/srv/messages/es-UY.json",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "messages/es-PY.json"
-        ],
-        "dst": "/srv/messages/es-PY.json",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
+          "shell/index.html",
+          "shell/shell.css",
+          "shell/boot.js",
+          "offline-first-sw.js",
+          "shell/shell.yaml",
+          "shell/shell.json",
+          "shell/design.css",
+          "shell/screens/arena.html",
+          "shell/screens/arena.css",
+          "shell/screens/regras.html",
+          "shell/screens/regras.css",
+          "shell/handlers/seats2.js",
+          "shell/handlers/sitting.js",
+          "shell/handlers/spun.js",
+          "shell/handlers/stake0.js",
+          "shell/handlers/table.js",
+          "shell/handlers/variant2.js",
+          "shell/handlers/variant3.js",
+          "shell/shared/table.css",
+          "messages/pt-BR.json",
+          "messages/es-AR.json",
+          "messages/es-UY.json",
+          "messages/es-PY.json",
           "messages/ca-ES.json"
         ],
-        "dst": "/srv/messages/ca-ES.json",
+        "dst": "/srv/",
         "link": true,
-        "parents": false,
+        "parents": true,
         "exclude": []
       },
       {
@@ -836,151 +629,43 @@
       {
         "from": null,
         "srcs": [
-          "shell/assets/bigode.png"
-        ],
-        "dst": "/srv/shell/assets/bigode.png",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/assets/cida.png"
-        ],
-        "dst": "/srv/shell/assets/cida.png",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/assets/jordi.png"
-        ],
-        "dst": "/srv/shell/assets/jordi.png",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/assets/nezinho.png"
-        ],
-        "dst": "/srv/shell/assets/nezinho.png",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/assets/osvaldo.png"
-        ],
-        "dst": "/srv/shell/assets/osvaldo.png",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/assets/tabare.png"
-        ],
-        "dst": "/srv/shell/assets/tabare.png",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/assets/tiao.png"
-        ],
-        "dst": "/srv/shell/assets/tiao.png",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "shell/assets/tiao_queijo.png"
-        ],
-        "dst": "/srv/shell/assets/tiao_queijo.png",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
+          "shell/assets/bigode.png",
+          "shell/assets/cida.png",
+          "shell/assets/jordi.png",
+          "shell/assets/nezinho.png",
+          "shell/assets/osvaldo.png",
+          "shell/assets/tabare.png",
+          "shell/assets/tiao.png",
+          "shell/assets/tiao_queijo.png",
           "shell/assets/xiru.png"
         ],
-        "dst": "/srv/shell/assets/xiru.png",
+        "dst": "/srv/",
         "link": true,
-        "parents": false,
+        "parents": true,
         "exclude": []
       },
       {
         "from": null,
         "srcs": [
-          "brief.html"
-        ],
-        "dst": "/srv/docs/brief.html",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "ir.html"
-        ],
-        "dst": "/srv/docs/ir.html",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
-          "acceptance.md"
-        ],
-        "dst": "/srv/docs/acceptance.md",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
+          "brief.html",
+          "ir.html",
+          "acceptance.md",
           "DESIGN.md"
         ],
-        "dst": "/srv/docs/DESIGN.md",
+        "dst": "/srv/docs/",
         "link": true,
-        "parents": false,
+        "parents": true,
         "exclude": []
       },
       {
         "from": null,
         "srcs": [
-          "robots.txt"
-        ],
-        "dst": "/srv/robots.txt",
-        "link": true,
-        "parents": false,
-        "exclude": []
-      },
-      {
-        "from": null,
-        "srcs": [
+          "robots.txt",
           "sitemap.xml"
         ],
-        "dst": "/srv/sitemap.xml",
+        "dst": "/srv/",
         "link": true,
-        "parents": false,
+        "parents": true,
         "exclude": []
       }
     ],

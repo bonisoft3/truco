@@ -93,6 +93,11 @@
           "action": "rebuild",
           "path": "../services/database/migrations/012_lobby.sql",
           "target": "/docker-entrypoint-initdb.d"
+        },
+        {
+          "action": "rebuild",
+          "path": "../services/database/migrations/013_networked_shouts.sql",
+          "target": "/docker-entrypoint-initdb.d"
         }
       ]
     }
@@ -120,7 +125,8 @@
           "services/database/migrations/006_policies.sql",
           "services/database/migrations/007_txid.sql",
           "services/database/migrations/008_publication.sql",
-          "services/database/migrations/012_lobby.sql"
+          "services/database/migrations/012_lobby.sql",
+          "services/database/migrations/013_networked_shouts.sql"
         ],
         "dst": "/docker-entrypoint-initdb.d/",
         "link": true,
@@ -165,7 +171,8 @@
       "services/database/migrations/006_policies.sql",
       "services/database/migrations/007_txid.sql",
       "services/database/migrations/008_publication.sql",
-      "services/database/migrations/012_lobby.sql"
+      "services/database/migrations/012_lobby.sql",
+      "services/database/migrations/013_networked_shouts.sql"
     ],
     "exclude": []
   },
@@ -259,7 +266,8 @@
           "services/database/migrations/006_policies.sql",
           "services/database/migrations/007_txid.sql",
           "services/database/migrations/008_publication.sql",
-          "services/database/migrations/012_lobby.sql"
+          "services/database/migrations/012_lobby.sql",
+          "services/database/migrations/013_networked_shouts.sql"
         ],
         "exclude": []
       },

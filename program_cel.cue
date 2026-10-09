@@ -31,7 +31,7 @@ code: state: entities: {
 			opponent_name?: strings.MinRunes(1)
 			partner_name?: strings.MinRunes(1)
 			seed?: strings.MaxRunes(12)
-			my_seat?: ("" | "you" | "eles1")
+			my_seat?: ("" | "you" | "eles1" | "parca" | "eles2")
 			current?: ("yes" | "no")
 			locale?: ("" | "pt-BR" | "es-AR" | "es-UY" | "es-PY" | "ca-ES")
 		}]
@@ -43,7 +43,7 @@ code: state: entities: {
 			status: ["playing","over"]
 			winner: ["","us","them","others"]
 			opponent: ["nezinho","cida","tiao","ze","xiru","osvaldo","tiao_queijo","tabare","jordi","online"]
-			my_seat: ["","you","eles1"]
+			my_seat: ["","you","eles1","parca","eles2"]
 			current: ["yes","no"]
 			locale: ["","pt-BR","es-AR","es-UY","es-PY","ca-ES"]
 		}
@@ -88,7 +88,16 @@ code: state: entities: {
 			envido_them?: >=0 & <=33
 			envido_result?: ("" | "us" | "them" | "others")
 			said?: strings.MaxRunes(60)
+			shout_state?: ("" | "live" | "gone")
+			shout_word?: strings.MaxRunes(60)
+			shout_from?: strings.MaxRunes(16)
+			shout_kind?: ("" | "call" | "accept" | "run" | "win" | "close" | "quick")
+			shout_t?: strings.MaxRunes(16)
+			shout_done?: ("" | "yes" | "no")
+			last_remote_shout?: strings.MaxRunes(64)
+			oculta?: ("" | "yes" | "no")
 			turn_seat?: ("" | "you" | "parca" | "eles1" | "eles2" | "eles3" | "eles4")
+			shout_seat?: ("" | "you" | "parca" | "eles1" | "eles2" | "eles3" | "eles4")
 			current?: ("yes" | "no")
 		}]
 		enums: {
@@ -109,7 +118,12 @@ code: state: entities: {
 			envido: ["","called","scored","ran","flor"]
 			envido_asked: ["","you","parca","eles1","eles2","eles3","eles4"]
 			envido_result: ["","us","them","others"]
+			shout_state: ["","live","gone"]
+			shout_kind: ["","call","accept","run","win","close","quick"]
+			shout_done: ["","yes","no"]
+			oculta: ["","yes","no"]
 			turn_seat: ["","you","parca","eles1","eles2","eles3","eles4"]
+			shout_seat: ["","you","parca","eles1","eles2","eles3","eles4"]
 			current: ["yes","no"]
 		}
 		bounds: {
@@ -124,6 +138,10 @@ code: state: entities: {
 			envido_us: {intMin: 0, intMax: 33}
 			envido_them: {intMin: 0, intMax: 33}
 			said: {sizeMax: 60}
+			shout_word: {sizeMax: 60}
+			shout_from: {sizeMax: 16}
+			shout_t: {sizeMax: 16}
+			last_remote_shout: {sizeMax: 64}
 		}
 	}
 	Play: {
@@ -144,6 +162,7 @@ code: state: entities: {
 			manilha?: ("" | "yes" | "no")
 			lie?: >=-7 & <=7
 			win?: ("" | "yes")
+			display_seat?: ("" | "you" | "parca" | "eles1" | "eles2" | "eles3" | "eles4")
 			seq?: strings.MinRunes(2) & strings.MaxRunes(2)
 		}]
 		enums: {
@@ -152,6 +171,7 @@ code: state: entities: {
 			suit: ["","♠","♥","♦","♣"]
 			manilha: ["","yes","no"]
 			win: ["","yes"]
+			display_seat: ["","you","parca","eles1","eles2","eles3","eles4"]
 		}
 		bounds: {
 			id: {sizeMax: 64}
@@ -206,15 +226,21 @@ code: state: entities: {
 			id: "char_length(id) <= 64"
 			handle: "char_length(handle) > 0 AND char_length(handle) <= 40"
 			room_seed: "char_length(room_seed) <= 64"
+			variant: "variant IN ('paulista', 'mineiro', 'gaucho', 'truc', 'douradinha', 'douradao', 'argentino', 'uruguayo', 'paraguayo')"
+			seats: "seats IN ('1v1', '2v2', '2v2v2')"
 			status: "status IN ('waiting', 'playing')"
 		}
 		seed: [...{
 			id?: strings.MaxRunes(64)
 			handle?: strings.MinRunes(1) & strings.MaxRunes(40)
 			room_seed?: strings.MaxRunes(64)
+			variant?: ("paulista" | "mineiro" | "gaucho" | "truc" | "douradinha" | "douradao" | "argentino" | "uruguayo" | "paraguayo")
+			seats?: ("1v1" | "2v2" | "2v2v2")
 			status?: ("waiting" | "playing")
 		}]
 		enums: {
+			variant: ["paulista","mineiro","gaucho","truc","douradinha","douradao","argentino","uruguayo","paraguayo"]
+			seats: ["1v1","2v2","2v2v2"]
 			status: ["waiting","playing"]
 		}
 		bounds: {
@@ -230,6 +256,7 @@ code: state: entities: {
 			challenger_name: "char_length(challenger_name) > 0 AND char_length(challenger_name) <= 40"
 			target_id: "char_length(target_id) <= 64"
 			seed: "char_length(seed) <= 64"
+			variant: "variant IN ('paulista', 'mineiro', 'gaucho', 'truc', 'douradinha', 'douradao', 'argentino', 'uruguayo', 'paraguayo')"
 			status: "status IN ('pending', 'accepted', 'declined', 'expired')"
 		}
 		seed: [...{
@@ -238,9 +265,11 @@ code: state: entities: {
 			challenger_name?: strings.MinRunes(1) & strings.MaxRunes(40)
 			target_id?: strings.MaxRunes(64)
 			seed?: strings.MaxRunes(64)
+			variant?: ("paulista" | "mineiro" | "gaucho" | "truc" | "douradinha" | "douradao" | "argentino" | "uruguayo" | "paraguayo")
 			status?: ("pending" | "accepted" | "declined" | "expired")
 		}]
 		enums: {
+			variant: ["paulista","mineiro","gaucho","truc","douradinha","douradao","argentino","uruguayo","paraguayo"]
 			status: ["pending","accepted","declined","expired"]
 		}
 		bounds: {
@@ -256,7 +285,7 @@ code: state: entities: {
 			id: "char_length(id) <= 64"
 			room_seed: "char_length(room_seed) <= 64"
 			player_id: "char_length(player_id) <= 64"
-			action: "action IN ('play_card', 'truco', 'accept', 'run', 'touch_card', 'resign')"
+			action: "action IN ('play_card', 'truco', 'accept', 'run', 'touch_card', 'resign', 'shout')"
 			card: "char_length(card) <= 4"
 			slot: "slot >= 0 AND slot <= 12"
 		}
@@ -264,12 +293,12 @@ code: state: entities: {
 			id?: strings.MaxRunes(64)
 			room_seed?: strings.MaxRunes(64)
 			player_id?: strings.MaxRunes(64)
-			action?: ("play_card" | "truco" | "accept" | "run" | "touch_card" | "resign")
+			action?: ("play_card" | "truco" | "accept" | "run" | "touch_card" | "resign" | "shout")
 			card?: strings.MaxRunes(4)
 			slot?: >=0 & <=12
 		}]
 		enums: {
-			action: ["play_card","truco","accept","run","touch_card","resign"]
+			action: ["play_card","truco","accept","run","touch_card","resign","shout"]
 		}
 		bounds: {
 			id: {sizeMax: 64}

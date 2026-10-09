@@ -120,6 +120,9 @@ say:
       fuel_mutations:
         cmds:
           - do: deno test --config tests/deno.json --no-lock --no-check --allow-env --allow-read tests/fuel_mutations_storybook.test.ts
+      lobby_presence:
+        cmds:
+          - do: deno test --config tests/deno.json --no-lock --no-check --allow-env --allow-read tests/lobby_presence.test.ts
       machines:
         cmds:
           - do: 'use tools.nu [run-mise]; run-mise exec -- omnishell check machines .'

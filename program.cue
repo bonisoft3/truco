@@ -26,6 +26,7 @@ code: pronto.#App & {
 	state: {
 		rawMigrations: [
 			{name: "012_lobby.sql", src: "services/database/sql/012_lobby.sql"},
+			{name: "013_networked_shouts.sql", src: "services/database/sql/013_networked_shouts.sql"},
 		]
 		entities: {
 			Match: {
@@ -56,7 +57,7 @@ code: pronto.#App & {
 					// from this and the hand's number, so a match replays out of its
 					// own rows and the table needs no randomness of its own.
 					{name: "seed", type: "text", cel: "this.size() <= 12"},
-					{name: "my_seat", type: "text", required: false, cel: "this in ['', 'you', 'eles1']"},
+					{name: "my_seat", type: "text", required: false, cel: "this in ['', 'you', 'eles1', 'parca', 'eles2']"},
 					{name: "current", type: "text", cel: "this in ['yes', 'no']"},
 					{name: "locale", type: "text", required: false, cel: "this in ['', 'pt-BR', 'es-AR', 'es-UY', 'es-PY', 'ca-ES']"},
 					{name: "created_at", type: "timestamptz", required: false},
@@ -109,7 +110,16 @@ code: pronto.#App & {
 					{name: "envido_them", type: "int", required: false, cel: "this >= 0 && this <= 33"},
 					{name: "envido_result", type: "text", required: false, cel: "this in ['', 'us', 'them', 'others']"},
 					{name: "said", type: "text", required: false, cel: "this.size() <= 60"},
+					{name: "shout_state", type: "text", required: false, cel: "this in ['', 'live', 'gone']"},
+					{name: "shout_word", type: "text", required: false, cel: "this.size() <= 60"},
+					{name: "shout_from", type: "text", required: false, cel: "this.size() <= 16"},
+					{name: "shout_kind", type: "text", required: false, cel: "this in ['', 'call', 'accept', 'run', 'win', 'close', 'quick']"},
+					{name: "shout_t", type: "text", required: false, cel: "this.size() <= 16"},
+					{name: "shout_done", type: "text", required: false, cel: "this in ['', 'yes', 'no']"},
+					{name: "last_remote_shout", type: "text", required: false, cel: "this.size() <= 64"},
+					{name: "oculta", type: "text", required: false, cel: "this in ['', 'yes', 'no']"},
 					{name: "turn_seat", type: "text", required: false, cel: "this in ['', 'you', 'parca', 'eles1', 'eles2', 'eles3', 'eles4']"},
+					{name: "shout_seat", type: "text", required: false, cel: "this in ['', 'you', 'parca', 'eles1', 'eles2', 'eles3', 'eles4']"},
 					{name: "ui_deadline", type: "timestamptz", required: false},
 					{name: "backend_deadline", type: "timestamptz", required: false},
 					{name: "current", type: "text", cel: "this in ['yes', 'no']"},
@@ -152,6 +162,7 @@ code: pronto.#App & {
 					{name: "manilha", type: "text", required: false, cel: "this in ['', 'yes', 'no']"},
 					{name: "lie", type: "int", required: false, cel: "this >= -7 && this <= 7"},
 					{name: "win", type: "text", required: false, cel: "this in ['', 'yes']"},
+					{name: "display_seat", type: "text", required: false, cel: "this in ['', 'you', 'parca', 'eles1', 'eles2', 'eles3', 'eles4']"},
 					// Its place in the round's log. The table writes rows from a
 					// compartment, which has no clock to stamp them with, and an
 					// order the app derives replays identically besides.
@@ -196,6 +207,8 @@ code: pronto.#App & {
 					{name: "id", type: "text", pk: true, cel: "this.size() <= 64"},
 					{name: "handle", type: "text", cel: "this.size() > 0 && this.size() <= 40"},
 					{name: "room_seed", type: "text", cel: "this.size() <= 64"},
+					{name: "variant", type: "text", required: false, cel: "this in ['paulista', 'mineiro', 'gaucho', 'truc', 'douradinha', 'douradao', 'argentino', 'uruguayo', 'paraguayo']"},
+					{name: "seats", type: "text", required: false, cel: "this in ['1v1', '2v2', '2v2v2']"},
 					{name: "status", type: "text", cel: "this in ['waiting', 'playing']"},
 					{name: "updated_at", type: "timestamptz", required: false},
 				]
@@ -210,6 +223,7 @@ code: pronto.#App & {
 					{name: "challenger_name", type: "text", cel: "this.size() > 0 && this.size() <= 40"},
 					{name: "target_id", type: "text", cel: "this.size() <= 64"},
 					{name: "seed", type: "text", cel: "this.size() <= 64"},
+					{name: "variant", type: "text", cel: "this in ['paulista', 'mineiro', 'gaucho', 'truc', 'douradinha', 'douradao', 'argentino', 'uruguayo', 'paraguayo']"},
 					{name: "status", type: "text", cel: "this in ['pending', 'accepted', 'declined', 'expired']"},
 					{name: "created_at", type: "timestamptz", required: false},
 				]
@@ -222,7 +236,7 @@ code: pronto.#App & {
 					{name: "id", type: "text", pk: true, cel: "this.size() <= 64"},
 					{name: "room_seed", type: "text", cel: "this.size() <= 64"},
 					{name: "player_id", type: "text", cel: "this.size() <= 64"},
-					{name: "action", type: "text", cel: "this in ['play_card', 'truco', 'accept', 'run', 'touch_card', 'resign']"},
+					{name: "action", type: "text", cel: "this in ['play_card', 'truco', 'accept', 'run', 'touch_card', 'resign', 'shout']"},
 					{name: "card", type: "text", required: false, cel: "this.size() <= 4"},
 					{name: "slot", type: "int", required: false, cel: "this >= 0 && this <= 12"},
 					{name: "created_at", type: "timestamptz", required: false},
@@ -715,6 +729,14 @@ loop: surface: checks: "fuel_mutations": {
 		"deno test --config tests/deno.json --no-lock --no-check --allow-env --allow-read tests/fuel_mutations_storybook.test.ts",
 	]
 	note: "deterministic fuel budget, outbox mutation lifecycle, and read-only storybook state injection"
+}
+
+loop: surface: checks: "lobby_presence": {
+	verb: "test"
+	cmds: [
+		"deno test --config tests/deno.json --no-lock --no-check --allow-env --allow-read tests/lobby_presence.test.ts",
+	]
+	note: "demand-driven online lobby lifecycle, player deduplication, and challenge handshake"
 }
 
 build: (pronto.#DefaultBuild & {"code": code, "loop": loop, "cluster": cluster, "terminal": terminal}).out

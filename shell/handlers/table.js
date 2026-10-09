@@ -101,6 +101,13 @@
       ladder: { 2: "Truc!", 3: "Retruc!" }, ran: "ME'N VAIG", accept: "VULL!", we_won: "ÉS NOSTRA!", they_won: "ENS L'ENDUEM!",
     },
   };
+  const voiceOf = (variant) => {
+    const vCode = VOICE_OF[variant];
+    if (!vCode) throw new Error(`unknown variant ${variant}`);
+    const vData = VOICE[vCode];
+    if (!vData) throw new Error(`missing voice data for ${vCode}`);
+    return vData;
+  };
   // How eles play: the swept thresholds moved around a centre, plus a tell
   // that lands a beat before the call — the table warns you, and it is your
   // job to be looking (ir decision-25). Who they ARE is on the match row; this
@@ -174,6 +181,62 @@
       "Qui no arrisca no pisca!",
     ],
   };
+  const SHOUT_DEFS = {
+    1: { slot: 1, from: "shout-chama", key: "shout_chama" },
+    2: { slot: 2, from: "shout-manda", key: "shout_manda" },
+    3: { slot: 3, from: "shout-desce", key: "shout_desce" },
+    4: { slot: 4, from: "shout-chorou", key: "shout_chorou" },
+  };
+  const SHOUT_BY_FROM = Object.fromEntries(Object.values(SHOUT_DEFS).map((s) => [s.from, s]));
+  const SEATS = {
+    "1v1": ["you", "eles1"],
+    "2v2": ["you", "eles1", "parca", "eles2"],
+    "2v2v2": ["you", "eles1", "eles2", "parca", "eles3", "eles4"],
+  };
+  const seatsFor = (seat, current = "1v1") => (current === "2v2v2" ? "2v2v2" : (seat === "parca" || seat === "eles2" ? "2v2" : current));
+  const rotateSeatPerspective = (seat, mySeat, order) => {
+    const fromIdx = order.indexOf(seat);
+    const myIdx = order.indexOf(mySeat);
+    if (fromIdx === -1 || myIdx === -1) return seat;
+    return order[(fromIdx - myIdx + order.length) % order.length];
+  };
+  const isRoundBusy = (r) => Boolean(
+    r && (
+      (r.asked ?? "") !== "" ||
+      (r.envido_asked ?? "") !== "" ||
+      (r.result ?? "") !== "" ||
+      r.phase === "result" ||
+      (r.ran ?? "") !== "" ||
+      r.said === "ran" ||
+      (r.shout_state === "live" && (r.shout_kind ?? "") !== "quick")
+    )
+  );
+  const nextShoutTOf = (t) => String(Number(t ?? 0) + 1);
+  const parseSeenShouts = (raw) => {
+    const map = {};
+    if (!raw) return map;
+    for (const part of raw.split("|")) {
+      const [seat, seq] = part.split(":");
+      if (seat && seq !== undefined) map[seat] = Number(seq);
+    }
+    return map;
+  };
+  const formatSeenShouts = (map) => {
+    return Object.entries(map).map(([s, q]) => `${s}:${q}`).join("|");
+  };
+  const seqOfShout = (action) => {
+    const m = String(action?.id ?? "").match(/\/shout\/(\d+)/);
+    return m ? Number(m[1]) : 0;
+  };
+  const remoteShoutsOf = (actions, handNo, mySeatId, roomSeed) => (actions ?? []).filter((a) =>
+    (roomSeed === undefined || String(a.room_seed) === String(roomSeed)) &&
+    a.action === "shout" &&
+    a.player_id !== mySeatId &&
+    typeof a.id === "string" &&
+    a.id.includes(`/h${handNo}/`) &&
+    /\/shout\/\d+/.test(a.id) &&
+    SHOUT_DEFS[Number(a.slot)] !== undefined
+  );
   // Your parça, and the swept centre anybody else falls back to.
   const BIGODE = { call: 8.0, take: 7.0, tell: "", line: "Truco!" };
 
@@ -196,18 +259,54 @@
   const retired = (m) => ({ op: "patch", entity: "match", id: m.id, row: { current: "no" } });
 
   if (event.type === "click" && event.from === "btn-set-seat") {
+    const activeMatch = match ?? all.find((m) => m.current === "yes");
     const seat = event.detail?.seat ?? event.seat ?? "you";
-    const targetSeed = event.detail?.seed !== undefined ? String(event.detail.seed) : (event.seed !== undefined ? String(event.seed) : undefined);
-    const targetOpponent = event.detail?.opponent ?? "online";
-    const targetOpponentName = event.detail?.opponent_name ?? (CAST[targetOpponent] ?? CAST.online).name;
-    const seed = targetSeed ? (Number(targetSeed) >>> 0) : 1;
+    const rawSeed = event.detail?.seed !== undefined ? String(event.detail.seed) : (event.seed !== undefined ? String(event.seed) : activeMatch?.seed);
+    if (!rawSeed) {
+      throw new Error("btn-set-seat missing required seed");
+    }
+    const numSeed = Number(rawSeed);
+    if (!Number.isInteger(numSeed) || numSeed <= 0) {
+      throw new Error(`Invalid room seed: "${rawSeed}"`);
+    }
+    const targetSeed = String(numSeed);
+    const targetOpponent = event.detail?.opponent ?? activeMatch?.opponent;
+    if (!targetOpponent) {
+      throw new Error("btn-set-seat missing required opponent");
+    }
+    const castEntry = CAST[targetOpponent];
+    if (!castEntry) {
+      throw new Error(`Unknown opponent: "${targetOpponent}"`);
+    }
+    const targetOpponentName = event.detail?.opponent_name ?? activeMatch?.opponent_name ?? castEntry.name;
+    const explicitSeats = event.detail?.seats ?? event.seats;
+    const currentSeats = activeMatch?.seats || "1v1";
+    const targetSeats = explicitSeats ?? seatsFor(seat, currentSeats);
+    const ALLOWED_MY_SEATS = ["you", "eles1", "parca", "eles2"];
+    if (!ALLOWED_MY_SEATS.includes(seat)) {
+      throw new Error(`Seat "${seat}" is not a valid player seat in seats mode "${targetSeats}"`);
+    }
+    if (!SEATS[targetSeats] || !SEATS[targetSeats].includes(seat)) {
+      throw new Error(`Seat "${seat}" does not exist in seats mode "${targetSeats}"`);
+    }
+    const seed = numSeed >>> 0;
     const retireUpdates = [
-      ...all.filter((m) => m.current === "yes").map(retired),
+      ...all.filter((m) => m !== match && m.current === "yes").map(retired),
       ...(rows.held ?? []).filter((h) => h.current === "yes").map((h) => ({ op: "patch", entity: "held", id: h.id, row: { current: "no" } })),
       ...(rows.round ?? []).filter((r) => r.current === "yes").map((r) => ({ op: "patch", entity: "round", id: r.id, row: { current: "no" } })),
     ];
+    const explicitVariant = event.detail?.variant ?? event.variant;
+    const targetVariant = explicitVariant ?? activeMatch?.variant;
+    if (!targetVariant) {
+      throw new Error("btn-set-seat missing required variant");
+    }
+    if (targetSeats !== "2v2v2" && (targetVariant === "douradinha" || targetVariant === "douradao")) {
+      throw new Error(`Variant "${targetVariant}" is only supported in "2v2v2" seats mode`);
+    }
+    if (match && match.opponent === "online" && match.seed === targetSeed && (match.variant !== targetVariant || match.seats !== targetSeats)) {
+      throw new Error(`Cannot change rules for active online room "${targetSeed}"`);
+    }
     if (match === undefined) {
-      const wantVariant = "mineiro";
       return {
         updates: [
           ...retireUpdates,
@@ -217,53 +316,202 @@
             id: `m${seed.toString(36)}`,
             row: {
               id: `m${seed.toString(36)}`,
-              variant: wantVariant, seats: "1v1", theme: "xadrez",
+              variant: targetVariant, seats: targetSeats, theme: "xadrez",
               locale: "",
               us_score: "0", them_score: "0", others_score: "0",
-              stake: String(opening(wantVariant)), hand_no: "1",
+              stake: String(opening(targetVariant)), hand_no: "1",
               status: "playing", winner: "",
               opponent: targetOpponent, opponent_name: targetOpponentName, partner_name: "Bigode",
-              seed: String(targetSeed || seed), current: "yes",
+              seed: String(targetSeed), current: "yes",
               my_seat: seat,
             },
           },
         ],
       };
     }
-    if (targetSeed !== undefined && (match.seed !== targetSeed || match.opponent !== targetOpponent || match.my_seat !== seat || match.opponent_name !== targetOpponentName)) {
+    if (match && match.seed === targetSeed && match.opponent === targetOpponent && match.variant === targetVariant) {
+      const matchPatch = { my_seat: seat };
+      if (match.opponent_name !== targetOpponentName) {
+        matchPatch.opponent_name = targetOpponentName;
+      }
+      if (match.my_seat === seat && match.seats === targetSeats) {
+        if (match.opponent_name !== targetOpponentName) {
+          return { updates: [{ op: "patch", entity: "match", id: match.id, row: { opponent_name: targetOpponentName } }] };
+        }
+        return { updates: [] };
+      }
+      if (match.seats === targetSeats) {
+        const order = SEATS[targetSeats];
+        const sideCount = order.length === 6 ? 3 : 2;
+        const oldSide = order.indexOf(match.my_seat || "you") % sideCount;
+        const newSide = order.indexOf(seat) % sideCount;
+        const diff = (newSide - oldSide + sideCount) % sideCount;
+        const updates = [];
+        const sideNames = sideCount === 2 ? ["us", "them"] : ["us", "them", "others"];
+        const rotateSide = (s) => {
+          const idx = sideNames.indexOf(s);
+          return idx >= 0 ? sideNames[(idx - diff + sideCount) % sideCount] : s;
+        };
+        if (diff !== 0) {
+          const scoreKeys = sideCount === 2 ? ["us_score", "them_score"] : ["us_score", "them_score", "others_score"];
+          const oldScores = scoreKeys.map((k) => match[k] ?? "0");
+          scoreKeys.forEach((k, i) => {
+            matchPatch[k] = oldScores[(i + diff) % sideCount];
+          });
+          if (match.winner && match.winner !== "draw") {
+            matchPatch.winner = rotateSide(match.winner);
+          }
+        }
+        const standingRound = (rows.round ?? []).find((r) => r.current === "yes");
+        if (standingRound) {
+          const roundPatch = {};
+          if (diff !== 0) {
+            if (standingRound.result && standingRound.result !== "draw") roundPatch.result = rotateSide(standingRound.result);
+            if (standingRound.shout_from) roundPatch.shout_from = rotateSide(standingRound.shout_from);
+            if (standingRound.ran) roundPatch.ran = rotateSide(standingRound.ran);
+            if (standingRound.raised) roundPatch.raised = rotateSide(standingRound.raised);
+            if (standingRound.brink && standingRound.brink !== "both") roundPatch.brink = rotateSide(standingRound.brink);
+            for (const vk of ["v1", "v2", "v3"]) {
+              if (standingRound[vk] && standingRound[vk] !== "draw") {
+                roundPatch[vk] = rotateSide(standingRound[vk]);
+              }
+            }
+            if (standingRound.envido_result) roundPatch.envido_result = rotateSide(standingRound.envido_result);
+            if (sideCount === 2) {
+              if (standingRound.envido_us !== undefined) roundPatch.envido_them = standingRound.envido_us;
+              if (standingRound.envido_them !== undefined) roundPatch.envido_us = standingRound.envido_them;
+            }
+          }
+          if (match.my_seat !== seat) {
+            const curHandNo = match.hand_no || "1";
+            const seenMap = parseSeenShouts(standingRound.last_remote_shout);
+            const myOldShouts = (rows.room_action ?? []).filter(
+              (a) => String(a.room_seed) === String(targetSeed) &&
+                     a.player_id === match.my_seat &&
+                     a.action === "shout" &&
+                     typeof a.id === "string" &&
+                     a.id.includes(`/h${curHandNo}/`)
+            );
+            if (myOldShouts.length > 0) {
+              const maxSeq = Math.max(...myOldShouts.map(seqOfShout));
+              seenMap[match.my_seat] = Math.max(seenMap[match.my_seat] ?? 0, maxSeq);
+              roundPatch.last_remote_shout = formatSeenShouts(seenMap);
+            }
+            const currentPlays = (rows.play ?? []).filter((p) => p.round_id === standingRound.id);
+            for (const p of currentPlays) {
+              const nextDisplay = rotateSeatPerspective(p.seat, seat, order);
+              if (p.display_seat !== nextDisplay) {
+                updates.push({ op: "patch", entity: "play", id: p.id, row: { display_seat: nextDisplay } });
+              }
+            }
+          }
+          if (Object.keys(roundPatch).length > 0) {
+            updates.push({ op: "patch", entity: "round", id: standingRound.id, row: roundPatch });
+          }
+        }
+        updates.unshift({
+          op: "patch",
+          entity: "match",
+          id: match.id,
+          row: matchPatch,
+        });
+        return { updates };
+      }
+    }
+    const isSameSeedRulesChange = match && match.seed === targetSeed && (match.variant !== targetVariant || match.seats !== targetSeats);
+    if (isSameSeedRulesChange) {
+      const baseMatchId = `m${seed.toString(36)}`;
+      const sameSeedCount = all.filter((m) => m.id === baseMatchId || m.id.startsWith(`${baseMatchId}_`)).length;
+      const newMatchId = `${baseMatchId}_${sameSeedCount}`;
       return {
         updates: [
           ...retireUpdates,
+          retired(match),
           {
-            op: "patch",
+            op: "put",
             entity: "match",
-            id: match.id,
+            id: newMatchId,
             row: {
-              seed: targetSeed,
-              opponent: targetOpponent,
-              opponent_name: targetOpponentName,
-              my_seat: seat,
-              hand_no: "1",
+              id: newMatchId,
+              variant: targetVariant,
+              seats: targetSeats,
+              theme: "xadrez",
+              locale: "",
               us_score: "0",
               them_score: "0",
               others_score: "0",
-              stake: String(opening(match.variant)),
-              winner: "",
+              stake: String(opening(targetVariant)),
+              hand_no: "1",
               status: "playing",
+              winner: "",
+              opponent: targetOpponent,
+              opponent_name: targetOpponentName,
+              partner_name: "Bigode",
+              seed: String(targetSeed),
+              current: "yes",
+              my_seat: seat,
             },
           },
         ],
       };
     }
-    if (match.my_seat !== seat) {
-      return {
-        updates: [
-          { op: "patch", entity: "match", id: match.id, row: { my_seat: seat } },
-        ],
-      };
-    }
-    return { updates: [] };
+    return {
+      updates: [
+        ...retireUpdates,
+        {
+          op: "patch",
+          entity: "match",
+          id: match.id,
+          row: {
+            current: "yes",
+            seed: targetSeed,
+            opponent: targetOpponent,
+            opponent_name: targetOpponentName,
+            my_seat: seat,
+            seats: targetSeats,
+            variant: targetVariant,
+            hand_no: "1",
+            us_score: "0",
+            them_score: "0",
+            others_score: "0",
+            stake: String(opening(targetVariant)),
+            winner: "",
+            status: "playing",
+          },
+        },
+      ],
+    };
   }
+
+  if (event.type === "close_shout") {
+    const standing = (rows.round ?? []).find((r) => r.current === "yes");
+    if (!standing) return { updates: [] };
+    const expectedT = event.with?.t;
+    if (expectedT !== undefined && standing.shout_t && standing.shout_t !== expectedT) {
+      return { updates: [] };
+    }
+    const expectedWord = event.with?.word;
+    if (expectedWord !== undefined && standing.shout_word && standing.shout_word !== expectedWord) {
+      return { updates: [] };
+    }
+    const patch = {
+      shout_state: "gone",
+      shout_done: "yes",
+      shout_seat: "",
+      shout_word: standing.shout_word ?? "",
+      shout_from: standing.shout_from ?? "",
+      shout_kind: standing.shout_kind ?? "",
+    };
+    return {
+      updates: [{
+        op: "patch",
+        entity: "round",
+        id: standing.id,
+        row: patch,
+      }],
+    };
+  }
+
   if (match === undefined) {
     // What the last sitting was played under is what the next one opens under,
     // and a rule picked while closing it was written onto it — so the choice
@@ -359,11 +607,6 @@
   // Seats in seating order, partners spread as far apart as the table allows:
   // two sides interleave one-and-one, three interleave one-and-one-and-one, so
   // nobody ever sits beside their own partner.
-  const SEATS = {
-    "1v1": ["you", "eles1"],
-    "2v2": ["you", "eles1", "parca", "eles2"],
-    "2v2v2": ["you", "eles1", "eles2", "parca", "eles3", "eles4"],
-  };
   const order = SEATS[match.seats];
   if (order === undefined) throw new Error(`no seating for ${match.seats}`);
   const mySeat = match.my_seat || "you";
@@ -391,18 +634,18 @@
     const at = order.indexOf(fromSeat);
     return order.slice(at + 1).concat(order.slice(0, at)).find((s) => sideOf(s) === side);
   };
+  const answeringSeatOf = (fromSeat) => {
+    const at = order.indexOf(fromSeat);
+    const seat = order.slice(at + 1).concat(order.slice(0, at)).find((s) => sideOf(s) !== sideOf(fromSeat));
+    if (!seat) throw new Error(`No answering seat found for "${fromSeat}"`);
+    return seat;
+  };
   const theOther = (side) => {
     const rest = otherSides(side);
     if (rest.length !== 1) throw new Error(`${SIDES.length} sides have no single other`);
     return rest[0];
   };
-  const displaySeatOf = (seat) => {
-    if (mySeat === "eles1") {
-      if (seat === "eles1") return "you";
-      if (seat === "you") return "eles1";
-    }
-    return seat;
-  };
+  const displaySeatOf = (seat) => rotateSeatPerspective(seat, mySeat, order);
   const who = (seat) => (seat === "parca" ? BIGODE : CAST[match.opponent] ?? BIGODE);
   // The cast key, which is what a message key is built from. The partner
   // plays a strategy rather than a character, and speaks under its own name.
@@ -413,15 +656,22 @@
     const i = ladder.indexOf(Number(stake));
     return i >= 0 && i < ladder.length - 1 ? ladder[i + 1] : 0;
   };
+  const prevRung = (stake) => {
+    const i = ladder.indexOf(Number(stake));
+    return i > 0 ? ladder[i - 1] : ladder[0];
+  };
   const txt = (v) => String(v);
 
-  if (event.type === "click" && (event.from === "btn-resign" || event.from === "btn-modal-resign")) {
-    const mySide = sideOf(mySeat);
+  const resignUpdates = (actorSeat) => {
+    const actorSide = sideOf(actorSeat);
     // Leaving hands the match to the only other pair, where there is one. At
     // three there is no "the other pair", and handing it to whichever of two
     // came first would be inventing a rule — so the table simply stops, with
     // nobody named.
-    const winSide = SIDES.length === 2 ? theOther(mySide) : "";
+    const winSide = SIDES.length === 2 ? theOther(actorSide) : "";
+    const isMySeat = actorSeat === mySeat;
+    const isPartner = sideOf(actorSeat) === sideOf(mySeat);
+    const resignMsg = isMySeat ? "resigned_you" : (isPartner ? "resigned_partner" : "resigned_them");
     const updates = [
       {
         op: "patch",
@@ -434,21 +684,38 @@
         },
       },
     ];
+    let shoutThen = undefined;
     if (standing !== undefined) {
+      const vData = voiceOf(match.variant);
+      const winWord = winSide === "us" ? vData.we_won : (winSide === "them" ? vData.they_won : "");
+      const finalShoutT = nextShoutTOf(standing.shout_t);
       updates.push({
         op: "patch",
         entity: "round",
         id: standing.id,
         row: {
-          said: "Você abandonou a partida.",
+          said: resignMsg,
           result: winSide,
           phase: "result",
+          shout_state: winWord ? "live" : "gone",
+          shout_word: winWord,
+          shout_from: winSide,
+          shout_kind: "close",
+          shout_t: finalShoutT,
         },
       });
       for (const h of (rows.held ?? []).filter((h) => h.current === "yes" && h.round_id === standing.id)) {
         updates.push({ op: "patch", entity: "held", id: h.id, row: { current: "no" } });
       }
+      if (winWord) {
+        shoutThen = { type: "close_shout", with: { t: finalShoutT, word: winWord }, delay: 2400 };
+      }
     }
+    return { updates, shoutThen };
+  };
+
+  if (event.type === "click" && (event.from === "btn-resign" || event.from === "btn-modal-resign")) {
+    const { updates, shoutThen } = resignUpdates(mySeat);
     if (match.opponent === "online") {
       const actId = `${match.seed}/resign/${mySeat}`;
       updates.push({
@@ -465,70 +732,97 @@
         },
       });
     }
-    return { updates };
+    return shoutThen ? { updates, then: shoutThen } : { updates };
   }
 
+  let pendingLastRemoteShout = undefined;
+  let pendingRemoteShout = null;
+  const roomActions = match.opponent === "online"
+    ? (rows.room_action ?? []).filter((a) => String(a.room_seed) === String(match.seed))
+    : [];
   if (match.opponent === "online") {
-    const roomActions = (rows.room_action ?? []).filter((a) => String(a.room_seed) === String(match.seed));
-    const remoteResign = roomActions.find((a) => a.action === "resign");
+    const remoteResign = roomActions.find((a) =>
+      a.player_id !== mySeat &&
+      a.action === "resign" &&
+      typeof a.id === "string" &&
+      a.id.startsWith(`${match.seed}/resign/`)
+    );
     if (remoteResign && match.status === "playing") {
-      const resignedSide = sideOf(remoteResign.player_id);
-      const winSide = theOther(resignedSide);
-      const resignMsg = resignedSide === sideOf(mySeat) ? "resigned_you" : "resigned_them";
-      const updates = [
-        {
-          op: "patch",
-          entity: "match",
-          id: match.id,
-          row: {
-            ...Object.fromEntries(SIDES.map((sd) => [COLUMN[sd], txt(sd === winSide ? goal : scoreOf(sd))])),
-            status: "over",
-            winner: winSide,
-          },
-        },
-      ];
-      if (standing !== undefined) {
-        updates.push({
-          op: "patch",
-          entity: "round",
-          id: standing.id,
-          row: {
-            said: resignMsg,
-            result: winSide,
-            phase: "result",
-          },
-        });
-        for (const h of (rows.held ?? []).filter((h) => h.current === "yes" && h.round_id === standing.id)) {
-          updates.push({ op: "patch", entity: "held", id: h.id, row: { current: "no" } });
+      const { updates, shoutThen } = resignUpdates(remoteResign.player_id);
+      return shoutThen ? { updates, then: shoutThen } : { updates };
+    }
+    if (event.type === "mutation") {
+      if (standing) {
+        const currentHandNo = standing.hand_no ? Number(standing.hand_no) : Number(match.hand_no);
+        const remoteShouts = remoteShoutsOf(roomActions, currentHandNo, mySeat);
+        const seenMap = parseSeenShouts(standing.last_remote_shout);
+        const isBusy = isRoundBusy(standing);
+
+        if (isBusy) {
+          let advanced = false;
+          for (const a of remoteShouts) {
+            const seq = seqOfShout(a);
+            const lastSeen = seenMap[a.player_id] ?? 0;
+            if (seq > lastSeen) {
+              seenMap[a.player_id] = seq;
+              advanced = true;
+            }
+          }
+          if (advanced) {
+            pendingLastRemoteShout = formatSeenShouts(seenMap);
+          }
+        } else {
+          const unseenShouts = remoteShouts.filter((a) => {
+            const seq = seqOfShout(a);
+            const lastSeen = seenMap[a.player_id] ?? 0;
+            return seq > lastSeen;
+          });
+          if (unseenShouts.length > 0) {
+            unseenShouts.sort((a, b) => {
+              if (a.created_at && b.created_at && a.created_at !== b.created_at) {
+                return a.created_at < b.created_at ? -1 : 1;
+              }
+              if (a.txid && b.txid && a.txid !== b.txid) {
+                return Number(a.txid) - Number(b.txid);
+              }
+              return String(a.id).localeCompare(String(b.id));
+            });
+            const targetShout = unseenShouts[unseenShouts.length - 1];
+            for (const s of unseenShouts) {
+              const seq = seqOfShout(s);
+              seenMap[s.player_id] = Math.max(seenMap[s.player_id] ?? 0, seq);
+            }
+            const shoutDef = SHOUT_DEFS[Number(targetShout.slot)];
+            const updatedLastRemote = formatSeenShouts(seenMap);
+            const callerSide = sideOf(targetShout.player_id);
+            const nextShoutT = nextShoutTOf(standing.shout_t);
+            pendingLastRemoteShout = updatedLastRemote;
+            pendingRemoteShout = {
+              shout_state: "live",
+              shout_word: shoutDef.key,
+              shout_from: callerSide,
+              shout_kind: "quick",
+              shout_seat: targetShout.player_id,
+              shout_t: nextShoutT,
+              shout_done: "no",
+              then: { type: "close_shout", with: { t: nextShoutT, word: shoutDef.key }, delay: 1800 },
+            };
+          }
         }
       }
-      return { updates };
     }
   }
 
-  if (event.type === "close_shout") {
-    const standing = (rows.round ?? []).find((r) => r.current === "yes");
-    if (!standing) return { updates: [] };
-    return {
-      updates: [{
-        op: "patch",
-        entity: "round",
-        id: standing.id,
-        row: {
-          shout_state: "gone",
-          shout_done: "yes",
-          shout_word: standing.shout_word ?? "",
-          shout_from: standing.shout_from ?? "",
-          shout_kind: standing.shout_kind ?? "",
-        },
-      }],
-    };
-  }
 
   if (event.type === "bot_shout_retort") {
     const standing = (rows.round ?? []).find((r) => r.current === "yes");
     if (!standing) return { updates: [] };
-    const retortText = event.with?.reply ?? event.reply ?? "";
+    const shoutT = event.with?.t;
+    if (shoutT !== undefined && standing.shout_t && standing.shout_t !== shoutT) {
+      return { updates: [] };
+    }
+    const retortText = event.with?.reply ?? "";
+    const word = event.with?.word ?? standing.shout_word;
     return {
       updates: [{
         op: "patch",
@@ -538,7 +832,7 @@
           said: retortText,
         },
       }],
-      then: { type: "close_shout", delay: 1800 },
+      then: { type: "close_shout", with: { t: shoutT, word }, delay: 1800 },
     };
   }
 
@@ -721,6 +1015,16 @@
         dealt.push({ op: "patch", entity: "round", id: r.id, row: { current: "no" } });
       }
     }
+    let initialLastRemoteShout = "";
+    if (!now) {
+      const existingHandShouts = remoteShoutsOf(rows.room_action, handNo, mySeat, match.seed);
+      const initialSeenMap = {};
+      for (const a of existingHandShouts) {
+        const seq = seqOfShout(a);
+        initialSeenMap[a.player_id] = Math.max(initialSeenMap[a.player_id] ?? 0, seq);
+      }
+      initialLastRemoteShout = formatSeenShouts(initialSeenMap);
+    }
     dealt.push({
       op: "put",
       entity: "round",
@@ -733,7 +1037,9 @@
         said: brink !== "" ? `brink_${variant}_${brink}` : iam === "" ? opener : `${iam}_${opener}`,
         leader: mao, asked: "", raised: "", rung: txt(brink !== "" ? 0 : nextRung(ladder[0])),
         brink,
-        shout_word: "", shout_from: "", shout_state: "gone", shout_kind: "call", shout_t: "0",
+        shout_word: "", shout_from: "", shout_state: "gone", shout_kind: "call", shout_seat: "", shout_t: "0",
+        shout_done: "no", last_remote_shout: initialLastRemoteShout,
+        oculta: "no",
         envido: "", envido_asked: "", envido_rung: "0", envido_calls: "",
         envido_us: "0", envido_them: "0", envido_result: "",
         turn_seat: mao,
@@ -830,6 +1136,7 @@
   const laidBy = (seat, from, encobrir = false) => ({
     id: `${round.id}/v${vaza}/${seat}/card`,
     round_id: round.id, vaza: txt(vaza), seat, kind: "card",
+    display_seat: displaySeatOf(seat),
     card: from.card, count: "", power: encobrir ? "0" : txt(from.power),
     said: encobrir ? "encoberta" : "",
     from_slot: from.slot !== undefined ? String(from.slot) : undefined,
@@ -839,6 +1146,7 @@
   const saidBy = (seat, kind, said, stake) => ({
     id: `${round.id}/v${vaza}/${seat}/${kind}${stake === undefined ? "" : `/${stake}`}`,
     round_id: round.id, vaza: txt(vaza), seat, kind,
+    display_seat: displaySeatOf(seat),
     card: "", count: "", power: "0", said, win: "", seq: at(),
   });
   const handOf = (seat) => (rows.held ?? []).filter((h) => h.current === "yes" && h.seat === seat);
@@ -1121,19 +1429,22 @@
   if ((round.raised ?? "") !== raisedBy) view.raised = raisedBy;
   if (Number(round.rung ?? 0) !== rung) view.rung = txt(rung);
   if ((round.envido_calls ?? "") !== calls) view.envido_calls = calls;
+  if (pendingLastRemoteShout && (round.last_remote_shout ?? "") !== pendingLastRemoteShout) {
+    view.last_remote_shout = pendingLastRemoteShout;
+  }
   if ((round.turn_seat ?? "") !== turn) {
     view.turn_seat = turn;
     view.ui_deadline = "2026-09-09T12:00:15Z";
     view.backend_deadline = "2026-09-09T12:00:20Z";
     if (playing) {
+      const isPartner = sideOf(turn) === sideOf(mySeat);
       view.said = turn === mySeat
         ? "your_turn"
-        : (match.opponent === "online" ? "opponent_turn" : "turn_of");
+        : (match.opponent === "online" ? (isPartner ? "partner_turn" : "opponent_turn") : "turn_of");
     }
   }
 
-  const vCode = VOICE_OF[variant] ?? "sp";
-  const vData = VOICE[vCode] ?? VOICE.sp;
+  const vData = voiceOf(variant);
   const wordOf = (r) => (vData.ladder[r] ?? (Number(r) > 0 ? "TRUCO!" : "")).toUpperCase();
 
   let targetShoutWord = "";
@@ -1147,22 +1458,30 @@
     targetShoutFrom = sideOf(asked);
     targetShoutKind = "call";
     targetShoutState = "live";
+    view.shout_seat = asked;
+    pendingRemoteShout = null;
   } else if (ran !== "") {
     targetShoutWord = vData.ran;
     targetShoutFrom = sideOf(ran);
     targetShoutKind = "run";
     targetShoutState = "live";
+    view.shout_seat = "";
+    pendingRemoteShout = null;
   } else if (round.shout_kind === "accept" && round.shout_state === "live") {
     targetShoutWord = round.shout_word ?? (vData.accept ?? "CAI DENTRO!");
     targetShoutFrom = round.shout_from ?? "";
     targetShoutKind = "accept";
     targetShoutState = "live";
+    view.shout_seat = "";
+    pendingRemoteShout = null;
   } else if (match.status === "over" || (match.winner ?? "") !== "") {
     const weWon = match.winner === "us";
     targetShoutWord = weWon ? vData.we_won : vData.they_won;
     targetShoutFrom = match.winner || "us";
     targetShoutKind = "close";
     targetShoutState = (round.shout_done === "yes" || round.shout_state === "gone") ? "gone" : "live";
+    view.shout_seat = "";
+    pendingRemoteShout = null;
   } else if ((round.result ?? "") !== "" || (round.phase ?? "") === "result") {
     const winSide = SIDES.includes(round.result) ? round.result : (round.result === "us" ? "us" : round.result === "them" ? "them" : "");
     if (winSide === "us") {
@@ -1176,6 +1495,21 @@
       targetShoutKind = "win";
       targetShoutState = "live";
     }
+    view.shout_seat = "";
+    pendingRemoteShout = null;
+  } else if (pendingRemoteShout) {
+    targetShoutWord = pendingRemoteShout.shout_word;
+    targetShoutFrom = pendingRemoteShout.shout_from;
+    targetShoutKind = pendingRemoteShout.shout_kind;
+    targetShoutState = pendingRemoteShout.shout_state;
+    view.shout_seat = pendingRemoteShout.shout_seat;
+    view.shout_t = pendingRemoteShout.shout_t;
+    view.shout_done = "no";
+  } else if (round.shout_kind === "quick" && round.shout_state === "live") {
+    targetShoutWord = round.shout_word ?? "";
+    targetShoutFrom = round.shout_from ?? "";
+    targetShoutKind = "quick";
+    targetShoutState = "live";
   }
 
   if (targetShoutState === "gone") {
@@ -1187,16 +1521,53 @@
   if ((round.shout_state ?? "gone") !== targetShoutState) view.shout_state = targetShoutState;
   if ((round.shout_word ?? "") !== targetShoutWord) {
     view.shout_word = targetShoutWord;
-    view.shout_t = (round.shout_t ?? "1") === "1" ? "2" : "1";
+    view.shout_t = nextShoutTOf(round.shout_t);
   }
   if ((round.shout_from ?? "") !== targetShoutFrom) view.shout_from = targetShoutFrom;
   if ((round.shout_kind ?? "") !== targetShoutKind) view.shout_kind = targetShoutKind;
+  if (targetShoutState === "live" && (round.shout_state !== "live" || round.shout_kind !== targetShoutKind || (round.shout_word ?? "") !== targetShoutWord)) {
+    view.shout_done = "no";
+  }
   const said = (line) => (line === (round.said ?? "") ? {} : { said: line });
   const patchRound = (patch) =>
     Object.keys(patch).length === 0 ? [] : [{ op: "patch", entity: "round", id: round.id, row: patch }];
 
-  const settled = (extra) => ({ updates: [...keep, ...patchRound({ ...view, ...extra })] });
-  const after = (type, delay) => ({ updates: [...keep, ...patchRound(view)], then: { type, delay } });
+  const runPatch = (actorSeat) => {
+    const runnerSide = sideOf(actorSeat);
+    const settledStake = txt(
+      asked !== "" && Number(round.stake) < Number(round.rung)
+        ? Number(round.stake)
+        : prevRung(round.stake)
+    );
+    return [
+      put("play", saidBy(actorSeat, "run", "ran")),
+      ...patchRound({
+        ...view,
+        asked: "",
+        ran: runnerSide,
+        shout_state: "live",
+        shout_word: vData.ran,
+        shout_from: runnerSide,
+        shout_kind: "run",
+        shout_t: nextShoutTOf(round.shout_t),
+        stake: settledStake,
+        ...said("ran"),
+      }),
+      { op: "patch", entity: "match", id: match.id, row: { stake: settledStake } },
+    ];
+  };
+
+  const withPendingShout = (res) => {
+    if (!res) return res;
+    if (pendingRemoteShout?.then && !res.then) {
+      res.then = pendingRemoteShout.then;
+    } else if (!res.then && round.shout_state === "live" && round.shout_kind === "quick" && round.shout_done !== "yes") {
+      res.then = { type: "close_shout", with: { t: round.shout_t, word: round.shout_word }, delay: 1800 };
+    }
+    return res;
+  };
+  const settled = (extra) => withPendingShout({ updates: [...keep, ...patchRound({ ...view, ...extra })] });
+  const after = (type, delay) => withPendingShout({ updates: [...keep, ...patchRound(view)], then: { type, delay } });
 
   // Playing a brink hand raises it to the brink's worth at once; the lead is
   // still the deal's, so the mão lays first once the decision is in.
@@ -1221,59 +1592,90 @@
     const calling = CALL_OF[event.from];
     if (calling !== undefined) {
       if (!calls.split(" ").includes(OFFER_OF[calling])) return { updates: [] };
-      return { updates: callEnvido(mySeat, calling) };
+      return withPendingShout({ updates: callEnvido(mySeat, calling) });
     }
     if (event.from === "btn-brink-play" || event.from === "btn-brink-run") {
       if (!calls.split(" ").includes("brink")) return { updates: [] };
-      if (event.from === "btn-brink-play") return { updates: playBrink(mySeat) };
-      return { updates: [put("play", saidBy(mySeat, "run", "brink_ran_us"))] };
+      if (event.from === "btn-brink-play") return withPendingShout({ updates: playBrink(mySeat) });
+      return withPendingShout({ updates: [put("play", saidBy(mySeat, "run", "brink_ran_us"))] });
     }
     if (event.from === "btn-flor") {
       if (!calls.split(" ").includes("flor")) return { updates: [] };
-      return { updates: declareFlor(mySeat) };
+      return withPendingShout({ updates: declareFlor(mySeat) });
     }
     if (event.from === "btn-envido-take" || event.from === "btn-envido-run") {
       if (!calls.split(" ").includes("answer")) return { updates: [] };
-      return { updates: settleEnvido(mySeat, event.from === "btn-envido-take") };
+      return withPendingShout({ updates: settleEnvido(mySeat, event.from === "btn-envido-take") });
     }
     if (event.from === "btn-encobrir") {
       if (!playing || turn !== mySeat) return { updates: [] };
-      const nextSaid = (round.said ?? "") === "modo_oculta" ? "your_turn" : "modo_oculta";
-      return { updates: patchRound({ ...view, said: nextSaid }) };
+      const isOculta = (round.oculta ?? "") === "yes";
+      const nextOculta = isOculta ? "no" : "yes";
+      const nextSaid = isOculta ? "your_turn" : "modo_oculta";
+      return { updates: patchRound({ ...view, oculta: nextOculta, said: nextSaid }) };
     }
     if (event.from && event.from.startsWith("shout-")) {
-      const SHOUT_TEXTS = {
-        "shout-chama": "CHAMA!",
-        "shout-manda": "MANDA VIR!",
-        "shout-desce": "DESCE A MADEIRA!",
-        "shout-chorou": "CHOROU, PAROU!",
-      };
-      const playerShout = SHOUT_TEXTS[event.from] ?? "TRUCO!";
+      if (isRoundBusy(round)) return { updates: [] };
+      const shoutDef = SHOUT_BY_FROM[event.from];
+      if (!shoutDef) throw new Error(`Unknown quick shout event: ${event.from}`);
+      const playerShout = shoutDef.key;
+      const shoutSlot = shoutDef.slot;
+
       const oppKey = match.opponent ?? "nezinho";
       const retorts = BOT_SHOUT_RETORTS[oppKey] ?? BOT_SHOUT_RETORTS.nezinho;
       const prng = mulberry32(Number(match.seed) + handNo * 7919 + vaza * 131 + (event.from.length * 17));
-      const shouldRetort = prng() < 0.70;
+      const shouldRetort = match.opponent !== "online" && prng() < 0.70;
       const retortIndex = Math.floor(prng() * retorts.length);
       const botReply = retorts[retortIndex];
+
+      const handPrefix = `${match.seed}/h${handNo}/shout/`;
+      const handShouts = (rows.room_action ?? []).filter((a) =>
+        a.action === "shout" &&
+        typeof a.id === "string" &&
+        a.id.startsWith(handPrefix) &&
+        /\/shout\/\d+/.test(a.id)
+      );
+      const maxSeq = handShouts.reduce((max, a) => Math.max(max, seqOfShout(a)), 0);
+      const nextSeq = maxSeq + 1;
+      const actId = `${match.seed}/h${handNo}/shout/${String(nextSeq).padStart(4, "0")}/${mySeat}`;
+      const nextShoutT = nextShoutTOf(round.shout_t);
 
       const baseUpdates = patchRound({
         ...view,
         shout_state: "live",
         shout_word: playerShout,
         shout_from: sideOf(mySeat),
-        shout_kind: "call",
-        shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+        shout_kind: "quick",
+        shout_seat: mySeat,
+        shout_t: nextShoutT,
+        shout_done: "no",
       });
+
+      if (match.opponent === "online") {
+        baseUpdates.push({
+          op: "put",
+          entity: "room_action",
+          id: actId,
+          row: {
+            id: actId,
+            room_seed: String(match.seed),
+            player_id: mySeat,
+            action: "shout",
+            card: "",
+            slot: shoutSlot,
+          },
+        });
+      }
 
       if (shouldRetort) {
         return {
           updates: baseUpdates,
-          then: { type: "bot_shout_retort", with: { reply: botReply }, reply: botReply, delay: 850 + Math.floor(prng() * 300) },
+          then: { type: "bot_shout_retort", with: { reply: botReply, t: nextShoutT, word: playerShout }, delay: 850 + Math.floor(prng() * 300) },
         };
       }
       return {
         updates: baseUpdates,
-        then: { type: "close_shout", delay: 1800 },
+        then: { type: "close_shout", with: { t: nextShoutT, word: playerShout }, delay: 1800 },
       };
     }
     if (event.from === "btn-truco") {
@@ -1302,7 +1704,7 @@
           shout_word: wordOf(rung),
           shout_from: callerSide,
           shout_kind: "call",
-          shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+          shout_t: nextShoutTOf(round.shout_t),
           ...said(`rung_${variant}_${rung}`),
         }),
       ];
@@ -1329,22 +1731,9 @@
     // two and both are owed the same answer.
     if (asked !== "" && sideOf(asked) !== mySide) {
       if (event.from === "btn-run") {
-        const updates = [
-          put("play", saidBy(mySeat, "run", "ran")),
-          ...patchRound({
-            ...view,
-            asked: "",
-            ran: mySide,
-            shout_state: "live",
-            shout_word: vData.ran,
-            shout_from: mySide,
-            shout_kind: "run",
-            shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
-            ...said("ran"),
-          }),
-        ];
+        const updates = runPatch(mySeat);
         if (match.opponent === "online") {
-          const actId = `${match.seed}/h${handNo}/v${vaza}/${mySeat}/run`;
+          const actId = `${match.seed}/h${handNo}/v${vaza}/${mySeat}/run/${rung}`;
           updates.push({
             op: "put",
             entity: "room_action",
@@ -1359,7 +1748,7 @@
             },
           });
         }
-        return { updates };
+        return withPendingShout({ updates });
       }
       if (event.from === "btn-accept") {
         const acceptWord = vData.accept ?? "CAI DENTRO!";
@@ -1372,7 +1761,7 @@
             shout_word: acceptWord,
             shout_from: mySide,
             shout_kind: "accept",
-            shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+            shout_t: nextShoutTOf(round.shout_t),
             rung: txt(nextRung(rung)),
             stake: txt(rung),
             ...said("worth"),
@@ -1395,7 +1784,7 @@
             },
           });
         }
-        return { updates, then: { type: "close_shout", delay: 1800 } };
+        return withPendingShout({ updates, then: { type: "close_shout", with: { t: nextShoutTOf(round.shout_t), word: acceptWord }, delay: 1800 } });
       }
       // Answering a raise with a higher one is two moves, and they are two
       // rows: the rung on the table is taken, then the next is asked for. The
@@ -1416,7 +1805,7 @@
             shout_word: wordOf(next),
             shout_from: mySide,
             shout_kind: "call",
-            shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+            shout_t: nextShoutTOf(round.shout_t),
             ...said(`rung_${variant}_${next}`),
           }),
           { op: "patch", entity: "match", id: match.id, row: { stake: txt(rung) } },
@@ -1437,7 +1826,7 @@
             },
           });
         }
-        return { updates };
+        return withPendingShout({ updates });
       }
       return { updates: [] };
     }
@@ -1445,7 +1834,7 @@
       const callingSeat = order.find((s) => sideOf(s) !== sideOf(mySeat)) ?? "eles1";
       const callerSide = sideOf(callingSeat);
       if (!playing || rung === 0 || raisedBy === callerSide) return { updates: [] };
-      return {
+      return withPendingShout({
         updates: [
           put("play", saidBy(callingSeat, "truco", `rung_${variant}_${rung}`, round.stake)),
           ...patchRound({
@@ -1456,17 +1845,17 @@
             shout_word: wordOf(rung),
             shout_from: callerSide,
             shout_kind: "call",
-            shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+            shout_t: nextShoutTOf(round.shout_t),
             ...said(`rung_${variant}_${rung}`),
           }),
         ],
-      };
+      });
     }
     if (event.from === "btn-bot-accept" && asked !== "") {
-      const answeringSeat = order.find((s) => sideOf(s) !== sideOf(asked)) ?? "eles1";
+      const answeringSeat = answeringSeatOf(asked);
       const answeringSide = sideOf(answeringSeat);
       const acceptWord = vData.accept ?? "CAI DENTRO!";
-      return {
+      return withPendingShout({
         updates: [
           put("play", saidBy(answeringSeat, "accept", "took", round.stake)),
           ...patchRound({
@@ -1476,34 +1865,19 @@
             shout_word: acceptWord,
             shout_from: answeringSide,
             shout_kind: "accept",
-            shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+            shout_t: nextShoutTOf(round.shout_t),
             rung: txt(nextRung(rung)),
             stake: txt(rung),
             ...said("worth"),
           }),
           { op: "patch", entity: "match", id: match.id, row: { stake: txt(rung) } },
         ],
-        then: { type: "close_shout", delay: 1800 },
-      };
+        then: { type: "close_shout", with: { t: nextShoutTOf(round.shout_t), word: acceptWord }, delay: 1800 },
+      });
     }
     if (event.from === "btn-bot-run" && asked !== "") {
-      const answeringSeat = order.find((s) => sideOf(s) !== sideOf(asked)) ?? "eles1";
-      return {
-        updates: [
-          put("play", saidBy(answeringSeat, "run", "ran")),
-          ...patchRound({
-            ...view,
-            asked: "",
-            ran: sideOf(answeringSeat),
-            shout_state: "live",
-            shout_word: vData.ran,
-            shout_from: sideOf(answeringSeat),
-            shout_kind: "run",
-            shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
-            ...said("ran"),
-          }),
-        ],
-      };
+      const answeringSeat = answeringSeatOf(asked);
+      return withPendingShout({ updates: runPatch(answeringSeat) });
     }
     if (event.from !== "btn-bot-play" && event.from !== "btn-bot-accept" && event.from !== "btn-bot-run" && event.from !== "btn-bot-truco") {
       const card = (rows.held ?? []).find((h) => h.id === event.id);
@@ -1511,9 +1885,10 @@
       if (!playing || turn !== card.seat || card.seat !== mySeat) return { updates: [] };
       const nextTurn = seated[(seated.indexOf(leadSeat) + laid.length + 1) % seated.length];
       const nextSaid = nextTurn === mySeat ? "your_turn" : (match.opponent === "online" ? "opponent_turn" : "turn_of");
+      const isOculta = (round.oculta ?? "") === "yes";
       const updates = [
         { op: "patch", entity: "held", id: card.id, row: { current: "no" } },
-        put("play", laidBy(card.seat, card, (round.said ?? "") === "modo_oculta")),
+        put("play", laidBy(card.seat, card, isOculta)),
         ...(rows.held ?? [])
           .filter((h) => h.current === "yes" && h.seat === mySeat && h.id !== card.id)
           .map((h) => ({ op: "patch", entity: "held", id: h.id, row: { blocked: "disabled" } })),
@@ -1521,11 +1896,14 @@
           ...view,
           turn_seat: nextTurn,
           said: nextSaid,
+          oculta: "no",
           ...(round.shout_state === "live" && round.shout_kind === "accept" ? { shout_state: "gone" } : {}),
         }),
       ];
       if (match.opponent === "online") {
-        const actId = `${match.seed}/h${handNo}/v${vaza}/${mySeat}/card`;
+        const actId = isOculta
+          ? `${match.seed}/h${handNo}/v${vaza}/${mySeat}/card/oculta`
+          : `${match.seed}/h${handNo}/v${vaza}/${mySeat}/card`;
         updates.push({
           op: "put",
           entity: "room_action",
@@ -1535,12 +1913,12 @@
             room_seed: String(match.seed),
             player_id: mySeat,
             action: "play_card",
-            card: card.card,
+            card: isOculta ? "" : card.card,
             slot: Number(card.slot ?? 0),
           },
         });
       }
-      return { updates };
+      return withPendingShout({ updates });
     }
   }
 
@@ -1575,6 +1953,9 @@
     const shoutWord = isGameOver ? winWord : (ran !== "" ? vData.ran : winWord);
     const shoutFrom = isGameOver ? (match.winner || (round.result === "us" ? "us" : "them")) : (ran !== "" ? sideOf(ran) : (round.result === "us" ? "us" : "them"));
     const shoutKind = isGameOver ? "close" : (ran !== "" ? "run" : "win");
+    const finalShoutT = (round.shout_word === shoutWord && round.shout_kind === shoutKind)
+      ? (round.shout_t ?? "0")
+      : nextShoutTOf(round.shout_t);
     const updates = [
       ...keep,
       ...patchRound({
@@ -1583,9 +1964,7 @@
         shout_word: shoutWord,
         shout_from: shoutFrom,
         shout_kind: shoutKind,
-        shout_t: (round.shout_word === shoutWord && round.shout_kind === shoutKind)
-          ? (round.shout_t ?? "1")
-          : ((round.shout_t ?? "1") === "1" ? "2" : "1"),
+        shout_t: finalShoutT,
         ...said(line),
       }),
       // Any pair can take a hand; a draw is paid to nobody.
@@ -1595,7 +1974,7 @@
       }),
     ];
     if (isGameOver) {
-      return { updates, then: { type: "close_shout", delay: 2400 } };
+      return { updates, then: { type: "close_shout", with: { t: finalShoutT, word: shoutWord }, delay: 2400 } };
     }
     return { updates };
   }
@@ -1612,7 +1991,7 @@
     // The personas bet on one scale and are not given a second one here: the
     // truco threshold they already carry, read against the envido's own
     // ceiling of thirty-three rather than a hand's eleven.
-    if (florOpen(seat)) return { updates: [...keep, ...declareFlor(seat)] };
+    if (florOpen(seat)) return withPendingShout({ updates: [...keep, ...declareFlor(seat)] });
     const count = envidoOf(dealtTo(seat));
     // A count well past what it would have opened on is worth climbing rather
     // than merely taking. Real envido is the only rung above a plain one that
@@ -1621,30 +2000,46 @@
     const mayClimb = !envidoChain.includes("envido_real") &&
       envidoChain[envidoChain.length - 1] !== "envido_falta";
     if (mayClimb && count >= Math.round((who(seat).call / 11) * 33) + 3) {
-      return { updates: [...keep, ...callEnvido(seat, "envido_real")] };
+      return withPendingShout({ updates: [...keep, ...callEnvido(seat, "envido_real")] });
     }
     const takes = count >= Math.round((who(seat).take / 11) * 33);
-    return { updates: [...keep, ...settleEnvido(seat, takes)] };
+    return withPendingShout({ updates: [...keep, ...settleEnvido(seat, takes)] });
   }
 
   /* --- somebody asked ---------------------------------------------------- */
 
   if (asked !== "") {
     if (match.opponent === "online") {
-      const answeringSeat = order.find((s) => sideOf(s) !== sideOf(asked)) ?? "eles1";
-      const roomActions = (rows.room_action ?? []).filter((a) => String(a.room_seed) === String(match.seed));
-      const remoteAccept = roomActions.find((a) =>
-        a.player_id === answeringSeat &&
-        a.action === "accept" &&
-        (a.id ? a.id.startsWith(`${match.seed}/h${handNo}/`) : true)
+      const answeringSeat = answeringSeatOf(asked);
+      const remoteRun = roomActions.find((a) =>
+        sideOf(a.player_id) !== sideOf(asked) &&
+        a.player_id !== mySeat &&
+        a.action === "run" &&
+        typeof a.id === "string" && a.id.includes(`/h${handNo}/`) && a.id.includes(`/v${vaza}/`)
       );
-      if (remoteAccept || event.from === "btn-bot-accept") {
-        const answeringSide = sideOf(answeringSeat);
-        const acceptWord = vData.accept ?? "CAI DENTRO!";
-        return {
+      if (remoteRun || event.from === "btn-bot-run") {
+        const runnerSeat = remoteRun ? remoteRun.player_id : answeringSeat;
+        return withPendingShout({
           updates: [
             ...keep,
-            put("play", saidBy(answeringSeat, "accept", "took", round.stake)),
+            ...runPatch(runnerSeat),
+          ],
+        });
+      }
+      const remoteAccept = roomActions.find((a) =>
+        sideOf(a.player_id) !== sideOf(asked) &&
+        a.player_id !== mySeat &&
+        a.action === "accept" &&
+        typeof a.id === "string" && a.id.includes(`/h${handNo}/`) && a.id.includes(`/v${vaza}/`) && a.id.endsWith(`/${rung}`)
+      );
+      if (remoteAccept || event.from === "btn-bot-accept") {
+        const actorSeat = remoteAccept ? remoteAccept.player_id : answeringSeat;
+        const answeringSide = sideOf(actorSeat);
+        const acceptWord = vData.accept ?? "CAI DENTRO!";
+        return withPendingShout({
+          updates: [
+            ...keep,
+            put("play", saidBy(actorSeat, "accept", "took", round.stake)),
             ...patchRound({
               ...view,
               asked: "",
@@ -1652,69 +2047,48 @@
               shout_word: acceptWord,
               shout_from: answeringSide,
               shout_kind: "accept",
-              shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+              shout_t: nextShoutTOf(round.shout_t),
               rung: txt(nextRung(rung)),
               stake: txt(rung),
               ...said("worth"),
             }),
             { op: "patch", entity: "match", id: match.id, row: { stake: txt(rung) } },
           ],
-          then: { type: "close_shout", delay: 1800 },
-        };
-      }
-      const remoteRun = roomActions.find((a) =>
-        a.player_id === answeringSeat &&
-        a.action === "run" &&
-        (a.id ? a.id.startsWith(`${match.seed}/h${handNo}/`) : true)
-      );
-      if (remoteRun || event.from === "btn-bot-run") {
-        return {
-          updates: [
-            ...keep,
-            put("play", saidBy(answeringSeat, "run", "ran")),
-            ...patchRound({
-              ...view,
-              asked: "",
-              ran: sideOf(answeringSeat),
-              shout_state: "live",
-              shout_word: vData.ran,
-              shout_from: sideOf(answeringSeat),
-              shout_kind: "run",
-              shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
-            }),
-          ],
-        };
+          then: { type: "close_shout", with: { t: nextShoutTOf(round.shout_t), word: acceptWord }, delay: 1800 },
+        });
       }
       const remoteRaise = roomActions.find((a) =>
-        a.player_id === answeringSeat &&
+        sideOf(a.player_id) !== sideOf(asked) &&
+        a.player_id !== mySeat &&
         a.action === "truco" &&
         Number(a.slot) > rung &&
-        (a.id ? a.id.startsWith(`${match.seed}/h${handNo}/`) : true)
+        typeof a.id === "string" && a.id.startsWith(`${match.seed}/h${handNo}/`)
       );
       if (remoteRaise) {
+        const actorSeat = remoteRaise.player_id;
         const raiseRung = Number(remoteRaise.slot);
-        const taken = saidBy(answeringSeat, "accept", "took", round.stake);
-        const over = saidBy(answeringSeat, "truco", `rung_${variant}_${raiseRung}`, rung);
-        return {
+        const taken = saidBy(actorSeat, "accept", "took", round.stake);
+        const over = saidBy(actorSeat, "truco", `rung_${variant}_${raiseRung}`, rung);
+        return withPendingShout({
           updates: [
             ...keep,
             put("play", taken),
             put("play", over),
             ...patchRound({
               ...view,
-              asked: answeringSeat,
+              asked: actorSeat,
               rung: txt(raiseRung),
               stake: txt(rung),
               shout_state: "live",
               shout_word: wordOf(raiseRung),
-              shout_from: sideOf(answeringSeat),
+              shout_from: sideOf(actorSeat),
               shout_kind: "call",
-              shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+              shout_t: nextShoutTOf(round.shout_t),
               ...said(`rung_${variant}_${raiseRung}`),
             }),
             { op: "patch", entity: "match", id: match.id, row: { stake: txt(rung) } },
           ],
-        };
+        });
       }
       return settled({});
     }
@@ -1735,11 +2109,11 @@
     // standing underneath while the count is settled. The threshold is the
     // one the house would have opened on.
     if (mayCallEnvido(seat) && envidoOf(dealtTo(seat)) >= Math.round((who(seat).call / 11) * 33)) {
-      return { updates: [...keep, ...callEnvido(seat, "envido")] };
+      return withPendingShout({ updates: [...keep, ...callEnvido(seat, "envido")] });
     }
     if (strength >= who(seat).take) {
       const acceptWord = vData.accept ?? "CAI DENTRO!";
-      return {
+      return withPendingShout({
         updates: [
           ...keep,
           put("play", saidBy(seat, "accept", "took", round.stake)),
@@ -1750,32 +2124,22 @@
             shout_word: acceptWord,
             shout_from: sideOf(seat),
             shout_kind: "accept",
-            shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+            shout_t: nextShoutTOf(round.shout_t),
             rung: txt(nextRung(rung)),
             stake: txt(rung),
             ...said("worth"),
           }),
           { op: "patch", entity: "match", id: match.id, row: { stake: txt(rung) } },
         ],
-        then: { type: "close_shout", delay: 1800 },
-      };
+        then: { type: "close_shout", with: { t: nextShoutTOf(round.shout_t), word: acceptWord }, delay: 1800 },
+      });
     }
-    return {
+    return withPendingShout({
       updates: [
         ...keep,
-        put("play", saidBy(seat, "run", "ran")),
-        ...patchRound({
-          ...view,
-          asked: "",
-          ran: sideOf(seat),
-          shout_state: "live",
-          shout_word: vData.ran,
-          shout_from: sideOf(seat),
-          shout_kind: "run",
-          shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
-        }),
+        ...runPatch(seat),
       ],
-    };
+    });
   }
 
   /* --- the house is on the brink ----------------------------------------- */
@@ -1787,8 +2151,8 @@
     if (event.type !== "answer") return after("answer", BEAT * 2);
     const seats = order.filter((s) => sideOf(s) === brink);
     const best = Math.max(...seats.map((s) => strengthOf(handOf(s))));
-    if (best >= who(seats[0]).take) return { updates: [...keep, ...playBrink(seats[0])] };
-    return { updates: [...keep, put("play", saidBy(seats[0], "run", `brink_ran_${brink}`))] };
+    if (best >= who(seats[0]).take) return withPendingShout({ updates: [...keep, ...playBrink(seats[0])] });
+    return withPendingShout({ updates: [...keep, put("play", saidBy(seats[0], "run", `brink_ran_${brink}`))] });
   }
   // Owed by this seat's side: nothing is laid until it has decided.
   if (brinkOwed) return settled({});
@@ -1834,7 +2198,7 @@
     const line = verdict === "tie"
       ? `Empatou a ${trick}.`
       : verdict === "us" ? `${cap(trick)} sua.` : `${cap(trick)} deles.`;
-    return {
+    return withPendingShout({
       updates: [
         ...keep,
         ...marks,
@@ -1846,7 +2210,7 @@
           ...said(result === "" ? line : round.said ?? ""),
         }),
       ],
-    };
+    });
   }
 
   /* --- eles play --------------------------------------------------------- */
@@ -1855,8 +2219,8 @@
   if (turn === mySeat && !botMove) return settled({});
 
   const oppSeat = order.find((s) => sideOf(s) !== sideOf(mySeat)) ?? "eles1";
-  const actorSeat = botMove ? (event.detail?.seat ?? oppSeat) : turn;
-  if (actorSeat === mySeat && !botMove) return settled({});
+  const actorSeat = botMove ? (event.detail?.seat ?? (turn === mySeat ? oppSeat : turn)) : turn;
+  if (actorSeat === mySeat) return settled({});
   if (turn !== actorSeat) return settled({});
 
   const hand = handOf(actorSeat);
@@ -1868,7 +2232,7 @@
     const pick = (cardTarget ? hand.find((c) => c.card === cardTarget) : null)
       ?? (slotTarget !== undefined ? hand.find((c) => String(c.slot) === String(slotTarget)) : null)
       ?? (hand.slice().sort((x, y) => Number(x.power) - Number(y.power)).find((c) => Number(c.power) > (laid.length === 0 ? 0 : Math.max(...laid.map((p) => Number(p.power))))) ?? hand[0]);
-    return {
+    return withPendingShout({
       updates: [
         ...keep,
         { op: "patch", entity: "held", id: pick.id, row: { current: "no" } },
@@ -1878,20 +2242,19 @@
           ...(round.shout_state === "live" && round.shout_kind === "accept" ? { shout_state: "gone" } : {}),
         }),
       ],
-    };
+    });
   }
 
   if (match.opponent === "online") {
-    const roomActions = (rows.room_action ?? []).filter((a) => String(a.room_seed) === String(match.seed));
     if (asked === "" && playing && rung !== 0 && raisedBy !== sideOf(actorSeat)) {
       const remoteTruco = roomActions.find((a) =>
         a.player_id === actorSeat &&
         a.action === "truco" &&
         Number(a.slot) === rung &&
-        (a.id ? a.id.startsWith(`${match.seed}/h${handNo}/`) : true)
+        typeof a.id === "string" && a.id.startsWith(`${match.seed}/h${handNo}/`)
       );
       if (remoteTruco) {
-        return {
+        return withPendingShout({
           updates: [
             ...keep,
             put("play", saidBy(actorSeat, "truco", `rung_${variant}_${rung}`, round.stake)),
@@ -1902,33 +2265,36 @@
               shout_word: wordOf(rung),
               shout_from: sideOf(actorSeat),
               shout_kind: "call",
-              shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+              shout_t: nextShoutTOf(round.shout_t),
               ...said(`rung_${variant}_${rung}`),
             }),
           ],
-        };
+        });
       }
     }
     const targetActId = `${match.seed}/h${handNo}/v${vaza}/${actorSeat}/card`;
     const remotePlay = roomActions.find((a) =>
-      a.id === targetActId || (
+      a.id === targetActId ||
+      a.id === `${targetActId}/oculta` || (
         a.player_id === actorSeat &&
         a.action === "play_card" &&
-        (a.id ? a.id.startsWith(`${match.seed}/h${handNo}/v${vaza}/`) : true)
+        typeof a.id === "string" && a.id.startsWith(`${match.seed}/h${handNo}/v${vaza}/`)
       )
     );
     if (remotePlay) {
+      const isOculta = Boolean(remotePlay.id && remotePlay.id.endsWith("/oculta"));
       const pick = (remotePlay.card ? hand.find((c) => c.card === remotePlay.card) : null)
         ?? (remotePlay.slot !== undefined ? hand.find((c) => String(c.slot) === String(remotePlay.slot)) : null)
         ?? hand[0];
-      return {
+      const res = {
         updates: [
           ...keep,
           { op: "patch", entity: "held", id: pick.id, row: { current: "no" } },
-          put("play", laidBy(actorSeat, pick)),
+          put("play", laidBy(actorSeat, pick, isOculta)),
           ...patchRound(view),
         ],
       };
+      return withPendingShout(res);
     }
     return settled({});
   }
@@ -1959,12 +2325,12 @@
   if (event.type !== "act" && event.type !== "call") return after("act", BEAT);
 
   if (wantsEnvido) {
-    return { updates: [...keep, ...callEnvido(turn, "envido")] };
+    return withPendingShout({ updates: [...keep, ...callEnvido(turn, "envido")] });
   }
 
   if (wants) {
     const isFirstCall = Number(round.stake) === opening(match.variant);
-    return {
+    return withPendingShout({
       updates: [
         ...keep,
         put("play", saidBy(turn, "truco", `rung_${variant}_${rung}`, round.stake)),
@@ -1975,11 +2341,11 @@
           shout_word: wordOf(rung),
           shout_from: sideOf(turn),
           shout_kind: "call",
-          shout_t: (round.shout_t ?? "1") === "1" ? "2" : "1",
+          shout_t: nextShoutTOf(round.shout_t),
           ...said(isFirstCall ? `call_${castOf(turn)}` : `rung_${variant}_${rung}`),
         }),
       ],
-    };
+    });
   }
 
   // Lowest winning card, else lowest card (ir decision-16). A mão de ferro is
@@ -1990,7 +2356,7 @@
   const pick = brink === "both"
     ? hand.slice().sort((x, y) => Number(x.slot) - Number(y.slot))[0]
     : sorted.find((c) => Number(c.power) > toBeat) ?? sorted[0];
-  return {
+  return withPendingShout({
     updates: [
       ...keep,
       { op: "patch", entity: "held", id: pick.id, row: { current: "no" } },
@@ -2000,5 +2366,5 @@
         ...(round.shout_state === "live" && round.shout_kind === "accept" ? { shout_state: "gone" } : {}),
       }),
     ],
-  };
+  });
 }

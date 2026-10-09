@@ -430,20 +430,37 @@ body:has([data-screen="arena"]) > nav a {
   & .seat-role { display: none; }
   & .seat-role i { display: none; font-style: normal; }
 
-  &:has(.actions[data-leader="you"]) .seat-role,
-  &:has(.matchbox[data-seats="1v1"]):has(.actions[data-leader="eles1"]) .seat-role,
-  &:has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="eles2"]) .seat-role {
+  /* Mão: leader matches local seat */
+  &:not(:has(.matchbox:is([data-my-seat="eles1"], [data-my-seat="eles2"], [data-my-seat="parca"]))):has(.actions[data-leader="you"]) .seat-role,
+  &:has(.matchbox[data-my-seat="eles1"]):has(.actions[data-leader="eles1"]) .seat-role,
+  &:has(.matchbox[data-my-seat="eles2"]):has(.actions[data-leader="eles2"]) .seat-role,
+  &:has(.matchbox[data-my-seat="parca"]):has(.actions[data-leader="parca"]) .seat-role {
     display: inline-block;
   }
-
-  &:not(:has(.matchbox[data-my-seat="eles1"])):has(.actions[data-leader="you"]) .seat-role i[data-r="mao"] { display: inline; }
-  &:not(:has(.matchbox[data-my-seat="eles1"])):has(.matchbox[data-seats="1v1"]):has(.actions[data-leader="eles1"]) .seat-role i[data-r="pe"],
-  &:not(:has(.matchbox[data-my-seat="eles1"])):has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="eles2"]) .seat-role i[data-r="pe"] {
+  &:not(:has(.matchbox:is([data-my-seat="eles1"], [data-my-seat="eles2"], [data-my-seat="parca"]))):has(.actions[data-leader="you"]) .seat-role i[data-r="mao"],
+  &:has(.matchbox[data-my-seat="eles1"]):has(.actions[data-leader="eles1"]) .seat-role i[data-r="mao"],
+  &:has(.matchbox[data-my-seat="eles2"]):has(.actions[data-leader="eles2"]) .seat-role i[data-r="mao"],
+  &:has(.matchbox[data-my-seat="parca"]):has(.actions[data-leader="parca"]) .seat-role i[data-r="mao"] {
     display: inline;
   }
 
-  &:has(.matchbox[data-my-seat="eles1"]):has(.actions[data-leader="eles1"]) .seat-role i[data-r="mao"] { display: inline; }
-  &:has(.matchbox[data-my-seat="eles1"]):has(.actions[data-leader="you"]) .seat-role i[data-r="pe"] { display: inline; }
+  /* Pé: leader sits after local seat in turn order */
+  &:not(:has(.matchbox:is([data-my-seat="eles1"], [data-my-seat="eles2"], [data-my-seat="parca"]))):has(.matchbox[data-seats="1v1"]):has(.actions[data-leader="eles1"]) .seat-role,
+  &:has(.matchbox[data-my-seat="eles1"]):has(.matchbox[data-seats="1v1"]):has(.actions[data-leader="you"]) .seat-role,
+  &:not(:has(.matchbox:is([data-my-seat="eles1"], [data-my-seat="eles2"], [data-my-seat="parca"]))):has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="eles1"]) .seat-role,
+  &:has(.matchbox[data-my-seat="eles1"]):has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="parca"]) .seat-role,
+  &:has(.matchbox[data-my-seat="parca"]):has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="eles2"]) .seat-role,
+  &:has(.matchbox[data-my-seat="eles2"]):has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="you"]) .seat-role {
+    display: inline-block;
+  }
+  &:not(:has(.matchbox:is([data-my-seat="eles1"], [data-my-seat="eles2"], [data-my-seat="parca"]))):has(.matchbox[data-seats="1v1"]):has(.actions[data-leader="eles1"]) .seat-role i[data-r="pe"],
+  &:has(.matchbox[data-my-seat="eles1"]):has(.matchbox[data-seats="1v1"]):has(.actions[data-leader="you"]) .seat-role i[data-r="pe"],
+  &:not(:has(.matchbox:is([data-my-seat="eles1"], [data-my-seat="eles2"], [data-my-seat="parca"]))):has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="eles1"]) .seat-role i[data-r="pe"],
+  &:has(.matchbox[data-my-seat="eles1"]):has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="parca"]) .seat-role i[data-r="pe"],
+  &:has(.matchbox[data-my-seat="parca"]):has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="eles2"]) .seat-role i[data-r="pe"],
+  &:has(.matchbox[data-my-seat="eles2"]):has(.matchbox[data-seats="2v2"]):has(.actions[data-leader="you"]) .seat-role i[data-r="pe"] {
+    display: inline;
+  }
 
   /* Everything the table can be set to, plus the one piece of navigation the
      app has, gathered at the far end of the pad. Wraps as a block, so when the
@@ -485,39 +502,52 @@ body:has([data-screen="arena"]) > nav a {
   & .rules-link:hover { color: var(--pad-ink); border-block-end-color: var(--pad-ink); }
   & .rules-link:focus-visible { outline: 2px solid var(--rim); outline-offset: 2px; }
 
-  /* Whether the bar is online is a state, not an act, so it is dressed as one:
-     a lit dot and an unshouted word in the pad's own dim ink. It stays a
-     <button> because it is the only door to #modal-online — the treatment is
-     what was wrong with it, not the element. The ink is --pad-dim and not the
-     lamp because this control's ground is the cream pad, unlike the settings
-     beside it, which paint their own dark wood. */
+  /* Online presence status button on the seatbar pad:
+     Shows a quiet pill with a lit dot and label.
+     Clicking opens #modal-online (Bar Online).
+     When online (data-online="true"), the dot pulses emerald green. */
   & .btn-online-status {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    /* Quiet, not small: this is the only way to the online modal, so it keeps
-       a finger's worth of height whatever the type scale does to its label. */
-    padding: 2px 6px;
+    padding: 2px 8px;
     min-block-size: 24px;
-    border: none;
-    background: none;
+    border-radius: var(--r-full);
+    border: 1px solid color-mix(in oklch, var(--pad-ink) 20%, transparent);
+    background: color-mix(in oklch, var(--pad-ink) 6%, transparent);
     color: var(--pad-dim);
-    font: 500 clamp(0.5rem, 1.15dvh, 0.6875rem)/1.6 ui-sans-serif, system-ui, sans-serif;
+    font: 600 clamp(0.5rem, 1.15dvh, 0.6875rem)/1.6 ui-sans-serif, system-ui, sans-serif;
     white-space: nowrap;
     cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
-  & .btn-online-status:hover { color: var(--pad-ink); }
+  & .btn-online-status:hover {
+    color: var(--pad-ink);
+    border-color: color-mix(in oklch, var(--pad-ink) 40%, transparent);
+  }
   & .btn-online-status:focus-visible {
     outline: 2px solid var(--rim);
     outline-offset: 2px;
   }
+
   & .online-label-short { display: none; }
   & .online-label-full { display: inline; }
+
   & .online-pulse {
     inline-size: 7px;
     block-size: 7px;
     border-radius: var(--r-full);
-    background: #15803d;
+    background: #78716c;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+  & .btn-online-status[data-online="true"] .online-pulse {
+    background: #22c55e;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
+    animation: pulse-dot 1.6s infinite ease-in-out;
+  }
+  & .btn-online-status[data-online="true"] {
+    color: var(--pad-ink);
+    border-color: color-mix(in oklch, #22c55e 40%, transparent);
   }
 
   /* The scoreboard: two figures with the one hot thing between them. */
@@ -1135,50 +1165,50 @@ body:has([data-screen="arena"]) > nav a {
     margin-inline-start: calc(var(--card-w) * -0.48);
   }
 
-  & .played[data-seat="you"] {
+  & .played:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""]) {
     --from-y: calc(var(--card-h) * 1.12);
     --from-x: 0px;
     --from-rot: 0deg;
   }
-  & .played[data-seat="you"][data-from-slot="0"] {
+  & .played:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""])[data-from-slot="0"] {
     --from-x: calc(var(--card-w) * -1.2);
     --from-rot: -5deg;
   }
-  & .played[data-seat="you"][data-from-slot="1"] {
+  & .played:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""])[data-from-slot="1"] {
     --from-x: 0px;
     --from-rot: 0deg;
   }
-  & .played[data-seat="you"][data-from-slot="2"] {
+  & .played:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""])[data-from-slot="2"] {
     --from-x: calc(var(--card-w) * 1.2);
     --from-rot: 5deg;
   }
 
-  & .played:not([data-seat="you"]) {
+  & .played:not(:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""])) {
     --from-y: calc(var(--card-h) * -1.02);
     --from-x: 0px;
     --from-rot: 0deg;
   }
-  & .played:not([data-seat="you"])[data-from-slot="0"] {
+  & .played:not(:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""]))[data-from-slot="0"] {
     --from-x: calc(var(--card-w) * -1.0);
     --from-rot: -6deg;
   }
-  & .played:not([data-seat="you"])[data-from-slot="1"] {
+  & .played:not(:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""]))[data-from-slot="1"] {
     --from-x: 0px;
     --from-rot: 0deg;
   }
-  & .played:not([data-seat="you"])[data-from-slot="2"] {
+  & .played:not(:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""]))[data-from-slot="2"] {
     --from-x: calc(var(--card-w) * 1.0);
     --from-rot: 6deg;
   }
 
-  & .played[data-seat="you"] .card {
+  & .played:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""]) .card {
     animation: fly-travel var(--motion-settle) var(--motion-settle-ease) both,
                fly-arc-you var(--motion-settle) linear both;
     transition: filter var(--motion-settle) var(--motion-settle-ease),
                 box-shadow var(--motion-settle) var(--motion-settle-ease);
   }
 
-  & .played:not([data-seat="you"]) .card {
+  & .played:not(:is([data-display-seat="you"], [data-seat="you"]:not([data-display-seat]), [data-seat="you"][data-display-seat=""])) .card {
     animation: fly-travel var(--motion-settle) var(--motion-settle-ease) both,
                fly-arc-house var(--motion-settle) linear both;
     transition: filter var(--motion-settle) var(--motion-settle-ease),
@@ -1416,16 +1446,40 @@ body:has([data-screen="arena"]) > nav a {
     white-space: nowrap;
   }
 
+  & .log .v::after { content: "ª"; }
   & .log li[data-kind="truco"] .what,
   & .log li[data-kind="accept"] .what,
   & .log li[data-kind="run"] .what { color: var(--danger); font-weight: 700; }
-  & .log .v::after { content: "ª"; }
   & .log li[data-seat="you"] .who::before { content: "você"; }
   & .log li[data-seat="parca"] .who::before { content: "parça"; }
   & .log li[data-seat="eles1"] .who::before { content: "eles"; }
   & .log li[data-seat="eles2"] .who::before { content: "eles 2"; }
-  &:has(.matchbox[data-my-seat="eles1"]) .log li[data-seat="you"] .who::before { content: "eles"; }
-  &:has(.matchbox[data-my-seat="eles1"]) .log li[data-seat="eles1"] .who::before { content: "você"; }
+
+  &:is([data-my-seat="eles1"], :has(.matchbox[data-my-seat="eles1"])):has(.matchbox[data-seats="2v2"]) {
+    & .log li[data-seat="eles1"] .who::before { content: "você"; }
+    & .log li[data-seat="eles2"] .who::before { content: "parça"; }
+    & .log li[data-seat="parca"] .who::before { content: "eles"; }
+    & .log li[data-seat="you"] .who::before { content: "eles 2"; }
+  }
+
+  &:is([data-my-seat="eles1"], :has(.matchbox[data-my-seat="eles1"])):not(:has(.matchbox[data-seats="2v2"])) {
+    & .log li[data-seat="eles1"] .who::before { content: "você"; }
+    & .log li[data-seat="you"] .who::before { content: "eles"; }
+  }
+
+  &:is([data-my-seat="parca"], :has(.matchbox[data-my-seat="parca"])) {
+    & .log li[data-seat="parca"] .who::before { content: "você"; }
+    & .log li[data-seat="you"] .who::before { content: "parça"; }
+    & .log li[data-seat="eles2"] .who::before { content: "eles"; }
+    & .log li[data-seat="eles1"] .who::before { content: "eles 2"; }
+  }
+
+  &:is([data-my-seat="eles2"], :has(.matchbox[data-my-seat="eles2"])) {
+    & .log li[data-seat="eles2"] .who::before { content: "você"; }
+    & .log li[data-seat="eles1"] .who::before { content: "parça"; }
+    & .log li[data-seat="you"] .who::before { content: "eles"; }
+    & .log li[data-seat="parca"] .who::before { content: "eles 2"; }
+  }
   & .log .empty { margin: 0; grid-column: 1 / -1; }
 
   /* Lowered by the dealer when the call is answered. */
@@ -1856,18 +1910,25 @@ body:has([data-screen="arena"]) > nav a {
   &:has(.matchbox[data-status="playing"]):has(.hand[data-brink]:not([data-brink=""])) .play[data-phase="idle"] #btn-raise,
   &:has(.matchbox[data-status="playing"]):has(.hand[data-rung="0"]) .play[data-phase="idle"] #btn-truco,
   &:has(.matchbox[data-status="playing"]):has(.hand[data-rung="0"]) .play[data-phase="idle"] #btn-raise { display: none !important; }
-  &:has(.matchbox:not([data-my-seat="eles1"])):has(.hand:is([data-asked^="eles"])) .play[data-phase="idle"] .answers { display: flex; }
-  &:has(.matchbox[data-my-seat="eles1"]):has(.hand:is([data-asked="you"], [data-asked="parca"])) .play[data-phase="idle"] .answers { display: flex; }
   &:has(.hand:not([data-asked=""])) .play[data-phase="idle"] .actions { display: none; }
-  &:has(.matchbox:not([data-my-seat="eles1"])):has(.hand:is([data-asked^="eles"])) .play[data-phase="idle"] #btn-next { display: none; }
-  &:has(.matchbox[data-my-seat="eles1"]):has(.hand:is([data-asked="you"], [data-asked="parca"])) .play[data-phase="idle"] #btn-next { display: none; }
-  &:has(.matchbox:not([data-my-seat="eles1"])):has(.hand:not([data-turn-seat="you"]):not([data-result=""]):not([data-asked^="eles"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules),
-  &:has(.matchbox[data-my-seat="eles1"]):has(.hand:not([data-turn-seat="eles1"]):not([data-result=""]):not([data-asked="you"]):not([data-asked="parca"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules) {
+  &:has(.matchbox:not([data-opponent="online"])) {
+    &:has(.hand:is([data-asked^="eles"])) .play[data-phase="idle"] .answers { display: flex; }
+    &:has(.hand:is([data-asked^="eles"])) .play[data-phase="idle"] #btn-next { display: none; }
+  }
+  &:has(.matchbox[data-opponent="online"]) {
+    &:has(.matchbox:not([data-my-seat="eles1"], [data-my-seat="eles2"])):has(.hand:is([data-asked^="eles"])) .play[data-phase="idle"] .answers,
+    &:has(.matchbox:is([data-my-seat="eles1"], [data-my-seat="eles2"])):has(.hand:is([data-asked="you"], [data-asked="parca"])) .play[data-phase="idle"] .answers { display: flex; }
+    &:has(.matchbox:not([data-my-seat="eles1"], [data-my-seat="eles2"])):has(.hand:is([data-asked^="eles"])) .play[data-phase="idle"] #btn-next,
+    &:has(.matchbox:is([data-my-seat="eles1"], [data-my-seat="eles2"])):has(.hand:is([data-asked="you"], [data-asked="parca"])) .play[data-phase="idle"] #btn-next { display: none; }
+  }
+  &:has(.matchbox:not([data-my-seat="eles1"], [data-my-seat="eles2"], [data-my-seat="parca"])):has(.hand:not([data-turn-seat="you"]):not([data-result=""]):not([data-asked^="eles"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules),
+  &:has(.matchbox[data-my-seat="parca"]):has(.hand:not([data-turn-seat="parca"]):not([data-result=""]):not([data-asked^="eles"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules),
+  &:has(.matchbox[data-my-seat="eles1"]):has(.hand:not([data-turn-seat="eles1"]):not([data-result=""]):not([data-asked="you"]):not([data-asked="parca"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules),
+  &:has(.matchbox[data-my-seat="eles2"]):has(.hand:not([data-turn-seat="eles2"]):not([data-result=""]):not([data-asked="you"]):not([data-asked="parca"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules) {
     opacity: 0.5;
     pointer-events: none;
   }
-  &:has(.matchbox:not([data-my-seat="eles1"])):has(.hand[data-raised="us"]) .play[data-phase="idle"] #btn-truco,
-  &:has(.matchbox[data-my-seat="eles1"]):has(.hand[data-raised="them"]) .play[data-phase="idle"] #btn-truco,
+  &:has(.hand[data-raised="us"]) .play[data-phase="idle"] #btn-truco,
   &:has(.hand[data-rung="0"]) .play[data-phase="idle"] #btn-truco,
   &:has(.hand[data-rung="0"]) .play[data-phase="idle"] #btn-raise {
     opacity: 0.5;
@@ -2054,8 +2115,11 @@ body:has([data-screen="arena"]) > nav a {
     }
     & .btn-online-status {
       gap: 4px;
-      padding: 0 2px;
+      padding: 0 4px;
+      font-size: 0.625rem;
     }
+    & .online-label-full { display: none; }
+    & .online-label-short { display: inline; }
     & .seatbar-links {
       gap: 4px;
     }
@@ -2241,25 +2305,80 @@ body:has([data-screen="arena"]) > nav a {
     padding-inline: 12px;
     font-size: 0.75rem;
   }
-  & .identity-badge {
+  & .identity-toggle-wrap {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    background: color-mix(in oklch, #22c55e 15%, transparent);
-    border: 1px solid #86efac;
-    border-radius: var(--r-full);
-    font: 700 0.6875rem ui-sans-serif, system-ui;
-    color: #15803d;
-    text-transform: uppercase;
+    margin-inline-start: auto;
   }
-  & .status-dot-green {
+  & .identity-toggle-wrap .btn-online-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 10px 3px 6px;
+    min-block-size: 28px;
+    border-radius: var(--r-full);
+    border: 1px solid color-mix(in oklch, var(--pad-ink) 25%, transparent);
+    background: color-mix(in oklch, var(--pad-ink) 8%, transparent);
+    color: var(--pad-dim);
+    font: 600 clamp(0.625rem, 1.2dvh, 0.75rem)/1.4 ui-sans-serif, system-ui, sans-serif;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  & .identity-toggle-wrap .btn-online-toggle:hover {
+    color: var(--pad-ink);
+    border-color: color-mix(in oklch, var(--pad-ink) 45%, transparent);
+  }
+  & .identity-toggle-wrap .btn-online-toggle:focus-visible {
+    outline: 2px solid var(--rim);
+    outline-offset: 2px;
+  }
+  & .identity-toggle-wrap .toggle-track {
+    display: inline-block;
+    inline-size: 26px;
+    block-size: 15px;
+    border-radius: var(--r-full);
+    background: color-mix(in oklch, var(--pad-ink) 28%, transparent);
+    position: relative;
+    transition: background 0.2s ease;
+  }
+  & .identity-toggle-wrap .toggle-thumb {
+    display: block;
+    inline-size: 11px;
+    block-size: 11px;
+    border-radius: var(--r-full);
+    background: #fff;
+    position: absolute;
+    inset-block-start: 2px;
+    inset-inline-start: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease;
+  }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] {
+    background: color-mix(in oklch, #15803d 18%, transparent);
+    border-color: color-mix(in oklch, #15803d 60%, transparent);
+    color: var(--pad-ink);
+  }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-track {
+    background: #16a34a;
+  }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-thumb {
+    transform: translateX(11px);
+  }
+  & .identity-toggle-wrap .btn-online-toggle .online-pulse {
     inline-size: 7px;
     block-size: 7px;
     border-radius: var(--r-full);
-    background: #22c55e;
-    box-shadow: 0 0 5px #22c55e;
+    background: #78716c;
+    transition: background 0.2s ease;
   }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .online-pulse {
+    background: #22c55e;
+  }
+  & .identity-toggle-wrap .btn-online-toggle .toggle-label-off { display: inline; color: var(--pad-dim); }
+  & .identity-toggle-wrap .btn-online-toggle .toggle-label-on { display: none; }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-label-off { display: none; }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-label-on { display: inline; font-weight: 700; color: #15803d; }
 
   & .sec-header-row {
     display: flex;
@@ -2281,14 +2400,24 @@ body:has([data-screen="arena"]) > nav a {
   & .lobby-players-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-block-size: 60px;
-    max-block-size: 160px;
+    gap: 6px;
+    block-size: 136px;
+    min-block-size: 136px;
+    max-block-size: 136px;
     overflow-y: auto;
-    padding: 4px;
-    background: color-mix(in oklch, var(--pad-1) 80%, #fff);
+    padding: 6px;
+    background: color-mix(in oklch, var(--pad-1) 85%, #fff);
     border: 1px solid var(--pad-line);
     border-radius: var(--r-sm);
+    box-sizing: border-box;
+    scrollbar-gutter: stable;
+  }
+  & .lobby-players-list .empty {
+    margin: auto;
+    padding: 12px 16px;
+    text-align: center;
+    color: var(--pad-dim);
+    font: 500 0.8125rem/1.4 ui-sans-serif, system-ui, sans-serif;
   }
   & .lobby-empty {
     padding: 12px;
@@ -2298,6 +2427,7 @@ body:has([data-screen="arena"]) > nav a {
     gap: 4px;
     color: var(--pad-dim);
     font-size: 0.8125rem;
+    margin: auto;
   }
   & .lobby-empty small {
     font-size: 0.6875rem;
@@ -2309,11 +2439,14 @@ body:has([data-screen="arena"]) > nav a {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 12px;
+    padding: 6px 10px;
+    min-block-size: 46px;
     background: #ffffff;
     border: 1px solid var(--rim);
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+    flex-shrink: 0;
 
     &[data-is-me="true"] .btn-challenge {
       display: none !important;
@@ -2380,6 +2513,33 @@ body:has([data-screen="arena"]) > nav a {
     margin: 0;
     font: 400 0.8125rem/1.4 ui-sans-serif, system-ui, sans-serif;
     color: var(--pad-dim, #6B573D);
+  }
+  & .invite-seat-picker {
+    display: flex;
+    gap: 6px;
+    margin-block: 4px;
+  }
+  & .btn-invite-seat {
+    flex: 1;
+    min-block-size: 30px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    border-radius: 4px;
+    border: 1px solid var(--pad-rim, #D8C7A5);
+    background: color-mix(in oklch, var(--pad-ink, #241A12) 6%, transparent);
+    color: var(--pad-ink, #241A12);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  & .btn-invite-seat:hover {
+    background: color-mix(in oklch, var(--pad-ink, #241A12) 12%, transparent);
+  }
+  & .btn-invite-seat.active {
+    background: var(--brass-ink, #8a5814);
+    color: #fff;
+    border-color: var(--brass-ink, #8a5814);
   }
   & .invite-box, & .join-box {
     display: flex;
