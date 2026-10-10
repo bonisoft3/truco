@@ -685,13 +685,13 @@ _arenaMarkup: #"""
 
   <div id="mp-sync-challenge" class="sr-only" data-live="challenge" data-order="created_at.desc">
     <template data-item>
-      <span data-id="{id}" data-challenger-id="{challenger_id}" data-challenger-name="{challenger_name}" data-target-id="{target_id}" data-seed="{seed}" data-variant="{variant}" data-status="{status}" data-created-at="{created_at}"></span>
+      <span data-id="{id}" data-status="{status}"></span>
     </template>
   </div>
   <div id="mp-sync-action" class="sr-only" data-live="room_action" data-order="created_at.asc"
        data-on-mutation="table" data-reads="match,round,play,held,room_action">
     <template data-item>
-      <span data-id="{id}" data-room-seed="{room_seed}" data-player-id="{player_id}" data-action="{action}" data-card="{card}" data-slot="{slot}"></span>
+      <span data-id="{id}"></span>
     </template>
   </div>
 
@@ -2066,6 +2066,8 @@ _arenaMarkup: #"""
         room_seed: seed,
         player_id: seat,
         action: "touch_card",
+        card: "",
+        slot: 0,
       }]).catch(() => {});
     }
     updateSeatPerspective();
