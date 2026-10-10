@@ -4330,7 +4330,101 @@ Deno.test({
   },
 });
 
+// Regression rationale: mid-hand reload in online match must replay the local seat's committed plays and shouts from room_action; previously the early return on turn === mySeat and player_id !== mySeat filters dropped local actions.
+Deno.test({
+  name: "mid-hand reload in online match replays local and remote plays from room_action",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const seed = "889900";
+    const m = await table();
+    let mReload: Mounted | null = null;
+    try {
+      await m.settle();
+      m.fire("#btn-set-seat", "click", { detail: { seat: "you", seed, opponent: "online", seats: "1v1" } });
+      await m.settle();
 
+      let r = hand(m);
+      assert(r.turn_seat === "you", `expected initial turn you, got ${r.turn_seat}`);
 
+      m.fire("#btn-truco");
+      await m.settle();
 
+      const myTrucoAction = m.rows("room_action").find((a: any) => a.action === "truco" && a.player_id === "you");
+      assert(myTrucoAction !== undefined, "expected truco room_action from you");
 
+      r = hand(m);
+      assert(r.asked === "you", `expected asked 'you', got ${r.asked}`);
+      const rung = r.rung;
+
+      await m.store.put("room_action", {
+        id: `${seed}/h1/v1/eles1/accept/${rung}`,
+        room_seed: seed,
+        player_id: "eles1",
+        action: "accept",
+        card: "",
+        slot: Number(rung),
+      });
+      await m.settle();
+
+      r = hand(m);
+      assert(r.asked === "", `expected asked cleared after accept, got ${r.asked}`);
+      assert(Number(r.stake) === 4, `expected stake 4 after mineiro accept, got ${r.stake}`);
+
+      const myCards = playable(m);
+      assert(myCards.length === 3, "expected 3 playable cards");
+      const myPlayedCard = myCards[0].getAttribute("data-card");
+
+      m.fire(myCards[0]);
+      await m.settle();
+
+      const myAction = m.rows("room_action").find((a: any) => a.action === "play_card" && a.player_id === "you");
+      assert(myAction !== undefined, "expected room_action from you");
+      assert(myAction.card === myPlayedCard, "expected card match");
+
+      const eles1Held = m.rows("held").filter((h: any) => h.seat === "eles1" && h.current === "yes");
+      const oppPlayedCard = eles1Held[0].card;
+      const oppAction = {
+        id: `${seed}/h1/v1/eles1/card`,
+        room_seed: seed,
+        player_id: "eles1",
+        action: "play_card",
+        card: oppPlayedCard,
+        slot: 0,
+      };
+      await m.store.put("room_action", oppAction);
+      await m.settle();
+
+      r = hand(m);
+      assert(r.v1 !== "", `expected v1 resolved, got empty`);
+      assert(r.phase === "v2", `expected phase v2, got ${r.phase}`);
+
+      const savedActions = m.rows("room_action");
+
+      mReload = await mountApp({
+        appDir: APP,
+        screen: "arena",
+        seed: SEED,
+        params: {},
+        tables: { match: [], round: [], play: [], held: [], lobby: [], challenge: [], room_action: savedActions },
+      });
+      await mReload.settle();
+      mReload.fire("#btn-set-seat", "click", { detail: { seat: "you", seed, opponent: "online", seats: "1v1" } });
+      await mReload.settle();
+
+      const reloadedRound = hand(mReload);
+      assert(Number(reloadedRound.stake) === 4, `expected reloaded stake 4, got ${reloadedRound.stake}`);
+      assert(reloadedRound.asked === "", `expected reloaded asked empty, got ${reloadedRound.asked}`);
+
+      const reloadedPlays = mReload.rows("play");
+      assert(reloadedPlays.some((p: any) => p.seat === "you" && p.card === myPlayedCard), "expected you play replayed");
+      assert(reloadedPlays.some((p: any) => p.seat === "eles1" && p.card === oppPlayedCard), "expected eles1 play replayed");
+
+      const reloadedMyCards = playable(mReload);
+      assert(reloadedMyCards.length === 2, `expected 2 remaining playable cards for you, got ${reloadedMyCards.length}`);
+    } finally {
+      await m.stop();
+      if (mReload) await mReload.stop();
+    }
+  },
+});

@@ -386,6 +386,7 @@ code: pronto.#App & {
 			"decision-17": {}
 			"decision-33": {}
 			"decision-34": {}
+			"decision-35": {}
 		}
 		tests: {
 			"test-deal-shuffle": {

@@ -238,6 +238,7 @@ _arenaMarkup: #"""
         <div class="tavern-header-title">
           <span class="live-dot" aria-hidden="true"></span>
           <h1 class="tavern-name" data-text="{msg.tavern_title}">Boteco do Seu Nezinho · Mesa 1</h1>
+          <span id="tavern-room-badge" class="tavern-room-badge" style="display: none;"></span>
         </div>
         <span class="avatar" id="seatbar-avatar" aria-hidden="true">V</span>
         <span class="who">
@@ -391,12 +392,21 @@ _arenaMarkup: #"""
           <div class="rope-fill" id="rope-fill"></div>
           <span class="timer-label" id="timer-label"></span>
         </div>
-        <div class="opponent-stage">
+        <div class="opponent-stage" id="opponent-stage">
           <div class="opponent-avatar-wrap">
-            <div class="opponent-avatar-ring">
-              <div class="opponent-avatar-img"></div>
+            <div class="opponent-avatar-ring" id="opponent-avatar-ring">
+              <div class="opponent-avatar-img" id="opponent-avatar-img"></div>
+              <span class="opponent-avatar-initial" id="opponent-avatar-initial" style="display:none" aria-hidden="true"></span>
+              <span class="opponent-online-dot" id="opponent-online-dot" style="display:none" aria-hidden="true"></span>
             </div>
             <span class="opponent-turn-badge" id="opponent-turn-badge" data-text="{msg.turn_badge_them}">Vez dele</span>
+            <div class="opponent-nameplate" id="opponent-nameplate">
+              <span class="opponent-name-line">
+                <b class="opponent-display-name eles-name" id="opponent-display-name" data-text="{msg[opponent_name]}"></b>
+                <span class="opponent-online-badge" id="opponent-online-badge" style="display:none" data-text="{msg.online_short}">Online</span>
+              </span>
+              <span class="opponent-role-desc" id="opponent-role-desc" data-text="{msg.role_opponent}">Adversário</span>
+            </div>
           </div>
           <div class="opponent-dialogue-wrap">
             <div class="speech-bubble" id="opponent-speech-bubble">
@@ -579,7 +589,7 @@ _arenaMarkup: #"""
           <button type="button" class="btn-quick-shout" id="shout-desce" data-on-click="table" data-text="{msg.shout_desce}">Desce a madeira!</button>
           <button type="button" class="btn-quick-shout" id="shout-chorou" data-on-click="table" data-text="{msg.shout_chorou}">Chorou, parou!</button>
         </div>
-        </div>
+
 
         <div class="nomatch" id="nomatch">
           <p class="over-line" data-text="{msg.empty_table}">Mesa vazia</p>
@@ -1683,6 +1693,33 @@ _arenaMarkup: #"""
     localStorage.setItem("truco-handle", v);
   };
 
+  const resolveOpponentName = () => {
+    const box = $(".matchbox");
+    const isOnline = box?.dataset.opponent === "online";
+    if (!isOnline) {
+      const oppKey = box?.dataset.opponentName || "opponent_nezinho";
+      const loc = screen.dataset.locale || "pt-BR";
+      const cat = globalThis.__prontoMessages?.[loc];
+      return cat?.[oppKey] || (oppKey.startsWith("opponent_") ? oppKey.slice(9) : oppKey);
+    }
+    const rawName = box?.dataset.opponentName;
+    if (rawName && rawName !== "opponent_online" && rawName !== "Adversário Online" && rawName !== "opponent_nezinho") {
+      return rawName;
+    }
+    if (activeChallengeTargetName) return activeChallengeTargetName;
+    const qOpp = (typeof location !== "undefined" && location.search) ? new URLSearchParams(location.search).get("opp") : null;
+    if (qOpp) return qOpp;
+    const seed = box?.dataset.seed;
+    const client = globalThis.__mechaClient;
+    if (client?.collections?.lobby?.state && seed) {
+      const myId = getMyPlayerId();
+      const peer = Array.from(client.collections.lobby.state.values())
+        .find((r) => String(r.room_seed) === String(seed) && r.id !== myId && r.handle);
+      if (peer?.handle) return peer.handle;
+    }
+    return "Adversário";
+  };
+
   updateSeatPerspective = () => {
     const seat = getMySeat();
     if (screen.dataset.mySeat !== seat) screen.dataset.mySeat = seat;
@@ -1698,6 +1735,60 @@ _arenaMarkup: #"""
         setText(whoTitle, def);
       }
       if (avatar) setText(avatar, "V");
+    }
+
+    const box = $(".matchbox");
+    const isOnline = box?.dataset.opponent === "online";
+    const oppName = resolveOpponentName();
+
+    for (const el of screen.querySelectorAll(".eles-name")) {
+      setText(el, oppName);
+    }
+
+    const oppDot = $("#opponent-online-dot");
+    const oppBadge = $("#opponent-online-badge");
+    const oppInit = $("#opponent-avatar-initial");
+    const oppImg = $("#opponent-avatar-img");
+    const oppRole = $("#opponent-role-desc");
+
+    if (isOnline) {
+      if (oppDot) oppDot.style.display = "block";
+      if (oppBadge) oppBadge.style.display = "inline-block";
+      if (oppInit) {
+        oppInit.style.display = "flex";
+        setText(oppInit, oppName ? oppName[0].toUpperCase() : "A");
+      }
+      if (oppImg) oppImg.style.display = "none";
+      const getRoleMsg = (k) => {
+        const loc = screen.dataset.locale || "pt-BR";
+        const cat = globalThis.__prontoMessages ?? {};
+        return (cat[loc] ?? cat["pt-BR"] ?? {})[k] ?? (cat["pt-BR"] ?? {})[k] ?? k;
+      };
+      if (oppRole) {
+        const isPartner = box?.dataset.seats === "2v2";
+        setText(oppRole, getRoleMsg(isPartner ? "role_partner" : "role_opponent"));
+      }
+    } else {
+      if (oppDot) oppDot.style.display = "none";
+      if (oppBadge) oppBadge.style.display = "none";
+      if (oppInit) oppInit.style.display = "none";
+      if (oppImg) oppImg.style.display = "";
+      if (oppRole) {
+        const loc = screen.dataset.locale || "pt-BR";
+        const cat = globalThis.__prontoMessages ?? {};
+        setText(oppRole, (cat[loc] ?? cat["pt-BR"] ?? {})["role_bot"] ?? "Robô");
+      }
+    }
+
+    const roomBadge = $("#tavern-room-badge");
+    if (roomBadge) {
+      const seed = box?.dataset.seed;
+      if (isOnline && seed && seed !== "1") {
+        roomBadge.style.display = "inline-flex";
+        setText(roomBadge, `#${seed}`);
+      } else {
+        roomBadge.style.display = "none";
+      }
     }
   };
 
@@ -1767,7 +1858,8 @@ _arenaMarkup: #"""
     const seatsParam = is2v2 ? "&seats=2v2" : "";
     const variant = validateVariantForSeats(curV, is2v2 ? "2v2" : "1v1");
     const variantParam = `&variant=${encodeURIComponent(variant)}`;
-    const url = `${location.origin}${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${targetSeat}${seatsParam}${variantParam}`;
+    const oppParam = `&opp=${encodeURIComponent(getMyHandle())}`;
+    const url = `${location.origin}${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${targetSeat}${seatsParam}${variantParam}${oppParam}`;
     field.value = url;
   };
 
@@ -2034,13 +2126,17 @@ _arenaMarkup: #"""
     }
     const boxVariant = (box?.dataset?.variant && !box.dataset.variant.includes("{")) ? box.dataset.variant : undefined;
     const targetVariant = validateVariantForSeats(variant || boxVariant || currentVariant(), targetSeats);
+    const qOppParam = (typeof location !== "undefined" && location.search) ? new URLSearchParams(location.search).get("opp") : null;
+    const opp = (opponentName && opponentName !== "opponent_online" && opponentName !== "Adversário Online")
+      ? opponentName
+      : (activeChallengeTargetName || qOppParam || opponentName || "opponent_online");
+    sessionStorage.setItem("truco-opponent-name", opp);
     const seatsParam = targetSeats === "2v2" ? `&seats=2v2` : "";
     const variantParam = `&variant=${encodeURIComponent(targetVariant)}`;
-    const newUrl = `${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${seat}${seatsParam}${variantParam}`;
+    const oppUrlParam = (opp && opp !== "opponent_online" && opp !== "Adversário Online") ? `&opp=${encodeURIComponent(opp)}` : "";
+    const newUrl = `${location.pathname}?seed=${encodeURIComponent(seed)}&opponent=online&seat=${seat}${seatsParam}${variantParam}${oppUrlParam}`;
     sessionStorage.setItem("truco-room-seed", seed);
     sessionStorage.setItem("truco-seat", seat);
-    const opp = opponentName || "opponent_online";
-    sessionStorage.setItem("truco-opponent-name", opp);
     history.replaceState(null, "", newUrl);
 
     const modal = $("#modal-online");
@@ -2055,20 +2151,9 @@ _arenaMarkup: #"""
     const btnSetSeat = $("#btn-set-seat");
     if (btnSetSeat) {
       btnSetSeat.dispatchEvent(new CustomEvent("click", {
-        bubbles: false,
+        bubbles: true,
         detail: { seat, seed, opponent: "online", opponent_name: opp, seats: targetSeats, variant: targetVariant },
       }));
-    }
-    const client = globalThis.__mechaClient;
-    if (client?.insert) {
-      client.insert("room_action", [{
-        id: `${seed}/touch/${seat}`,
-        room_seed: seed,
-        player_id: seat,
-        action: "touch_card",
-        card: "",
-        slot: 0,
-      }]).catch(() => {});
     }
     updateSeatPerspective();
   };
@@ -2372,6 +2457,8 @@ _arenaMarkup: #"""
         navigator.clipboard.writeText(field.value).then(() => {
           if (status) setText(status, "✓ Link copiado para a área de transferência!");
           setTimeout(() => { if (status) setText(status, ""); }, 3000);
+        }).catch(() => {
+          if (status) setText(status, "Copie o link manualmente acima.");
         });
       }
     });
@@ -2398,12 +2485,14 @@ _arenaMarkup: #"""
         let seat = "eles1";
         let seats = undefined;
         let variant;
+        let extractedOpp;
         if (val.includes("?")) {
           const u = new URL(val, location.origin);
           targetSeed = u.searchParams.get("seed") || u.searchParams.get("match") || targetSeed;
           seat = u.searchParams.get("seat") || seat;
           seats = u.searchParams.get("seats") ? seatsFor(seat, u.searchParams.get("seats")) : undefined;
           variant = u.searchParams.get("variant") || undefined;
+          extractedOpp = u.searchParams.get("opp") || undefined;
         }
         const numSeed = Number(targetSeed);
         if (!Number.isInteger(numSeed) || numSeed <= 0) {
@@ -2412,12 +2501,13 @@ _arenaMarkup: #"""
         }
         const strSeed = String(numSeed);
         const client = globalThis.__mechaClient;
-        if (!variant) {
+        if (!variant || !extractedOpp) {
           const lobbyRows = Array.from(client?.collections?.lobby?.state?.values?.() || []);
           const host = lobbyRows.find((r) => String(r.room_seed) === strSeed);
-          if (host?.variant) {
-            variant = host.variant;
+          if (host) {
+            if (!variant && host.variant) variant = host.variant;
             if (!seats && host.seats) seats = host.seats;
+            if (!extractedOpp && host.handle) extractedOpp = host.handle;
           }
         }
         if (!variant) {
@@ -2449,7 +2539,7 @@ _arenaMarkup: #"""
           if (err) setText(err, getJoinMsg("join_err_invalid"));
           return;
         }
-        startOnlineMatch(strSeed, seat, undefined, targetSeats, targetVariant);
+        startOnlineMatch(strSeed, seat, extractedOpp, targetSeats, targetVariant);
       });
     }
 
@@ -2489,6 +2579,7 @@ _arenaMarkup: #"""
         const handleInp = $("#my-handle-input");
         if (handleInp) handleInp.value = getMyHandle();
         const toggle = $("#btn-toggle-online");
+        const box = $(".matchbox");
         const isOnline = toggle?.dataset.online === "true" || box?.dataset.opponent === "online";
         if (isOnline) {
           sendLobbyHeartbeat();
@@ -2566,6 +2657,7 @@ _arenaMarkup: #"""
   };
 
   const ensureOnlineMode = () => {
+    const box = $(".matchbox");
     const qOpp = new URLSearchParams(location.search).get("opponent");
     const qSeed = new URLSearchParams(location.search).get("seed");
     const qSeat = new URLSearchParams(location.search).get("seat") || "you";
@@ -2592,8 +2684,8 @@ _arenaMarkup: #"""
         }
       }
       const qVariant = validateVariantForSeats(resolvedVariant, qSeats);
-      const box = $(".matchbox");
-      const opp = sessionStorage.getItem("truco-opponent-name") || "Adversário Online";
+      const qOppName = new URLSearchParams(location.search).get("opp");
+      const opp = qOppName || sessionStorage.getItem("truco-opponent-name") || "Adversário Online";
       if (!box || box.dataset.seed !== qSeed || box.dataset.opponent !== "online" || box.dataset.mySeat !== qSeat || box.dataset.seats !== qSeats || box.dataset.variant !== qVariant) {
         startOnlineMatch(qSeed, qSeat, opp, qSeats, qVariant);
       }

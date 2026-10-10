@@ -1432,15 +1432,16 @@
   if (pendingLastRemoteShout && (round.last_remote_shout ?? "") !== pendingLastRemoteShout) {
     view.last_remote_shout = pendingLastRemoteShout;
   }
+  const saidForTurn = (seat) => seat === mySeat
+    ? "your_turn"
+    : (match.opponent === "online" ? (sideOf(seat) === sideOf(mySeat) ? "partner_turn" : "opponent_turn") : "turn_of");
+
   if ((round.turn_seat ?? "") !== turn) {
     view.turn_seat = turn;
     view.ui_deadline = "2026-09-09T12:00:15Z";
     view.backend_deadline = "2026-09-09T12:00:20Z";
     if (playing) {
-      const isPartner = sideOf(turn) === sideOf(mySeat);
-      view.said = turn === mySeat
-        ? "your_turn"
-        : (match.opponent === "online" ? (isPartner ? "partner_turn" : "opponent_turn") : "turn_of");
+      view.said = saidForTurn(turn);
     }
   }
 
@@ -1884,7 +1885,7 @@
       if (card === undefined || card.current !== "yes") return { updates: [] };
       if (!playing || turn !== card.seat || card.seat !== mySeat) return { updates: [] };
       const nextTurn = seated[(seated.indexOf(leadSeat) + laid.length + 1) % seated.length];
-      const nextSaid = nextTurn === mySeat ? "your_turn" : (match.opponent === "online" ? "opponent_turn" : "turn_of");
+      const nextSaid = saidForTurn(nextTurn);
       const isOculta = (round.oculta ?? "") === "yes";
       const updates = [
         { op: "patch", entity: "held", id: card.id, row: { current: "no" } },
@@ -2013,7 +2014,6 @@
       const answeringSeat = answeringSeatOf(asked);
       const remoteRun = roomActions.find((a) =>
         sideOf(a.player_id) !== sideOf(asked) &&
-        a.player_id !== mySeat &&
         a.action === "run" &&
         typeof a.id === "string" && a.id.includes(`/h${handNo}/`) && a.id.includes(`/v${vaza}/`)
       );
@@ -2028,7 +2028,6 @@
       }
       const remoteAccept = roomActions.find((a) =>
         sideOf(a.player_id) !== sideOf(asked) &&
-        a.player_id !== mySeat &&
         a.action === "accept" &&
         typeof a.id === "string" && a.id.includes(`/h${handNo}/`) && a.id.includes(`/v${vaza}/`) && a.id.endsWith(`/${rung}`)
       );
@@ -2059,7 +2058,6 @@
       }
       const remoteRaise = roomActions.find((a) =>
         sideOf(a.player_id) !== sideOf(asked) &&
-        a.player_id !== mySeat &&
         a.action === "truco" &&
         Number(a.slot) > rung &&
         typeof a.id === "string" && a.id.startsWith(`${match.seed}/h${handNo}/`)
@@ -2213,39 +2211,41 @@
     });
   }
 
-  /* --- eles play --------------------------------------------------------- */
+  /* --- eles play / online play ------------------------------------------- */
 
   const botMove = event.from === "btn-bot-play";
-  if (turn === mySeat && !botMove) return settled({});
-
-  const oppSeat = order.find((s) => sideOf(s) !== sideOf(mySeat)) ?? "eles1";
-  const actorSeat = botMove ? (event.detail?.seat ?? (turn === mySeat ? oppSeat : turn)) : turn;
-  if (actorSeat === mySeat) return settled({});
-  if (turn !== actorSeat) return settled({});
-
-  const hand = handOf(actorSeat);
-  if (hand.length === 0) return settled({});
-
   if (botMove) {
-    const cardTarget = event.detail?.card ?? event.card;
-    const slotTarget = event.detail?.slot ?? event.slot;
-    const pick = (cardTarget ? hand.find((c) => c.card === cardTarget) : null)
-      ?? (slotTarget !== undefined ? hand.find((c) => String(c.slot) === String(slotTarget)) : null)
-      ?? (hand.slice().sort((x, y) => Number(x.power) - Number(y.power)).find((c) => Number(c.power) > (laid.length === 0 ? 0 : Math.max(...laid.map((p) => Number(p.power))))) ?? hand[0]);
-    return withPendingShout({
-      updates: [
-        ...keep,
-        { op: "patch", entity: "held", id: pick.id, row: { current: "no" } },
-        put("play", laidBy(actorSeat, pick)),
-        ...patchRound({
-          ...view,
-          ...(round.shout_state === "live" && round.shout_kind === "accept" ? { shout_state: "gone" } : {}),
-        }),
-      ],
-    });
+    const oppSeat = order.find((s) => sideOf(s) !== sideOf(mySeat)) ?? "eles1";
+    const actorSeat = event.detail?.seat ?? (turn === mySeat ? oppSeat : turn);
+    if (actorSeat !== mySeat && turn === actorSeat) {
+      const hand = handOf(actorSeat);
+      if (hand.length > 0) {
+        const cardTarget = event.detail?.card ?? event.card;
+        const slotTarget = event.detail?.slot ?? event.slot;
+        const pick = (cardTarget ? hand.find((c) => c.card === cardTarget) : null)
+          ?? (slotTarget !== undefined ? hand.find((c) => String(c.slot) === String(slotTarget)) : null)
+          ?? (hand.slice().sort((x, y) => Number(x.power) - Number(y.power)).find((c) => Number(c.power) > (laid.length === 0 ? 0 : Math.max(...laid.map((p) => Number(p.power))))) ?? hand[0]);
+        return withPendingShout({
+          updates: [
+            ...keep,
+            { op: "patch", entity: "held", id: pick.id, row: { current: "no" } },
+            put("play", laidBy(actorSeat, pick)),
+            ...patchRound({
+              ...view,
+              ...(round.shout_state === "live" && round.shout_kind === "accept" ? { shout_state: "gone" } : {}),
+            }),
+          ],
+        });
+      }
+    }
+    return settled({});
   }
 
   if (match.opponent === "online") {
+    const actorSeat = turn;
+    const hand = handOf(actorSeat);
+    if (hand.length === 0) return settled({});
+
     if (asked === "" && playing && rung !== 0 && raisedBy !== sideOf(actorSeat)) {
       const remoteTruco = roomActions.find((a) =>
         a.player_id === actorSeat &&
@@ -2286,18 +2286,31 @@
       const pick = (remotePlay.card ? hand.find((c) => c.card === remotePlay.card) : null)
         ?? (remotePlay.slot !== undefined ? hand.find((c) => String(c.slot) === String(remotePlay.slot)) : null)
         ?? hand[0];
+      const nextTurn = seated[(seated.indexOf(leadSeat) + laid.length + 1) % seated.length];
+      const nextSaid = saidForTurn(nextTurn);
       const res = {
         updates: [
           ...keep,
           { op: "patch", entity: "held", id: pick.id, row: { current: "no" } },
           put("play", laidBy(actorSeat, pick, isOculta)),
-          ...patchRound(view),
+          ...patchRound({
+            ...view,
+            turn_seat: nextTurn,
+            said: nextSaid,
+            oculta: "no",
+            ...(round.shout_state === "live" && round.shout_kind === "accept" ? { shout_state: "gone" } : {}),
+          }),
         ],
       };
       return withPendingShout(res);
     }
     return settled({});
   }
+
+  if (turn === mySeat) return settled({});
+
+  const hand = handOf(turn);
+  if (hand.length === 0) return settled({});
 
   const persona = who(turn);
   const strength = strengthOf(hand);

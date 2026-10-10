@@ -335,6 +335,19 @@ body:has([data-screen="arena"]) > nav a {
     padding: clamp(3px, 0.7dvh, 7px) clamp(7px, 1.4vw, 13px);
   }
 
+  & .tavern-room-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--r-full);
+    border: 1px solid color-mix(in oklch, var(--rim) 45%, transparent);
+    background: color-mix(in oklch, var(--wood-deep) 60%, transparent);
+    color: var(--rim-hi);
+    font-family: var(--shout-font);
+    font-size: clamp(9px, 1.6vw, 11px);
+    letter-spacing: 0.05em;
+  }
+
   & .seatbar .avatar {
     display: grid;
     place-items: center;

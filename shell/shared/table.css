@@ -511,9 +511,13 @@ body > nav, nav:has(.shell-me), nav:has(.shell-signout), nav.shell-strip, .shell
 .opponent-avatar-wrap {
   position: relative;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.5vw, 10px);
 }
 
 .opponent-avatar-ring {
+  position: relative;
   inline-size: clamp(48px, 11vw, 60px);
   block-size: clamp(48px, 11vw, 60px);
   border-radius: 50%;
@@ -521,6 +525,71 @@ body > nav, nav:has(.shell-me), nav:has(.shell-signout), nav.shell-strip, .shell
   background: linear-gradient(135deg, #d4af37 0%, #855e25 50%, #3a2512 100%);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.75), 0 0 0 2px rgba(0, 0, 0, 0.6);
   overflow: hidden;
+  flex-shrink: 0;
+}
+
+.opponent-nameplate {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-inline-size: 0;
+  gap: 1px;
+}
+
+.opponent-name-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.opponent-display-name {
+  font-size: clamp(0.8125rem, 1.6vw, 0.9375rem);
+  font-weight: 700;
+  color: #f7eedb;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.opponent-online-badge {
+  background: color-mix(in oklch, #319795 35%, transparent);
+  border: 1px solid #319795;
+  color: #4fd1c5;
+  font-size: 0.625rem;
+  padding: 1px 5px;
+  border-radius: var(--r-full);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.opponent-role-desc {
+  font-size: clamp(0.625rem, 1.3vw, 0.6875rem);
+  color: #cbd5e0;
+  opacity: 0.85;
+}
+
+.opponent-avatar-initial {
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 35%, #2a4365, #1a202c);
+  color: #63b3ed;
+  font-weight: 700;
+  font-size: clamp(1rem, 2.2vw, 1.35rem);
+}
+
+.opponent-online-dot {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-end: 0;
+  inline-size: 12px;
+  block-size: 12px;
+  background: #38a169;
+  border: 2px solid #1a202c;
+  border-radius: 50%;
 }
 
 .opponent-avatar-img {
