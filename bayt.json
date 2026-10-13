@@ -164,7 +164,7 @@
           }
         },
         "self": {
-          "version": "v0.42.2"
+          "version": "v0.43.0"
         },
         "doctor": {
           "do": "use tools.nu [run-mise]; run-mise exec -- cue version; run-mise exec -- deno --version; run-mise where github:bonisoft3/pronto"
@@ -1388,7 +1388,7 @@
       },
       "entrypoint": {
         "name": "entrypoint",
-        "do": "case \"${ORIGIN#http://}\" in \"$ORIGIN\") h=${ORIGIN#https://};; *) h=${ORIGIN#http://};; esac; case \"$h\" in \"$ORIGIN\"|\"\"|*[!A-Za-z0-9.:-]*) echo \"ORIGIN '$ORIGIN' is no origin: set it to the scheme and host readers reach the door at, as https://app.example\" >&2; exit 1;; esac; set -e -o pipefail; roots=$(caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile | tr , '\\n' | awk -F'\"' '/\"root\":/{print $4}' | sort -u); if [ -n \"$roots\" ]; then find $roots -type f ! -name '*.etag' -exec sh -c 'set -e; q=$1; shift; for f do h=$(sha256sum < \"$f\"); printf \"$q%s$q\" \"${h%% *}\" > \"$f.etag\"; done' sh '\"' {} +; fi; if [ -f /certs/localhost.pem ]; then export CADDY_TLS='/certs/localhost.pem /certs/localhost-key.pem'; fi; exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile",
+        "do": "case \"${ORIGIN#http://}\" in \"$ORIGIN\") h=${ORIGIN#https://};; *) h=${ORIGIN#http://};; esac; case \"$h\" in \"$ORIGIN\"|\"\"|*[!A-Za-z0-9.:-]*) echo \"ORIGIN '$ORIGIN' is no origin: set it to the scheme and host readers reach the door at, as https://app.example\" >&2; exit 1;; esac; set -e -o pipefail; roots=$(caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile | tr , '\\n' | grep -o '\"root\":\"[^\"]*\"' | cut -d'\"' -f4 | sort -u); if [ -n \"$roots\" ]; then find $roots -type f ! -name '*.etag' -exec sh -c 'set -e; q=$1; shift; for f do h=$(sha256sum < \"$f\"); printf \"$q%s$q\" \"${h%% *}\" > \"$f.etag\"; done' sh '\"' {} +; fi; if [ -f /certs/localhost.pem ]; then export CADDY_TLS='/certs/localhost.pem /certs/localhost-key.pem'; fi; exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile",
         "priority": 0,
         "shell": "sh",
         "stop": false,
@@ -1493,6 +1493,16 @@
             "priority": -10,
             "line": "COPY --from=bonitao/lazybox:0.8.3@sha256:c896a6836673d8fd217f6021a2522351fd82d580ed985159feb2f10373018e73 /lazybox/ /root/.local/share/lazybox/"
           },
+          "path-env": {
+            "name": "path-env",
+            "priority": -9,
+            "line": "ENV PATH=/root/.local/bin:/root/.local/share/lazybox/bin:$PATH"
+          },
+          "static-curl-config": {
+            "name": "static-curl-config",
+            "priority": -8,
+            "line": "RUN mv /root/.local/share/lazybox/libexec/static-curl /root/.local/share/lazybox/libexec/static-curl.bin\nCOPY --chmod=0755 <<'STATIC_CURL' /root/.local/share/lazybox/libexec/static-curl\n#!/bin/sh\nOPENSSL_CONF=\"${OPENSSL_CONF:-/dev/null}\" exec \"$(dirname \"$0\")/static-curl.bin\" \"$@\"\nSTATIC_CURL"
+          },
           "mise-trusted": {
             "name": "mise-trusted",
             "priority": -8,
@@ -1517,11 +1527,6 @@
                 "required": false
               }
             ]
-          },
-          "path-env": {
-            "name": "path-env",
-            "priority": -9,
-            "line": "ENV PATH=/root/.local/bin:/root/.local/share/lazybox/bin:$PATH"
           }
         },
         "add": [],
@@ -5216,7 +5221,9 @@
         "mounts": [],
         "secrets": {},
         "extra_hosts": [],
-        "epilogue": [],
+        "epilogue": [
+          "RUN mkdir -p /monorepo"
+        ],
         "copy": [],
         "defaultCopy": null,
         "healthcheck": null,
@@ -5254,6 +5261,34 @@
               "auth"
             ]
           }
+        }
+      },
+      "entrypoint": {
+        "name": "entrypoint",
+        "do": "deno run --allow-net --allow-env main.ts",
+        "priority": 0,
+        "shell": "exec",
+        "stop": false,
+        "srcs": {
+          "globs": [],
+          "defaultGlobs": null,
+          "exclude": [],
+          "defaultExclude": null
+        },
+        "env": {
+          "DATABASE_URL": "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-truco}",
+          "PGRST_JWT_SECRET": "${PGRST_JWT_SECRET:-mecha-dev-secret-please-override-32ch}",
+          "WEBAUTHN_RP_ID": "${WEBAUTHN_RP_ID:-localhost}",
+          "WEBAUTHN_ORIGIN": "${WEBAUTHN_ORIGIN:-https://localhost:*}"
+        },
+        "after": {
+          "database": "healthy"
+        },
+        "host": true
+      },
+      "expose": {
+        "http": {
+          "port": 9999
         }
       },
       "cmds": [],

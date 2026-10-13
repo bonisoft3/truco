@@ -42,13 +42,34 @@
     "mounts": [],
     "secrets": {},
     "extra_hosts": [],
-    "epilogue": [],
+    "epilogue": [
+      "RUN mkdir -p /monorepo"
+    ],
     "copy": [],
     "healthcheck": null,
     "expose": [],
     "entrypoint": null,
     "incremental": false,
     "cmd": null
+  },
+  "entrypoint": {
+    "do": "deno run --allow-net --allow-env main.ts",
+    "shell": "exec",
+    "env": {
+      "DATABASE_URL": "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-truco}",
+      "PGRST_JWT_SECRET": "${PGRST_JWT_SECRET:-mecha-dev-secret-please-override-32ch}",
+      "WEBAUTHN_RP_ID": "${WEBAUTHN_RP_ID:-localhost}",
+      "WEBAUTHN_ORIGIN": "${WEBAUTHN_ORIGIN:-https://localhost:*}"
+    },
+    "after": {
+      "database": "healthy"
+    },
+    "host": true
+  },
+  "expose": {
+    "http": {
+      "port": 9999
+    }
   },
   "name": "auth",
   "project": "truco",
