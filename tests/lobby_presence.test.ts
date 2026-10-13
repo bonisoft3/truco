@@ -5,8 +5,12 @@
 // Clicking it when online turns Online OFF and removes presence.
 // Closing the modal does NOT kick the player offline.
 // #btn-modal-go-offline inside the modal allows explicit disconnect.
-import { describe, expect, it } from "@test/harness";
+import { afterEach, describe, expect, it } from "@test/harness";
 import { parseHTML } from "linkedom";
+import mountDealer from "../shell/hatches/dealer.js";
+
+let dealerController: AbortController;
+afterEach(() => dealerController?.abort());
 
 const setupTestDOM = async () => {
   const html = await Deno.readTextFile(new URL("../shell/screens/arena.html", import.meta.url));
@@ -29,19 +33,19 @@ const setupTestDOM = async () => {
         fn({ newState: "closed" });
       }
     };
+    modal.removeEventListener = (ev: string, fn: Function) => {
+      const handlers = modalListeners[ev] ?? [];
+      const at = handlers.indexOf(fn);
+      if (at !== -1) handlers.splice(at, 1);
+    };
     modal.addEventListener = (ev: string, fn: Function) => {
       modalListeners[ev] = modalListeners[ev] ?? [];
       modalListeners[ev].push(fn);
     };
   }
 
-  const scriptEl = document.querySelector("script");
-  const scriptText = scriptEl?.textContent ?? "";
-  (document as any).currentScript = scriptEl;
-
   const storage: Record<string, string> = { "truco-player-id": "p_test_1", "truco-handle": "Davi" };
   const ptBrMessages = JSON.parse(await Deno.readTextFile(new URL("../messages/pt-BR.json", import.meta.url)));
-  (globalThis as any).__prontoMessages = { "pt-BR": ptBrMessages };
   const sess = {
     getItem: (k: string) => storage[k] ?? null,
     setItem: (k: string, v: string) => { storage[k] = v; },
@@ -62,17 +66,17 @@ const setupTestDOM = async () => {
     collections: {
       challenge: {
         toArray: [],
-        subscribeChanges: (cb: Function) => { challengeSubs.push(cb); },
+        subscribeChanges: (cb: Function) => { challengeSubs.push(cb); return () => { challengeSubs.splice(challengeSubs.indexOf(cb), 1); }; },
       },
       lobby: {
         state: new Map(),
         toArray: [],
-        subscribeChanges: () => {},
+        subscribeChanges: () => () => {},
       },
       room_action: {
         state: new Map(),
         toArray: [],
-        subscribeChanges: () => {},
+        subscribeChanges: () => () => {},
       },
     },
     insert: async (tbl: string, rows: any[]) => {
@@ -114,14 +118,34 @@ const setupTestDOM = async () => {
   (globalThis as any).CustomEvent = (window as any).CustomEvent;
   (globalThis as any).matchMedia = () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} });
 
-  const fn = new Function("window", "document", "sessionStorage", "location", "history", "matchMedia", scriptText);
-  fn(window, document, sess, { origin: "http://localhost", pathname: "/shell/", search: "" }, (globalThis as any).history, (globalThis as any).matchMedia);
+  Object.assign(globalThis, { window, document, sessionStorage: sess, localStorage: sess,
+    location: { origin: "http://localhost", pathname: "/shell/", search: "" } });
+  dealerController = new AbortController();
+  mountDealer(document.querySelector('[data-screen="arena"]'), {
+    signal: dealerController.signal,
+    messages: { "pt-BR": ptBrMessages },
+  });
   await new Promise((r) => setTimeout(r, 10));
 
-  return { document, window, modal, insertCalls, updateCalls, removeCalls, modalListeners, observerInstances, challengeSubs, sess };
+  return { document, window, modal, insertCalls, updateCalls, removeCalls, modalListeners, observerInstances, challengeSubs, sess, controller: dealerController };
 };
 
 describe({ name: "demand-driven lobby presence toggle lifecycle", sanitizeOps: false, sanitizeResources: false }, () => {
+  it("aborting a dealer releases observers, subscriptions and document controls", async () => {
+    const { document, window, controller, observerInstances, challengeSubs, insertCalls } = await setupTestDOM();
+    expect(observerInstances.length).toBeGreaterThan(0);
+    expect(challengeSubs.length).toBe(1);
+    controller.abort();
+    expect(observerInstances.length).toBe(0);
+    expect(challengeSubs.length).toBe(0);
+    const screen = document.querySelector('[data-screen="arena"]');
+    expect(screen._dealer).toBeUndefined();
+    expect(document.querySelector("#modal-online").dataset.wired).toBeUndefined();
+    document.querySelector("#btn-toggle-online").dispatchEvent(new window.CustomEvent("click"));
+    await new Promise(resolve => setTimeout(resolve, 10));
+    expect(insertCalls.length).toBe(0);
+  });
+
   it("initial page load does not insert player into lobby and toggle is OFF", async () => {
     const { document, insertCalls, updateCalls } = await setupTestDOM();
     const toggleBtn = document.querySelector("#btn-toggle-online") as any;

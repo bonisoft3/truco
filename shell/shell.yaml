@@ -14,6 +14,10 @@ auth:
   promote: false
 floors:
   touch: 24
+hostDom:
+  dealer:
+    src: shell/hatches/dealer.js
+    note: 'Trusted arena dealer: host DOM and browser APIs, local/session storage, history, animations, and direct live-client lobby, challenge and room-action writes. No isolation or delivery guarantee.'
 i18n:
   default: pt-BR
   locales:
@@ -163,9 +167,15 @@ partialUniques:
     - cols:
         - current
       where: current=eq.yes
+read:
+  lobby: lazy
+  challenge: lazy
+  room_action: lazy
 server: true
 routes:
-  - keep: 0
+  - hatches:
+      - dealer
+    keep: 0
     path: /
     screen: arena
     nav:
@@ -222,10 +232,6 @@ routes:
     states:
       - populated
       - populated-dark
-sync:
-  lobby: on-demand
-  challenge: on-demand
-  room_action: on-demand
 tables:
   - challenge
   - lobby

@@ -192,7 +192,6 @@ code: pronto.#App & {
 			AppUser: {
 				table:      "app_user"
 				durability: "live"
-				writers:    "pipeline"
 				access: {scope: "internal"}
 				fields: [
 					{name: "id", type: "uuid", pk: true},
@@ -253,13 +252,19 @@ code: pronto.#App & {
 			service:  "/auth"
 		}
 		blobs: false
-		hatches: {}
+		hatches: dealer: {
+			kind: "host-dom"
+			note: "Trusted arena dealer: host DOM and browser APIs, local/session storage, history, animations, and direct live-client lobby, challenge and room-action writes. No isolation or delivery guarantee."
+			src: "shell/hatches/dealer.js"
+			files: ["shell/hatches/dealer.js"]
+		}
 		vendored: {}
 	}
 
 	surface: {
 		screens: {
 			arena: {
+				hatches: ["dealer"]
 				title: "Mesa"
 				route: "/"
 				label:  "nav_table"

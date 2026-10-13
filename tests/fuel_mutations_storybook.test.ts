@@ -306,7 +306,7 @@ describe("1. Deterministic Fuel Budgets for Automated Tests", () => {
     meter.spendEffect("ephemeral", 2, "put_row");
     meter.spendEffect("compensable", 1, "outbox_add");
     meter.spendEffect("replicated", 1, "wal_sync");
-    meter.spendEffect("exterior", 1, "saga_call");
+    meter.spendEffect("external", 1, "charge_call");
     expect(meter.current).toBe(1 + 20 + 50 + 100 + 250);
     expect(meter.remaining).toBe(79);
   });

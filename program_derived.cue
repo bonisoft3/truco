@@ -79,6 +79,14 @@ code: surface: screens: {
 			{table: "held", op: "reduce"},
 			{table: "room_action", op: "reduce"},
 		]
+		charts: [
+			{table: "match", field: "variant", writes: []},
+			{table: "match", field: "seats", writes: []},
+			{table: "match", field: "opponent", writes: []},
+			{table: "match", field: "theme", writes: []},
+			{table: "round", field: "truco_state", writes: []},
+			{table: "round", field: "envido_state", writes: []},
+		]
 		files: {handlers: ["shell/handlers/seats2.js", "shell/handlers/sitting.js", "shell/handlers/spun.js", "shell/handlers/stake0.js", "shell/handlers/table.js", "shell/handlers/variant2.js", "shell/handlers/variant3.js"], adapters: []}
 	}
 	regras: {
@@ -86,6 +94,7 @@ code: surface: screens: {
 			{table: "match", kind: "live", nested: false, lists: [], route: "view", clauses: [{"col":"current","op":"eq"}], embeds: [], orders: []},
 		]
 		writes: []
+		charts: []
 		files: {handlers: [], adapters: []}
 	}
 }

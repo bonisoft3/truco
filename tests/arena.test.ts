@@ -4,8 +4,8 @@
 // checked without the cluster: the terminal's `machines` check answers for the
 // pickers' arrows, and answers for one region at a time.
 //
-// The inline dealer in arena.html does not run here — linkedom executes no
-// scripts — so nothing below reads .play[data-phase], .talk or #over-line.
+// The host-DOM dealer is tested separately; these assertions cover rows
+// and bindings, without browser animation or online coordination.
 // Every assertion names a row, or an attribute the interpreter bound from one.
 import { assert, mountApp, type Mounted, only, type Row, textOf } from "../../../plugins/omnishell/test/screen-harness.ts";
 
@@ -18,6 +18,7 @@ const table = (params: Record<string, string> = {}) =>
   mountApp({
     appDir: APP,
     screen: "arena",
+    mountHostDom: false,
     seed: SEED,
     params,
     tables: { match: [], round: [], play: [], held: [], lobby: [], challenge: [], room_action: [] },
@@ -2502,12 +2503,11 @@ Deno.test({
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-    // A call is shouted in the game's voice (arena.cue, VOICE), which the
-    // felt's script reads and no harness here runs. A voice short a rung
+    // A call is shouted in the host-DOM dealer's voice. A voice short a rung
     // shouts nothing and labels the truco button with nothing, so the voices
     // are held to the dealer's own ladders the way the menu's goals are.
     const handler = await Deno.readTextFile(new URL("shell/handlers/table.js", APP));
-    const felt = await Deno.readTextFile(new URL("arena.cue", APP));
+    const felt = await Deno.readTextFile(new URL("shell/hatches/dealer.js", APP));
     const price = handler.match(/const PRICE = \{([\s\S]*?)\n  \};/)?.[1] ?? "";
     const rungs = new Map<string, number[]>();
     for (const [, name, list] of price.matchAll(/^ {4}(\w+): \{[\s\S]*?rungs: \[([\d, ]+)\]/gm)) {
@@ -4404,6 +4404,7 @@ Deno.test({
       mReload = await mountApp({
         appDir: APP,
         screen: "arena",
+    mountHostDom: false,
         seed: SEED,
         params: {},
         tables: { match: [], round: [], play: [], held: [], lobby: [], challenge: [], room_action: savedActions },

@@ -3,6 +3,7 @@
 <!doctype html>
 <html lang="pt-BR" dir="ltr">
 <head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-eval' 'inline-speculation-rules'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; frame-src 'self'; worker-src 'self' blob:; form-action 'self'; require-trusted-types-for 'script'; trusted-types omnishell-markup omnishell-url default">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Uma arena de truco — placar, mãos, viras e apostas, rodada a rodada.">
@@ -13,6 +14,9 @@
 <link rel="stylesheet" href="./shell.css">
 <link rel="stylesheet" href="./design.css">
 <link rel="stylesheet" href="../shell/shared/table.css">
+
+
+
 
 
 
@@ -1393,18 +1397,6 @@ body:has([data-screen="regras"]) {
   </section>
 
 </section></div></main>
-<script>new PerformanceObserver((list, observer) => {
-  if (!list.getEntriesByName("first-contentful-paint").length) return;
-  observer.disconnect();
-  for (const attrs of [{"rel":"preload","href":"./shell.json","as":"fetch","crossorigin":""},{"rel":"modulepreload","href":"/omnishell/interpreter/shell.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/chrome.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/screen.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/fragment.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/data-sync.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/validate.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/render.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/release-plan.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/release-assets.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/preloads.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/hatch.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/hatch-worker.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/jessie.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/vendor/mecha-client.js"},{"rel":"modulepreload","href":"/omnishell/interpreter/vendor/messages.js"},{"crossorigin":"anonymous","as":"fetch","href":"/shell/screens/regras.html","rel":"preload"},{"crossorigin":"anonymous","as":"fetch","href":"/shell/screens/regras.css","rel":"preload"}]) {
-    const link = document.createElement("link");
-    for (const [name, value] of Object.entries(attrs)) link.setAttribute(name, value);
-    document.head.append(link);
-  }
-  const boot = document.createElement("script");
-  boot.type = "module";
-  boot.src = "./boot.js";
-  document.body.append(boot);
-}).observe({ type: "paint", buffered: true });</script>
+<script data-pronto-preloads="[{&quot;rel&quot;:&quot;preload&quot;,&quot;href&quot;:&quot;./shell.json&quot;,&quot;as&quot;:&quot;fetch&quot;,&quot;crossorigin&quot;:&quot;&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/shell.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/chrome.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/screen.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/fragment.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/data-sync.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/validate.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/render.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/release-plan.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/release-assets.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/preloads.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/markup.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/script-url.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/host-dom.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/hatch.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/hatch-worker.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/jessie.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/vendor/mecha-client.js&quot;},{&quot;rel&quot;:&quot;modulepreload&quot;,&quot;href&quot;:&quot;/omnishell/interpreter/vendor/messages.js&quot;},{&quot;crossorigin&quot;:&quot;anonymous&quot;,&quot;as&quot;:&quot;fetch&quot;,&quot;href&quot;:&quot;/shell/screens/regras.html&quot;,&quot;rel&quot;:&quot;preload&quot;},{&quot;crossorigin&quot;:&quot;anonymous&quot;,&quot;as&quot;:&quot;fetch&quot;,&quot;href&quot;:&quot;/shell/screens/regras.css&quot;,&quot;rel&quot;:&quot;preload&quot;}]" data-pronto-boot="./boot.js" src="/omnishell/interpreter/deferred-boot.js" type="module"></script>
 </body>
 </html>

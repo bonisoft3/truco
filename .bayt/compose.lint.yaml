@@ -3,18 +3,22 @@ services:
   truco-lint:
     build:
       additional_contexts:
-        truco-setup: service:truco-setup
+        truco-generate: service:truco-generate
       context: ..
       dockerfile: .bayt/Dockerfile.lint
       target: lint
+      tags:
+      - bayt-truco-lint:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
+      - bayt-truco-lint:latest
       args:
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
-    image: bayt-truco-lint:${BAYT_IMAGE_TAG:-latest}
+    image: bayt-truco-lint:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
     scale: 0
   truco-lint_bayt:
     build:
       additional_contexts:
+        truco-generate_bayt: service:truco-generate_bayt
         truco-setup_bayt: service:truco-setup_bayt
       context: ..
       dockerfile: .bayt/Dockerfile.lint
@@ -26,6 +30,9 @@ services:
     scale: 0
   truco-lint_srcs:
     build:
+      additional_contexts:
+        truco-generate_srcs: service:truco-generate_srcs
+        truco-setup_srcs: service:truco-setup_srcs
       context: ..
       dockerfile: .bayt/Dockerfile.lint
       target: lint_srcs

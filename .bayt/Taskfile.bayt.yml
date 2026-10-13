@@ -8,8 +8,16 @@ includes:
     taskfile: ./Taskfile.setup.yaml
     dir: ../
     optional: true
+  lint-inputs:
+    taskfile: ./Taskfile.lint-inputs.yaml
+    dir: ../
+    optional: true
   lint:
     taskfile: ./Taskfile.lint.yaml
+    dir: ../
+    optional: true
+  generate:
+    taskfile: ./Taskfile.generate.yaml
     dir: ../
     optional: true
   build:
@@ -24,16 +32,40 @@ includes:
     taskfile: ./Taskfile.integrate.yaml
     dir: ../
     optional: true
+  ci-visual:
+    taskfile: ./Taskfile.ci-visual.yaml
+    dir: ../
+    optional: true
+  launch-action:
+    taskfile: ./Taskfile.launch-action.yaml
+    dir: ../
+    optional: true
+  integrate-action:
+    taskfile: ./Taskfile.integrate-action.yaml
+    dir: ../
+    optional: true
   check-acceptance:
     taskfile: ./Taskfile.check-acceptance.yaml
+    dir: ../
+    optional: true
+  ci-acceptance:
+    taskfile: ./Taskfile.ci-acceptance.yaml
     dir: ../
     optional: true
   check-fit:
     taskfile: ./Taskfile.check-fit.yaml
     dir: ../
     optional: true
+  ci-fit:
+    taskfile: ./Taskfile.ci-fit.yaml
+    dir: ../
+    optional: true
   check-window:
     taskfile: ./Taskfile.check-window.yaml
+    dir: ../
+    optional: true
+  ci-window:
+    taskfile: ./Taskfile.ci-window.yaml
     dir: ../
     optional: true
 version: "3"

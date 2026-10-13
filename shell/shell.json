@@ -20,6 +20,12 @@
   "floors": {
     "touch": 24
   },
+  "hostDom": {
+    "dealer": {
+      "src": "shell/hatches/dealer.js",
+      "note": "Trusted arena dealer: host DOM and browser APIs, local/session storage, history, animations, and direct live-client lobby, challenge and room-action writes. No isolation or delivery guarantee."
+    }
+  },
   "i18n": {
     "default": "pt-BR",
     "locales": {
@@ -308,9 +314,17 @@
       }
     ]
   },
+  "read": {
+    "lobby": "lazy",
+    "challenge": "lazy",
+    "room_action": "lazy"
+  },
   "server": true,
   "routes": [
     {
+      "hatches": [
+        "dealer"
+      ],
       "keep": 0,
       "path": "/",
       "screen": "arena",
@@ -382,11 +396,6 @@
       ]
     }
   ],
-  "sync": {
-    "lobby": "on-demand",
-    "challenge": "on-demand",
-    "room_action": "on-demand"
-  },
   "tables": [
     "challenge",
     "lobby",

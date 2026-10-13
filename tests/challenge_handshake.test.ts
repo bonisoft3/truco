@@ -1,7 +1,11 @@
 // Regression test: accepting or declining an incoming challenge must update the challenge
 // status in the database so the challenger's client transitions to the match.
-import { describe, expect, it } from "@test/harness";
+import { afterEach, describe, expect, it } from "@test/harness";
 import { parseHTML } from "linkedom";
+import mountDealer from "../shell/hatches/dealer.js";
+
+let dealerController: AbortController;
+afterEach(() => dealerController?.abort());
 
 const setupTestDOM = async (challengeItem: any) => {
   const html = await Deno.readTextFile(new URL("../shell/screens/arena.html", import.meta.url));
@@ -14,10 +18,6 @@ const setupTestDOM = async (challengeItem: any) => {
     modal.hidePopover = () => {};
   }
 
-  const scriptEl = document.querySelector("script");
-  const scriptText = scriptEl?.textContent ?? "";
-  (document as any).currentScript = scriptEl;
-
   const storage: Record<string, string> = { "truco-player-id": "player_b", "truco-handle": "bonitao" };
   const sess = {
     getItem: (k: string) => storage[k] ?? null,
@@ -25,14 +25,17 @@ const setupTestDOM = async (challengeItem: any) => {
     removeItem: (k: string) => { delete storage[k]; },
   };
 
+  Object.defineProperty(globalThis, "localStorage", { value: sess, configurable: true, writable: true });
+  Object.defineProperty(globalThis, "sessionStorage", { value: sess, configurable: true, writable: true });
+
   const updateCalls: Array<{ tbl: string; rows: any[] }> = [];
   (globalThis as any).__mechaClient = {
     collections: {
       challenge: {
         toArray: [challengeItem],
-        subscribeChanges: () => {},
+        subscribeChanges: () => () => {},
       },
-      lobby: { toArray: [], subscribeChanges: () => {} },
+      lobby: { toArray: [], subscribeChanges: () => () => {} },
     },
     update: async (tbl: string, rows: any[]) => {
       updateCalls.push({ tbl, rows });
@@ -44,8 +47,13 @@ const setupTestDOM = async (challengeItem: any) => {
   (globalThis as any).CustomEvent = (window as any).CustomEvent;
   (globalThis as any).matchMedia = () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} });
 
-  const fn = new Function("window", "document", "sessionStorage", "location", "history", "matchMedia", scriptText);
-  fn(window, document, sess, { origin: "http://localhost", pathname: "/shell/", search: "" }, (globalThis as any).history, (globalThis as any).matchMedia);
+  Object.assign(globalThis, { window, document, sessionStorage: sess, localStorage: sess,
+    location: { origin: "http://localhost", pathname: "/shell/", search: "" } });
+  dealerController = new AbortController();
+  mountDealer(document.querySelector('[data-screen="arena"]'), {
+    signal: dealerController.signal,
+    messages: { "pt-BR": JSON.parse(await Deno.readTextFile(new URL("../messages/pt-BR.json", import.meta.url))) },
+  });
 
   return { document, updateCalls };
 };
@@ -59,6 +67,7 @@ describe({ name: "challenge handshake sync", sanitizeOps: false, sanitizeResourc
       target_id: "player_b",
       seed: "999888",
       status: "pending",
+      variant: "paulista",
       created_at: new Date().toISOString(),
     };
 
@@ -86,6 +95,7 @@ describe({ name: "challenge handshake sync", sanitizeOps: false, sanitizeResourc
       target_id: "player_b",
       seed: "111222",
       status: "pending",
+      variant: "paulista",
       created_at: new Date().toISOString(),
     };
 

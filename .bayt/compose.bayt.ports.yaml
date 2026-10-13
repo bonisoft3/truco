@@ -1,0 +1,5 @@
+# generated from bayt.cue — do not edit
+services:
+  truco-caddy:
+    ports:
+    - ${CADDY_TLS_HOST_PORT:-10374}:8443
