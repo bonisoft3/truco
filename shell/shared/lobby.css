@@ -1,12 +1,14 @@
 :is(.screen[data-screen="arena"], .online-table) {
   /* Anchored at the top, not centred: what arrives late extends the bar
-     downwards and never moves what is already drawn. */
+     downwards and never moves what is already drawn; shorter viewports scroll
+     the frame once it reaches 88dvh. */
   & .boteco-modal {
     margin: 6dvh auto auto;
     padding: 0;
     border: none;
     background: transparent;
     max-inline-size: min(90vw, 440px);
+    max-block-size: 88dvh;
     overflow: visible;
   }
   & .boteco-modal::backdrop {
@@ -19,10 +21,17 @@
     border: 2px solid var(--rim, #C2A97C);
     border-radius: 8px;
     padding: 20px;
+    box-sizing: border-box;
+    max-block-size: 88dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: 0 16px 48px color-mix(in oklch, #000 45%, transparent);
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+  & :is(.modal-header, .modal-body) {
+    flex-shrink: 0;
   }
   & .modal-header {
     display: flex;

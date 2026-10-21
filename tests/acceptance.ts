@@ -1572,6 +1572,19 @@ const CASES: Case[] = [
         await other.context().close();
       }
       assert((await where()) === opened, `the bar moved as it filled: ${opened} then ${await where()}`);
+      const vp = p.viewportSize() ?? { width: 1280, height: 800 };
+      await p.setViewportSize({ width: vp.width, height: 500 });
+      try {
+        const scrolled = await p.locator("#modal-online .boteco-modal-frame").evaluate((frame: HTMLElement) => {
+          const overflows = frame.scrollHeight > frame.clientHeight && getComputedStyle(frame).overflowY === "auto";
+          frame.scrollTop = frame.scrollHeight;
+          const join = frame.querySelector("#online-join")?.getBoundingClientRect();
+          return { overflows, joinBottom: join ? Math.round(join.bottom) : 9999 };
+        });
+        assert(scrolled.overflows && scrolled.joinBottom <= 500, `short viewport must scroll the bar modal into view: ${JSON.stringify(scrolled)}`);
+      } finally {
+        await p.setViewportSize(vp);
+      }
     },
   },
   // A browser that kept an earlier deployment ran the scripts it had kept
