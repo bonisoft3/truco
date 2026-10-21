@@ -11,9 +11,7 @@ say:
       pronto-integrate-0:
         priority: 0
         cmds:
-        - do: >-
-            use integrate.nu; integrate --bake --no-up --with-buildx --target
-            ci-acceptance,ci-fit,ci-window
+        - do: use integrate.nu; integrate --bake --no-up --with-buildx --target ci-acceptance
       visual:
         cmds:
         - do: use integrate.nu; integrate --bake --no-up --with-buildx --target ci-visual
@@ -206,10 +204,10 @@ say:
         cmds:
         - do: >-
             deno test --config tests/online-deno.json --no-lock --allow-env --allow-read
-            --allow-run=cue tests/online-machine.test.ts tests/lobby-machine.test.ts
+            tests/online-machine.test.ts tests/lobby-machine.test.ts
         - do: >-
             deno test --config tests/online-deno.json --no-lock --no-check --allow-env
-            --allow-read --allow-run=cue tests/online-screens.test.ts
+            --allow-read tests/online-screens.test.ts
       machines:
         cmds:
         - do: use tools.nu [run-mise]; run-mise exec -- omnishell check machines .

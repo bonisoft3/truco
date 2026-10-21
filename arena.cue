@@ -16,6 +16,9 @@ _reset: {
 	us_score:     "0"
 	them_score:   "0"
 	others_score: "0"
+	us_games:     "0"
+	them_games:   "0"
+	others_games: "0"
 	hand_no:      "1"
 	winner:       ""
 	status:       "playing"
@@ -24,7 +27,7 @@ _reset: {
 // The table's row before any game is on it: one row, "table", is the arena's
 // whatever is played, so a pick before the first deal writes the row the
 // arena then deals on.
-_table: #"{"id":"table","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":"0","them_score":"0","others_score":"0","stake":"2","hand_no":"1","status":"playing","winner":"","opponent":"nezinho","opponent_name":"opponent_nezinho","opponent_handle":"","filled":"","partner_name":"Bigode","seed":"1","current":"yes","my_seat":"you","locale":"pt-BR","game":"","wake":""}"#
+_table: #"{"id":"table","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":"0","them_score":"0","others_score":"0","us_games":"0","them_games":"0","others_games":"0","stake":"2","hand_no":"1","status":"playing","winner":"","opponent":"nezinho","opponent_name":"opponent_nezinho","opponent_handle":"","filled":"","partner_name":"Bigode","seed":"1","current":"yes","my_seat":"you","locale":"pt-BR","game":"","wake":""}"#
 
 // What a variant costs to win is part of its name in the menu — "até 12
 // pontos", "a 30 puntos" — so the goal reads as words in the reader's
@@ -235,7 +238,7 @@ _arenaReads: #"data-reads="match,round,play,held,intent,truco_match_seat,truco_m
 // see different ones.
 _lobbyReads: #"data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table""#
 
-_round: #"{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":"","felt_phase":"idle","truco_label":"call_truco","truco_title":"felt_title_raise","truco_blocked":"disabled","raise_label":"raise","raise_blocked":"disabled","next_rung":"0","name_key":"opponent_nezinho","name_handle":"","worth":"2","opponent_name":"opponent_nezinho","opponent_handle":"","opponent":"nezinho","dialogue_key":"","dialogue_state":"","player_shout_state":"","over_key":"","tell":"","said_t":"","shout_word":"","shout_from":"","shout_kind":"","shout_state":"","shout_t":"","shout_seat":"","raise_hint":"felt_raise_to","shout_anim":"1"}"#
+_round: #"{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":"","felt_phase":"idle","truco_label":"call_truco","truco_title":"felt_title_raise","truco_blocked":"disabled","raise_label":"raise","raise_blocked":"disabled","next_rung":"0","name_key":"opponent_nezinho","name_handle":"","worth":"2","opponent_name":"opponent_nezinho","opponent_handle":"","opponent":"nezinho","dialogue_key":"","dialogue_state":"","player_shout_state":"","over_key":"","tell":"","said_t":"","shout_word":"","shout_from":"","shout_kind":"","shout_state":"","shout_t":"","shout_seat":"","raise_hint":"felt_raise_to","shout_anim":"1","oculta":"no","turn_seat":""}"#
 
 _arenaMarkup: #"""
 <section class="screen" data-screen="arena">
@@ -305,6 +308,9 @@ _arenaMarkup: #"""
            data-us="{us_score}"
            data-them="{them_score}"
            data-others="{others_score}"
+           data-us-games="{us_games}"
+           data-them-games="{them_games}"
+           data-others-games="{others_games}"
            data-stake="{stake}"
            data-hand="{hand_no}"
            data-status="{status}"
@@ -320,6 +326,7 @@ _arenaMarkup: #"""
           <div class="score us">
             <p class="sect" data-text="{msg.us}">Nós</p>
             <p class="figure" data-text="{us_score}"></p>
+            <span class="jogos" aria-hidden="true" data-n="{us_games}"><i class="jogo"></i><i class="jogo"></i></span>
             <span class="tentos" aria-hidden="true" data-n="{us_score}"><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento" data-last></i></span>
           </div>
           <div class="stakebox">
@@ -332,6 +339,7 @@ _arenaMarkup: #"""
           <div class="score them">
             <p class="sect eles-name"><span class="as-cast" data-text="{msg[opponent_name]}"></span><span class="as-handle" data-text="{opponent_handle}"></span></p>
             <p class="figure" data-text="{them_score}"></p>
+            <span class="jogos" aria-hidden="true" data-n="{them_games}"><i class="jogo"></i><i class="jogo"></i></span>
             <span class="tentos" aria-hidden="true" data-n="{them_score}"><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento" data-last></i></span>
           </div>
           <!-- The third pair. Only a table of three deals one, and the
@@ -339,6 +347,7 @@ _arenaMarkup: #"""
           <div class="score others">
             <p class="sect" data-text="{msg.them_others}">Os outros</p>
             <p class="figure" data-text="{others_score}"></p>
+            <span class="jogos" aria-hidden="true" data-n="{others_games}"><i class="jogo"></i><i class="jogo"></i></span>
             <span class="tentos" aria-hidden="true" data-n="{others_score}"><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento" data-last></i></span>
           </div>
         </div>
@@ -357,7 +366,7 @@ _arenaMarkup: #"""
                      data-shout-word="{shout_word}" data-shout-from="{shout_from}" data-shout-state="{shout_state}" data-shout-kind="{shout_kind}" data-shout-seat="{shout_seat}" data-shout-t="{shout_t}"
                      data-envido="{envido}" data-envido-asked="{envido_asked}" data-calls="{envido_calls}"
                      data-leader="{leader}" data-raised="{raised}" data-brink="{brink}" data-ran="{ran}"
-                     data-turn-seat="{turn_seat}">
+                     data-oculta="{oculta}" data-turn-seat="{turn_seat}">
 
             <ol class="spine pad" data-phase="{phase}">
               <li data-node="dealt"><span data-text="{msg.spine_hand}">Mão</span></li>
@@ -403,6 +412,24 @@ _arenaMarkup: #"""
           <div class="opponent-avatar-wrap">
             <div class="opponent-avatar-ring" id="opponent-avatar-ring">
               <div class="opponent-avatar-img" id="opponent-avatar-img"></div>
+              <svg class="opponent-lego-avatar" id="opponent-lego-avatar" viewBox="0 0 64 64" aria-hidden="true">
+                <path class="lego-torso" d="M12 62 C12 46 20 43 32 43 C44 43 52 46 52 62 Z" />
+                <path class="lego-collar" d="M24 43 L32 51 L40 43" />
+                <rect class="lego-neck" x="26" y="38" width="12" height="6" rx="2" />
+                <g class="lego-head-group">
+                  <rect class="lego-stud" x="24" y="7" width="16" height="6" rx="2.5" />
+                  <rect class="lego-head" x="16" y="12" width="32" height="27" rx="7" />
+                  <g class="lego-gaze">
+                    <path class="lego-brow" d="M22 21 Q25.5 19 29 20.5" />
+                    <path class="lego-brow" d="M35 20.5 Q38.5 19 42 21" />
+                    <ellipse class="lego-eye" cx="25.5" cy="25.5" rx="2.6" ry="3.1" />
+                    <ellipse class="lego-eye" cx="38.5" cy="25.5" rx="2.6" ry="3.1" />
+                    <circle class="lego-glint" cx="24.7" cy="24.3" r="0.9" />
+                    <circle class="lego-glint" cx="37.7" cy="24.3" r="0.9" />
+                    <path class="lego-mouth" d="M26 32.5 Q32 35.5 38 32" />
+                  </g>
+                </g>
+              </svg>
               <span class="opponent-avatar-initial" id="opponent-avatar-initial" aria-hidden="true" data-text="{opponent_handle}" data-text-format="initial"></span>
               <span class="opponent-online-dot" id="opponent-online-dot" aria-hidden="true"></span>
             </div>
@@ -504,8 +531,8 @@ _arenaMarkup: #"""
           </div>
         </div>
         <div class="encobrir-bar" data-live="round" data-filter="current=eq.yes" \#(_arenaReads)
-             data-empty-row='{"id":"","said":""}'>
-          <button type="button" class="btn-encobrir" id="btn-encobrir" data-on-click="arena" title="{msg.encobrir_title_tip}">
+             data-empty-row='{"id":"","said":"","oculta":"no"}'>
+          <button type="button" class="btn-encobrir" id="btn-encobrir" data-active="{oculta}" data-on-click="arena" title="{msg.encobrir_title_tip}">
             <span aria-hidden="true">🙈</span>
             <span data-text="{msg.encobrir_btn}">Encobrir</span>
           </button>
@@ -520,7 +547,7 @@ _arenaMarkup: #"""
                these spans lands in the card's own text, and what the card then
                reads as would depend on how the spans wrap. -->
           <template data-item>
-            <button type="button" class="card" data-on-click="arena" data-row="{id}" data-round="{round_id}" data-card="{card}" data-slot="{slot}"
+            <button type="button" class="card" data-on-click="arena" data-on-pointerenter="arena" data-row="{id}" data-round="{round_id}" data-card="{card}" data-slot="{slot}"
                     data-suit="{suit}" data-manilha="{manilha}"
                     style="view-transition-name: card-{card};"
                     disabled="{blocked}"><span class="sr-only" data-text="{msg.play_card}">Jogar </span><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></button>

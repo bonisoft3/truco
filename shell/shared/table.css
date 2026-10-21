@@ -356,6 +356,38 @@ body > nav, nav:has(.shell-me), nav:has(.shell-signout), nav.shell-strip, .shell
   --mark: clamp(8px, 1.6dvh, 12px);
 }
 
+.jogos {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  vertical-align: middle;
+  margin-inline-start: 5px;
+}
+
+.screen:has(.matchbox:is([data-variant="gaucho"], [data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"])) .jogos,
+.screen:is([data-variant="gaucho"], [data-variant="argentino"], [data-variant="uruguayo"], [data-variant="paraguayo"]) .jogos {
+  display: none;
+}
+
+.jogo {
+  display: block;
+  inline-size: clamp(7px, 1.3dvh, 9px);
+  block-size: clamp(7px, 1.3dvh, 9px);
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in oklch, var(--pad-ink) 35%, transparent);
+  background: color-mix(in oklch, var(--pad-ink) 8%, transparent);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.jogos[data-n="1"] .jogo:nth-child(1),
+.jogos[data-n="2"] .jogo {
+  border-color: #b45309;
+  background: radial-gradient(circle at 35% 35%, #fef08a 0%, #f59e0b 55%, #b45309 100%);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  transform: scale(1.08);
+}
+
 /* Feijão: an ellipse with a lighter belly and a dark seam, tipped a little so
    a row of them never reads as a progress bar. */
 /* Twelve markers stand in the rack and the score says how many are on the
@@ -850,8 +882,55 @@ body > nav, nav:has(.shell-me), nav:has(.shell-signout), nav.shell-strip, .shell
    player across an online table is their handle, as they wrote it. */
 .eles-name:has(.as-handle:not(:empty)) .as-cast { display: none; }
 
-/* A player across an online table has no portrait: they wear their initial. */
-.screen:has(.matchbox[data-opponent="online"]) .opponent-avatar-img { display: none; }
+/* A player across an online table wears a generic minifigure avatar whose
+   gaze follows the card they hover in their hand. */
+.opponent-lego-avatar {
+  display: none;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #2b4c6f 0%, #172434 100%);
+}
+.opponent-lego-avatar .lego-torso {
+  fill: #b83b2b;
+  stroke: #23150d;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.opponent-lego-avatar .lego-collar {
+  fill: none;
+  stroke: #f4e3c1;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.opponent-lego-avatar :is(.lego-neck, .lego-stud, .lego-head) {
+  fill: #f6c93e;
+  stroke: #23150d;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.opponent-lego-avatar :is(.lego-brow, .lego-mouth) {
+  fill: none;
+  stroke: #23150d;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.opponent-lego-avatar .lego-eye { fill: #1f140e; }
+.opponent-lego-avatar .lego-glint { fill: #fff; }
+.opponent-lego-avatar :is(.lego-head-group, .lego-gaze) {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.screen:has(.matchbox[data-opponent="online"]) :is(.opponent-avatar-img, .opponent-avatar-initial) { display: none; }
+.screen:has(.matchbox[data-opponent="online"]) .opponent-lego-avatar { display: block; }
+.play:has(.seats[data-tell$="-0"]) .opponent-lego-avatar .lego-gaze { transform: translate(-3px, 2px); }
+.play:has(.seats[data-tell$="-0"]) .opponent-lego-avatar .lego-head-group { transform: rotate(-4deg) translateY(1px); }
+.play:has(.seats[data-tell$="-1"]) .opponent-lego-avatar .lego-gaze { transform: translate(0, 3px); }
+.play:has(.seats[data-tell$="-1"]) .opponent-lego-avatar .lego-head-group { transform: translateY(1.5px); }
+.play:has(.seats[data-tell$="-2"]) .opponent-lego-avatar .lego-gaze { transform: translate(3px, 2px); }
+.play:has(.seats[data-tell$="-2"]) .opponent-lego-avatar .lego-head-group { transform: rotate(4deg) translateY(1px); }
 
 /* ==========================================================================
    Regional Table Environments & Atmospheric Props (Stitch Design Specification)
@@ -1149,6 +1228,7 @@ body > nav, nav:has(.shell-me), nav:has(.shell-signout), nav.shell-strip, .shell
 }
 
 .btn-encobrir[data-active="yes"],
+.screen:has(.hand[data-oculta="yes"]) .btn-encobrir,
 .screen:has(.hand[data-said="modo_oculta"]) .btn-encobrir {
   background: rgba(120, 53, 15, 0.85);
   border-color: #f59e0b;
@@ -1156,7 +1236,18 @@ body > nav, nav:has(.shell-me), nav:has(.shell-signout), nav.shell-strip, .shell
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
 }
 
+.screen:has(.hand[data-oculta="yes"]) .seat-row.mine .card:not([disabled]) {
+  border-color: #f59e0b;
+  box-shadow:
+    inset 0 0 0 2px rgba(245, 158, 11, 0.45),
+    0 0 12px rgba(245, 158, 11, 0.35);
+}
+
 /* Card Played Encoberta */
+.played[data-said="encoberta"] {
+  view-transition-name: none !important;
+}
+
 .played[data-said="encoberta"] .card,
 .card[data-encoberta="yes"] {
   background: repeating-linear-gradient(45deg, #a61c16, #a61c16 5px, #75110d 5px, #75110d 10px) !important;

@@ -4,7 +4,7 @@ import pronto "github.com/bonisoft3/pronto"
 
 // A shout across the table: which, and how many this voice has shouted, so a
 // reader tells a new one from the one it heard, even the same word twice.
-#Word: {type: "string", maxLength: 12, values: ["", "chama", "manda", "desce", "chorou"]}
+#Word: {type: "string", maxLength: 12, values: ["", "chama", "manda", "desce", "chorou", "peek0", "peek1", "peek2"]}
 #Voice: {
  room: {type: "string", maxLength: 36}
  // The table's public name for its voices (the match's talk), never its room.

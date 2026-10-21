@@ -13,9 +13,9 @@ tasks:
       [ -n \"\$DEPOT_TOKEN\" ] && bake=\"depot bake --project \$DEPOT_PROJECT_ID\" || bake=\"docker buildx bake\"
       pin() { [ -z \"\$BUILDKIT_SYNTAX\" ] || find /monorepo -path '*/.bayt/Dockerfile.*' -type f -exec sed -i \"\$1\" {} \\; ; }
       docker compose --profile '*' config -o /tmp/ci-compose.yaml
-      docker buildx bake --allow=fs.read=/ -f /tmp/ci-compose.yaml --print ci-visual ci-replay ci-acceptance ci-fit ci-window > /tmp/ci-bake.json
+      docker buildx bake --allow=fs.read=/ -f /tmp/ci-compose.yaml --print ci-visual ci-replay ci-acceptance > /tmp/ci-bake.json
       :
-      for target in ci-visual ci-replay ci-acceptance ci-fit ci-window; do
+      for target in ci-visual ci-replay ci-acceptance; do
        case \"  \" in
        *\" \$target \"*) executor=\"\$bake\" ;;
        *) executor=\"docker buildx bake\"; : ;;

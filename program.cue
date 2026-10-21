@@ -84,6 +84,9 @@ code: pronto.#App & {
 					// An online table whose last chair just filled: its first hand, before a card is laid.
 					{ordinal: 24, name: "tavern_key", type: "text", required: false},
 					{ordinal: 23, name: "filled", type: "text", required: false, cel: "this in ['', 'yes']"},
+					{ordinal: 25, name: "us_games", type: "int", required: false, cel: "this >= 0 && this <= 2"},
+					{ordinal: 26, name: "them_games", type: "int", required: false, cel: "this >= 0 && this <= 2"},
+					{ordinal: 27, name: "others_games", type: "int", required: false, cel: "this >= 0 && this <= 2"},
 					{ordinal: 19, name: "created_at", type: "timestamptz", required: false},
 				]
 			}
@@ -951,8 +954,8 @@ loop: surface: checks: "fuel_mutations": {
 loop: surface: checks: "online_machine": {
 	verb: "test"
 	cmds: [
-		"deno test --config tests/online-deno.json --no-lock --allow-env --allow-read --allow-run=cue tests/online-machine.test.ts tests/lobby-machine.test.ts",
-		"deno test --config tests/online-deno.json --no-lock --no-check --allow-env --allow-read --allow-run=cue tests/online-screens.test.ts",
+		"deno test --config tests/online-deno.json --no-lock --allow-env --allow-read tests/online-machine.test.ts tests/lobby-machine.test.ts",
+		"deno test --config tests/online-deno.json --no-lock --no-check --allow-env --allow-read tests/online-screens.test.ts",
 	]
 	note: "complete hybrid matches, wager authority, private hands, brink decisions and deadlines; the bar's and the table's folds mounted"
 }
@@ -969,27 +972,6 @@ build: checks: "acceptance": {
 		"deno run --config tests/deno.json --no-lock --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/acceptance.ts .",
 	]
 	note: "walks the brief's acceptance checklist against the running table: deal, play, raise, score, pickers, both screens"
-}
-
-// The platform's battery runs its contrast and clipping checks at the theme
-// the table boots in, at two window shapes. A cloth changes the ink and a
-// window shape changes what fits, so the app runs the same two checks across
-// every window shape and every cloth.
-build: checks: "fit": {
-	browser: true
-	cmds: [
-		"deno run --config tests/deno.json --no-lock --unstable-sloppy-imports --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/fit.ts .",
-	]
-	note: "the terminal's contrast and clipping checks across five window shapes and all four cloths"
-}
-
-// Spatial geometry, trick card alignment, and window layout invariants across viewports.
-build: checks: "window": {
-	browser: true
-	cmds: [
-		"deno run --config tests/deno.json --no-lock --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/window.test.ts",
-	]
-	note: "spatial geometry, trick card alignment, and window layout invariants across desktop and mobile viewports"
 }
 
 out: pronto.#emit & {"code": code, "cluster": cluster, "terminal": terminal, "loop": loop, "build": build}

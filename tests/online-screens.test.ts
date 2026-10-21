@@ -61,21 +61,44 @@ Deno.test({ name: "an online match is played at the arena, from your seat, and e
   assertEquals(m.rows("truco_voice_command").length, 1, "a voice already sat here is sat again");
 
   // The hand is led by seat "a": a card of yours asks nothing of the match yet.
+  assert(m.one("#opponent-avatar-ring #opponent-lego-avatar") !== null, "online opponent lego avatar is rendered");
   m.fire(m.all("#seat-you .card")[0]);
   await step(m);
   assertEquals(m.rows("truco_match_command").length, 0, "a card was sent out of turn");
 
-  // The inviter plays; your seat moves on and the turn is yours.
-  const led = await play(started.state, "play", "a", { slot: 0, covered: false });
+  // Hovering a card in your hand signals the slot on your voice; hearing the
+  // opponent hover theirs moves their avatar gaze and card back via data-tell
+  // without opening a shout bubble.
+  m.fire(m.all("#seat-you .card")[1], "pointerenter");
+  await step(m);
+  const peeked = m.rows("truco_voice_command").find((c) => c.id === `${ME}/2/owner/peek1`);
+  assert(peeked !== undefined, `the voice commands are ${JSON.stringify(m.rows("truco_voice_command"))}`);
+  assertEquals((peeked.request).event, { kind: "shout", payload: { word: "peek1" } });
+  await m.store.update("truco_voice_command", peeked.id, { outcome: "accepted", revision: "3" });
+  await m.store.put("truco_voice_seat", voice(3, { room: ROOM, talk: "talk-of-the-table", seat: "b", name: "Bia" }));
+  await m.store.put("truco_voice_public", theirs(5, "peek1"));
+  await step(m);
+  assertEquals(m.one("#seats").getAttribute("data-tell"), "eles1-1");
+  assertEquals(m.rows("round").find((r) => r.current === "yes")!.shout_state, "gone");
+
+  // The inviter plays covered (encoberto) from slot 0; slot 0 leaves their hand,
+  // lands face-down on the mat, and the turn is yours.
+  const led = await play(started.state, "play", "a", { slot: 0, covered: true });
   await m.store.put("truco_match_seat", seat(2, led));
   await step(m);
   assertEquals(m.rows("match").find((r) => r.id === "table")!.filled, "");
+  assertEquals(m.rows("held").filter((h) => h.seat === "eles1" && h.current === "yes").map((h) => h.slot), ["1", "2"]);
+  assertEquals(m.one(".matcards .played").getAttribute("data-said"), "encoberta");
+  m.fire("#btn-encobrir");
+  await step(m);
+  assertEquals(m.one("#btn-encobrir").getAttribute("data-active"), "yes");
   m.fire(m.all("#seat-you .card")[0]);
   await step(m);
+  assertEquals(m.one("#btn-encobrir").getAttribute("data-active"), "no");
   const [laid] = m.rows("truco_match_command");
   const slot = viewOf(led).available[0];
   assertEquals(laid.id, `${ROOM}/2/b/play${slot}`);
-  assertEquals((laid.request), { version: 7, expected_revision: "2", event: { kind: "play", payload: { slot, covered: false } } });
+  assertEquals((laid.request), { version: 8, expected_revision: "2", event: { kind: "play", payload: { slot, covered: true } } });
 
   // A shout is your voice's, never the match's: it cannot move the game under a card in flight.
   m.fire("#shout-chama");
@@ -85,14 +108,14 @@ Deno.test({ name: "an online match is played at the arena, from your seat, and e
   assert(shouted !== undefined, `the voice's commands are ${JSON.stringify(m.rows("truco_voice_command"))}`);
   assertEquals((shouted.request).event, { kind: "shout", payload: { word: "chama" } });
   // One the voice moved under is shouted again at the revision it holds now.
-  await m.store.update("truco_voice_command", shouted.id, { outcome: "rejected", reason: "stale_revision", revision: "3" });
-  await m.store.put("truco_voice_seat", voice(3, { room: ROOM, talk: "talk-of-the-table", seat: "b", name: "Bia" }));
+  await m.store.update("truco_voice_command", shouted.id, { outcome: "rejected", reason: "stale_revision", revision: "4" });
+  await m.store.put("truco_voice_seat", voice(4, { room: ROOM, talk: "talk-of-the-table", seat: "b", name: "Bia" }));
   await step(m);
   const tag = String(shouted.id).split("/").slice(3).join("/");
-  assert(m.rows("truco_voice_command").some((c) => c.id === `${ME}/3/owner/${tag}`), `the voice's commands are ${JSON.stringify(m.rows("truco_voice_command"))}`);
+  assert(m.rows("truco_voice_command").some((c) => c.id === `${ME}/4/owner/${tag}`), `the voice's commands are ${JSON.stringify(m.rows("truco_voice_command"))}`);
 
   // Ana shouts back, and the table says it from her side.
-  await m.store.put("truco_voice_public", theirs(5, "manda"));
+  await m.store.put("truco_voice_public", theirs(6, "manda"));
   await step(m);
   const round = m.rows("round").find((r) => r.current === "yes")!;
   assertEquals([round.shout_word, round.shout_from, round.shout_state], ["shout_manda", "them", "live"]);
@@ -104,6 +127,24 @@ Deno.test({ name: "an online match is played at the arena, from your seat, and e
   await step(m, 1800);
   const again = m.rows("truco_match_command").find((c) => c.id === `${ROOM}/3/b/play${slot}`);
   assert(again !== undefined, `the commands are ${JSON.stringify(m.rows("truco_match_command"))}`);
+
+  // Regression: when a hand ends (hand_over), the table deals the next hand on
+  // the terminal's beat even if an older command row has not replicated its
+  // outcome yet, continuing the match across hands to 12 tentos.
+  const raised = await play(led.state, "raise", "b");
+  const ended = await play(raised.state, "fold", "a");
+  assertEquals(viewOf(ended).phase, "hand_over");
+  await m.store.put("truco_match_seat", seat(4, ended));
+  await step(m);
+  await step(m, 1800);
+  await step(m, 1000);
+  const nextCmd = m.rows("truco_match_command").find((c) => c.id === `${ROOM}/4/b/next`);
+  assert(nextCmd !== undefined, `expected next command at revision 4, got ${JSON.stringify(m.rows("truco_match_command"))}`);
+  const hand2 = await play(ended.state, "next", "b");
+  await m.store.put("truco_match_seat", seat(5, hand2));
+  await step(m);
+  assertEquals(m.rows("round").find((r) => r.current === "yes")!.hand_no, "2");
+  assertEquals(m.rows("held").filter((h) => h.seat === "you" && h.current === "yes").length, 3);
   await m.stop();
 } });
 

@@ -1,8 +1,7 @@
 import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1.0.11";
-import { type Answer, initialMatch, matchFixture } from "./online-fixture.ts";
-import { compileHybrid, type HybridMachine } from "../../../plugins/pronto/hybrid.ts";
+import { type Answer, hybridFixture, initialMatch, matchFixture } from "./online-fixture.ts";
+import { compileHybrid } from "../../../plugins/pronto/hybrid.ts";
 import { walk } from "../../../plugins/pronto/hybrid-battery.ts";
-import { ROOT, run } from "../../../plugins/pronto/testdata/hybrid-fixtures.ts";
 import { instrument } from "../../../plugins/omnishell/instrument.ts";
 import { executeHybrid } from "../../../plugins/pronto/hybrid-local.ts";
 
@@ -24,15 +23,13 @@ Deno.test("online match deals privately and completes both variants through the 
       if (state.brink !== "both") assertEquals(answer.views[0].value.hand, state.a);
     }
     assert(state.score_a === 12 || state.score_b === 12);
+    assert(state.games_a === 2 || state.games_b === 2);
     assertEquals((await step(state, "play", "a", {slot: 0, covered: false})).reason, "illegal_event");
   }
 });
 
 Deno.test("a voice sits only where a match seated it, and counts its shouts", async () => {
-  const result = await run("cue", ["export", "./apps/truco", "-e", "code.state.hybrids.truco_voice.reducer"]);
-  if (!result.ok) throw new Error(result.err);
-  const spec: HybridMachine = JSON.parse(result.out);
-  const compiled = await compileHybrid(spec, await Deno.readTextFile(new URL("apps/truco/machines/voice.js", ROOT)), instrument);
+  const {spec, compiled} = await hybridFixture("voice");
   type Voice = {phase: string; room: string; talk: string; seat: string; name: string; word: string; n: number};
   const step = async (state: Voice, kind: string, payload: unknown) => await executeHybrid(compiled.source, spec.fuel, {
     state, event: {kind, payload}, viewers: ["owner"], context: {actor: "owner", tier: "omnishell", now: 1000},
@@ -99,6 +96,11 @@ Deno.test("brink decisions, blind cards, covered cards and deadlines preserve pr
   assertEquals((await step(playing, "play", "a", {slot: 0, covered: false}, playing.deadline)).reason, "expired");
   const timed = await step(choice.state, "timeout", "", {}, choice.state.deadline);
   assertEquals([timed.state.phase, timed.state.score_b], ["hand_over", 2]);
+  // Winning the first jogo of a queda (12 tentos) advances games_b to 1 and deals jogo 2 at 0-0 tentos.
+  const firstGame = await step({...choice.state, score_b: 10}, "fold", "a");
+  assertEquals([firstGame.state.phase, firstGame.state.score_b, firstGame.state.games_b, firstGame.state.winner], ["hand_over", 12, 1, ""]);
+  const secondGame = await step(firstGame.state, "next", "a");
+  assertEquals([secondGame.state.phase, secondGame.state.score_a, secondGame.state.score_b, secondGame.state.games_b, secondGame.state.brink], ["playing", 0, 0, 1, ""]);
 });
 
 Deno.test("every online variant and seating completes with private hands and team scores", async () => {
@@ -122,6 +124,7 @@ Deno.test("every online variant and seating completes with private hands and tea
         }
       }
       assertEquals(state[`score_${state.winner}` as "score_a"], state.goal);
+      assertEquals(state[`games_${state.winner}` as "games_a"], ["gaucho", "argentino", "uruguayo", "paraguayo"].includes(variant) ? 1 : 2);
     }
   }
 });
@@ -291,11 +294,7 @@ Deno.test("Truco's machines hold under any input a step can be given", async () 
     ["truco_presence", {}, ["owner"], ["hidden", "visible"]],
   ];
   for (const [name, input, seats, reached] of machines) {
-    const exported = await run("cue", ["export", "./apps/truco", "-e", `code.state.hybrids.${name}.reducer`]);
-    if (!exported.ok) throw new Error(exported.err);
-    const spec = JSON.parse(exported.out) as HybridMachine;
-    const rules = await Deno.readTextFile(new URL(`apps/truco/machines/${name.replace("truco_", "")}.js`, ROOT));
-    const compiled = await compileHybrid(spec, rules, instrument);
+    const {spec, compiled} = await hybridFixture(name.replace("truco_", ""));
     const context = {tier: "mecha", now: 1000, entropy: "0123456789abcdef".repeat(16)};
     const fresh = (await executeHybrid(compiled.source, spec.fuel, {initialize: true, payload: input, viewers: [], context}) as {state: {phase: string; seats?: string[]}}).state;
     // A match waits for its table, which only a full one leaves: it is walked

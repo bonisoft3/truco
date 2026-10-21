@@ -9,7 +9,7 @@
 
 import { baseUrl } from "omnishell/base-url.ts";
 
-type Case = { id: string; accepts: string[]; run: (p: Page) => Promise<void> };
+type Case = { id: string; accepts: string[]; serial?: boolean; run: (p: Page) => Promise<void> };
 // deno-lint-ignore no-explicit-any
 type Page = any;
 // deno-lint-ignore no-explicit-any
@@ -34,19 +34,45 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // time the driver hands it and never by how fast this machine polls: a wait
 // budgeted here passes through the same states on a loaded runner as on an
 // idle one, where a wall-clock deadline would simply see fewer of them.
-let carried = 0;
-const tick = (p: Page, ms = 100) => {
-  carried += ms;
-  return p.evaluate((n: number) => (globalThis as { __prontoClock?: { advance: (n: number) => number } })
-    .__prontoClock?.advance(n) ?? 0, ms).catch(() => 0);
+const carried = new WeakMap<object, number>();
+const tick = async (p: Page, ms = 100) => {
+  carried.set(p, (carried.get(p) ?? 0) + ms);
+  return await p.evaluate(async (n: number) => {
+    const w = globalThis as {
+      __prontoClock?: { advance: (n: number) => number; due: () => { in: number }[] };
+      __prontoBusy?: () => { regions: number; waits: number };
+    };
+    const clock = w.__prontoClock;
+    if (!clock) return 0;
+    const settle = async (turns: number) => {
+      const deadline = performance.now() + 50;
+      let calm = 0;
+      while (performance.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 0));
+        if ((w.__prontoBusy?.().regions ?? 0) === 0) {
+          if (++calm >= turns) break;
+        } else {
+          calm = 0;
+        }
+      }
+    };
+    if ((w.__prontoBusy?.().regions ?? 0) > 0) await settle(2);
+    const hadWaits = clock.due().length > 0;
+    const fired = (clock.due()[0]?.in ?? Infinity) <= n;
+    const remaining = clock.advance(n);
+    if (fired || (w.__prontoBusy?.().regions ?? 0) > 0) await settle(2);
+    else if (!hadWaits && remaining === 0) await new Promise((r) => setTimeout(r, 20));
+    else await settle(1);
+    return remaining;
+  }, ms).catch(() => 0);
 };
 
 /** A budget in the table's own seconds, per `carried`. The wall cap is a
     backstop against a table that has stopped, not the budget. */
-function forTable(ms: number) {
-  const spent = carried + ms;
+function forTable(p: Page, ms: number) {
+  const spent = (carried.get(p) ?? 0) + ms;
   const wall = Date.now() + 240_000;
-  return () => carried < spent && Date.now() < wall;
+  return () => (carried.get(p) ?? 0) < spent && Date.now() < wall;
 }
 
 /** Poll until the predicate holds; a timeout is a failed case, not a hang.
@@ -65,8 +91,8 @@ async function until(p: Page, what: string, ms: number, fn: () => Promise<boolea
       throw new Error(`timed out waiting for ${what}`);
     }
     spent += 100;
-    await tick(p);
-    await sleep(20);
+    if (manual) await tick(p);
+    else await sleep(20);
   }
 }
 
@@ -242,28 +268,26 @@ async function seatedAt(p: Page, seed: number, rules: Rules = {}, clock: "fast" 
 /** Play the hand on the table out: your cards as they come, every call
     accepted, until the game stands between hands. */
 async function toHandOver(p: Page) {
-  const playing = forTable(90000);
+  const playing = forTable(p, 90000);
   while (playing()) {
     if ((await storedGame(p))?.state.phase === "hand_over") return;
     if (await p.locator("#btn-brink-play").isVisible()) await p.locator("#btn-brink-play").click().catch(() => {});
     await answerIfRaised(p);
     if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p).catch(() => {});
     await tick(p, 300);
-    await sleep(20);
   }
   throw new Error(`the hand never ended: ${(await storedGame(p))?.state.phase}`);
 }
 
 /** Play on until the match is over. */
 async function toFinished(p: Page) {
-  const playing = forTable(120000);
+  const playing = forTable(p, 120000);
   while (playing()) {
     if ((await storedGame(p))?.state.phase === "finished") return;
     if (await p.locator("#btn-brink-play").isVisible()) await p.locator("#btn-brink-play").click().catch(() => {});
     await answerIfRaised(p);
     if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p).catch(() => {});
     await tick(p, 300);
-    await sleep(20);
   }
   throw new Error(`the match never ended: ${(await storedGame(p))?.state.phase}`);
 }
@@ -271,15 +295,17 @@ async function toFinished(p: Page) {
 /** The score a hand is dealt at, set between hands: the stored game is given
     the score and the machine deals the next hand from it, so whatever a score
     decides at the deal — a mão de dez, a mão de ferro — is the machine's. */
-async function scoredAt(p: Page, score: { us: number; them: number }) {
+async function scoredAt(p: Page, score: { us: number; them: number; usGames?: number; themGames?: number }) {
   await toHandOver(p);
   const hand = (await storedGame(p))!.state.hand_no + 1;
-  await p.evaluate((score: { us: number; them: number }) => {
+  await p.evaluate((score: { us: number; them: number; usGames?: number; themGames?: number }) => {
     const rows = JSON.parse(localStorage.getItem("mecha:match")!) as Record<string, { data: { game: string } }>;
     const row = Object.values(rows)[0];
     const game = JSON.parse(row.data.game);
     game.state.score_a = score.us;
     game.state.score_b = score.them;
+    if (score.usGames !== undefined) game.state.games_a = score.usGames;
+    if (score.themGames !== undefined) game.state.games_b = score.themGames;
     row.data.game = JSON.stringify(game);
     localStorage.setItem("mecha:match", JSON.stringify(rows));
   }, score);
@@ -351,7 +377,6 @@ async function playOne(p: Page) {
     }
     if (Date.now() > deadline) throw new Error("timed out waiting for the card to leave the hand");
     await tick(p);
-    await sleep(20);
   }
 }
 
@@ -444,7 +469,7 @@ const CASES: Case[] = [
       // the table alternates seats, a hand can be drawn (no points), and the
       // house can raise mid-hand — so the exit condition is the score, not a
       // count of clicks.
-      const playing = forTable(45000);
+      const playing = forTable(p, 45000);
       let sitting = await attr(p, ".matchbox", "data-seed");
       let before = await total();
       while (playing()) {
@@ -464,7 +489,6 @@ const CASES: Case[] = [
         if ((await total()) > before) break;
         if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p);
         await tick(p, 500);
-        await sleep(20);
       }
       const after = await total();
       const where = await p.evaluate(() => {
@@ -590,7 +614,7 @@ const CASES: Case[] = [
       });
       assert((await count(p, ".log li[data-kind]")) === 0, "the four-seat hand inherited the two-seat hand's log");
       await playOne(p);
-      const circuit = forTable(45000);
+      const circuit = forTable(p, 45000);
       let round = false;
       while (circuit()) {
         await answerIfRaised(p);
@@ -601,7 +625,6 @@ const CASES: Case[] = [
         // loop only watching would never lay.
         if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p);
         await tick(p);
-        await sleep(20);
       }
       // What the table was doing when it ran out of budget, because "not four
       // yet" is every reason at once: a hand re-dealt under the driver empties
@@ -705,13 +728,12 @@ const CASES: Case[] = [
       const total = async () =>
         Number(await text(p, ".score.us .figure")) + Number(await text(p, ".score.them .figure"));
       const before = await total();
-      const playing = forTable(45000);
+      const playing = forTable(p, 45000);
       while (playing()) {
         await answerIfRaised(p);
         if ((await total()) > before) break;
         if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p);
         await tick(p, 500);
-        await sleep(20);
       }
       assert((await total()) > before, "hand 1 never scored");
       await p.reload({ waitUntil: "domcontentloaded" });
@@ -734,7 +756,7 @@ const CASES: Case[] = [
       // while the badge holds the base pays the base, and nobody can say
       // what the hand is worth.
       await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS);
-      const calling = forTable(60000);
+      const calling = forTable(p, 60000);
       let adopted = 0;
       while (calling()) {
         if ((await count(p, '.log li[data-kind=truco][data-seat^=eles]')) > 0 &&
@@ -754,7 +776,6 @@ const CASES: Case[] = [
           await playOne(p).catch(() => {});
         }
         await tick(p, 300);
-        await sleep(20);
       }
       assert(adopted > 0, "Tião never called on a table dealt for him to call");
       // Mineiro opens the mão at 2 and every other variant at 1. The match row
@@ -775,7 +796,7 @@ const CASES: Case[] = [
       const before = await total();
       // The sitting can end under the measurement, as it can above.
       const sitting = await attr(p, ".matchbox", "data-seed");
-      const playing = forTable(60000);
+      const playing = forTable(p, 60000);
       // The banner lives only for the pause between hands, shorter than a
       // stride at speed — it is read inside the loop or not at all.
       let worth = 0;
@@ -790,7 +811,6 @@ const CASES: Case[] = [
           await playOne(p).catch(() => {});
         }
         await tick(p, 500);
-        await sleep(20);
       }
       if (ended) {
         // The scoreboard cannot answer for a hand it has already forgotten,
@@ -828,7 +848,7 @@ const CASES: Case[] = [
       });
       // Eleven all at paulista: whoever takes the hand takes the match.
       await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS);
-      await scoredAt(p, { us: 11, them: 11 });
+      await scoredAt(p, { us: 11, them: 11, usGames: 1, themGames: 1 });
       await toFinished(p);
       const won = await attr(p, ".matchbox", "data-seed");
       await p.reload({ waitUntil: "domcontentloaded" });
@@ -951,12 +971,11 @@ const CASES: Case[] = [
       // Mineiro on the Brazilian page, at its last hand: whoever takes the
       // match says so the way Minas does.
       await seatedAt(p, SEEDS.talk, { variant: "mineiro", opponent: "nezinho" });
-      await scoredAt(p, { us: 10, them: 10 });
-      const playing = forTable(90000);
+      await scoredAt(p, { us: 10, them: 10, usGames: 1, themGames: 1 });
+      const playing = forTable(p, 90000);
       while (playing() && (await attr(p, ".play", "data-phase")) !== "over") {
         if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p).catch(() => {});
         await tick(p, 300);
-        await sleep(20);
       }
       const shout = (await text(p, ".shout")).replace(/\s+/g, "");
       assert(["ÉNÓIS,SÔ!", "LEVAMO,UAI!"].includes(shout), `the mineiro table closed on "${shout}"`);
@@ -1035,12 +1054,11 @@ const CASES: Case[] = [
           });
         }, sel);
         assert(await inside("#seat-you .card"), "your hand runs off the board at three pairs");
-        const playing = forTable(60000);
+        const playing = forTable(p, 60000);
         while (playing() && (await count(p, '.trick[data-t="1"] .played')) < 6) {
           await answerIfRaised(p);
           if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p).catch(() => {});
           await tick(p, 300);
-          await sleep(20);
         }
         assert((await count(p, '.trick[data-t="1"] .played')) > 0, "nothing reached the mat");
         assert(await inside(".matcards .played .card"), "the mat runs off the board at three pairs");
@@ -1063,25 +1081,26 @@ const CASES: Case[] = [
       // case's restart-on-new-id reads that as a fresh sitting rather than a
       // frozen one — which is how a table with no way forward passed.
       await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS);
-      await scoredAt(p, { us: 11, them: 0 });
+      await scoredAt(p, { us: 11, them: 0, usGames: 1, themGames: 0 });
       const almost = await attr(p, ".matchbox", "data-seed");
+      assert(await attr(p, ".score.us .jogos", "data-n") === "1", "the first won game is not marked on the board");
       // Eleven is paulista's brink, so the hand is the mão de onze and is
       // played only once you say so.
       // The brink hand and the ones after it to twelve: each raise answered
       // spends table seconds polling for the log, more on a slower browser,
       // and three hands at 11 ran the budget down to its last beats.
-      const playing = forTable(240000);
+      const playing = forTable(p, 240000);
       while (playing()) {
         if ((await attr(p, ".play", "data-phase")) === "over") break;
         if (await p.locator("#btn-brink-play").isVisible()) await p.locator("#btn-brink-play").click();
         await answerIfRaised(p);
         if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p).catch(() => {});
         await tick(p, 300);
-        await sleep(20);
       }
       assert(await attr(p, ".play", "data-phase") === "over", "one point from twelve, the match never closed");
       assert(await attr(p, ".matchbox", "data-seed") === almost, "the won match left the table");
       assert(Number(await text(p, ".score.us .figure")) === 12, "the closing score is not on the board");
+      assert(await attr(p, ".score.us .jogos", "data-n") === "2", "the second won game is not marked on the board");
       assert(/Partida sua/.test(await text(p, "#over-line")), "the table does not say who won");
       assert(await attr(p, ".shout", "data-state") === "live", "the partida closed without a shout");
       assert((await text(p, ".shout")).replace(/\s+/g, "") === "ÉNOSSA!", `the closing shout says ${await text(p, ".shout")}`);
@@ -1091,6 +1110,7 @@ const CASES: Case[] = [
         await dealtHand(p) && (await attr(p, ".matchbox", "data-seed")) !== almost);
       assert(await attr(p, ".matchbox", "data-status") === "playing", "the new sitting is not playing");
       assert(Number(await text(p, ".score.us .figure")) === 0, "the new sitting inherited the old score");
+      assert(await attr(p, ".score.us .jogos", "data-n") === "0", "the new sitting inherited the old games");
     },
   },
   {
@@ -1127,7 +1147,43 @@ const CASES: Case[] = [
           }
           return false;
         });
-        if (grew) return;
+        if (grew) {
+          const layout = await p.evaluate(() => {
+            const style = document.createElement("style");
+            style.textContent = ".trick .played, .trick .card { rotate: 0deg !important; animation: none !important; transition: none !important; }";
+            document.head.appendChild(style);
+            try {
+              const trick1 = document.querySelector<HTMLElement>('.trick[data-t="1"]')!;
+              const c1 = trick1.querySelector<HTMLElement>(".played .card")!.getBoundingClientRect();
+              const c2 = document.querySelector<HTMLElement>('.trick[data-t="2"] .played .card')!.getBoundingClientRect();
+              const played = [...trick1.querySelectorAll<HTMLElement>(".played")];
+              return {
+                ratio: c2.height / c1.height,
+                baseline: Math.abs(c1.bottom - c2.bottom),
+                opacities: [...document.querySelectorAll<HTMLElement>(".trick .played .card")].map((c) => getComputedStyle(c).opacity),
+                outcome: trick1.closest(".matcards")?.getAttribute("data-v1") ?? "",
+                border: getComputedStyle(trick1).borderStyle,
+                cards: played.map((el) => ({ winner: el.dataset.win === "yes", z: Number(getComputedStyle(el).zIndex) })),
+              };
+            } finally {
+              style.remove();
+            }
+          });
+          assert(layout.ratio >= 0.95 && layout.ratio <= 1.05, `trick card height ratio drifted: ${layout.ratio}`);
+          assert(layout.baseline <= 20, `trick card baseline drifted by ${layout.baseline}px`);
+          assert(layout.opacities.every((o: string) => o === "1"), `trick cards must be opaque: ${layout.opacities.join(",")}`);
+          assert(layout.border === "none", `trick container border must be none, got ${layout.border}`);
+          if (layout.outcome === "us" || layout.outcome === "them") {
+            const winners = layout.cards.filter((c: { winner: boolean }) => c.winner).map((c: { z: number }) => c.z);
+            const beaten = layout.cards.filter((c: { winner: boolean }) => !c.winner).map((c: { z: number }) => c.z);
+            assert(Math.min(...winners) > Math.max(...beaten), `winning cards must stack above beaten cards: ${JSON.stringify(layout.cards)}`);
+          } else {
+            for (let i = 1; i < layout.cards.length; i++) {
+              assert(layout.cards[i].z > layout.cards[i - 1].z, `tied trick stacks in play order: ${JSON.stringify(layout.cards)}`);
+            }
+          }
+          return;
+        }
       }
       throw new Error("three hands ended before a second trick landed beside the first");
     },
@@ -1143,7 +1199,6 @@ const CASES: Case[] = [
       // does to a button the app has not disabled yet.
       await p.locator(".seat-row.mine .card").nth(1).click({ force: true }).catch(() => {});
       await tick(p, 2200);
-        await sleep(20);
       const open = await openTrickCards(p);
       const seats = 2;
       assert(open <= seats, `${open} cards landed in a ${seats}-seat trick`);
@@ -1287,13 +1342,12 @@ const CASES: Case[] = [
       assert(first === "mão" || first === "pé", `no position is shown: "${first}"`);
       // Play the hand out; the next deal moves the lead one seat, so the
       // position flips in a two-seat game.
-      const playing = forTable(45000);
+      const playing = forTable(p, 45000);
       while (playing()) {
         await answerIfRaised(p);
         if ((await role()) !== first) break;
         if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p);
         await tick(p, 500);
-        await sleep(20);
       }
       const next = await role();
       assert(next !== first, `the mão never passed: still "${next}"`);
@@ -1310,14 +1364,13 @@ const CASES: Case[] = [
       // deals on the same wake as the score, passes every other case here
       // and shows a player nothing.
       await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS);
-      const calling = forTable(60000);
+      const calling = forTable(p, 60000);
       let raised = false;
       while (calling()) {
         if ((await attr(p, ".play", "data-phase")) === "raised" &&
             (await count(p, '.log li[data-kind=truco][data-seat^=eles]')) > 0) { raised = true; break; }
         if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p).catch(() => {});
         await tick(p, 300);
-        await sleep(20);
       }
       assert(raised, "Tião never called on seed 2");
       const stood = Number(await attr(p, ".hand", "data-stake"));
@@ -1354,7 +1407,7 @@ const CASES: Case[] = [
       const LADDER = [1, 3, 6, 9, 12];
       const WORD: Record<number, string> = { 3: "TRUCO!", 6: "SEIS!", 9: "NOVE!", 12: "DOZE!" };
       const above = (r: number) => LADDER[LADDER.indexOf(r) + 1];
-      const calling = forTable(60000);
+      const calling = forTable(p, 60000);
       let asked = 0;
       while (calling()) {
         if ((await attr(p, ".play", "data-phase")) === "raised" &&
@@ -1366,7 +1419,6 @@ const CASES: Case[] = [
           await playOne(p).catch(() => {});
         }
         await tick(p, 300);
-        await sleep(20);
       }
       assert(asked > 0, "Tião never called on seed 2");
       const stood = Number(await attr(p, ".hand", "data-stake"));
@@ -1460,7 +1512,6 @@ const CASES: Case[] = [
         p.on("request", listener);
         await playOne(p);
         await tick(p, 2500);
-        await sleep(20);
         p.off("request", listener);
         // Shapes and the token that authorizes them are the terminal's sync
         // plane, which the bar's rows ride; anything else is the app fetching.
@@ -1484,6 +1535,7 @@ const CASES: Case[] = [
   {
     id: "going online lights the pill and lists you in another reader's bar",
     accepts: ["accept-bar-online"],
+    serial: true,
     run: async (p) => {
       await realTable(p);
       const ana = runName("Ana");
@@ -1504,6 +1556,7 @@ const CASES: Case[] = [
   {
     id: "the bar holds still while it connects and fills",
     accepts: ["accept-bar-still"],
+    serial: true,
     run: async (p) => {
       await realTable(p);
       await p.click("#btn-open-online");
@@ -1537,7 +1590,7 @@ const CASES: Case[] = [
       const marked = await p.evaluate((url) => fetch(url).then((r) => r.text()), chrome) + "\nglobalThis.__earlierDeployment = true;\n";
       const markedAt = chrome.replace(/_immutable-[0-9a-f]{64}-/, `_immutable-${"e".repeat(64)}-`);
       // A browser whose first visit was the earlier deployment.
-      const context = await p.context().browser().newContext({ locale: "pt-BR", viewport: { width: 1280, height: 900 }, ignoreHTTPSErrors: true });
+      const context = await newContext(p.context().browser());
       try {
         const q = await context.newPage();
         const earlier = () => q.evaluate(() => (globalThis as Record<string, unknown>).__earlierDeployment === true);
@@ -1585,6 +1638,7 @@ const CASES: Case[] = [
   {
     id: "an accepted challenge seats both players at one table",
     accepts: ["accept-bar-challenge"],
+    serial: true,
     run: async (p) => {
       await realTable(p);
       const ana = runName("Ana"), bia = runName("Bia");
@@ -1690,10 +1744,40 @@ async function goOnline(p: Page, name: string) {
   await until(p, "the switch on", 10000, async () => (await attr(p, "#btn-toggle-online", "aria-checked")) === "true");
 }
 
+let crudTurn = Promise.resolve();
+
+// deno-lint-ignore no-explicit-any
+async function newContext(browser: any) {
+  const context = await browser.newContext({
+    locale: "pt-BR",
+    viewport: { width: 1280, height: 900 },
+    ignoreHTTPSErrors: true,
+  });
+  await context.route("**/crud/truco_*", (route: Route) => {
+    const next = crudTurn.then(async () => {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const response = await route.fetch().catch(() => null);
+        if (response === null) {
+          await sleep(30);
+          await route.abort().catch(() => {});
+          return;
+        }
+        if (response.status() !== 500 || attempt === 4) {
+          await route.fulfill({ response }).catch(() => {});
+          return;
+        }
+        await sleep(25 * 2 ** attempt);
+      }
+    });
+    crudTurn = next.catch(() => {});
+  });
+  return context;
+}
+
 /** A second player: another browser context is another guest. Its clock is
     real, since nothing it waits for is the driver's to advance. */
 async function reader(p: Page): Promise<Page> {
-  const context = await p.context().browser().newContext({ locale: "pt-BR", viewport: { width: 1280, height: 900 }, ignoreHTTPSErrors: true });
+  const context = await newContext(p.context().browser());
   const other = await context.newPage();
   await other.goto(`${origin(p)}/`, { waitUntil: "domcontentloaded" });
   await until(other, "the other reader's table", 20000, async () => (await count(other, ".seat-row.mine .card")) === 3);
@@ -1715,35 +1799,61 @@ async function main(): Promise<number> {
   // address takes its language from Accept-Language — so the driver states
   // the reader it is rather than inheriting the runner's.
   const readerFor = async () => {
-    const context = await browser.newContext({
-      locale: "pt-BR",
-      viewport: { width: 1280, height: 900 },
-    });
+    const context = await newContext(browser);
     const page = await context.newPage();
+    const caseErrors: string[] = [];
     page.on("console", (m: { type: () => string; text: () => string }) => {
-      if (m.type() === "error" && !m.text().includes("ERR_INTERNET_DISCONNECTED")) errors.push(m.text());
+      if (m.type() === "error" && !m.text().includes("ERR_INTERNET_DISCONNECTED")) caseErrors.push(m.text());
     });
-    return page;
+    return { page, caseErrors };
   };
 
   let failed = 0;
   const filter = Deno.args[1];
   const cases = filter ? CASES.filter((c) => c.id.includes(filter)) : CASES;
+  const runCase = async (c: Case) => {
+    // Every case starts from a dealt table.
+    const { page, caseErrors } = await readerFor();
+    try {
+      await freshTable(page, base);
+      caseErrors.length = 0;
+      await c.run(page);
+      errors.push(...caseErrors);
+      console.log(`PASS  ${c.id}  [${c.accepts.join(" ")}]`);
+    } catch (err) {
+      failed++;
+      console.log(`FAIL  ${c.id}  [${c.accepts.join(" ")}]\n      ${err instanceof Error ? err.message : err}`);
+    } finally {
+      await page.context().close();
+    }
+  };
+  const LANES = 4;
+  const HEAVY = new Set([
+    "eles tell you before they call",
+    "a deployment newer than the browser's copy is the one that runs",
+    "a match won at the table stays on it until asked",
+    "a won sitting left overnight opens by itself",
+    "a country picked brings its own truco, in its own language",
+    "the players talk like their table, whatever the page's language",
+    "a tie and the rodada that breaks it are laid side by side",
+    "an accepted raise is the stake the hand pays",
+  ]);
+  const parallel = [
+    ...cases.filter((c) => !c.serial && HEAVY.has(c.id)),
+    ...cases.filter((c) => !c.serial && !HEAVY.has(c.id)),
+  ];
+  const serial = cases.filter((c) => c.serial);
+  let next = 0;
   try {
-    for (const c of cases) {
-      // Every case starts from a dealt table.
-      const page = await readerFor();
-      try {
-        await freshTable(page, base);
-        errors.length = 0;
-        await c.run(page);
-        console.log(`PASS  ${c.id}  [${c.accepts.join(" ")}]`);
-      } catch (err) {
-        failed++;
-        console.log(`FAIL  ${c.id}  [${c.accepts.join(" ")}]\n      ${err instanceof Error ? err.message : err}`);
-      } finally {
-        await page.context().close();
-      }
+    await Promise.all(
+      Array.from({ length: Math.min(LANES, parallel.length) }, async () => {
+        while (next < parallel.length) {
+          await runCase(parallel[next++]);
+        }
+      }),
+    );
+    for (const c of serial) {
+      await runCase(c);
     }
   } finally {
     await browser.close();

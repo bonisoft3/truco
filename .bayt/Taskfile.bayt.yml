@@ -64,20 +64,4 @@ includes:
     taskfile: ./Taskfile.ci-acceptance.yaml
     dir: ../
     optional: true
-  check-fit:
-    taskfile: ./Taskfile.check-fit.yaml
-    dir: ../
-    optional: true
-  ci-fit:
-    taskfile: ./Taskfile.ci-fit.yaml
-    dir: ../
-    optional: true
-  check-window:
-    taskfile: ./Taskfile.check-window.yaml
-    dir: ../
-    optional: true
-  ci-window:
-    taskfile: ./Taskfile.ci-window.yaml
-    dir: ../
-    optional: true
 version: "3"

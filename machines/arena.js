@@ -163,7 +163,7 @@
   // A step that ends the hand on a run, with the score it stood at held over
   // it until the paid beat; any other step as it came.
   const heard = (before, after) => after.state.result !== "" && before.state.result === "" && after.state.log.at(-1)?.kind === "fold"
-    ? {...after, face: {...after.face, unpaid: {revision: after.revision, a: before.state.score_a, b: before.state.score_b, c: before.state.score_c}}}
+    ? {...after, face: {...after.face, unpaid: {revision: after.revision, a: before.state.score_a, b: before.state.score_b, c: before.state.score_c, ga: before.state.games_a, gb: before.state.games_b, gc: before.state.games_c}}}
     : after;
 
   /* --- the house ------------------------------------------------------------ */
@@ -271,6 +271,7 @@
     const matchRow = {
       ...(created ? {variant, seats: g.seating, opponent: g.opponent, theme: table?.theme ?? "xadrez", locale: table?.locale ?? "", partner_name: "Bigode", my_seat: "you"} : {}),
       id: "table", us_score: txt(unpaid?.[mine] ?? view[`score_${mine}`]), them_score: txt(unpaid?.[sideAt(1)] ?? view[`score_${sideAt(1)}`]), others_score: txt(unpaid?.[others] ?? view[`score_${others}`]),
+      us_games: txt(unpaid?.[`g${mine}`] ?? view[`games_${mine}`]), them_games: txt(unpaid?.[`g${sideAt(1)}`] ?? view[`games_${sideAt(1)}`]), others_games: txt(unpaid?.[`g${others}`] ?? view[`games_${others}`]),
       stake: txt(view.stake), hand_no: txt(view.hand_no), status: finished ? "over" : "playing", winner,
       opponent_name: g.online ? "opponent_online" : `opponent_${g.opponent}`, opponent_handle: g.online ? g.opponent_name : "",
       filled: g.online && view.hand_no === 1 && view.plays.length === 0 && view.log.length === 0 ? "yes" : "",
@@ -358,6 +359,7 @@
     const shoutFrom = shout?.from ?? previous?.shout_from ?? "";
     const shoutKind = shout?.kind ?? previous?.shout_kind ?? "";
     const shoutT = previous === undefined ? 0 : Number(previous.shout_t ?? 0) + (newQuick || word !== previous.shout_word || shoutFrom !== previous.shout_from || shoutKind !== previous.shout_kind ? 1 : 0);
+    const peek = g.online && face.peek?.revision === g.revision && view.phase === "playing" ? `${at(face.peek.seat)}-${face.peek.slot}` : "";
     const roundRow = {
       id: roundId, match_id: "table", hand_no: txt(view.hand_no),
       vira: view.vira < 0 ? "" : card(view.vira).card,
@@ -376,7 +378,7 @@
       dialogue_state: !g.online || quick && shout.from === "them" ? "live" : "gone",
       player_shout_state: quick && shout.seat === "you" ? "yes" : "no",
       over_key: finished ? winner === "us" ? "felt_match_yours" : "felt_match_theirs" : "",
-      tell: said.startsWith("tell_") ? g.opponent : "",
+      tell: said.startsWith("tell_") ? g.opponent : peek,
       said_t: previous?.said === said ? previous.said_t ?? "0" : previous?.said_t === "1" ? "2" : "1",
       leader: at(view.leader), asked, raised: relOf(view.right) ?? "", rung: txt(rung),
       brink: view.brink === "both" ? "both" : relOf(view.brink) ?? "",
@@ -402,10 +404,12 @@
     // Everyone else's cards are backs, but for a partner's on your side's brink.
     for (const {seat, count} of view.counts) {
       if (seat === me) continue;
-      const open = view.partners.find(p => p.seat === seat)?.hand.filter(c => c >= 0) ?? [];
-      for (let slot = 0; slot < count; slot += 1) {
+      const partner = view.partners.find(p => p.seat === seat)?.hand ?? [];
+      const slots = [0, 1, 2].filter(s => !view.plays.some(p => p.seat === seat && p.slot === s)).slice(0, count);
+      for (const slot of slots) {
+        const shown = partner[slot];
         held.push({
-          id: `${roundId}/${at(seat)}/${slot}`, round_id: roundId, seat: at(seat), ...(open[slot] === undefined ? back : card(open[slot])),
+          id: `${roundId}/${at(seat)}/${slot}`, round_id: roundId, seat: at(seat), ...(shown === undefined || shown < 0 ? back : card(shown)),
           power: "0", manilha: "no", slot: txt(slot), blocked: "disabled", display_seat: at(seat), current: "yes",
         });
       }
@@ -518,28 +522,37 @@
   const shoutOf = g => {
     const heard = {...g.face.heard};
     let quick = g.face.quick;
+    let peek = g.face.peek ?? null;
     for (const v of voices(g.view.talk)) {
       const n = Number(v.n);
       if (heard[v.seat] !== undefined && n > heard[v.seat] && v.word !== "") {
-        quick = {word: `shout_${v.word}`, t: (g.face.quick?.t ?? 0) + 1, live: true, from: v.seat === g.seat ? "us" : "them", seat: v.seat};
+        if (v.word.startsWith("peek")) {
+          if (v.seat !== g.seat) peek = {seat: v.seat, slot: v.word.slice(4), revision: g.revision};
+        } else {
+          quick = {word: `shout_${v.word}`, t: (g.face.quick?.t ?? 0) + 1, live: true, from: v.seat === g.seat ? "us" : "them", seat: v.seat};
+        }
       }
       heard[v.seat] = n;
     }
-    return {...g.face, heard, quick};
+    return {...g.face, heard, quick, peek};
   };
   const seated = (row, back) => {
     const view = row.view;
     const g = {
       id: `o${row.instance_id}`, online: true, room: row.instance_id, seat: row.seat, version: machine.spec.version,
       variant: view.variant, seating: view.seating, opponent: "online", opponent_name: nameAt(view.talk, view.seating, row.seat), seed: "0",
-      revision: Number(row.revision), view, back, face: {told: null, quick: null, oculta: false, shouts: 0, heard: {}},
+      revision: Number(row.revision), view, back, face: {told: null, quick: null, peek: null, oculta: false, shouts: 0, heard: {}},
     };
-    return {...g, face: {...shoutOf(g), quick: null}};
+    return {...g, face: {...shoutOf(g), quick: null, peek: null}};
   };
   const caught = (g, row) => {
     const view = row.view;
     return {...g, revision: Number(row.revision), view, opponent_name: nameAt(view.talk, view.seating, g.seat), face: shoutOf(g)};
   };
+  // A command is named by what it says — the table, the revision it was made
+  // at, your seat and the gesture — so the same gesture twice is one row, and
+  // one made on a view the table has moved past comes back stale.
+  const revisionOf = c => Number(String(c.id).split("/")[1]);
   // Your voice: opened once, the first time a match seats you, and sat at
   // each table you play with the name you go by there.
   const rise = () => voice !== undefined && voice.view.phase === "seated" ? speak("rise", {}) : [];
@@ -554,16 +567,12 @@
       const id = `voice/${row.actor}`;
       return (rows.truco_voice_open ?? []).some(o => o.id === id) ? [] : [{op: "put", entity: "truco_voice_open", id, row: {id, instance_id: row.actor, kind: "create", input: "{}"}}];
     }
-    if (voiceCommands.some(c => c.instance_id === voice.instance_id && !c.outcome)) return [];
+    if (voiceCommands.some(c => c.instance_id === voice.instance_id && !c.outcome && revisionOf(c) === Number(voice.revision))) return [];
     const said = voice.view;
     if (g.view.phase === "finished" || said.room === g.room && said.talk === g.view.talk && said.seat === g.seat && said.name === handle) return [];
     return speak("sit", {room: g.room, talk: g.view.talk, seat: g.seat, name: handle}, `sit${g.seat}`);
   };
-  // A command is named by what it says — the table, the revision it was made
-  // at, your seat and the gesture — so the same gesture twice is one row, and
-  // one made on a view the table has moved past comes back stale.
-  const revisionOf = c => Number(String(c.id).split("/")[1]);
-  const pendingIn = g => commands.some(c => c.instance_id === g.room && !c.outcome);
+  const pendingIn = g => commands.some(c => c.instance_id === g.room && !c.outcome && revisionOf(c) === g.revision);
   const command = (g, kind, payload, tag = kind) => {
     const id = `${g.room}/${g.revision}/${g.seat}/${tag}`;
     if (commands.some(c => c.id === id)) return [];
@@ -629,6 +638,18 @@
   }
 
   /* --- clicks record intents ------------------------------------------------ */
+
+  // Hovering a card in an online hand signals the slot to your voice so the
+  // other side sees your eyes and hand move over the card you are weighing.
+  if (event.type === "pointerenter") {
+    if (game === null || !game.online) return {updates: []};
+    const g = game;
+    const held = (rows.held ?? []).find(h => h.id === event.id && h.seat === "you");
+    const word = held === undefined ? "" : `peek${held.slot}`;
+    if (word === "" || g.view.phase !== "playing" || voice === undefined || voice.view.room !== g.room) return {updates: []};
+    if (voiceCommands.some(c => c.instance_id === voice.instance_id && !c.outcome && revisionOf(c) === Number(voice.revision))) return {updates: []};
+    return {updates: speak("shout", {word}, `peek${held.slot}`)};
+  }
 
   // An intent names the game and revision it was made at, so one made on a
   // stale table is dropped, and the click's number, one past the last click's,
@@ -744,7 +765,7 @@
     const ran = g.view.phase === "hand_over" && g.view.log.at(-1)?.kind === "fold";
     const pace = shouting ? beat(g, "hush", 1800, {t: g.face.quick.t})
       : ran && g.face.runHushed !== g.revision ? beat(g, "run-hush", 1800)
-      : g.view.phase === "hand_over" ? beat(g, "next", ran ? 1000 : 2800) : undefined;
+      : g.view.phase === "hand_over" && !pendingIn(g) ? beat(g, "next", ran ? 1000 : 2800) : undefined;
     return pace === undefined ? {updates} : {updates, then: pace};
   }
   const playing = seatRows.find(r => r.phase !== "finished");

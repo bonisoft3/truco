@@ -1,14 +1,14 @@
 const allSeats = ["a", "b", "c", "d", "e", "f"];
 const config = variant => ({
-  mineiro: {ladder: [2, 4, 8, 10, 12], goal: 12, brink: 10, trumps: [3, 14, 29, 12]},
-  paulista: {ladder: [1, 3, 6, 9, 12], goal: 12, brink: 11},
-  gaucho: {ladder: [1, 2, 3, 4], goal: 18, trumps: [29, 31, 13, 12], envido: true, flor: true, mazo: true},
-  truc: {ladder: [1, 2, 3], goal: 12, trumps: [], mazo: true},
-  argentino: {ladder: [1, 2, 3, 4], goal: 30, trumps: [29, 31, 13, 12], envido: true, mazo: true},
-  uruguayo: {ladder: [1, 2, 3, 4], goal: 30, trumps: [29, 31, 13, 12], envido: true, flor: true, mazo: true},
-  paraguayo: {ladder: [1, 2, 3, 4], goal: 30, trumps: [29, 31, 13, 12], envido: true, flor: true, mazo: true},
-  douradinha: {ladder: [2, 4, 8, 10, 12], goal: 12, trumps: [16, 23, 35, 31, 7, 3, 14, 29, 12]},
-  douradao: {ladder: [2, 4, 8, 10, 12], goal: 12, trumps: [40, 24, 15, 28, 20, 16, 23, 31, 35, 7, 3, 39, 14]},
+  mineiro: {ladder: [2, 4, 8, 10, 12], goal: 12, games: 2, brink: 10, trumps: [3, 14, 29, 12]},
+  paulista: {ladder: [1, 3, 6, 9, 12], goal: 12, games: 2, brink: 11},
+  gaucho: {ladder: [1, 2, 3, 4], goal: 18, games: 1, trumps: [29, 31, 13, 12], envido: true, flor: true, mazo: true},
+  truc: {ladder: [1, 2, 3], goal: 12, games: 2, trumps: [], mazo: true},
+  argentino: {ladder: [1, 2, 3, 4], goal: 30, games: 1, trumps: [29, 31, 13, 12], envido: true, mazo: true},
+  uruguayo: {ladder: [1, 2, 3, 4], goal: 30, games: 1, trumps: [29, 31, 13, 12], envido: true, flor: true, mazo: true},
+  paraguayo: {ladder: [1, 2, 3, 4], goal: 30, games: 1, trumps: [29, 31, 13, 12], envido: true, flor: true, mazo: true},
+  douradinha: {ladder: [2, 4, 8, 10, 12], goal: 12, games: 2, trumps: [16, 23, 35, 31, 7, 3, 14, 29, 12]},
+  douradao: {ladder: [2, 4, 8, 10, 12], goal: 12, games: 2, trumps: [40, 24, 15, 28, 20, 16, 23, 31, 35, 7, 3, 39, 14]},
 })[variant];
 // A table without a clock (turn_ms 0) has no deadline to miss.
 const due = (state, context) => state.turn_ms ? context.now + state.turn_ms : 0;
@@ -31,7 +31,10 @@ const handWinner = tricks => {
 };
 const pay = (state, winner, points) => {
   const score = Math.min(state.goal, state[`score_${winner}`] + points);
-  return {...state, [`score_${winner}`]: score, ...(score === state.goal ? {winner, result: winner, deadline: 0} : {})};
+  if (score < state.goal || state[`score_${winner}`] === state.goal) return {...state, [`score_${winner}`]: score};
+  const games = state[`games_${winner}`] + 1;
+  const won = games === config(state.variant).games;
+  return {...state, [`score_${winner}`]: score, [`games_${winner}`]: games, result: winner, deadline: 0, ...(won ? {winner} : {})};
 };
 const award = (state, result, points) => ({...(result === "draw" ? state : pay(state, result, points)), result, offer: 0, deadline: 0});
 const advance = (state, context) => {
@@ -133,7 +136,7 @@ return {
     if ((input.seating === "2v2v2") !== ["douradinha", "douradao"].includes(input.variant)) throw new Error("variant does not support this seating");
     const seats = allSeats.slice(0, input.seating === "1v1" ? 2 : input.seating === "2v2" ? 4 : 6);
     return {phase: "waiting", variant: input.variant, seating: input.seating, reserved: input.reserved, talk: input.talk, seats, joined: ["a"],
-      a: [], b: [], c: [], d: [], e: [], f: [], score_a: 0, score_b: 0, score_c: 0,
+      a: [], b: [], c: [], d: [], e: [], f: [], score_a: 0, score_b: 0, score_c: 0, games_a: 0, games_b: 0, games_c: 0,
       goal: input.variant === "gaucho" && input.seating === "2v2" ? 24 : config(input.variant).goal, turn_ms: input.turn_ms, log: [],
       hand_no: 0, leader: "a", turn: "a", stake: 0, offer: 0, caller: "", right: "", brink: "", result: "", winner: "", vira: -1, deadline: 0,
       tricks: [], plays: [], folded: [], answers: [], envido_chain: [], envido_caller: "", envido_done: "", envido_scores: []};
@@ -193,9 +196,11 @@ return {
     const hands = {};
     for (const [i, seat] of allSeats.entries()) hands[seat] = state.seats.includes(seat) ? deck.slice(i * 3, i * 3 + 3) : [];
     const leader = state.hand_no === 0 ? "a" : state.seats[(state.seats.indexOf(state.leader) + 1) % state.seats.length];
+    const reset = [state.score_a, state.score_b, state.score_c].includes(state.goal);
+    const scores = reset ? {score_a: 0, score_b: 0, score_c: 0} : {score_a: state.score_a, score_b: state.score_b, score_c: state.score_c};
     const at = config(state.variant).brink;
-    const brink = at === undefined ? "" : state.score_a === at && state.score_b === at ? "both" : state.score_a === at ? "a" : state.score_b === at ? "b" : "";
-    return {...state, ...hands, vira: state.variant === "paulista" ? deck[state.seats.length * 3] : -1, leader, turn: leader, brink,
+    const brink = at === undefined ? "" : scores.score_a === at && scores.score_b === at ? "both" : scores.score_a === at ? "a" : scores.score_b === at ? "b" : "";
+    return {...state, ...scores, ...hands, vira: state.variant === "paulista" ? deck[state.seats.length * 3] : -1, leader, turn: leader, brink,
       hand_no: state.hand_no + 1, stake: config(state.variant).ladder[0], offer: 0, caller: "", right: "", result: "", tricks: [], plays: [], folded: [], answers: [],
       envido_chain: [], envido_caller: "", envido_done: "", envido_scores: [], log: [], deadline: due(state, context)};
   },

@@ -15,6 +15,7 @@ import (
 #Cards: {type: "array", maxItems: 3, items: #Card}
 #Number: {type: "integer", min: 0, max: 9007199254740991}
 #Score: {type: "integer", min: 0, max: 30}
+#Games: {type: "integer", min: 0, max: 2}
 // Milliseconds a seat has to act; 0 plays without a clock.
 #TurnMs: {type: "integer", min: 0, max: 600000}
 #Phase: {type: "string", maxLength: 12, values: ["waiting", "dealing", "brink", "playing", "wager", "envido", "resolving", "hand_over", "finished"]}
@@ -29,7 +30,7 @@ import (
 // state value, which a view carries as `phase`.
 #Game: {
  variant: #Variant, seating: #Seating, seats: #Seats, joined: #Seats
- score_a: #Score, score_b: #Score, score_c: #Score, goal: #Score
+ score_a: #Score, score_b: #Score, score_c: #Score, games_a: #Games, games_b: #Games, games_c: #Games, goal: #Score
  hand_no: #Number, leader: #Seat, turn: #Seat, stake: #Score, offer: #Score
  caller: #Side, right: #Side, brink: #Side, result: #Side, winner: #Side
  vira: #Card, deadline: #Number, turn_ms: #TurnMs, tricks: #Sides, plays: #Plays, log: #Log
@@ -98,7 +99,7 @@ match: pronto.#Machine & {
   }
  }
  setup: {
-  version: 7
+  version: 8
   fuel:    100000
   entropy: 128
   guards: {
@@ -116,7 +117,7 @@ match: pronto.#Machine & {
    isDue: reads: ["now"]
   }
   // What a hand's end pays: the score, and the result that closes it.
-  let _paid = ["score_a", "score_b", "score_c", "winner", "result", "deadline"]
+  let _paid = ["score_a", "score_b", "score_c", "games_a", "games_b", "games_c", "winner", "result", "deadline"]
   // A card laid, and the trick it may close.
   let _laid = list.Concat([_paid, ["a", "b", "c", "d", "e", "f", "plays", "tricks", "turn", "offer"]])
   let _bid = ["stake", "offer", "right", "caller", "answers"]

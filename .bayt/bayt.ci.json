@@ -451,11 +451,7 @@
         "./.bayt/compose.setup.yaml",
         "./.bayt/compose.ci-acceptance.yaml",
         "./.bayt/compose.check-acceptance.yaml",
-        "./.bayt/compose.browser.yaml",
-        "./.bayt/compose.ci-fit.yaml",
-        "./.bayt/compose.check-fit.yaml",
-        "./.bayt/compose.ci-window.yaml",
-        "./.bayt/compose.check-window.yaml"
+        "./.bayt/compose.browser.yaml"
       ]
     },
     "outs": {
@@ -501,11 +497,7 @@
         "./.bayt/compose.setup.yaml",
         "./.bayt/compose.ci-acceptance.yaml",
         "./.bayt/compose.check-acceptance.yaml",
-        "./.bayt/compose.browser.yaml",
-        "./.bayt/compose.ci-fit.yaml",
-        "./.bayt/compose.check-fit.yaml",
-        "./.bayt/compose.ci-window.yaml",
-        "./.bayt/compose.check-window.yaml"
+        "./.bayt/compose.browser.yaml"
       ]
     },
     "srcs": {
@@ -533,10 +525,6 @@
         "ci-replay_bayt_srcs",
         "ci-acceptance_srcs_srcs",
         "ci-acceptance_bayt_srcs",
-        "ci-fit_srcs_srcs",
-        "ci-fit_bayt_srcs",
-        "ci-window_srcs_srcs",
-        "ci-window_bayt_srcs",
         "integrate_srcs_srcs_srcs",
         "integrate_bayt_srcs_srcs",
         "database_srcs_srcs_srcs",
@@ -550,11 +538,7 @@
         "setup_srcs_srcs_srcs",
         "check-acceptance_srcs_srcs_srcs",
         "check-acceptance_bayt_srcs_srcs",
-        "browser_srcs_srcs_srcs",
-        "check-fit_srcs_srcs_srcs",
-        "check-fit_bayt_srcs_srcs",
-        "check-window_srcs_srcs_srcs",
-        "check-window_bayt_srcs_srcs"
+        "browser_srcs_srcs_srcs"
       ],
       "transitiveCrossDeps": [],
       "chainedDeps": [],
@@ -582,11 +566,7 @@
         "./.bayt/compose.setup.yaml",
         "./.bayt/compose.ci-acceptance.yaml",
         "./.bayt/compose.check-acceptance.yaml",
-        "./.bayt/compose.browser.yaml",
-        "./.bayt/compose.ci-fit.yaml",
-        "./.bayt/compose.check-fit.yaml",
-        "./.bayt/compose.ci-window.yaml",
-        "./.bayt/compose.check-window.yaml"
+        "./.bayt/compose.browser.yaml"
       ]
     }
   },
@@ -603,11 +583,7 @@
     "ci-replay_srcs",
     "ci-replay_bayt",
     "ci-acceptance_srcs",
-    "ci-acceptance_bayt",
-    "ci-fit_srcs",
-    "ci-fit_bayt",
-    "ci-window_srcs",
-    "ci-window_bayt"
+    "ci-acceptance_bayt"
   ],
   "sameProjectDeps": [
     "ci-visual_srcs",
@@ -615,11 +591,7 @@
     "ci-replay_srcs",
     "ci-replay_bayt",
     "ci-acceptance_srcs",
-    "ci-acceptance_bayt",
-    "ci-fit_srcs",
-    "ci-fit_bayt",
-    "ci-window_srcs",
-    "ci-window_bayt"
+    "ci-acceptance_bayt"
   ],
   "transitiveDeps": [
     "ci-visual_srcs",
@@ -628,10 +600,6 @@
     "ci-replay_bayt",
     "ci-acceptance_srcs",
     "ci-acceptance_bayt",
-    "ci-fit_srcs",
-    "ci-fit_bayt",
-    "ci-window_srcs",
-    "ci-window_bayt",
     "integrate_srcs_srcs",
     "integrate_bayt_srcs",
     "database_srcs_srcs",
@@ -645,11 +613,7 @@
     "setup_srcs_srcs",
     "check-acceptance_srcs_srcs",
     "check-acceptance_bayt_srcs",
-    "browser_srcs_srcs",
-    "check-fit_srcs_srcs",
-    "check-fit_bayt_srcs",
-    "check-window_srcs_srcs",
-    "check-window_bayt_srcs"
+    "browser_srcs_srcs"
   ],
   "transitiveCrossDeps": [],
   "upClosure": [
@@ -671,11 +635,7 @@
     "./.bayt/compose.setup.yaml",
     "./.bayt/compose.ci-acceptance.yaml",
     "./.bayt/compose.check-acceptance.yaml",
-    "./.bayt/compose.browser.yaml",
-    "./.bayt/compose.ci-fit.yaml",
-    "./.bayt/compose.check-fit.yaml",
-    "./.bayt/compose.ci-window.yaml",
-    "./.bayt/compose.check-window.yaml"
+    "./.bayt/compose.browser.yaml"
   ],
   "chainedDeps": [
     {
@@ -755,58 +715,6 @@
         ],
         "exclude": []
       }
-    },
-    {
-      "name": "ci-fit_srcs",
-      "project": "truco",
-      "dir": ".",
-      "outs": {
-        "globs": [],
-        "exclude": []
-      }
-    },
-    {
-      "name": "ci-fit_bayt",
-      "project": "truco",
-      "dir": ".",
-      "outs": {
-        "globs": [
-          ".bayt/compose.ci-fit.yaml",
-          ".bayt/Dockerfile.ci-fit",
-          ".bayt/bayt.ci-fit.json",
-          ".bayt/Taskfile.yml",
-          ".bayt/Taskfile.bayt.yml",
-          ".bayt/Taskfile.ci-fit.yaml",
-          ".bayt/process-compose.yaml"
-        ],
-        "exclude": []
-      }
-    },
-    {
-      "name": "ci-window_srcs",
-      "project": "truco",
-      "dir": ".",
-      "outs": {
-        "globs": [],
-        "exclude": []
-      }
-    },
-    {
-      "name": "ci-window_bayt",
-      "project": "truco",
-      "dir": ".",
-      "outs": {
-        "globs": [
-          ".bayt/compose.ci-window.yaml",
-          ".bayt/Dockerfile.ci-window",
-          ".bayt/bayt.ci-window.json",
-          ".bayt/Taskfile.yml",
-          ".bayt/Taskfile.bayt.yml",
-          ".bayt/Taskfile.ci-window.yaml",
-          ".bayt/process-compose.yaml"
-        ],
-        "exclude": []
-      }
     }
   ],
   "cmds": [
@@ -819,7 +727,7 @@
         "defaultGlobs": null,
         "defaultExclude": null
       },
-      "do": "set -eu\nexport DOCKER_HOST_TCP=\"$DOCKER_HOST\"\nexport DEPOT_DISABLE_OTEL=1\n[ -n \"$DEPOT_TOKEN\" ] && bake=\"depot bake --project $DEPOT_PROJECT_ID\" || bake=\"docker buildx bake\"\npin() { [ -z \"$BUILDKIT_SYNTAX\" ] || find /monorepo -path '*/.bayt/Dockerfile.*' -type f -exec sed -i \"$1\" {} \\; ; }\ndocker compose --profile '*' config -o /tmp/ci-compose.yaml\ndocker buildx bake --allow=fs.read=/ -f /tmp/ci-compose.yaml --print ci-visual ci-replay ci-acceptance ci-fit ci-window > /tmp/ci-bake.json\n:\nfor target in ci-visual ci-replay ci-acceptance ci-fit ci-window; do\n case \"  \" in\n *\" $target \"*) executor=\"$bake\" ;;\n *) executor=\"docker buildx bake\"; : ;;\n esac\n $executor -f /tmp/ci-bake.json --progress plain --set '*.output=type=cacheonly' ${SAYT_NO_CACHE:+--no-cache --set \"*.cache-from=\" --set \"*.cache-to=\"} ${SAYT_NO_CACHE_FROM:+--set \"*.cache-from=\"} ${SAYT_NO_CACHE_TO:+--set \"*.cache-to=\"} \"$target\"\ndone",
+      "do": "set -eu\nexport DOCKER_HOST_TCP=\"$DOCKER_HOST\"\nexport DEPOT_DISABLE_OTEL=1\n[ -n \"$DEPOT_TOKEN\" ] && bake=\"depot bake --project $DEPOT_PROJECT_ID\" || bake=\"docker buildx bake\"\npin() { [ -z \"$BUILDKIT_SYNTAX\" ] || find /monorepo -path '*/.bayt/Dockerfile.*' -type f -exec sed -i \"$1\" {} \\; ; }\ndocker compose --profile '*' config -o /tmp/ci-compose.yaml\ndocker buildx bake --allow=fs.read=/ -f /tmp/ci-compose.yaml --print ci-visual ci-replay ci-acceptance > /tmp/ci-bake.json\n:\nfor target in ci-visual ci-replay ci-acceptance; do\n case \"  \" in\n *\" $target \"*) executor=\"$bake\" ;;\n *) executor=\"docker buildx bake\"; : ;;\n esac\n $executor -f /tmp/ci-bake.json --progress plain --set '*.output=type=cacheonly' ${SAYT_NO_CACHE:+--no-cache --set \"*.cache-from=\" --set \"*.cache-to=\"} ${SAYT_NO_CACHE_FROM:+--set \"*.cache-from=\"} ${SAYT_NO_CACHE_TO:+--set \"*.cache-to=\"} \"$target\"\ndone",
       "shell": "sh",
       "dockerfile": {
         "inject": {

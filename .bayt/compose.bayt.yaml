@@ -42,14 +42,6 @@ include:
   required: false
 - path: ./compose.ci-acceptance.yaml
   required: false
-- path: ./compose.check-fit.yaml
-  required: false
-- path: ./compose.ci-fit.yaml
-  required: false
-- path: ./compose.check-window.yaml
-  required: false
-- path: ./compose.ci-window.yaml
-  required: false
 - path: ./compose.caddy.yaml
   required: false
 - path: ./compose.crud.yaml

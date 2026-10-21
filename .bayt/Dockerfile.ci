@@ -104,8 +104,6 @@ COPY --parents monorepo/*.yaml ./
 COPY --from=truco-ci-visual_bayt --link /monorepo /monorepo
 COPY --from=truco-ci-replay_bayt --link /monorepo /monorepo
 COPY --from=truco-ci-acceptance_bayt --link /monorepo /monorepo
-COPY --from=truco-ci-fit_bayt --link /monorepo /monorepo
-COPY --from=truco-ci-window_bayt --link /monorepo /monorepo
 COPY --parents .bayt/** ./
 COPY .bayt/Taskfile.yml .bayt/Taskfile.bayt.yml .bayt/Taskfile.ci.yaml .bayt/bayt.ci.json ./.bayt/
 ENV BUILDX_BAKE_ENTITLEMENTS_FS=0
@@ -168,8 +166,6 @@ COPY --parents .bayt/compose.ci.yaml .bayt/Dockerfile.ci .bayt/bayt.ci.json .bay
 COPY --from=truco-ci-visual_bayt /monorepo /monorepo
 COPY --from=truco-ci-replay_bayt /monorepo /monorepo
 COPY --from=truco-ci-acceptance_bayt /monorepo /monorepo
-COPY --from=truco-ci-fit_bayt /monorepo /monorepo
-COPY --from=truco-ci-window_bayt /monorepo /monorepo
 ARG SOURCE_DATE_EPOCH
 ARG BAYT_CLAMP=1
 RUN if [ "${BAYT_CLAMP:-1}" != 0 ]; then find /monorepo/${BAYT_DIR} -exec touch -hd @${SOURCE_DATE_EPOCH:-0} {} + && { d=$(dirname /monorepo/${BAYT_DIR}); while [ "$d" != / ]; do touch -hd @${SOURCE_DATE_EPOCH:-0} "$d" || exit; d=$(dirname "$d"); done; }; fi

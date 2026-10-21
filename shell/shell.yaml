@@ -102,6 +102,12 @@ optional:
       type: text
     - name: filled
       type: text
+    - name: us_games
+      type: int
+    - name: them_games
+      type: int
+    - name: others_games
+      type: int
     - name: created_at
       type: timestamptz
   round:
@@ -537,6 +543,24 @@ schema:
           - 'yes'
         name: filled
         type: text
+        required: false
+      - bounds:
+          intMin: 0
+          intMax: 2
+        name: us_games
+        type: int
+        required: false
+      - bounds:
+          intMin: 0
+          intMax: 2
+        name: them_games
+        type: int
+        required: false
+      - bounds:
+          intMin: 0
+          intMax: 2
+        name: others_games
+        type: int
         required: false
       - name: created_at
         type: timestamptz
@@ -1512,6 +1536,18 @@ schema:
                   - tie
                   - draw
                   - both
+            games_a:
+              kind: integer
+              intMin: 0
+              intMax: 2
+            games_b:
+              kind: integer
+              intMin: 0
+              intMax: 2
+            games_c:
+              kind: integer
+              intMin: 0
+              intMax: 2
             goal:
               kind: integer
               intMin: 0
@@ -2535,6 +2571,9 @@ schema:
                 - manda
                 - desce
                 - chorou
+                - peek0
+                - peek1
+                - peek2
         name: view
         type: json
         required: true

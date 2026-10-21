@@ -47,8 +47,6 @@ services:
         truco-ci-visual_bayt: service:truco-ci-visual_bayt
         truco-ci-replay_bayt: service:truco-ci-replay_bayt
         truco-ci-acceptance_bayt: service:truco-ci-acceptance_bayt
-        truco-ci-fit_bayt: service:truco-ci-fit_bayt
-        truco-ci-window_bayt: service:truco-ci-window_bayt
         bayt: >-
           ${BAYT_RUNTIME:-docker-image://bonitao/bayt-runtime:1.2.1@sha256:c5776093b5c464b77365e3bb5310b2c5d9c8d99f5cc07a131c30a4ea03d42f5c}
         workspaceroot-pronto-sources_srcs: >-
@@ -150,8 +148,6 @@ services:
         truco-ci-visual_bayt: service:truco-ci-visual_bayt
         truco-ci-replay_bayt: service:truco-ci-replay_bayt
         truco-ci-acceptance_bayt: service:truco-ci-acceptance_bayt
-        truco-ci-fit_bayt: service:truco-ci-fit_bayt
-        truco-ci-window_bayt: service:truco-ci-window_bayt
       context: ..
       dockerfile: .bayt/Dockerfile.ci
       target: ci_bayt

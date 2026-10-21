@@ -121,6 +121,21 @@
         "name": "tavern_key",
         "type": "text",
         "retired": false
+      },
+      "25": {
+        "name": "us_games",
+        "type": "int",
+        "retired": false
+      },
+      "26": {
+        "name": "them_games",
+        "type": "int",
+        "retired": false
+      },
+      "27": {
+        "name": "others_games",
+        "type": "int",
+        "retired": false
       }
     }
   },

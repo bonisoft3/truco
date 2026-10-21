@@ -115,8 +115,10 @@ Deno.test("every table plays to its goal, the house choosing from each seat's ow
       yourTurn(t);
     }
     const goal = t.game().state.goal;
+    const targetGames = ["gaucho", "argentino", "uruguayo", "paraguayo"].includes(variant) ? 1 : 2;
     const scores = [t.table().us_score, t.table().them_score, t.table().others_score].map(Number);
-    assert(scores.includes(goal) && t.table().winner !== "", `${variant} ${seats} ended at ${scores.join("/")} short of ${goal}`);
+    const games = [t.table().us_games, t.table().them_games, t.table().others_games].map(Number);
+    assert(scores.includes(goal) && games.includes(targetGames) && t.table().winner !== "", `${variant} ${seats} ended at ${scores.join("/")} (${games.join("/")} games) short of ${goal}`);
     assert(t.hand().shout_kind === "close", `${variant} ${seats} closed without its shout`);
   }
 });
@@ -155,7 +157,7 @@ Deno.test("resigning hands the house the match, and another game starts afresh f
   assert(t.table().status === "over" && t.table().winner === "them", `the match went to "${t.table().winner}"`);
   t.click("btn-again");
   assert(t.table().seed === "777" && t.hand().id.startsWith("g777/"), `the next game is ${t.hand().id}`);
-  assert(t.table().us_score === "0" && t.table().them_score === "0" && t.table().status === "playing", "the new game kept the old score");
+  assert(t.table().us_score === "0" && t.table().them_score === "0" && t.table().us_games === "0" && t.table().them_games === "0" && t.table().status === "playing", "the new game kept the old score");
   assert(t.rows.round.find((r) => r.id === first)?.current === "no", "the finished hand is still on the felt");
 });
 
@@ -177,6 +179,11 @@ Deno.test("encobrir lays your card face down, and nobody reads it", () => {
   const laid = only(t.rows.play.filter((p) => p.kind === "card" && p.seat === "you"), "your card");
   assert(laid.said === "encoberta" && laid.card === "", `a covered card reads "${laid.card}" (${laid.said})`);
   assert(t.hand().oculta === "no", "encobrir stayed armed after the card");
+  // Regression: the house's remaining held backs must keep the slots not yet
+  // played rather than always retiring slot 2 first.
+  const theirPlayed = t.rows.play.filter((p) => p.kind === "card" && p.seat === "eles1").map((p) => p.from_slot);
+  const theirHeld = t.rows.held.filter((h) => h.current === "yes" && h.display_seat === "eles1").map((h) => h.slot);
+  assert(theirPlayed.length === 2 && theirHeld.join(",") === "2", `played ${theirPlayed.join(",")} left ${theirHeld.join(",")}`);
 });
 
 Deno.test("every click is its own, taken in the order it was made", () => {

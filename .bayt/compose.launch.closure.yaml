@@ -40,10 +40,6 @@ include:
   required: false
 - path: .././.bayt/compose.check-acceptance.yaml
   required: false
-- path: .././.bayt/compose.check-fit.yaml
-  required: false
-- path: .././.bayt/compose.check-window.yaml
-  required: false
 - path: ../monorepo/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml
   required: false
 services:

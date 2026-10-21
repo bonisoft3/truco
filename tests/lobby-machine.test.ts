@@ -1,14 +1,10 @@
 import { assertEquals } from "jsr:@std/assert@1.0.11";
-import { compileHybrid } from "../../../plugins/pronto/hybrid.ts";
-import { instrument } from "../../../plugins/omnishell/instrument.ts";
 import { executeHybrid } from "../../../plugins/pronto/hybrid-local.ts";
-import { ROOT, run, uuid } from "../../../plugins/pronto/testdata/hybrid-fixtures.ts";
+import { uuid } from "../../../plugins/pronto/testdata/hybrid-fixtures.ts";
+import { hybridFixture } from "./online-fixture.ts";
 
 async function fixture<T>(name: string) {
-  const exported = await run("cue", ["export", "./apps/truco", "-e", `code.state.hybrids.truco_${name}.reducer`]);
-  if (!exported.ok) throw new Error(exported.err);
-  const spec = JSON.parse(exported.out);
-  const compiled = await compileHybrid(spec, await Deno.readTextFile(new URL(`apps/truco/machines/${name}.js`, ROOT)), instrument);
+  const {spec, compiled} = await hybridFixture(name);
   return async (state: T, kind: string, payload = {}, now = 1000, actor = "owner") => await executeHybrid(compiled.source, spec.fuel, {
     state, event: {kind, payload}, context: {now, actor, tier: ["touch", "leave", "expire"].includes(kind) ? "mecha" : "omnishell"}, viewers: [actor],
   }) as {kind: string; reason: string; state: T; public?: unknown};

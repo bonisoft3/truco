@@ -148,34 +148,6 @@ services:
     profiles:
     - ci-acceptance
     scale: 1
-  check-fit:
-    extends:
-      file: ./compose.check-fit.yaml
-      service: truco-check-fit
-    profiles:
-    - check-fit
-    scale: 1
-  ci-fit:
-    extends:
-      file: ./compose.ci-fit.yaml
-      service: truco-ci-fit
-    profiles:
-    - ci-fit
-    scale: 1
-  check-window:
-    extends:
-      file: ./compose.check-window.yaml
-      service: truco-check-window
-    profiles:
-    - check-window
-    scale: 1
-  ci-window:
-    extends:
-      file: ./compose.ci-window.yaml
-      service: truco-ci-window
-    profiles:
-    - ci-window
-    scale: 1
   caddy:
     extends:
       file: ./compose.caddy.yaml

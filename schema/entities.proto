@@ -115,6 +115,9 @@ message Match {
   optional string opponent_handle = 22 [json_name = "opponent_handle"];
   optional string tavern_key = 24 [json_name = "tavern_key"];
   optional string filled = 23 [json_name = "filled"];
+  optional int32 us_games = 25 [json_name = "us_games"];
+  optional int32 them_games = 26 [json_name = "them_games"];
+  optional int32 others_games = 27 [json_name = "others_games"];
   google.protobuf.Timestamp created_at = 19 [json_name = "created_at"];
 }
 
