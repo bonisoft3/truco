@@ -1572,14 +1572,16 @@ const CASES: Case[] = [
         await other.context().close();
       }
       assert((await where()) === opened, `the bar moved as it filled: ${opened} then ${await where()}`);
-      const vp = p.viewportSize() ?? { width: 1280, height: 800 };
+      const vp = p.viewportSize()!;
       await p.setViewportSize({ width: vp.width, height: 500 });
       try {
+        // [popover] sits in the fixed top layer, so a short window only reaches
+        // the bottom of the bar when the modal frame itself scrolls.
         const scrolled = await p.locator("#modal-online .boteco-modal-frame").evaluate((frame: HTMLElement) => {
           const overflows = frame.scrollHeight > frame.clientHeight && getComputedStyle(frame).overflowY === "auto";
           frame.scrollTop = frame.scrollHeight;
-          const join = frame.querySelector("#online-join")?.getBoundingClientRect();
-          return { overflows, joinBottom: join ? Math.round(join.bottom) : 9999 };
+          const join = frame.querySelector("#btn-submit-join")!.getBoundingClientRect();
+          return { overflows, joinBottom: Math.round(join.bottom) };
         });
         assert(scrolled.overflows && scrolled.joinBottom <= 500, `short viewport must scroll the bar modal into view: ${JSON.stringify(scrolled)}`);
       } finally {

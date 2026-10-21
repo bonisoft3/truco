@@ -1,7 +1,6 @@
 :is(.screen[data-screen="arena"], .online-table) {
   /* Anchored at the top, not centred: what arrives late extends the bar
-     downwards and never moves what is already drawn; shorter viewports scroll
-     the frame once it reaches 88dvh. */
+     downwards and never moves what is already drawn. */
   & .boteco-modal {
     margin: 6dvh auto auto;
     padding: 0;

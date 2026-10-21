@@ -207,10 +207,9 @@ Deno.test({ name: "the bar leases your tab by a drawn key and renews it on the t
   // You are listed to yourself as the others see you, marked and with no one
   // to challenge; another player is, and challenging them opens a challenge.
   await m.store.upsert("player", { id: "you", handle: "Davi" });
-  // Regression: a backgrounded tab whose lease row was pruned by the ticker on
-  // expiry, or whose lease lapsed before "Entrar na roda" was clicked (refused
-  // as "disconnected"), re-puts its lease and resends show once the renewed
-  // lease advances the seat's revision.
+  // A backgrounded tab whose lease row expires on the ticker, or whose lease
+  // lapses before "Entrar na roda" is clicked (refused as "disconnected"),
+  // re-puts its lease and resends show once the renewed lease advances the seat.
   await m.store.remove("truco_presence_lease", String(lease.id));
   await m.store.put("truco_presence_seat", { id: `${ME}/owner`, instance_id: ME, actor: ME, seat: "owner", revision: "8", phase: "hidden", view: {}, name: "" });
   await step(m);
