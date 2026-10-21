@@ -207,6 +207,25 @@ Deno.test({ name: "the bar leases your tab by a drawn key and renews it on the t
   // You are listed to yourself as the others see you, marked and with no one
   // to challenge; another player is, and challenging them opens a challenge.
   await m.store.upsert("player", { id: "you", handle: "Davi" });
+  // Regression: a backgrounded tab whose lease row was pruned by the ticker on
+  // expiry, or whose lease lapsed before "Entrar na roda" was clicked (refused
+  // as "disconnected"), re-puts its lease and resends show once the renewed
+  // lease advances the seat's revision.
+  await m.store.remove("truco_presence_lease", String(lease.id));
+  await m.store.put("truco_presence_seat", { id: `${ME}/owner`, instance_id: ME, actor: ME, seat: "owner", revision: "8", phase: "hidden", view: {}, name: "" });
+  await step(m);
+  assertEquals(m.rows("truco_presence_lease").map((l) => [l.id, Number(l.beat)]), [[lease.id, 0]]);
+  m.fire("#btn-toggle-online");
+  await step(m);
+  const show8 = m.rows("truco_presence_command").find((c) => c.id === `${ME}/8/owner/show`)!;
+  await m.store.put("truco_presence_command", { ...show8, outcome: "rejected", reason: "disconnected" });
+  await step(m);
+  assertEquals(Number(m.rows("truco_presence_lease")[0].beat), 9);
+  assertEquals(m.one("#btn-toggle-online").getAttribute("aria-checked"), "true");
+  await m.store.put("truco_presence_seat", { id: `${ME}/owner`, instance_id: ME, actor: ME, seat: "owner", revision: "9", phase: "hidden", view: {}, name: "" });
+  await step(m);
+  assert(m.rows("truco_presence_command").some((c) => c.id === `${ME}/9/owner/show`), `expected show retry at revision 9, got ${JSON.stringify(m.rows("truco_presence_command"))}`);
+  await m.store.put("truco_presence_seat", { id: `${ME}/owner`, instance_id: ME, actor: ME, seat: "owner", revision: "10", phase: "visible", view: {}, name: "Davi" });
   await m.store.put("truco_presence_public", { id: ME, name: "Davi" });
   await m.store.put("truco_presence_public", { id: OTHER, name: "Bia" });
   await step(m);

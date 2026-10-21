@@ -148,16 +148,23 @@ const app = // lobby — the bar, the arena's modal: your presence among the pla
   const nameless = presence?.phase === "visible" && handle === "" && !sent;
   // A lease renewal moves the revision under a click, so this tab's last
   // switch can come back stale; while the seat is not where it asked to be,
-  // it is sent again at the revision the seat holds now.
+  // it is sent again at the revision the seat holds now. A backgrounded tab
+  // whose lease lapsed on the cluster re-puts its lease and resends show once
+  // the renewed lease advances the seat's revision.
   const [last] = (rows.truco_presence_command ?? [])
     .map(c => ({row: c, revision: Number(txt(c.id).split("/")[1]), kind: txt(c.id).split("/")[3]}))
     .filter(c => presence !== undefined && c.row.instance_id === presence.instance_id && ["show", "hide"].includes(c.kind))
     .sort((x, y) => y.revision - x.revision);
-  const unmet = last !== undefined && last.row.reason === "stale_revision" && Number(presence.revision) > last.revision &&
+  const lease = (rows.truco_presence_lease ?? []).find(l => l.id === tab.lease);
+  const disconnected = last !== undefined && last.row.reason === "disconnected" && Number(presence.revision) === last.revision &&
+    presence.phase !== "visible" && handle !== "";
+  const relist = presence !== undefined && (lease === undefined || (disconnected && Number(lease.beat) <= last.revision))
+    ? [{op: "put", entity: "truco_presence_lease", id: tab.lease, row: {id: tab.lease, beat: disconnected ? last.revision + 1 : 0}}] : [];
+  const unmet = last !== undefined && ["stale_revision", "disconnected"].includes(last.row.reason) && Number(presence.revision) > last.revision &&
     (presence.phase === "visible") !== (last.kind === "show") && (last.kind === "hide" || handle !== "");
   // Shown is what you asked for while a switch of yours is in flight, and
   // what the seat holds once none is: a refused switch shows the seat again.
-  const inFlight = presence !== undefined && (rows.truco_presence_command ?? []).some(c => c.instance_id === presence.instance_id && !c.outcome);
+  const inFlight = presence !== undefined && ((rows.truco_presence_command ?? []).some(c => c.instance_id === presence.instance_id && !c.outcome) || disconnected);
   const held = presence === undefined ? "" : presence.phase === "visible" ? "show" : "hide";
   const shown = inFlight ? txt(tab.shown ?? "") || held : held;
   // The bar's own rows: the tables on its list, by who opened them, and the
@@ -207,6 +214,7 @@ const app = // lobby — the bar, the arena's modal: your presence among the pla
     ...synced("chair", chairs),
     ...answered,
     ...reclose,
+    ...relist,
     ...(txt(tab.me ?? "") === me ? [] : [{op: "patch", entity: "lobby_tab", id: "the", row: {me}}]),
     ...(txt(tab.shown ?? "") === shown ? [] : [{op: "patch", entity: "lobby_tab", id: "the", row: {shown}}]),
     ...(unmet ? [command("truco_presence", presence.instance_id, presence.revision, presence.seat, last.kind, last.kind === "show" ? {name: handle} : {})]
