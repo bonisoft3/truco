@@ -1,7 +1,8 @@
 # generated from bayt.cue — do not edit
 FROM docker:29.7.1-cli@sha256:27a51d5ab1cd38d9eeaba7b415b8c07bc10c31e1cf1ec8d78f6413fcfab3f44f AS ci-acceptance
-WORKDIR /monorepo/.
-COPY --from=bonitao/lazybox:0.8.3@sha256:c896a6836673d8fd217f6021a2522351fd82d580ed985159feb2f10373018e73 /lazybox/ /root/.local/share/lazybox/
+ARG BAYT_DIR
+WORKDIR /monorepo/${BAYT_DIR}
+COPY --from=bonitao/lazybox:0.8.4@sha256:4afc3200d59fe5744cc7871858c4b04b404449c90578b9fe57136fea0b7dd566 /lazybox/ /root/.local/share/lazybox/
 COPY --from=mirror.gcr.io/alpine/socat:1.8.0.0@sha256:a6be4c0262b339c53ddad723cdd178a1a13271e1137c65e27f90a08c16de02b8 /usr/bin/socat1 /usr/local/bin/socat
 COPY --from=mirror.gcr.io/alpine/socat:1.8.0.0@sha256:a6be4c0262b339c53ddad723cdd178a1a13271e1137c65e27f90a08c16de02b8 /usr/lib/libreadline.so.8 /usr/lib/libncursesw.so.6 /usr/lib/
 ENV PATH=$PATH:/root/.local/bin:/root/.local/share/lazybox/bin
@@ -76,11 +77,36 @@ BKID_LOCK
 COPY --from=bayt . /monorepo/plugins/bayt/runtime
 RUN cd /opt/bkid && mise trust -y && mise install && mise exec -- sh -c 'cp "$(mise which task)" /usr/local/bin/task && cp "$(mise which depot)" /usr/local/bin/depot'
 ENV PATH=/monorepo/plugins/bayt/runtime:${PATH}
-COPY --from=truco-check-acceptance_srcs --parents /monorepo/tests/** /
+ARG MONOREPO_COMPOSE_MODE
+ENV MONOREPO_COMPOSE_MODE=$MONOREPO_COMPOSE_MODE
+ARG BAYT_RUNTIME
+ENV BAYT_RUNTIME=$BAYT_RUNTIME
+COPY --from=libraries_mecha-airlock-image_bayt /monorep[o] /monorepo/
+COPY --from=libraries_mecha-airlock-image_srcs /monorep[o] /monorepo/
+COPY --from=libraries_mecha-auth-image_bayt /monorep[o] /monorepo/
+COPY --from=libraries_mecha-auth-image_srcs /monorep[o] /monorepo/
+COPY --from=libraries_mecha-clock-image_bayt /monorep[o] /monorepo/
+COPY --from=libraries_mecha-clock-image_srcs /monorep[o] /monorepo/
+COPY --from=libraries_mecha-compute-image_bayt /monorep[o] /monorepo/
+COPY --from=libraries_mecha-compute-image_srcs /monorep[o] /monorepo/
+COPY --from=libraries_mecha-conduit-image_bayt /monorep[o] /monorepo/
+COPY --from=libraries_mecha-database-image_bayt /monorep[o] /monorepo/
+COPY --from=libraries_mecha-database-image_srcs /monorep[o] /monorepo/
+COPY --from=libraries_mecha-mesh-image_bayt /monorep[o] /monorepo/
+COPY --from=libraries_mecha-mesh-image_srcs /monorep[o] /monorepo/
+COPY --from=libraries_mecha-ticker-image_bayt /monorep[o] /monorepo/
+COPY --from=libraries_mecha-ticker-image_srcs /monorep[o] /monorepo/
+COPY --from=plugins_omnishell-runtime-image_bayt /monorep[o] /monorepo/
+COPY --from=plugins_omnishell-runtime-image_srcs /monorep[o] /monorepo/
+COPY --from=workspaceroot-pronto-sources_bayt /monorep[o] /monorepo/
+COPY --from=workspaceroot-pronto-sources_srcs /monorep[o] /monorepo/
+COPY --parents monorepo/*.yaml ./
+COPY --from=truco-check-acceptance_srcs --parents /monorepo/${BAYT_DIR:+${BAYT_DIR}/}tests/** /
 COPY --from=truco-check-acceptance_bayt --link /monorepo /monorepo
-COPY --from=truco-database_srcs --parents /monorepo/services/database/migrations/000_extensions.sql /monorepo/services/database/migrations/001_roles.sql /monorepo/services/database/migrations/002_grants.sql /monorepo/services/database/migrations/004_types.sql /monorepo/services/database/migrations/005_create_tables.sql /monorepo/services/database/migrations/006_policies.sql /monorepo/services/database/migrations/007_txid.sql /monorepo/services/database/migrations/008_publication.sql /monorepo/services/database/migrations/012_lobby.sql /monorepo/services/database/migrations/013_networked_shouts.sql /
-COPY --from=truco-caddy_srcs --parents /monorepo/docker/Caddyfile /monorepo/shell/index.html /monorepo/shell/shell.css /monorepo/shell/boot.js /monorepo/offline-first-sw.js /monorepo/shell/shell.yaml /monorepo/shell/shell.json /monorepo/shell/design.css /monorepo/shell/screens/arena.html /monorepo/shell/screens/arena.css /monorepo/shell/screens/regras.html /monorepo/shell/screens/regras.css /monorepo/shell/handlers/seats2.js /monorepo/shell/handlers/sitting.js /monorepo/shell/handlers/spun.js /monorepo/shell/handlers/stake0.js /monorepo/shell/handlers/table.js /monorepo/shell/handlers/variant2.js /monorepo/shell/handlers/variant3.js /monorepo/shell/shared/table.css /monorepo/shell/hatches/dealer.js /monorepo/messages/pt-BR.json /monorepo/messages/es-AR.json /monorepo/messages/es-UY.json /monorepo/messages/es-PY.json /monorepo/messages/ca-ES.json /monorepo/documents/ar/reglas/index.html /monorepo/documents/ca/regles/index.html /monorepo/documents/py/reglas/index.html /monorepo/documents/regras/index.html /monorepo/documents/uy/reglas/index.html /monorepo/shell/assets/bigode.png /monorepo/shell/assets/cida.png /monorepo/shell/assets/jordi.png /monorepo/shell/assets/nezinho.png /monorepo/shell/assets/osvaldo.png /monorepo/shell/assets/tabare.png /monorepo/shell/assets/tiao.png /monorepo/shell/assets/tiao_queijo.png /monorepo/shell/assets/xiru.png /monorepo/brief.html /monorepo/ir.html /monorepo/ir/card.css /monorepo/acceptance.md /monorepo/DESIGN.md /monorepo/robots.txt /monorepo/sitemap.xml /
-COPY --from=truco-browser_srcs --parents /monorepo/[m]ise.toml /monorepo/[.]mise.toml /monorepo/[m]ise.lock /monorepo/[.]tool-versions /
+COPY --from=truco-database_srcs --parents /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/000_extensions.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/001_roles.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/002_grants.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/004_types.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/005_create_tables.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/006_policies.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/007_txid.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/008_publication.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/016_mecha_actors.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/012_lobby.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/013_networked_shouts.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/014_retire_online_writes.sql /monorepo/${BAYT_DIR:+${BAYT_DIR}/}services/database/migrations/017_table_indexes.sql /
+COPY --from=truco-caddy_srcs --parents /monorepo/${BAYT_DIR:+${BAYT_DIR}/}docker/Caddyfile /
+COPY --from=truco-served_srcs --parents /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/index.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/shell.css /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/boot.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}offline-first-sw.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/shell.yaml /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/shell.json /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/design.css /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/screens/arena.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/screens/arena.css /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/screens/regras.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/screens/regras.css /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/handlers/arena.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/handlers/country.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/handlers/lease.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/handlers/lobby.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/handlers/seats2.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/handlers/variant2.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/handlers/variant3.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/renderers/initial.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/renderers/speech.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/renderers/uppercase.js /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/shared/lobby.css /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/shared/table.css /monorepo/${BAYT_DIR:+${BAYT_DIR}/}messages/pt-BR.json /monorepo/${BAYT_DIR:+${BAYT_DIR}/}messages/es-AR.json /monorepo/${BAYT_DIR:+${BAYT_DIR}/}messages/es-UY.json /monorepo/${BAYT_DIR:+${BAYT_DIR}/}messages/es-PY.json /monorepo/${BAYT_DIR:+${BAYT_DIR}/}messages/ca-ES.json /monorepo/${BAYT_DIR:+${BAYT_DIR}/}documents/ar/reglas/index.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}documents/ca/regles/index.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}documents/py/reglas/index.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}documents/regras/index.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}documents/uy/reglas/index.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/assets/bigode.png /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/assets/cida.png /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/assets/jordi.png /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/assets/nezinho.png /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/assets/osvaldo.png /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/assets/tabare.png /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/assets/tiao.png /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/assets/tiao_queijo.png /monorepo/${BAYT_DIR:+${BAYT_DIR}/}shell/assets/xiru.png /monorepo/${BAYT_DIR:+${BAYT_DIR}/}brief.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}ir.html /monorepo/${BAYT_DIR:+${BAYT_DIR}/}ir/card.css /monorepo/${BAYT_DIR:+${BAYT_DIR}/}acceptance.md /monorepo/${BAYT_DIR:+${BAYT_DIR}/}DESIGN.md /monorepo/${BAYT_DIR:+${BAYT_DIR}/}robots.txt /monorepo/${BAYT_DIR:+${BAYT_DIR}/}sitemap.xml /
+COPY --from=truco-browser_srcs --parents /monorepo/${BAYT_DIR:+${BAYT_DIR}/}[m]ise.toml /monorepo/${BAYT_DIR:+${BAYT_DIR}/}[.]mise.toml /monorepo/${BAYT_DIR:+${BAYT_DIR}/}[m]ise.lock /monorepo/${BAYT_DIR:+${BAYT_DIR}/}[.]tool-versions /
 COPY .bayt/Taskfile.yml .bayt/Taskfile.bayt.yml .bayt/Taskfile.ci-acceptance.yaml .bayt/bayt.ci-acceptance.json ./.bayt/
 ENV BUILDX_BAKE_ENTITLEMENTS_FS=0
 ENV COMPOSE_BAKE=true
@@ -111,7 +137,7 @@ if [ -n "$DOCKER_HOST" ] && [ ! -e /var/run/docker.sock ]; then
   ulimit -n 1048576 2>/dev/null || true
   addr=${DOCKER_HOST#tcp://}
   [ -n "$addr" ] || { echo "bkid: DOCKER_HOST=$DOCKER_HOST has no tcp:// address" >&2; exit 1; }
-  socat -d0 UNIX-LISTEN:/var/run/docker.sock,fork,backlog=1024,reuseaddr "TCP:$addr,keepalive,keepidle=30,keepintvl=15,keepcnt=4" &
+  socat -d0 -t 86400 UNIX-LISTEN:/var/run/docker.sock,fork,backlog=1024,reuseaddr "TCP:$addr,keepalive,keepidle=30,keepintvl=15,keepcnt=4" &
   SOCAT_PID=$!
   trap 'kill $SOCAT_PID 2>/dev/null || true' EXIT INT TERM
   socat -u OPEN:/dev/null UNIX-CONNECT:/var/run/docker.sock,retry=20,interval=0.2 >/dev/null 2>&1 \
@@ -126,14 +152,16 @@ task -t .bayt/Taskfile.yml bayt:ci-acceptance
 BAYT_INJECT
 
 FROM busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223 AS ci-acceptance_bayt_ctxs
-WORKDIR /monorepo/.
+ARG BAYT_DIR
+WORKDIR /monorepo/${BAYT_DIR}
 COPY --parents .bayt/compose.ci-acceptance.yaml .bayt/Dockerfile.ci-acceptance .bayt/bayt.ci-acceptance.json .bayt/Taskfile.yml .bayt/Taskfile.bayt.yml .bayt/Taskfile.ci-acceptance.yaml .bayt/process-compose.yaml ./
 COPY --from=truco-check-acceptance_bayt /monorepo /monorepo
 COPY --from=truco-database_bayt /monorepo /monorepo
 COPY --from=truco-caddy_bayt /monorepo /monorepo
+COPY --from=truco-served_bayt /monorepo /monorepo
 COPY --from=truco-browser_bayt /monorepo /monorepo
 ARG SOURCE_DATE_EPOCH
 ARG BAYT_CLAMP=1
-RUN if [ "${BAYT_CLAMP:-1}" != 0 ]; then find /monorepo/. -exec touch -hd @${SOURCE_DATE_EPOCH:-0} {} + && touch -hd @${SOURCE_DATE_EPOCH:-0} /monorepo; fi
+RUN if [ "${BAYT_CLAMP:-1}" != 0 ]; then find /monorepo/${BAYT_DIR} -exec touch -hd @${SOURCE_DATE_EPOCH:-0} {} + && { d=$(dirname /monorepo/${BAYT_DIR}); while [ "$d" != / ]; do touch -hd @${SOURCE_DATE_EPOCH:-0} "$d" || exit; d=$(dirname "$d"); done; }; fi
 FROM scratch AS ci-acceptance_bayt
 COPY --from=ci-acceptance_bayt_ctxs /monorepo /monorepo

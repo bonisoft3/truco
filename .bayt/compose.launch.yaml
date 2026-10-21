@@ -8,6 +8,7 @@ services:
         truco-crud: service:truco-crud
         truco-electric: service:truco-electric
         truco-auth: service:truco-auth
+        truco-clock: service:truco-clock
       context: ..
       dockerfile: .bayt/Dockerfile.launch
       target: launch
@@ -15,6 +16,7 @@ services:
       - bayt-truco-launch:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
       - bayt-truco-launch:latest
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     depends_on:
@@ -31,6 +33,8 @@ services:
         condition: service_healthy
         restart: true
       truco-auth:
+        condition: service_started
+      truco-clock:
         condition: service_started
     healthcheck:
       test:
@@ -53,10 +57,12 @@ services:
         truco-crud_bayt: service:truco-crud_bayt
         truco-electric_bayt: service:truco-electric_bayt
         truco-auth_bayt: service:truco-auth_bayt
+        truco-clock_bayt: service:truco-clock_bayt
       context: ..
       dockerfile: .bayt/Dockerfile.launch
       target: launch_bayt
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     image: bayt-truco-launch_bayt:latest

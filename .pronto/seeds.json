@@ -19,6 +19,8 @@
       "my_seat": "",
       "current": "yes",
       "locale": "",
+      "game": "seed_game_1",
+      "wake": "seed_wake_1",
       "created_at": "2026-09-23T23:00:00Z"
     },
     {
@@ -40,6 +42,8 @@
       "my_seat": "you",
       "current": "no",
       "locale": "pt-BR",
+      "game": "seed_game_2",
+      "wake": "seed_wake_2",
       "created_at": "2026-09-23T22:00:00Z"
     },
     {
@@ -61,6 +65,8 @@
       "my_seat": "eles1",
       "current": "yes",
       "locale": "es-AR",
+      "game": "seed_game_3",
+      "wake": "seed_wake_3",
       "created_at": "2026-09-23T21:00:00Z"
     }
   ],
@@ -72,7 +78,6 @@
       "vira": "seed_vira_1",
       "manilha": "seed_manilha_1",
       "phase": "dealt",
-      "truco_state": "",
       "ran": "",
       "v1": "",
       "v2": "",
@@ -92,9 +97,15 @@
       "envido_them": 0,
       "envido_result": "",
       "said": "seed_said_1",
+      "shout_state": "",
+      "shout_word": "seed_shout_word_1",
+      "shout_from": "seed_shout_from_1",
+      "shout_kind": "",
+      "shout_t": "seed_shout_t_1",
+      "shout_done": "",
+      "oculta": "",
       "turn_seat": "",
-      "ui_deadline": "2026-09-23T23:00:00Z",
-      "backend_deadline": "2026-09-23T23:00:00Z",
+      "shout_seat": "",
       "current": "yes",
       "created_at": "2026-09-23T23:00:00Z"
     },
@@ -105,7 +116,6 @@
       "vira": "seed_vira_2",
       "manilha": "seed_manilha_2",
       "phase": "v1",
-      "truco_state": "none",
       "ran": "us",
       "v1": "us",
       "v2": "us",
@@ -125,9 +135,15 @@
       "envido_them": 1,
       "envido_result": "us",
       "said": "seed_said_2",
+      "shout_state": "live",
+      "shout_word": "seed_shout_word_2",
+      "shout_from": "seed_shout_from_2",
+      "shout_kind": "call",
+      "shout_t": "seed_shout_t_2",
+      "shout_done": "yes",
+      "oculta": "yes",
       "turn_seat": "you",
-      "ui_deadline": "2026-09-23T22:00:00Z",
-      "backend_deadline": "2026-09-23T22:00:00Z",
+      "shout_seat": "you",
       "current": "no",
       "created_at": "2026-09-23T22:00:00Z"
     },
@@ -138,7 +154,6 @@
       "vira": "seed_vira_3",
       "manilha": "seed_manilha_3",
       "phase": "v2",
-      "truco_state": "truco_called",
       "ran": "them",
       "v1": "them",
       "v2": "them",
@@ -158,9 +173,15 @@
       "envido_them": 2,
       "envido_result": "them",
       "said": "seed_said_3",
+      "shout_state": "gone",
+      "shout_word": "seed_shout_word_3",
+      "shout_from": "seed_shout_from_3",
+      "shout_kind": "accept",
+      "shout_t": "seed_shout_t_3",
+      "shout_done": "no",
+      "oculta": "no",
       "turn_seat": "parca",
-      "ui_deadline": "2026-09-23T21:00:00Z",
-      "backend_deadline": "2026-09-23T21:00:00Z",
+      "shout_seat": "parca",
       "current": "yes",
       "created_at": "2026-09-23T21:00:00Z"
     }
@@ -168,41 +189,23 @@
   "play": [
     {
       "id": "play_0001",
-      "round_id": "round_0001",
+      "round_id": "round_0003",
       "vaza": 1,
       "seat": "you",
       "kind": "card",
       "count": "seed_count_1",
-      "card": "4c",
+      "card": "seed_card_1",
       "power": 0,
       "said": "seed_said_1",
       "from_slot": 0,
-      "rank": "4",
-      "suit": "♣",
-      "face": "🃔",
+      "rank": "seed_rank_1",
+      "suit": "",
+      "face": "seed_face_1",
       "manilha": "",
       "lie": -7,
       "win": "",
+      "display_seat": "",
       "seq": "seed_seq_1"
-    },
-    {
-      "id": "play_0004",
-      "round_id": "round_0001",
-      "vaza": 1,
-      "seat": "eles1",
-      "kind": "card",
-      "count": "seed_count_4",
-      "card": "4d",
-      "power": 0,
-      "said": "seed_said_4",
-      "from_slot": 1,
-      "rank": "4",
-      "suit": "♦",
-      "face": "🃄",
-      "manilha": "",
-      "lie": 5,
-      "win": "",
-      "seq": "seed_seq_4"
     },
     {
       "id": "play_0002",
@@ -221,6 +224,7 @@
       "manilha": "yes",
       "lie": -6,
       "win": "yes",
+      "display_seat": "you",
       "seq": "seed_seq_2"
     },
     {
@@ -240,6 +244,7 @@
       "manilha": "no",
       "lie": -5,
       "win": "",
+      "display_seat": "parca",
       "seq": "seed_seq_3"
     }
   ],
@@ -293,6 +298,195 @@
       "created_at": "2026-09-23T21:00:00Z"
     }
   ],
+  "intent": [
+    {
+      "id": "intent_0001",
+      "game": "seed_game_1",
+      "revision": 10,
+      "kind": "play",
+      "slot": 0
+    },
+    {
+      "id": "intent_0002",
+      "game": "seed_game_2",
+      "revision": 20,
+      "kind": "raise",
+      "slot": 1
+    },
+    {
+      "id": "intent_0003",
+      "game": "seed_game_3",
+      "revision": 30,
+      "kind": "accept",
+      "slot": 2
+    }
+  ],
+  "lobby_tab": [
+    {
+      "id": "lobby_tab_0001",
+      "lease": "seed_lease_1",
+      "me": "seed_me_1",
+      "note": "seed_note_1"
+    },
+    {
+      "id": "lobby_tab_0002",
+      "lease": "seed_lease_2",
+      "me": "seed_me_2",
+      "note": "seed_note_2"
+    },
+    {
+      "id": "lobby_tab_0003",
+      "lease": "seed_lease_3",
+      "me": "seed_me_3",
+      "note": "seed_note_3"
+    }
+  ],
+  "online_rules": [
+    {
+      "id": "online_rules_0001",
+      "state": "picking",
+      "variant": "paulista",
+      "seating": "1v1"
+    },
+    {
+      "id": "online_rules_0002",
+      "state": "picking",
+      "variant": "mineiro",
+      "seating": "2v2"
+    },
+    {
+      "id": "online_rules_0003",
+      "state": "picking",
+      "variant": "gaucho",
+      "seating": "2v2v2"
+    }
+  ],
+  "online_view": [
+    {
+      "id": "online_view_0001",
+      "room": "seed_room_1",
+      "covered": "yes",
+      "status": "active",
+      "bare": "",
+      "seated": 10,
+      "places": 10,
+      "place": 10,
+      "team": "seed_team_1",
+      "my_place": 10,
+      "mine": "seed_mine_1",
+      "three": "yes",
+      "a": "seed_a_1",
+      "b": "seed_b_1",
+      "c": "seed_c_1",
+      "hand_no": "seed_hand_no_1",
+      "goal": 10,
+      "stake": "seed_stake_1",
+      "variant": "seed_variant_1",
+      "vira": "seed_vira_1",
+      "error": "seed_error_1"
+    },
+    {
+      "id": "online_view_0002",
+      "room": "seed_room_2",
+      "covered": "no",
+      "status": "active",
+      "bare": "yes",
+      "seated": 20,
+      "places": 20,
+      "place": 20,
+      "team": "seed_team_2",
+      "my_place": 20,
+      "mine": "seed_mine_2",
+      "three": "no",
+      "a": "seed_a_2",
+      "b": "seed_b_2",
+      "c": "seed_c_2",
+      "hand_no": "seed_hand_no_2",
+      "goal": 20,
+      "stake": "seed_stake_2",
+      "variant": "seed_variant_2",
+      "vira": "seed_vira_2",
+      "error": "seed_error_2"
+    },
+    {
+      "id": "online_view_0003",
+      "room": "seed_room_3",
+      "covered": "yes",
+      "status": "active",
+      "bare": "",
+      "seated": 30,
+      "places": 30,
+      "place": 30,
+      "team": "seed_team_3",
+      "my_place": 30,
+      "mine": "seed_mine_3",
+      "three": "yes",
+      "a": "seed_a_3",
+      "b": "seed_b_3",
+      "c": "seed_c_3",
+      "hand_no": "seed_hand_no_3",
+      "goal": 30,
+      "stake": "seed_stake_3",
+      "variant": "seed_variant_3",
+      "vira": "seed_vira_3",
+      "error": "seed_error_3"
+    }
+  ],
+  "online_item": [
+    {
+      "id": "online_item_0001",
+      "room": "seed_room_1",
+      "kind": "card",
+      "key": "seed_key_1",
+      "n": 10,
+      "place": 10,
+      "team": "",
+      "count": 10,
+      "card": "seed_card_1",
+      "turn": "yes",
+      "win": "yes"
+    },
+    {
+      "id": "online_item_0002",
+      "room": "seed_room_2",
+      "kind": "play",
+      "key": "seed_key_2",
+      "n": 20,
+      "place": 20,
+      "team": "a",
+      "count": 20,
+      "card": "seed_card_2",
+      "turn": "no",
+      "win": "no"
+    },
+    {
+      "id": "online_item_0003",
+      "room": "seed_room_3",
+      "kind": "place",
+      "key": "seed_key_3",
+      "n": 30,
+      "place": 30,
+      "team": "b",
+      "count": 30,
+      "card": "seed_card_3",
+      "turn": "yes",
+      "win": "yes"
+    }
+  ],
+  "player": [
+    {
+      "id": "player_0001",
+      "handle": "seed_handle_1"
+    },
+    {
+      "id": "player_0002",
+      "handle": "seed_handle_2"
+    },
+    {
+      "id": "player_0003",
+      "handle": "seed_handle_3"
+    }
+  ],
   "app_user": [
     {
       "id": "cfc548bf-df8e-424c-99a6-72ac95b2dcc4",
@@ -312,6 +506,8 @@
       "id": "lobby_0001",
       "handle": "seed_handle_1",
       "room_seed": "seed_room_seed_1",
+      "variant": "paulista",
+      "seats": "1v1",
       "status": "waiting",
       "updated_at": "2026-09-23T23:00:00Z"
     },
@@ -319,6 +515,8 @@
       "id": "lobby_0002",
       "handle": "seed_handle_2",
       "room_seed": "seed_room_seed_2",
+      "variant": "mineiro",
+      "seats": "2v2",
       "status": "playing",
       "updated_at": "2026-09-23T22:00:00Z"
     },
@@ -326,6 +524,8 @@
       "id": "lobby_0003",
       "handle": "seed_handle_3",
       "room_seed": "seed_room_seed_3",
+      "variant": "gaucho",
+      "seats": "2v2v2",
       "status": "waiting",
       "updated_at": "2026-09-23T21:00:00Z"
     }
@@ -337,6 +537,7 @@
       "challenger_name": "Sample challenger_name 1",
       "target_id": "cfc548bf-df8e-424c-99a6-72ac95b2dcc4",
       "seed": "seed_seed_1",
+      "variant": "paulista",
       "status": "pending",
       "created_at": "2026-09-23T23:00:00Z"
     },
@@ -346,6 +547,7 @@
       "challenger_name": "Sample challenger_name 2",
       "target_id": "cfc548bf-df8e-424c-99a6-72ac95b2dcc4",
       "seed": "seed_seed_2",
+      "variant": "mineiro",
       "status": "accepted",
       "created_at": "2026-09-23T22:00:00Z"
     },
@@ -355,6 +557,7 @@
       "challenger_name": "Sample challenger_name 3",
       "target_id": "cfc548bf-df8e-424c-99a6-72ac95b2dcc4",
       "seed": "seed_seed_3",
+      "variant": "gaucho",
       "status": "declined",
       "created_at": "2026-09-23T21:00:00Z"
     }
@@ -363,7 +566,7 @@
     {
       "id": "room_action_0001",
       "room_seed": "seed_room_seed_1",
-      "player_id": "d5a8b298-ca62-4e5c-a197-2684f895bf7f",
+      "player_id": "player_0002",
       "action": "play_card",
       "card": "seed_card_1",
       "slot": 0,
@@ -372,7 +575,7 @@
     {
       "id": "room_action_0002",
       "room_seed": "seed_room_seed_2",
-      "player_id": "cfc548bf-df8e-424c-99a6-72ac95b2dcc4",
+      "player_id": "player_0002",
       "action": "truco",
       "card": "seed_card_2",
       "slot": 1,
@@ -381,11 +584,321 @@
     {
       "id": "room_action_0003",
       "room_seed": "seed_room_seed_3",
-      "player_id": "cfc548bf-df8e-424c-99a6-72ac95b2dcc4",
+      "player_id": "player_0003",
       "action": "accept",
       "card": "seed_card_3",
       "slot": 2,
       "created_at": "2026-09-23T21:00:00Z"
+    }
+  ],
+  "truco_match_seat": [
+    {
+      "id": "truco_match_seat_0001",
+      "instance_id": "seed_instance_id_1",
+      "actor": "seed_actor_1",
+      "seat": "seed_seat_1",
+      "revision": 10,
+      "phase": "seed_phase_1",
+      "view": "seed_view_1",
+      "variant": "seed_variant_1",
+      "seating": "seed_seating_1"
+    },
+    {
+      "id": "truco_match_seat_0002",
+      "instance_id": "seed_instance_id_2",
+      "actor": "seed_actor_2",
+      "seat": "seed_seat_2",
+      "revision": 20,
+      "phase": "seed_phase_2",
+      "view": "seed_view_2",
+      "variant": "seed_variant_2",
+      "seating": "seed_seating_2"
+    },
+    {
+      "id": "truco_match_seat_0003",
+      "instance_id": "seed_instance_id_3",
+      "actor": "seed_actor_3",
+      "seat": "seed_seat_3",
+      "revision": 30,
+      "phase": "seed_phase_3",
+      "view": "seed_view_3",
+      "variant": "seed_variant_3",
+      "seating": "seed_seating_3"
+    }
+  ],
+  "truco_match_command": [
+    {
+      "id": "truco_match_command_0001",
+      "instance_id": "seed_instance_id_1",
+      "actor": "seed_actor_1",
+      "request": "seed_request_1",
+      "revision": 10,
+      "outcome": "",
+      "reason": "seed_reason_1"
+    },
+    {
+      "id": "truco_match_command_0002",
+      "instance_id": "seed_instance_id_2",
+      "actor": "seed_actor_2",
+      "request": "seed_request_2",
+      "revision": 20,
+      "outcome": "accepted",
+      "reason": "seed_reason_2"
+    },
+    {
+      "id": "truco_match_command_0003",
+      "instance_id": "seed_instance_id_3",
+      "actor": "seed_actor_3",
+      "request": "seed_request_3",
+      "revision": 30,
+      "outcome": "rejected",
+      "reason": "seed_reason_3"
+    }
+  ],
+  "truco_match_open": [
+    {
+      "id": "truco_match_open_0001",
+      "instance_id": "seed_instance_id_1",
+      "actor": "seed_actor_1",
+      "kind": "create",
+      "input": "seed_input_1",
+      "outcome": "",
+      "reason": "seed_reason_1"
+    },
+    {
+      "id": "truco_match_open_0002",
+      "instance_id": "seed_instance_id_2",
+      "actor": "seed_actor_2",
+      "kind": "join",
+      "input": "seed_input_2",
+      "outcome": "accepted",
+      "reason": "seed_reason_2"
+    },
+    {
+      "id": "truco_match_open_0003",
+      "instance_id": "seed_instance_id_3",
+      "actor": "seed_actor_3",
+      "kind": "create",
+      "input": "seed_input_3",
+      "outcome": "rejected",
+      "reason": "seed_reason_3"
+    }
+  ],
+  "truco_match_public": [
+    {
+      "id": "truco_match_public_0001",
+      "variant": "seed_variant_1",
+      "seating": "seed_seating_1",
+      "seated": 0,
+      "places": 2
+    },
+    {
+      "id": "truco_match_public_0002",
+      "variant": "seed_variant_2",
+      "seating": "seed_seating_2",
+      "seated": 1,
+      "places": 3
+    },
+    {
+      "id": "truco_match_public_0003",
+      "variant": "seed_variant_3",
+      "seating": "seed_seating_3",
+      "seated": 2,
+      "places": 4
+    }
+  ],
+  "truco_presence_seat": [
+    {
+      "id": "truco_presence_seat_0001",
+      "instance_id": "seed_instance_id_1",
+      "actor": "seed_actor_1",
+      "seat": "seed_seat_1",
+      "revision": 10,
+      "phase": "seed_phase_1",
+      "view": "seed_view_1",
+      "name": "Sample name 1"
+    },
+    {
+      "id": "truco_presence_seat_0002",
+      "instance_id": "seed_instance_id_2",
+      "actor": "seed_actor_2",
+      "seat": "seed_seat_2",
+      "revision": 20,
+      "phase": "seed_phase_2",
+      "view": "seed_view_2",
+      "name": "Sample name 2"
+    },
+    {
+      "id": "truco_presence_seat_0003",
+      "instance_id": "seed_instance_id_3",
+      "actor": "seed_actor_3",
+      "seat": "seed_seat_3",
+      "revision": 30,
+      "phase": "seed_phase_3",
+      "view": "seed_view_3",
+      "name": "Sample name 3"
+    }
+  ],
+  "truco_presence_command": [
+    {
+      "id": "truco_presence_command_0001",
+      "instance_id": "seed_instance_id_1",
+      "actor": "seed_actor_1",
+      "request": "seed_request_1",
+      "revision": 10,
+      "outcome": "",
+      "reason": "seed_reason_1"
+    },
+    {
+      "id": "truco_presence_command_0002",
+      "instance_id": "seed_instance_id_2",
+      "actor": "seed_actor_2",
+      "request": "seed_request_2",
+      "revision": 20,
+      "outcome": "accepted",
+      "reason": "seed_reason_2"
+    },
+    {
+      "id": "truco_presence_command_0003",
+      "instance_id": "seed_instance_id_3",
+      "actor": "seed_actor_3",
+      "request": "seed_request_3",
+      "revision": 30,
+      "outcome": "rejected",
+      "reason": "seed_reason_3"
+    }
+  ],
+  "truco_presence_public": [
+    {
+      "id": "truco_presence_public_0001",
+      "name": "Sample name 1"
+    },
+    {
+      "id": "truco_presence_public_0002",
+      "name": "Sample name 2"
+    },
+    {
+      "id": "truco_presence_public_0003",
+      "name": "Sample name 3"
+    }
+  ],
+  "truco_presence_lease": [
+    {
+      "id": "truco_presence_lease_0001",
+      "actor": "seed_actor_1",
+      "beat": 10
+    },
+    {
+      "id": "truco_presence_lease_0002",
+      "actor": "seed_actor_2",
+      "beat": 20
+    },
+    {
+      "id": "truco_presence_lease_0003",
+      "actor": "seed_actor_3",
+      "beat": 30
+    }
+  ],
+  "truco_challenge_seat": [
+    {
+      "id": "truco_challenge_seat_0001",
+      "instance_id": "seed_instance_id_1",
+      "actor": "seed_actor_1",
+      "seat": "seed_seat_1",
+      "revision": 10,
+      "phase": "seed_phase_1",
+      "view": "seed_view_1",
+      "inviter_name": "Sample inviter_name 1",
+      "target_name": "Sample target_name 1",
+      "variant": "seed_variant_1",
+      "seating": "seed_seating_1",
+      "room": "seed_room_1"
+    },
+    {
+      "id": "truco_challenge_seat_0002",
+      "instance_id": "seed_instance_id_2",
+      "actor": "seed_actor_2",
+      "seat": "seed_seat_2",
+      "revision": 20,
+      "phase": "seed_phase_2",
+      "view": "seed_view_2",
+      "inviter_name": "Sample inviter_name 2",
+      "target_name": "Sample target_name 2",
+      "variant": "seed_variant_2",
+      "seating": "seed_seating_2",
+      "room": "seed_room_2"
+    },
+    {
+      "id": "truco_challenge_seat_0003",
+      "instance_id": "seed_instance_id_3",
+      "actor": "seed_actor_3",
+      "seat": "seed_seat_3",
+      "revision": 30,
+      "phase": "seed_phase_3",
+      "view": "seed_view_3",
+      "inviter_name": "Sample inviter_name 3",
+      "target_name": "Sample target_name 3",
+      "variant": "seed_variant_3",
+      "seating": "seed_seating_3",
+      "room": "seed_room_3"
+    }
+  ],
+  "truco_challenge_command": [
+    {
+      "id": "truco_challenge_command_0001",
+      "instance_id": "seed_instance_id_1",
+      "actor": "seed_actor_1",
+      "request": "seed_request_1",
+      "revision": 10,
+      "outcome": "",
+      "reason": "seed_reason_1"
+    },
+    {
+      "id": "truco_challenge_command_0002",
+      "instance_id": "seed_instance_id_2",
+      "actor": "seed_actor_2",
+      "request": "seed_request_2",
+      "revision": 20,
+      "outcome": "accepted",
+      "reason": "seed_reason_2"
+    },
+    {
+      "id": "truco_challenge_command_0003",
+      "instance_id": "seed_instance_id_3",
+      "actor": "seed_actor_3",
+      "request": "seed_request_3",
+      "revision": 30,
+      "outcome": "rejected",
+      "reason": "seed_reason_3"
+    }
+  ],
+  "truco_challenge_open": [
+    {
+      "id": "truco_challenge_open_0001",
+      "instance_id": "seed_instance_id_1",
+      "actor": "seed_actor_1",
+      "kind": "create",
+      "input": "seed_input_1",
+      "outcome": "",
+      "reason": "seed_reason_1"
+    },
+    {
+      "id": "truco_challenge_open_0002",
+      "instance_id": "seed_instance_id_2",
+      "actor": "seed_actor_2",
+      "kind": "join",
+      "input": "seed_input_2",
+      "outcome": "accepted",
+      "reason": "seed_reason_2"
+    },
+    {
+      "id": "truco_challenge_open_0003",
+      "instance_id": "seed_instance_id_3",
+      "actor": "seed_actor_3",
+      "kind": "create",
+      "input": "seed_input_3",
+      "outcome": "rejected",
+      "reason": "seed_reason_3"
     }
   ]
 }

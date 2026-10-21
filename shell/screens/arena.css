@@ -1,4 +1,5 @@
 @import url("shared/table.css");
+@import url("shared/lobby.css");
 
 /* The arena is a board, not a document: it occupies exactly the viewport it
    is given and never scrolls, on a phone in portrait or on a desktop across
@@ -76,6 +77,13 @@ body:has([data-screen="arena"]) > nav a {
 @keyframes ember {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--attention) 55%, transparent); }
   50% { box-shadow: 0 0 0 7px color-mix(in oklch, var(--attention) 0%, transparent); }
+}
+
+/* The online dot's breath. Top level, as every @keyframes here: nested in a
+   style rule it is no rule at all, and the animation names nothing. */
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(0.85); opacity: 0.75; }
+  50% { transform: scale(1.25); opacity: 1; }
 }
 
 @keyframes talked-a {
@@ -368,7 +376,9 @@ body:has([data-screen="arena"]) > nav a {
     gap: 4px;
     min-inline-size: 0;
   }
-  & .seatbar .who b {
+  & .seatbar :is(.who b, #seatbar-player-name .empty) {
+    font-weight: 700;
+    animation: none;
     font-size: clamp(0.75rem, 1.7dvh, 0.9375rem);
     color: var(--pad-ink);
     overflow: hidden;
@@ -393,18 +403,6 @@ body:has([data-screen="arena"]) > nav a {
   & .seatbar .btn-edit-handle:hover, & .seatbar .who-title-wrap:hover .btn-edit-handle {
     opacity: 1;
     color: var(--pad-ink);
-  }
-  & .seatbar .inline-name-input {
-    display: inline-block;
-    font-size: clamp(0.75rem, 1.7dvh, 0.9375rem);
-    font-weight: 700;
-    color: var(--pad-ink);
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid var(--rim-hi);
-    border-radius: 4px;
-    padding: 1px 6px;
-    inline-size: clamp(90px, 18vw, 140px);
-    outline: none;
   }
   & .seatbar .who-sub {
     display: flex;
@@ -553,12 +551,12 @@ body:has([data-screen="arena"]) > nav a {
     background: #78716c;
     transition: background 0.2s ease, box-shadow 0.2s ease;
   }
-  & .btn-online-status[data-online="true"] .online-pulse {
+  &:has(#presence-shown [data-shown="show"]) .btn-online-status .online-pulse {
     background: #22c55e;
     box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
     animation: pulse-dot 1.6s infinite ease-in-out;
   }
-  & .btn-online-status[data-online="true"] {
+  &:has(#presence-shown [data-shown="show"]) .btn-online-status {
     color: var(--pad-ink);
     border-color: color-mix(in oklch, #22c55e 40%, transparent);
   }
@@ -874,6 +872,9 @@ body:has([data-screen="arena"]) > nav a {
     container-name: felt;
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto auto;
+    /* One column the felt's own width: an auto one grows to its widest row,
+       and the calls then wrap in a track wider than the felt that clips them. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "stage"
       "seats"
@@ -1354,7 +1355,7 @@ body:has([data-screen="arena"]) > nav a {
     pointer-events: none;
   }
 
-  & .play:has(.shout[data-state="live"]) .table-instruction-bar {
+  & .play:has(.shout[data-state="live"]):not(:has(.player-dialogue-wrap[data-active="yes"])) .table-instruction-bar {
     opacity: 0;
     pointer-events: none;
   }
@@ -1392,8 +1393,7 @@ body:has([data-screen="arena"]) > nav a {
   & .talk:empty { display: none; }
 
   /* Every line the table says should land. A CSS animation only restarts when
-     the animation NAME changes, so the two below are identical and the dealer
-     alternates between them. */
+     the animation NAME changes, so the row alternates between the two names. */
   & .talk[data-t="1"] { animation: talked-a var(--motion-base) var(--motion-ease); }
   & .talk[data-t="2"] { animation: talked-b var(--motion-base) var(--motion-ease); }
 
@@ -1495,7 +1495,6 @@ body:has([data-screen="arena"]) > nav a {
   }
   & .log .empty { margin: 0; grid-column: 1 / -1; }
 
-  /* Lowered by the dealer when the call is answered. */
   & .play { position: relative; }
   & .shout {
     position: absolute;
@@ -1552,6 +1551,9 @@ body:has([data-screen="arena"]) > nav a {
     display: none;
     opacity: 0;
     transform: translateY(-16px) scale(0.92);
+  }
+  & .play:has(.player-dialogue-wrap[data-active="yes"]) .shout[data-kind="quick"] {
+    display: none;
   }
   & .shout[data-state="gone"] {
     animation: shout-exit 340ms cubic-bezier(0.2, 0.8, 0.25, 1) both;
@@ -1698,7 +1700,9 @@ body:has([data-screen="arena"]) > nav a {
   /* What you can do. One set per phase, always within thumb reach. */
   & .actions, & .answers, & .over, & .nomatch {
     display: none;
-    flex-wrap: nowrap;
+    /* A variant with envido calls has more of them than a narrow felt holds
+       on one line, and the felt clips what runs past its edge: they wrap. */
+    flex-wrap: wrap;
     justify-content: center;
     /* The board's grid stretches whichever of these owns a sparse phase, and
        a stretched cross-axis turns a pill into a slab; the row centers its
@@ -1708,7 +1712,6 @@ body:has([data-screen="arena"]) > nav a {
     gap: clamp(6px, 1.6vw, 14px);
     inline-size: 100%;
     min-block-size: clamp(38px, 6dvh, 46px);
-    block-size: clamp(38px, 6dvh, 46px);
   }
 
   & .over, & .nomatch { text-align: center; }
@@ -1947,9 +1950,22 @@ body:has([data-screen="arena"]) > nav a {
     opacity: 0.5;
     pointer-events: none;
   }
-  & .modal-match-active-banner { display: none; }
-  &:has(.matchbox[data-status="playing"][data-opponent="online"]) .modal-match-active-banner { display: flex; }
   & #link-rules { display: none; }
+  & .challenges {
+    position: fixed;
+    inset: 24px 0 auto;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+  & .challenges > * { pointer-events: auto; }
+  & .challenges .incoming-challenge-banner { position: static; transform: none; }
+  /* An open popover is drawn above anything fixed, so a challenge to answer or
+     to wait on steps the bar aside until it is settled. */
+  &:has(.incoming-challenge-banner, .challenge-waiting-overlay) .boteco-modal { display: none; }
   & .over:not(:has(#over-line:not(:empty))) { display: none !important; }
   & .over a { display: none !important; }
   & .play[data-phase="over"] .boteco-shouts,
@@ -2006,9 +2022,9 @@ body:has([data-screen="arena"]) > nav a {
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-start { display: none; }
 
   /* The screen's own machine states. The terminal drives loading and empty.
-     validation-error is not among them: every form here is hidden inputs and
-     a submit, so the terminal's checkValidity() gate never fails. A store
-     write that throws does set network-error, local store or not. */
+     validation-error is said by the refused form's own .invalid paragraph,
+     not here. A store write that throws does set network-error, local store
+     or not. */
   &[data-state="loading"] .play,
   &[data-state="loading"] .scores,
   &[data-state="loading"] .spine { opacity: 0.35; }
@@ -2185,425 +2201,7 @@ body:has([data-screen="arena"]) > nav a {
     & .handline { padding: 0 6px; }
   }
 
-  & .boteco-modal {
-    margin: auto;
-    padding: 0;
-    border: none;
-    background: transparent;
-    max-inline-size: min(90vw, 440px);
-    overflow: visible;
-  }
-  & .boteco-modal::backdrop {
-    background: color-mix(in oklch, #000 65%, transparent);
-    backdrop-filter: blur(4px);
-  }
-  & .boteco-modal-frame {
-    background: var(--pad-bg, #FBF5E8);
-    color: var(--pad-ink, #241A12);
-    border: 2px solid var(--rim, #C2A97C);
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 16px 48px color-mix(in oklch, #000 45%, transparent);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  & .modal-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-block-end: 1px solid color-mix(in oklch, var(--pad-dim) 35%, transparent);
-    padding-block-end: 12px;
-  }
-  & .modal-header .avatar {
-    display: inline-grid;
-    place-content: center;
-    inline-size: 32px;
-    block-size: 32px;
-    font-size: 1.25rem;
-  }
-  & .modal-header h3 {
-    margin: 0;
-    font: 800 1.25rem/1.2 ui-sans-serif, system-ui, sans-serif;
-    color: var(--pad-ink, #241A12);
-    letter-spacing: -0.02em;
-  }
-  & .modal-close {
-    margin-inline-start: auto;
-    border: none;
-    background: transparent;
-    color: var(--pad-dim, #6B573D);
-    font-size: 1.25rem;
-    font-weight: 700;
-    cursor: pointer;
-    inline-size: 32px;
-    block-size: 32px;
-    display: grid;
-    place-content: center;
-    border-radius: 4px;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  & .modal-close:hover {
-    background: color-mix(in oklch, var(--pad-dim) 20%, transparent);
-    color: var(--pad-ink, #241A12);
-  }
-  & .modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  & .modal-title-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  & .modal-subtitle {
-    font-size: 0.75rem;
-    color: var(--pad-dim, #6B573D);
-    font-weight: 500;
-  }
-  & .modal-match-active-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 8px 12px;
-    background: rgba(185, 28, 28, 0.18);
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    border-radius: var(--r-sm);
-    color: #fca5a5;
-    font-size: 0.8125rem;
-    font-weight: 600;
-  }
 
-  & .lobby-identity-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    background: color-mix(in oklch, var(--pad-2) 60%, transparent);
-    border: 1px solid var(--pad-line);
-    border-radius: var(--r-sm);
-  }
-  & .identity-avatar {
-    font-size: 1.5rem;
-    inline-size: 36px;
-    block-size: 36px;
-    display: grid;
-    place-content: center;
-    background: var(--pad-1);
-    border-radius: var(--r-full);
-    border: 1px solid var(--rim);
-  }
-  & .identity-main {
-    flex: 1;
-    min-inline-size: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  & .identity-main label {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--pad-dim);
-  }
-  & .identity-input-row {
-    display: flex;
-    gap: 6px;
-  }
-  & .btn-compact {
-    min-block-size: 32px;
-    padding-inline: 12px;
-    font-size: 0.75rem;
-  }
-  & .identity-toggle-wrap {
-    display: flex;
-    align-items: center;
-    margin-inline-start: auto;
-  }
-  & .identity-toggle-wrap .btn-online-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 3px 10px 3px 6px;
-    min-block-size: 28px;
-    border-radius: var(--r-full);
-    border: 1px solid color-mix(in oklch, var(--pad-ink) 25%, transparent);
-    background: color-mix(in oklch, var(--pad-ink) 8%, transparent);
-    color: var(--pad-dim);
-    font: 600 clamp(0.625rem, 1.2dvh, 0.75rem)/1.4 ui-sans-serif, system-ui, sans-serif;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  }
-  & .identity-toggle-wrap .btn-online-toggle:hover {
-    color: var(--pad-ink);
-    border-color: color-mix(in oklch, var(--pad-ink) 45%, transparent);
-  }
-  & .identity-toggle-wrap .btn-online-toggle:focus-visible {
-    outline: 2px solid var(--rim);
-    outline-offset: 2px;
-  }
-  & .identity-toggle-wrap .toggle-track {
-    display: inline-block;
-    inline-size: 26px;
-    block-size: 15px;
-    border-radius: var(--r-full);
-    background: color-mix(in oklch, var(--pad-ink) 28%, transparent);
-    position: relative;
-    transition: background 0.2s ease;
-  }
-  & .identity-toggle-wrap .toggle-thumb {
-    display: block;
-    inline-size: 11px;
-    block-size: 11px;
-    border-radius: var(--r-full);
-    background: #fff;
-    position: absolute;
-    inset-block-start: 2px;
-    inset-inline-start: 2px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-    transition: transform 0.2s ease;
-  }
-  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] {
-    background: color-mix(in oklch, #15803d 18%, transparent);
-    border-color: color-mix(in oklch, #15803d 60%, transparent);
-    color: var(--pad-ink);
-  }
-  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-track {
-    background: #16a34a;
-  }
-  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-thumb {
-    transform: translateX(11px);
-  }
-  & .identity-toggle-wrap .btn-online-toggle .online-pulse {
-    inline-size: 7px;
-    block-size: 7px;
-    border-radius: var(--r-full);
-    background: #78716c;
-    transition: background 0.2s ease;
-  }
-  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .online-pulse {
-    background: #22c55e;
-  }
-  & .identity-toggle-wrap .btn-online-toggle .toggle-label-off { display: inline; color: var(--pad-dim); }
-  & .identity-toggle-wrap .btn-online-toggle .toggle-label-on { display: none; }
-  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-label-off { display: none; }
-  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-label-on { display: inline; font-weight: 700; color: #15803d; }
-
-  & .sec-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  & .btn-text-action {
-    background: none;
-    border: none;
-    color: var(--brass-ink, #8a5814);
-    font: 700 0.75rem ui-sans-serif, system-ui;
-    cursor: pointer;
-    padding: 2px 6px;
-  }
-  & .btn-text-action:hover {
-    text-decoration: underline;
-  }
-
-  & .lobby-players-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    block-size: 136px;
-    min-block-size: 136px;
-    max-block-size: 136px;
-    overflow-y: auto;
-    padding: 6px;
-    background: color-mix(in oklch, var(--pad-1) 85%, #fff);
-    border: 1px solid var(--pad-line);
-    border-radius: var(--r-sm);
-    box-sizing: border-box;
-    scrollbar-gutter: stable;
-  }
-  & .lobby-players-list .empty {
-    margin: auto;
-    padding: 12px 16px;
-    text-align: center;
-    color: var(--pad-dim);
-    font: 500 0.8125rem/1.4 ui-sans-serif, system-ui, sans-serif;
-  }
-  & .lobby-empty {
-    padding: 12px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    color: var(--pad-dim);
-    font-size: 0.8125rem;
-    margin: auto;
-  }
-  & .lobby-empty small {
-    font-size: 0.6875rem;
-    color: var(--pad-dim);
-    opacity: 0.85;
-  }
-
-  & .lobby-player-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 10px;
-    min-block-size: 46px;
-    background: #ffffff;
-    border: 1px solid var(--rim);
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    box-sizing: border-box;
-    flex-shrink: 0;
-
-    &[data-is-me="true"] .btn-challenge {
-      display: none !important;
-    }
-  }
-  & .player-avatar-mini {
-    font-size: 1.25rem;
-  }
-  & .player-info-wrap {
-    flex: 1;
-    min-inline-size: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  & .player-handle {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: var(--pad-ink);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  & .player-handle .player-slug {
-    opacity: 0.6;
-    font-weight: 400;
-    font-size: 0.8em;
-  }
-  & .player-status-tag {
-    font-size: 0.6875rem;
-    font-weight: 600;
-  }
-  & .player-status-tag.ready { color: #16a34a; }
-  & .player-status-tag.busy { color: #d97706; }
-
-  & .btn-challenge {
-    background: linear-gradient(180deg, #15803d, #166534);
-    color: #ffffff !important;
-    border: 1px solid #86efac;
-    border-radius: 4px;
-    padding: 6px 14px;
-    font: 800 0.75rem ui-sans-serif, system-ui;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: filter 0.15s ease, transform 0.1s ease;
-  }
-  & .btn-challenge:hover {
-    filter: brightness(1.15);
-    transform: scale(1.02);
-  }
-  & .modal-sec {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  & .modal-sec label {
-    font: 700 0.8125rem/1.3 ui-sans-serif, system-ui, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--brass-ink, #8a5814);
-  }
-  & .modal-hint {
-    margin: 0;
-    font: 400 0.8125rem/1.4 ui-sans-serif, system-ui, sans-serif;
-    color: var(--pad-dim, #6B573D);
-  }
-  & .invite-seat-picker {
-    display: flex;
-    gap: 6px;
-    margin-block: 4px;
-  }
-  & .btn-invite-seat {
-    flex: 1;
-    min-block-size: 30px;
-    padding: 4px 8px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    border-radius: 4px;
-    border: 1px solid var(--pad-rim, #D8C7A5);
-    background: color-mix(in oklch, var(--pad-ink, #241A12) 6%, transparent);
-    color: var(--pad-ink, #241A12);
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-  & .btn-invite-seat:hover {
-    background: color-mix(in oklch, var(--pad-ink, #241A12) 12%, transparent);
-  }
-  & .btn-invite-seat.active {
-    background: var(--brass-ink, #8a5814);
-    color: #fff;
-    border-color: var(--brass-ink, #8a5814);
-  }
-  & .invite-box, & .join-box {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-block-start: 4px;
-  }
-  & .boteco-input {
-    flex: 1;
-    min-inline-size: 0;
-    min-block-size: 36px;
-    padding: 6px 10px;
-    border: 1px solid var(--rim, #C2A97C);
-    border-radius: 4px;
-    background: #fff;
-    color: #241A12;
-    font: 600 0.8125rem/1 ui-sans-serif, monospace;
-    outline: none;
-  }
-  & .boteco-input:focus {
-    border-color: var(--brass-ink, #8a5814);
-    box-shadow: 0 0 0 2px color-mix(in oklch, var(--brass-ink) 25%, transparent);
-  }
-  & .invite-box .act, & .join-box .act {
-    flex-shrink: 0;
-    min-block-size: 36px;
-    min-inline-size: 80px;
-    text-decoration: none;
-    cursor: pointer;
-    font: 700 0.8125rem/1 ui-sans-serif, system-ui, sans-serif;
-    display: inline-grid;
-    place-content: center;
-    border-radius: 4px;
-  }
-  & .modal-sep {
-    inline-size: 100%;
-    block-size: 1px;
-    background: color-mix(in oklch, var(--pad-dim) 35%, transparent);
-    margin: 4px 0;
-  }
-  & .copy-status {
-    min-block-size: 18px;
-    font: 600 0.75rem/1.2 ui-sans-serif, system-ui, sans-serif;
-    color: #2b7a2b;
-  }
-  & .join-err {
-    margin: 0;
-    min-block-size: 18px;
-    font: 600 0.75rem/1.2 ui-sans-serif, system-ui, sans-serif;
-    color: var(--clr-danger, #9E2B25);
-  }
 }
 
 .incoming-challenge-banner {
@@ -2612,7 +2210,7 @@ body:has([data-screen="arena"]) > nav a {
   left: 50%;
   transform: translateX(-50%);
   z-index: 99999;
-  display: none;
+  display: flex;
   align-items: center;
   gap: 16px;
   background: #241A12;
@@ -2621,9 +2219,6 @@ body:has([data-screen="arena"]) > nav a {
   border-radius: 8px;
   padding: 12px 20px;
   box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-}
-body:has(#mp-sync-challenge span[data-status="pending"]) .incoming-challenge-banner {
-  display: flex;
 }
 .incoming-challenge-banner .challenge-alert-content {
   display: flex;
@@ -2648,7 +2243,7 @@ body:has(#mp-sync-challenge span[data-status="pending"]) .incoming-challenge-ban
   inset: 0;
   background: rgba(0,0,0,0.65);
   z-index: 99998;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(2px);
@@ -3042,3 +2637,36 @@ body:has(#mp-sync-challenge span[data-status="pending"]) .incoming-challenge-ban
 .screen:has(.hand[data-brink="both"]) .seat-row.mine .card > :not(.sr-only) { visibility: hidden; }
 .screen:has(.hand[data-brink="both"]) .seat-row.mine .card::before,
 .screen:has(.hand[data-brink="both"]) .seat-row.mine .card::after { content: none; }
+
+.screen[data-screen="arena"] {
+  & #opponent-speech-bubble[data-state="gone"] { display: none; }
+  & #opponent-turn-badge { display: none; }
+  &:has(.hand[data-turn-seat^="eles"]) #opponent-turn-badge { display: block; }
+  &:not(:has(.matchbox[data-opponent="online"])) :is(#opponent-avatar-initial, #opponent-online-dot, #opponent-online-badge, #opponent-role-desc .as-handle) { display: none; }
+  &:has(.matchbox[data-opponent="online"]) #opponent-role-desc .as-cast { display: none; }
+}
+
+.screen[data-storybook] {
+  & .mat {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "seat" "scores" "line" "spine" "play" "log";
+  }
+  & .play :is(.actions, .answers, .over, .nomatch) { display: none; }
+  &:is([data-state="populated"], [data-state="populated-dark"], [data-state="picking"], [data-state="resolved"], [data-state="match-over"]) .play .actions { display: flex; }
+  & .play .actions :is(#btn-start, #btn-next, #btn-again) { display: none; }
+  &:is([data-state="raised"], [data-state="raised-dark"]) .play .answers { display: flex; }
+  &[data-state="resolved"] .play #btn-next,
+  &[data-state="match-over"] .play #btn-again { display: inline-flex; }
+  &[data-state="resolved"] .play :is(#btn-truco, #btn-resign),
+  &[data-state="match-over"] .play :is(#btn-truco, #btn-resign) { display: none; }
+  &[data-state="match-over"] .play .over,
+  &[data-state="empty"] .play .nomatch { display: block; }
+  &[data-state="picking"] [data-picker="theme"] { position: relative; }
+  &[data-state="picking"] [data-picker="theme"] .picker-list {
+    display: block;
+    position: absolute;
+    inset: 100% 0 auto auto;
+    z-index: 30;
+  }
+}

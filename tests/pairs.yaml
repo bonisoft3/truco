@@ -542,15 +542,3 @@ pairs:
       card: 4♣
     when: play card
     then: output.from_slot == 1 && output.card == "4♣"
-  - id: test-turn-clock
-    ir: test-turn-clock
-    of: Round
-    accepts:
-      - accept-turn-clock
-    says: turns carry an authoritative deadline with grace buffer for network latency
-    given:
-      seat: us
-      ui_deadline: '2026-09-09T12:00:15Z'
-      backend_deadline: '2026-09-09T12:00:20Z'
-    when: start turn
-    then: output.backend_deadline > output.ui_deadline

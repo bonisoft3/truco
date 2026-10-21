@@ -1,0 +1,12 @@
+{
+  "schema": {
+    "target": "database",
+    "initdb": "/docker-entrypoint-initdb.d"
+  },
+  "server": true,
+  "tokenRoles": [
+    "anon",
+    "app_user",
+    "service"
+  ]
+}

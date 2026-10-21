@@ -11,7 +11,7 @@
 // Findings print as {severity, path, message} JSON; only `critical` exits
 // non-zero, which is the battery's own line.
 import { baseUrl } from "omnishell/base-url.ts";
-import { settle } from "omnishell/check-visual.ts";
+import { motion } from "omnishell/check-visual.ts";
 import { checkClippedControls } from "omnishell/src/lint/playwright/checks/clipped-controls.ts";
 import { checkContrast } from "omnishell/src/lint/playwright/checks/contrast.ts";
 import type { VisualBug } from "omnishell/src/lint/playwright/types.ts";
@@ -38,6 +38,9 @@ type Page = any;
 /** How long the table gets to answer: a picker to render off the current
  * match's row, a chosen cloth to come back through the store. */
 const TABLE_MS = 30_000;
+// The table's cards land in a cascade that can outrun omnishell's 2.5s
+// settle cap on a loaded runner: a screen still moving at this one is.
+const MOTION_CAP_MS = 10_000;
 
 /** What the page said, for a wait that ran out. The terminal's own wrapper
  * carries neither name nor state — those are the app's, on the [data-screen]
@@ -70,13 +73,18 @@ async function reported(page: Page, said: string[]): Promise<string> {
  * table without one has no picker. The picker draws before the first match
  * lands, and a pick made then is refused by its guard (a write there would
  * mint a junk match), so the table has to be seated before the picker is one
- * that answers. Seated is a real id: before the match region binds, the
- * attribute still reads its own "{id}" placeholder. */
+ * that answers. Seated is a hand dealt by the game the seat's draw names:
+ * before the match region binds, the seed still reads its own "{seed}"
+ * placeholder. */
 async function pickerOf(page: Page, said: string[]): Promise<void> {
   try {
     await page.waitForSelector(`${PICKER} > button`, { timeout: TABLE_MS });
     await page.waitForFunction(
-      () => /^m[0-9a-z]+$/.test(document.querySelector(".matchbox")?.getAttribute("data-match-id") ?? ""),
+      () => {
+        const seed = document.querySelector(".matchbox")?.getAttribute("data-seed") ?? "";
+        const round = document.querySelector("#seat-you .card")?.getAttribute("data-round") ?? "";
+        return /^[0-9]+$/.test(seed) && round.startsWith(`g${seed}/`);
+      },
       undefined,
       { timeout: TABLE_MS },
     );
@@ -114,8 +122,9 @@ async function sweep(browser: Page, base: string, vw: number, vh: number): Promi
       await page.locator(`${PICKER} > button`).click();
       await page.locator(`${PICKER} [data-opt="${theme}"]`).click();
       await clothOf(page, theme, said);
-      if (!(await settle(page))) {
-        found.push({ severity: "critical", path: `${vw}x${vh}/${theme}`, message: `${vw}x${vh} on ${theme}: still moving, so everything below measured a moving table` });
+      const moving = await motion(page, { capMs: MOTION_CAP_MS });
+      if (moving !== null) {
+        found.push({ severity: "critical", path: `${vw}x${vh}/${theme}`, message: `${vw}x${vh} on ${theme}: still moving (${moving}), so everything below measured a moving table` });
       }
       for (const bug of [...await checkClippedControls(page), ...await checkContrast(page)]) {
         found.push(finding(vw, vh, theme, bug));
@@ -131,12 +140,13 @@ async function main(appDir: string): Promise<number> {
   const { chromium } = await import("npm:playwright@1.61.1");
   const base = await baseUrl(appDir);
   const browser = await chromium.launch({ args: ["--ignore-certificate-errors"] });
-  // One context per window shape, all at once: the shapes do not interact —
-  // each opens its own table in its own storage — and almost all of the time
-  // here is the table settling between cloths, which five can spend together.
-  let swept: Finding[][];
+  // One window shape at a time. Five live tables in one browser, beside the
+  // stacks integrate runs at once, starved a page of frames for seconds: its
+  // transitions sat pending at 0ms and the settle read a table that was not
+  // moving as still moving.
+  const swept: Finding[][] = [];
   try {
-    swept = await Promise.all(VIEWPORTS.map(([vw, vh]) => sweep(browser, base, vw, vh)));
+    for (const [vw, vh] of VIEWPORTS) swept.push(await sweep(browser, base, vw, vh));
   } finally {
     await browser.close();
   }

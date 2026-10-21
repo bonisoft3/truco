@@ -738,9 +738,20 @@ body > nav, nav:has(.shell-me), nav:has(.shell-signout), nav.shell-strip, .shell
   100% { transform: translateX(-50%) scale(0.9); opacity: 0; }
 }
 
+@keyframes comicPopAndFadeAgain {
+  0% { transform: translateX(-50%) scale(0.7); opacity: 0; }
+  12% { transform: translateX(-50%) scale(1); opacity: 1; }
+  85% { transform: translateX(-50%) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) scale(0.9); opacity: 0; }
+}
+
 .player-dialogue-wrap[data-active="yes"] {
   display: block;
   animation: comicPopAndFade 1800ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.player-dialogue-wrap[data-active="yes"][data-t="2"] {
+  animation-name: comicPopAndFadeAgain;
 }
 
 .player-speech-bubble {
@@ -835,9 +846,12 @@ body > nav, nav:has(.shell-me), nav:has(.shell-signout), nav.shell-strip, .shell
 .screen:has([data-opponent="jordi"]) .opponent-avatar-img,
 .matchbox[data-opponent="jordi"] ~ * .opponent-avatar-img { background-image: url("/shell/assets/jordi.png"); }
 
-.screen[data-opponent="online"] .opponent-avatar-img,
-.screen:has([data-opponent="online"]) .opponent-avatar-img,
-.matchbox[data-opponent="online"] ~ * .opponent-avatar-img { background-image: url("/shell/assets/bigode.png"); }
+/* The opponent's name: a member of the cast is a message, translated; a
+   player across an online table is their handle, as they wrote it. */
+.eles-name:has(.as-handle:not(:empty)) .as-cast { display: none; }
+
+/* A player across an online table has no portrait: they wear their initial. */
+.screen:has(.matchbox[data-opponent="online"]) .opponent-avatar-img { display: none; }
 
 /* ==========================================================================
    Regional Table Environments & Atmospheric Props (Stitch Design Specification)

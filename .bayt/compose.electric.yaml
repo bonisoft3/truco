@@ -4,6 +4,7 @@ services:
     build:
       additional_contexts:
         truco-database: service:truco-database
+        truco-timer-check: service:truco-timer-check
       context: ..
       dockerfile: .bayt/Dockerfile.electric
       target: electric
@@ -11,15 +12,18 @@ services:
       - bayt-truco-electric:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
       - bayt-truco-electric:latest
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     depends_on:
       truco-database:
         condition: service_healthy
         restart: true
+      truco-timer-check:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: >-
-        postgresql://electric:electric@database:5432/${POSTGRES_DB:-truco}?sslmode=disable
+        postgresql://electric:${ELECTRIC_PASSWORD:-dev-electric-password}@database:5432/${POSTGRES_DB:-truco}?sslmode=disable
       ELECTRIC_SECRET: ${ELECTRIC_SECRET:-dev-electric-secret}
       ELECTRIC_MANUAL_TABLE_PUBLISHING: "true"
     healthcheck:
@@ -43,10 +47,12 @@ services:
     build:
       additional_contexts:
         truco-database_bayt: service:truco-database_bayt
+        truco-timer-check_bayt: service:truco-timer-check_bayt
       context: ..
       dockerfile: .bayt/Dockerfile.electric
       target: electric_bayt
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     image: bayt-truco-electric_bayt:latest

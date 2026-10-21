@@ -1,0 +1,522 @@
+{
+  "_generated_from": "bayt.cue (do not edit)",
+  "compose": {
+    "up": false,
+    "manual": true,
+    "environment": {},
+    "image": "${BAYT_DOCKER_REPOSITORY:-ghcr.io/bonisoft3/truco}:${BAYT_IMAGE_TAG:-latest}",
+    "ports": [
+      "8080:8080"
+    ],
+    "volumes": [],
+    "depends_on": {}
+  },
+  "dockerfile": {
+    "preamble": [
+      "RUN --mount=type=cache,target=/zypper-store,id=/zypper-store,sharing=shared --mount=type=cache,target=/var/cache/zypp,id=truco-release-docker:/var/cache/zypp,sharing=locked p=\"$PWD\"; s=/zypper-store; d=/var/cache/zypp/packages; mkdir -p \"$s\" \"$d\"; cp -r \"$s\"/. \"$d\"/ 2>/dev/null || true; zypper -n modifyservice --no-refresh --all && sed -i 's|http://|https://|g' /etc/zypp/repos.d/*.repo || exit; zypper -n modifyrepo --keep-packages --all && zypper -n install postgresql18-server=18.6-160000.1.1 postgresql18-contrib=18.6-160000.1.1 libopenssl3=3.5.0-160000.10.1 findutils=4.10.0-160000.2.2 || exit; cd \"$d\" && for f in */*.rpm */*/*.rpm; do [ -f \"$f\" ] || continue; o=\"$s/$f\"; [ -e \"$o\" ] && continue; mkdir -p \"$(dirname \"$o\")\"; t=\"$(mktemp \"$(dirname \"$o\")/.pXXXXXX\")\" && cp \"$f\" \"$t\" && mv -f \"$t\" \"$o\"; done; zypper -n modifyrepo --no-keep-packages --all || true; (cd \"$p\" && rm -rf /usr/lib/locale/* && mkdir -p /run/postgresql && chown -R postgres:postgres /run/postgresql) || exit",
+      "ENV PATH=/usr/lib/postgresql18/bin:/usr/local/bin:$PATH",
+      "ENV PGDATA=/var/lib/pgsql/data",
+      "ENV ORIGIN=http://localhost:8080",
+      "ENV CADDY_TLS_HOST_PORT=8080",
+      "ENV DENO_DIR=/deno-dir"
+    ],
+    "preambleCopyContexts": [],
+    "from": {
+      "name": "opensuse/leap:16.0@sha256:7f3aeccb6a613c0fc1690d3d3e5eb493fd477ee4587de20640017fc36d72f9b0"
+    },
+    "add": [
+      {
+        "platforms": {
+          "amd64": {
+            "url": "https://github.com/F1bonacc1/process-compose/releases/download/v1.122.0/process-compose_linux_amd64.tar.gz",
+            "checksum": "sha256:9b6dbc38324c0b0481f1cd1dd828ffdc78117129ec797678f4bf8c4023311281"
+          },
+          "arm64": {
+            "url": "https://github.com/F1bonacc1/process-compose/releases/download/v1.122.0/process-compose_linux_arm64.tar.gz",
+            "checksum": "sha256:52fa7d5a2d5e0db470faec5976204fc215ed7e3d13689e930cf522becfb63778"
+          }
+        },
+        "dest": "/usr/local/bin/process-compose",
+        "unpack": true
+      }
+    ],
+    "copy": [
+      {
+        "from": {
+          "name": "tarampampam/microcheck:1@sha256:79c187c05bfa67518078bf4db117771942fa8fe107dc79a905861c75ddf28dfa"
+        },
+        "srcs": [
+          "/bin/httpcheck"
+        ],
+        "dst": "/usr/local/bin/httpcheck",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "name": "tarampampam/microcheck:1@sha256:79c187c05bfa67518078bf4db117771942fa8fe107dc79a905861c75ddf28dfa"
+        },
+        "srcs": [
+          "/bin/portcheck"
+        ],
+        "dst": "/usr/local/bin/portcheck",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "ref": ":database",
+          "name": "truco-database"
+        },
+        "srcs": [
+          "/docker-entrypoint-initdb.d"
+        ],
+        "dst": "/docker-entrypoint-initdb.d",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "ref": ":crud",
+          "name": "truco-crud"
+        },
+        "srcs": [
+          "/usr/bin/postgrest"
+        ],
+        "dst": "/usr/local/bin/postgrest",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "ref": ":caddy",
+          "name": "truco-caddy"
+        },
+        "srcs": [
+          "/usr/bin/caddy"
+        ],
+        "dst": "/usr/bin/caddy",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "ref": ":caddy",
+          "name": "truco-caddy"
+        },
+        "srcs": [
+          "/etc/caddy/Caddyfile"
+        ],
+        "dst": "/etc/caddy/Caddyfile",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "ref": ":caddy",
+          "name": "truco-caddy"
+        },
+        "srcs": [
+          "/srv"
+        ],
+        "dst": "/srv",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "ref": ":caddy",
+          "name": "truco-caddy"
+        },
+        "srcs": [
+          "/omnishell"
+        ],
+        "dst": "/omnishell",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": null,
+        "srcs": [
+          ".bayt/process-compose.yaml"
+        ],
+        "dst": "/.bayt/process-compose.yaml",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "name": "denoland/deno:bin-2.5.5@sha256:a8dd9a073b2b4d1beb77a8174830c5af54e32517808dcc28249ed6c04fdac979"
+        },
+        "srcs": [
+          "/deno"
+        ],
+        "dst": "/usr/local/bin/deno",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "ref": ":auth",
+          "name": "truco-auth"
+        },
+        "srcs": [
+          "/app"
+        ],
+        "dst": "/app",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "ref": ":auth",
+          "name": "truco-auth"
+        },
+        "srcs": [
+          "/deno-dir"
+        ],
+        "dst": "/deno-dir",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      }
+    ],
+    "epilogue": [
+      "RUN printf '%s\\n' '#!/bin/sh' 'set -e' 'export PGDATA=\"${PGDATA:-/var/lib/pgsql/data}\"' 'export POSTGRES_DB=\"${POSTGRES_DB:-truco}\"' 'export PATH=\"/usr/lib/postgresql18/bin:$PATH\"' 'q=$(printf \"\\047\")' 'if [ ! -s \"$PGDATA/PG_VERSION\" ]; then' '  mkdir -p \"$PGDATA\" /run/postgresql' '  chown -R postgres:postgres \"$PGDATA\" /run/postgresql' '  setpriv --reuid=postgres --regid=postgres --clear-groups initdb -D \"$PGDATA\" --no-sync --encoding=UTF8 --auth=trust --locale-provider=icu --icu-locale=und --locale=C' '  setpriv --reuid=postgres --regid=postgres --clear-groups pg_ctl -D \"$PGDATA\" -w -o \"-c listen_addresses='\\'''\\''\" start' '  if [ \"$POSTGRES_DB\" != \"postgres\" ]; then setpriv --reuid=postgres --regid=postgres --clear-groups psql -U postgres -d postgres -c \"CREATE DATABASE \\\"$POSTGRES_DB\\\"\"; fi' '  setpriv --reuid=postgres --regid=postgres --clear-groups psql -U postgres -d \"$POSTGRES_DB\" -c \"CREATE TABLE IF NOT EXISTS _pronto_migrations (name text primary key, applied_at timestamptz default now())\"' '  for f in /docker-entrypoint-initdb.d/*.sql; do' '    if [ -f \"$f\" ]; then' '      echo \"Applying $f...\"' '      setpriv --reuid=postgres --regid=postgres --clear-groups psql -v ON_ERROR_STOP=1 -U postgres -d \"$POSTGRES_DB\" -f \"$f\"' '      base=$(basename \"$f\")' '      setpriv --reuid=postgres --regid=postgres --clear-groups psql -U postgres -d \"$POSTGRES_DB\" -c \"INSERT INTO _pronto_migrations (name) VALUES ($q$base$q) ON CONFLICT DO NOTHING\"' '    fi' '  done' '  setpriv --reuid=postgres --regid=postgres --clear-groups pg_ctl -D \"$PGDATA\" -m fast -w stop' 'else' '  setpriv --reuid=postgres --regid=postgres --clear-groups pg_ctl -D \"$PGDATA\" -w -o \"-c listen_addresses='\\'''\\''\" start' '  setpriv --reuid=postgres --regid=postgres --clear-groups psql -U postgres -d \"$POSTGRES_DB\" -c \"CREATE TABLE IF NOT EXISTS _pronto_migrations (name text primary key, applied_at timestamptz default now())\"' '  for f in /docker-entrypoint-initdb.d/*.sql; do' '    if [ -f \"$f\" ]; then' '      base=$(basename \"$f\")' '      case \"$base\" in *seed*) continue;; esac' '      applied=$(setpriv --reuid=postgres --regid=postgres --clear-groups psql -t -A -U postgres -d \"$POSTGRES_DB\" -c \"SELECT count(*) FROM _pronto_migrations WHERE name = $q$base$q\")' '      if [ \"$applied\" = \"0\" ]; then' '        echo \"Applying pending migration $f...\"' '        setpriv --reuid=postgres --regid=postgres --clear-groups psql -v ON_ERROR_STOP=1 -U postgres -d \"$POSTGRES_DB\" -f \"$f\"' '        setpriv --reuid=postgres --regid=postgres --clear-groups psql -U postgres -d \"$POSTGRES_DB\" -c \"INSERT INTO _pronto_migrations (name) VALUES ($q$base$q)\"' '      fi' '    fi' '  done' '  setpriv --reuid=postgres --regid=postgres --clear-groups pg_ctl -D \"$PGDATA\" -m fast -w stop' 'fi' 'if [ \"$1\" = \"postgres\" ]; then shift; fi' 'exec setpriv --reuid=postgres --regid=postgres --clear-groups postgres -D \"$PGDATA\" -c listen_addresses=127.0.0.1 \"$@\"' > /usr/local/bin/docker-entrypoint.sh && chmod 755 /usr/local/bin/docker-entrypoint.sh",
+      "RUN printf '%s\\n' '#!/bin/sh' 'if [ \"$1\" = \"microcheck\" ]; then' '  shift' '  exec \"$@\"' 'fi' 'exec \"$@\"' > /usr/local/bin/bayt && chmod 755 /usr/local/bin/bayt",
+      "RUN printf '%s\\n' '#!/bin/sh' 'set -e' 'if ! grep -q \"crud\" /etc/hosts 2>/dev/null; then' '  echo \"127.0.0.1 crud database auth\" >> /etc/hosts 2>/dev/null || true' 'fi' 'exec \"$@\"' > /usr/local/bin/appliance-entrypoint.sh && chmod 755 /usr/local/bin/appliance-entrypoint.sh",
+      "RUN sed -i '/handle @rendered {/,/^[[:space:]]*}[[:space:]]*$/d' /etc/caddy/Caddyfile",
+      "RUN awk '/handle \\/electric\\/\\* \\{/{p=1; print \"  handle /electric/* {\\n    header Content-Type application/json\\n    header electric-handle stub\\n    header electric-offset 0_0\\n    header electric-cursor 0\\n    header electric-schema `{\\\"id\\\":{\\\"type\\\":\\\"text\\\"}}`\\n    header electric-up-to-date true\\n    header Access-Control-Allow-Origin *\\n    header Access-Control-Expose-Headers \\\"electric-handle, electric-offset, electric-cursor, electric-schema, electric-up-to-date, content-type, cache-control, x-txid\\\"\\n\\n    @subset query subset__where=*\\n    handle @subset {\\n      respond `{\\\"metadata\\\":{\\\"xmin\\\":\\\"1\\\",\\\"xmax\\\":\\\"1\\\",\\\"xip_list\\\":[],\\\"snapshot_mark\\\":0,\\\"database_lsn\\\":\\\"0\\\"},\\\"data\\\":[]}` 200\\n    }\\n    handle {\\n      respond `[{\\\"headers\\\":{\\\"control\\\":\\\"up-to-date\\\"}}]` 200\\n    }\\n  }\"; next} p && /^  \\}/{p=0; next} !p{print}' /etc/caddy/Caddyfile > /etc/caddy/Caddyfile.tmp && mv /etc/caddy/Caddyfile.tmp /etc/caddy/Caddyfile"
+    ],
+    "extra_hosts": [],
+    "mounts": [],
+    "secrets": {},
+    "healthcheck": null,
+    "expose": [],
+    "entrypoint": [
+      "/usr/local/bin/appliance-entrypoint.sh"
+    ],
+    "incremental": false,
+    "cmd": [
+      "/usr/local/bin/process-compose",
+      "up",
+      "-f",
+      "/.bayt/process-compose.yaml",
+      "-t=false",
+      "--no-server"
+    ]
+  },
+  "name": "release-docker",
+  "project": "truco",
+  "dir": ".",
+  "activate": "",
+  "srcs": {
+    "globs": [
+      ".bayt/process-compose.yaml"
+    ],
+    "exclude": []
+  },
+  "outs": {
+    "globs": [],
+    "exclude": []
+  },
+  "state": {
+    "globs": []
+  },
+  "env": {},
+  "synthetics": {
+    "bayt": {
+      "name": "release-docker_bayt",
+      "project": "truco",
+      "dir": ".",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [
+          ".bayt/compose.release-docker.yaml",
+          ".bayt/Dockerfile.release-docker",
+          ".bayt/bayt.release-docker.json",
+          ".bayt/Taskfile.yml",
+          ".bayt/Taskfile.bayt.yml",
+          ".bayt/process-compose.yaml"
+        ],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "./.bayt/compose.release-docker.yaml",
+        "./.bayt/compose.database.yaml",
+        "./.bayt/compose.crud.yaml",
+        "./.bayt/compose.timer-check.yaml",
+        "./.bayt/compose.caddy.yaml",
+        "./.bayt/compose.served.yaml",
+        "./.bayt/compose.auth.yaml"
+      ]
+    },
+    "outs": {
+      "name": "release-docker_outs",
+      "project": "truco",
+      "dir": ".",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [],
+      "transitiveCrossDeps": [],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "./.bayt/compose.release-docker.yaml",
+        "./.bayt/compose.database.yaml",
+        "./.bayt/compose.crud.yaml",
+        "./.bayt/compose.timer-check.yaml",
+        "./.bayt/compose.caddy.yaml",
+        "./.bayt/compose.served.yaml",
+        "./.bayt/compose.auth.yaml"
+      ]
+    },
+    "srcs": {
+      "name": "release-docker_srcs",
+      "project": "truco",
+      "dir": ".",
+      "activate": "",
+      "srcs": {
+        "globs": [],
+        "exclude": []
+      },
+      "outs": {
+        "globs": [
+          ".bayt/process-compose.yaml",
+          "services/database/migrations/000_extensions.sql",
+          "services/database/migrations/001_roles.sql",
+          "services/database/migrations/002_grants.sql",
+          "services/database/migrations/004_types.sql",
+          "services/database/migrations/005_create_tables.sql",
+          "services/database/migrations/006_policies.sql",
+          "services/database/migrations/007_txid.sql",
+          "services/database/migrations/008_publication.sql",
+          "services/database/migrations/016_mecha_actors.sql",
+          "services/database/migrations/012_lobby.sql",
+          "services/database/migrations/013_networked_shouts.sql",
+          "services/database/migrations/014_retire_online_writes.sql",
+          "services/database/migrations/017_table_indexes.sql",
+          "docker/Caddyfile"
+        ],
+        "exclude": []
+      },
+      "env": {},
+      "visibility": "internal",
+      "deps": [],
+      "transitiveDeps": [
+        "database_srcs",
+        "crud_srcs",
+        "caddy_srcs",
+        "auth_srcs",
+        "database_outs_srcs",
+        "timer-check_outs_srcs",
+        "crud_outs_srcs",
+        "served_outs_srcs"
+      ],
+      "transitiveCrossDeps": [
+        {
+          "project": "truco",
+          "name": "database_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "services/database/migrations/000_extensions.sql",
+              "services/database/migrations/001_roles.sql",
+              "services/database/migrations/002_grants.sql",
+              "services/database/migrations/004_types.sql",
+              "services/database/migrations/005_create_tables.sql",
+              "services/database/migrations/006_policies.sql",
+              "services/database/migrations/007_txid.sql",
+              "services/database/migrations/008_publication.sql",
+              "services/database/migrations/016_mecha_actors.sql",
+              "services/database/migrations/012_lobby.sql",
+              "services/database/migrations/013_networked_shouts.sql",
+              "services/database/migrations/014_retire_online_writes.sql",
+              "services/database/migrations/017_table_indexes.sql"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "caddy_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "docker/Caddyfile"
+            ],
+            "exclude": []
+          }
+        }
+      ],
+      "chainedDeps": [],
+      "cmds": [],
+      "cache": {
+        "full": false,
+        "similar": false
+      },
+      "upClosure": [
+        "./.bayt/compose.release-docker.yaml",
+        "./.bayt/compose.database.yaml",
+        "./.bayt/compose.crud.yaml",
+        "./.bayt/compose.timer-check.yaml",
+        "./.bayt/compose.caddy.yaml",
+        "./.bayt/compose.served.yaml",
+        "./.bayt/compose.auth.yaml"
+      ]
+    }
+  },
+  "visibility": "internal",
+  "emitsSrcs": true,
+  "deps": [
+    "database",
+    "crud",
+    "caddy",
+    "auth"
+  ],
+  "sameProjectDeps": [
+    "database",
+    "crud",
+    "caddy",
+    "auth"
+  ],
+  "transitiveDeps": [
+    "database",
+    "crud",
+    "caddy",
+    "auth",
+    "database_outs",
+    "timer-check_outs",
+    "crud_outs",
+    "served_outs"
+  ],
+  "transitiveCrossDeps": [],
+  "upClosure": [
+    "./.bayt/compose.release-docker.yaml",
+    "./.bayt/compose.database.yaml",
+    "./.bayt/compose.crud.yaml",
+    "./.bayt/compose.timer-check.yaml",
+    "./.bayt/compose.caddy.yaml",
+    "./.bayt/compose.served.yaml",
+    "./.bayt/compose.auth.yaml"
+  ],
+  "chainedDeps": [
+    {
+      "name": "database",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "crud",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "caddy",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "auth",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "database_outs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "timer-check_outs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "crud_outs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "served_outs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    }
+  ],
+  "cmds": [],
+  "cache": {
+    "full": false,
+    "similar": false
+  }
+}

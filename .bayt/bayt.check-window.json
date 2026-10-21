@@ -5,7 +5,7 @@
     "manual": true,
     "build": {
       "additional_contexts": {
-        "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.9.0@sha256:275dddfe0afce4358da916fc3cde9da49516139850d440eb1f4f7d87e56b1fb4}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
+        "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.14.0@sha256:014eb4b0ae281bc94b871e134d31f310edb13abaa77c1f585b3772b666b7797a}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
       },
       "secrets": [],
       "args": {}
@@ -25,7 +25,8 @@
     },
     "environment": {
       "APP_URL": "https://caddy:8443",
-      "ORIGIN": "${ORIGIN:-https://localhost:${CADDY_TLS_HOST_PORT}}"
+      "ORIGIN": "${ORIGIN:-https://localhost:${CADDY_TLS_HOST_PORT}}",
+      "SETTLE_TIMEOUT_MS": "50000"
     },
     "ports": [],
     "volumes": []
@@ -104,8 +105,7 @@
           ".bayt/Dockerfile.*",
           ".bayt/bayt.*.json",
           ".bayt/Taskfile.*.yaml",
-          "mecha/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml",
-          "omnishell/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml"
+          "monorepo/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml"
         ],
         "exclude": []
       },
@@ -127,8 +127,12 @@
         "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.crud.yaml",
         "./.bayt/compose.database.yaml",
+        "./.bayt/compose.timer-check.yaml",
+        "./.bayt/compose.served.yaml",
         "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.auth.yaml"
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.clock.yaml",
+        "./.bayt/compose.ticker.yaml"
       ]
     },
     "outs": {
@@ -162,8 +166,12 @@
         "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.crud.yaml",
         "./.bayt/compose.database.yaml",
+        "./.bayt/compose.timer-check.yaml",
+        "./.bayt/compose.served.yaml",
         "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.auth.yaml"
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.clock.yaml",
+        "./.bayt/compose.ticker.yaml"
       ]
     },
     "srcs": {
@@ -221,8 +229,12 @@
         "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.crud.yaml",
         "./.bayt/compose.database.yaml",
+        "./.bayt/compose.timer-check.yaml",
+        "./.bayt/compose.served.yaml",
         "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.auth.yaml"
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.clock.yaml",
+        "./.bayt/compose.ticker.yaml"
       ]
     }
   },
@@ -253,8 +265,12 @@
     "./.bayt/compose.caddy.yaml",
     "./.bayt/compose.crud.yaml",
     "./.bayt/compose.database.yaml",
+    "./.bayt/compose.timer-check.yaml",
+    "./.bayt/compose.served.yaml",
     "./.bayt/compose.electric.yaml",
-    "./.bayt/compose.auth.yaml"
+    "./.bayt/compose.auth.yaml",
+    "./.bayt/compose.clock.yaml",
+    "./.bayt/compose.ticker.yaml"
   ],
   "chainedDeps": [
     {

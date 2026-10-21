@@ -11,15 +11,14 @@
       <header class="seatbar pad">
         <div class="tavern-header-title">
           <span class="live-dot" aria-hidden="true"></span>
-          <h1 class="tavern-name" data-text="{msg.tavern_title}">Boteco do Seu Nezinho · Mesa 1</h1>
+          <h1 class="tavern-name" data-live="match" data-filter="id=eq.table" data-empty-row='{"id":"table","tavern_key":"tavern_mineiro"}' data-text="{msg[tavern_key]}">Boteco do Seu Nezinho · Mesa 1</h1>
           <span id="tavern-room-badge" class="tavern-room-badge" style="display: none;"></span>
         </div>
-        <span class="avatar" id="seatbar-avatar" aria-hidden="true">V</span>
+        <span class="avatar" id="seatbar-avatar" aria-hidden="true" data-live="player" data-filter="id=eq.you" data-empty-row='{"id":"you","handle":""}' data-text="{handle}&#10;{msg.you}" data-text-format="initial">V</span>
         <span class="who">
           <span class="who-title-wrap">
-            <b id="seatbar-player-name" data-text="{msg.you}">Você</b>
+            <span id="seatbar-player-name" data-live="player" data-filter="id=eq.you&amp;handle=neq." data-empty="{msg.you}"><template data-item><b data-text="{handle}"></b></template></span>
             <button type="button" class="btn-edit-handle" id="btn-edit-seatbar-handle" popovertarget="modal-online" popovertargetaction="show" title="{msg.edit_name}" aria-label="{msg.edit_name}">✎</button>
-            <input type="text" id="seatbar-handle-input" class="boteco-input inline-name-input" maxlength="20" placeholder="{msg.handle_placeholder}" style="display: none;" autocomplete="off" />
           </span>
           <span class="who-sub">
             <span class="sect" data-text="{msg.player_subtitle}">Truqueiro nato · convidado</span>
@@ -32,10 +31,9 @@
              carries no data-live of its own to swallow them. Each choice takes
              its declared consequences with it as assigns on the match row; what
              leaves the row — the standing hand — is the fold's.
-             Mesa Online stays a button because it is the one door to
-             #modal-online, but it is dressed as what it is: a state. -->
+          -->
         <div class="seatbar-links">
-<div class="picker" data-picker="country">
+<div class="picker" data-live="match" data-filter="id=eq.table" data-machine='{"field":"locale","initial":"pt-BR","on":{"click@country-pt-BR":{"target":"pt-BR","assign":{"variant":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"variant","value":"mineiro"}},"seats":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"seats","value":"2v2"}},"stake":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"stake","value":"2"}},"theme":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"theme","value":"madeira"}},"opponent":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"opponent","value":"tiao_queijo"}},"opponent_name":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"opponent_name","value":"opponent_tiao_queijo"}},"us_score":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"us_score","value":"0"}},"them_score":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"them_score","value":"0"}},"others_score":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"others_score","value":"0"}},"hand_no":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"hand_no","value":"1"}},"winner":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"winner","value":""}},"status":{"type":"country","params":{"variants":"paulista,mineiro,gaucho,douradinha,douradao","field":"status","value":"playing"}}}},"click@country-es-AR":{"target":"es-AR","assign":{"variant":{"type":"country","params":{"variants":"argentino","field":"variant","value":"argentino"}},"seats":{"type":"country","params":{"variants":"argentino","field":"seats","value":"2v2"}},"stake":{"type":"country","params":{"variants":"argentino","field":"stake","value":"1"}},"theme":{"type":"country","params":{"variants":"argentino","field":"theme","value":"formica"}},"opponent":{"type":"country","params":{"variants":"argentino","field":"opponent","value":"osvaldo"}},"opponent_name":{"type":"country","params":{"variants":"argentino","field":"opponent_name","value":"opponent_osvaldo"}},"us_score":{"type":"country","params":{"variants":"argentino","field":"us_score","value":"0"}},"them_score":{"type":"country","params":{"variants":"argentino","field":"them_score","value":"0"}},"others_score":{"type":"country","params":{"variants":"argentino","field":"others_score","value":"0"}},"hand_no":{"type":"country","params":{"variants":"argentino","field":"hand_no","value":"1"}},"winner":{"type":"country","params":{"variants":"argentino","field":"winner","value":""}},"status":{"type":"country","params":{"variants":"argentino","field":"status","value":"playing"}}}},"click@country-es-UY":{"target":"es-UY","assign":{"variant":{"type":"country","params":{"variants":"uruguayo","field":"variant","value":"uruguayo"}},"seats":{"type":"country","params":{"variants":"uruguayo","field":"seats","value":"2v2"}},"stake":{"type":"country","params":{"variants":"uruguayo","field":"stake","value":"1"}},"theme":{"type":"country","params":{"variants":"uruguayo","field":"theme","value":"formica"}},"opponent":{"type":"country","params":{"variants":"uruguayo","field":"opponent","value":"tabare"}},"opponent_name":{"type":"country","params":{"variants":"uruguayo","field":"opponent_name","value":"opponent_tabare"}},"us_score":{"type":"country","params":{"variants":"uruguayo","field":"us_score","value":"0"}},"them_score":{"type":"country","params":{"variants":"uruguayo","field":"them_score","value":"0"}},"others_score":{"type":"country","params":{"variants":"uruguayo","field":"others_score","value":"0"}},"hand_no":{"type":"country","params":{"variants":"uruguayo","field":"hand_no","value":"1"}},"winner":{"type":"country","params":{"variants":"uruguayo","field":"winner","value":""}},"status":{"type":"country","params":{"variants":"uruguayo","field":"status","value":"playing"}}}},"click@country-es-PY":{"target":"es-PY","assign":{"variant":{"type":"country","params":{"variants":"paraguayo","field":"variant","value":"paraguayo"}},"seats":{"type":"country","params":{"variants":"paraguayo","field":"seats","value":"2v2"}},"stake":{"type":"country","params":{"variants":"paraguayo","field":"stake","value":"1"}},"theme":{"type":"country","params":{"variants":"paraguayo","field":"theme","value":"madeira"}},"opponent":{"type":"country","params":{"variants":"paraguayo","field":"opponent","value":"osvaldo"}},"opponent_name":{"type":"country","params":{"variants":"paraguayo","field":"opponent_name","value":"opponent_osvaldo"}},"us_score":{"type":"country","params":{"variants":"paraguayo","field":"us_score","value":"0"}},"them_score":{"type":"country","params":{"variants":"paraguayo","field":"them_score","value":"0"}},"others_score":{"type":"country","params":{"variants":"paraguayo","field":"others_score","value":"0"}},"hand_no":{"type":"country","params":{"variants":"paraguayo","field":"hand_no","value":"1"}},"winner":{"type":"country","params":{"variants":"paraguayo","field":"winner","value":""}},"status":{"type":"country","params":{"variants":"paraguayo","field":"status","value":"playing"}}}},"click@country-ca-ES":{"target":"ca-ES","assign":{"variant":{"type":"country","params":{"variants":"truc","field":"variant","value":"truc"}},"seats":{"type":"country","params":{"variants":"truc","field":"seats","value":"2v2"}},"stake":{"type":"country","params":{"variants":"truc","field":"stake","value":"1"}},"theme":{"type":"country","params":{"variants":"truc","field":"theme","value":"neon"}},"opponent":{"type":"country","params":{"variants":"truc","field":"opponent","value":"jordi"}},"opponent_name":{"type":"country","params":{"variants":"truc","field":"opponent_name","value":"opponent_jordi"}},"us_score":{"type":"country","params":{"variants":"truc","field":"us_score","value":"0"}},"them_score":{"type":"country","params":{"variants":"truc","field":"them_score","value":"0"}},"others_score":{"type":"country","params":{"variants":"truc","field":"others_score","value":"0"}},"hand_no":{"type":"country","params":{"variants":"truc","field":"hand_no","value":"1"}},"winner":{"type":"country","params":{"variants":"truc","field":"winner","value":""}},"status":{"type":"country","params":{"variants":"truc","field":"status","value":"playing"}}}}},"states":{"pt-BR":{},"es-AR":{},"es-UY":{},"es-PY":{},"ca-ES":{}}}' data-empty-row='{"id":"table","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":"0","them_score":"0","others_score":"0","stake":"2","hand_no":"1","status":"playing","winner":"","opponent":"nezinho","opponent_name":"opponent_nezinho","opponent_handle":"","filled":"","partner_name":"Bigode","seed":"1","current":"yes","my_seat":"you","locale":"pt-BR","game":"","wake":""}' data-picker="country">
   <style>
     [data-picker="country"] .pick-label i { display: none; }
     .screen[data-locale="pt-BR"] [data-picker="country"] .pick-label i[data-t="br"],
@@ -75,11 +73,11 @@
     <span class="pick-label" aria-hidden="true"><i data-t="br">🇧🇷 <span data-text="{msg.country_br}">Brasil</span></i><i data-t="ar">🇦🇷 <span data-text="{msg.country_ar}">Argentina</span></i><i data-t="uy">🇺🇾 <span data-text="{msg.country_uy}">Uruguay</span></i><i data-t="py">🇵🇾 <span data-text="{msg.country_py}">Paraguay</span></i><i data-t="es">🇪🇸 <span data-text="{msg.country_es}">Espanya</span></i></span>
   </button>
   <ul id="picker-pop-country" class="picker-list" popover aria-label="{msg.picker_country}">
-    <li><a data-route="arena" data-locale="pt-BR" data-locale-current="page"><b aria-hidden="true">🇧🇷</b> <span data-text="{msg.country_br}">Brasil</span></a></li>
-    <li><a data-route="arena" data-locale="es-AR" data-locale-current="page"><b aria-hidden="true">🇦🇷</b> <span data-text="{msg.country_ar}">Argentina</span></a></li>
-    <li><a data-route="arena" data-locale="es-UY" data-locale-current="page"><b aria-hidden="true">🇺🇾</b> <span data-text="{msg.country_uy}">Uruguay</span></a></li>
-    <li><a data-route="arena" data-locale="es-PY" data-locale-current="page"><b aria-hidden="true">🇵🇾</b> <span data-text="{msg.country_py}">Paraguay</span></a></li>
-    <li><a data-route="arena" data-locale="ca-ES" data-locale-current="page"><b aria-hidden="true">🇪🇸</b> <span data-text="{msg.country_es}">Espanya</span></a></li>
+    <li><a id="country-pt-BR" data-route="arena" data-locale="pt-BR" data-locale-current="page"><b aria-hidden="true">🇧🇷</b> <span data-text="{msg.country_br}">Brasil</span></a></li>
+    <li><a id="country-es-AR" data-route="arena" data-locale="es-AR" data-locale-current="page"><b aria-hidden="true">🇦🇷</b> <span data-text="{msg.country_ar}">Argentina</span></a></li>
+    <li><a id="country-es-UY" data-route="arena" data-locale="es-UY" data-locale-current="page"><b aria-hidden="true">🇺🇾</b> <span data-text="{msg.country_uy}">Uruguay</span></a></li>
+    <li><a id="country-es-PY" data-route="arena" data-locale="es-PY" data-locale-current="page"><b aria-hidden="true">🇵🇾</b> <span data-text="{msg.country_py}">Paraguay</span></a></li>
+    <li><a id="country-ca-ES" data-route="arena" data-locale="ca-ES" data-locale-current="page"><b aria-hidden="true">🇪🇸</b> <span data-text="{msg.country_es}">Espanya</span></a></li>
   </ul>
 </div>
 <omnishell--picker>
@@ -96,8 +94,8 @@
     [data-picker="variant"][data-value="douradao"] .pick-label i[data-t="douradao"] { display: inline; }
   </style>
   <div class="picker" data-picker="variant" data-value="{variant}" data-live="match" data-filter="current=eq.yes"
-       data-empty-row='{"id":"","variant":"mineiro"}'
-       data-machine='{"field":"variant","initial":"mineiro","on":{"click@variant-trigger-paulista":[{"guard":{"type":"sitting"},"target":"paulista","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"xadrez","opponent":"nezinho","opponent_name":"opponent_nezinho","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@variant-trigger-mineiro":[{"guard":{"type":"sitting"},"target":"mineiro","assign":{"stake":"2","seats":{"type":"seats2"},"theme":"madeira","opponent":"tiao_queijo","opponent_name":"opponent_tiao_queijo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@variant-trigger-gaucho":[{"guard":{"type":"sitting"},"target":"gaucho","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"madeira","opponent":"xiru","opponent_name":"opponent_xiru","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@variant-trigger-argentino":[{"guard":{"type":"sitting"},"target":"argentino","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"formica","opponent":"osvaldo","opponent_name":"opponent_osvaldo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@variant-trigger-uruguayo":[{"guard":{"type":"sitting"},"target":"uruguayo","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"formica","opponent":"tabare","opponent_name":"opponent_tabare","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@variant-trigger-paraguayo":[{"guard":{"type":"sitting"},"target":"paraguayo","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"madeira","opponent":"osvaldo","opponent_name":"opponent_osvaldo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@variant-trigger-truc":[{"guard":{"type":"sitting"},"target":"truc","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"neon","opponent":"jordi","opponent_name":"opponent_jordi","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@variant-trigger-douradinha":[{"guard":{"type":"sitting"},"target":"douradinha","assign":{"stake":"2","seats":"2v2v2","theme":"madeira","opponent":"tiao_queijo","opponent_name":"opponent_tiao_queijo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@variant-trigger-douradao":[{"guard":{"type":"sitting"},"target":"douradao","assign":{"stake":"2","seats":"2v2v2","theme":"madeira","opponent":"tiao_queijo","opponent_name":"opponent_tiao_queijo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}]},"states":{"paulista":{"on":{"click@variant-trigger-paulista":[]}},"mineiro":{"on":{"click@variant-trigger-mineiro":[]}},"gaucho":{"on":{"click@variant-trigger-gaucho":[]}},"argentino":{"on":{"click@variant-trigger-argentino":[]}},"uruguayo":{"on":{"click@variant-trigger-uruguayo":[]}},"paraguayo":{"on":{"click@variant-trigger-paraguayo":[]}},"truc":{"on":{"click@variant-trigger-truc":[]}},"douradinha":{"on":{"click@variant-trigger-douradinha":[]}},"douradao":{"on":{"click@variant-trigger-douradao":[]}}}}'>
+       data-empty-row='{"id":"table","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":"0","them_score":"0","others_score":"0","stake":"2","hand_no":"1","status":"playing","winner":"","opponent":"nezinho","opponent_name":"opponent_nezinho","opponent_handle":"","filled":"","partner_name":"Bigode","seed":"1","current":"yes","my_seat":"you","locale":"pt-BR","game":"","wake":""}'
+       data-machine='{"field":"variant","initial":"mineiro","on":{"click@variant-trigger-paulista":{"target":"paulista","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"xadrez","opponent":"nezinho","opponent_name":"opponent_nezinho","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@variant-trigger-mineiro":{"target":"mineiro","assign":{"stake":"2","seats":{"type":"seats2"},"theme":"madeira","opponent":"tiao_queijo","opponent_name":"opponent_tiao_queijo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@variant-trigger-gaucho":{"target":"gaucho","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"madeira","opponent":"xiru","opponent_name":"opponent_xiru","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@variant-trigger-argentino":{"target":"argentino","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"formica","opponent":"osvaldo","opponent_name":"opponent_osvaldo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@variant-trigger-uruguayo":{"target":"uruguayo","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"formica","opponent":"tabare","opponent_name":"opponent_tabare","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@variant-trigger-paraguayo":{"target":"paraguayo","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"madeira","opponent":"osvaldo","opponent_name":"opponent_osvaldo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@variant-trigger-truc":{"target":"truc","assign":{"stake":"1","seats":{"type":"seats2"},"theme":"neon","opponent":"jordi","opponent_name":"opponent_jordi","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@variant-trigger-douradinha":{"target":"douradinha","assign":{"stake":"2","seats":"2v2v2","theme":"madeira","opponent":"tiao_queijo","opponent_name":"opponent_tiao_queijo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@variant-trigger-douradao":{"target":"douradao","assign":{"stake":"2","seats":"2v2v2","theme":"madeira","opponent":"tiao_queijo","opponent_name":"opponent_tiao_queijo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}}},"states":{"paulista":{"on":{"click@variant-trigger-paulista":[]}},"mineiro":{"on":{"click@variant-trigger-mineiro":[]}},"gaucho":{"on":{"click@variant-trigger-gaucho":[]}},"argentino":{"on":{"click@variant-trigger-argentino":[]}},"uruguayo":{"on":{"click@variant-trigger-uruguayo":[]}},"paraguayo":{"on":{"click@variant-trigger-paraguayo":[]}},"truc":{"on":{"click@variant-trigger-truc":[]}},"douradinha":{"on":{"click@variant-trigger-douradinha":[]}},"douradao":{"on":{"click@variant-trigger-douradao":[]}}}}'>
     <button type="button" id="picker-open-variant"
             commandfor="picker-pop-variant" command="toggle-popover" aria-haspopup="listbox">
       <span class="sr" data-text="{msg.picker_variant}">Variante:</span>
@@ -139,8 +137,8 @@
     [data-picker="seats"][data-value="2v2v2"] .pick-label i[data-t="2v2v2"] { display: inline; }
   </style>
   <div class="picker" data-picker="seats" data-value="{seats}" data-live="match" data-filter="current=eq.yes"
-       data-empty-row='{"id":"","seats":"1v1"}'
-       data-machine='{"field":"seats","initial":"1v1","on":{"click@seats-trigger-1v1":[{"guard":{"type":"sitting"},"target":"1v1","assign":{"stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","variant":{"type":"variant2"},"winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@seats-trigger-2v2":[{"guard":{"type":"sitting"},"target":"2v2","assign":{"stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","variant":{"type":"variant2"},"winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@seats-trigger-2v2v2":[{"guard":{"type":"sitting"},"target":"2v2v2","assign":{"stake":"2","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","variant":{"type":"variant3"},"winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}]},"states":{"1v1":{"on":{"click@seats-trigger-1v1":[]}},"2v2":{"on":{"click@seats-trigger-2v2":[]}},"2v2v2":{"on":{"click@seats-trigger-2v2v2":[]}}}}'>
+       data-empty-row='{"id":"table","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":"0","them_score":"0","others_score":"0","stake":"2","hand_no":"1","status":"playing","winner":"","opponent":"nezinho","opponent_name":"opponent_nezinho","opponent_handle":"","filled":"","partner_name":"Bigode","seed":"1","current":"yes","my_seat":"you","locale":"pt-BR","game":"","wake":""}'
+       data-machine='{"field":"seats","initial":"1v1","on":{"click@seats-trigger-1v1":{"target":"1v1","assign":{"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","variant":{"type":"variant2"},"winner":"","status":"playing"}},"click@seats-trigger-2v2":{"target":"2v2","assign":{"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","variant":{"type":"variant2"},"winner":"","status":"playing"}},"click@seats-trigger-2v2v2":{"target":"2v2v2","assign":{"stake":"2","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","variant":{"type":"variant3"},"winner":"","status":"playing"}}},"states":{"1v1":{"on":{"click@seats-trigger-1v1":[]}},"2v2":{"on":{"click@seats-trigger-2v2":[]}},"2v2v2":{"on":{"click@seats-trigger-2v2v2":[]}}}}'>
     <button type="button" id="picker-open-seats"
             commandfor="picker-pop-seats" command="toggle-popover" aria-haspopup="listbox">
       <span class="sr" data-text="{msg.picker_seats}">Mesa:</span>
@@ -168,15 +166,14 @@
     [data-picker="opponent"][data-value="cida"] .pick-label i[data-t="cida"] { display: inline; }
     [data-picker="opponent"][data-value="tiao"] .pick-label i[data-t="tiao"] { display: inline; }
     [data-picker="opponent"][data-value="ze"] .pick-label i[data-t="ze"] { display: inline; }
-    [data-picker="opponent"][data-value="online"] .pick-label i[data-t="online"] { display: inline; }
   </style>
   <div class="picker" data-picker="opponent" data-value="{opponent}" data-live="match" data-filter="current=eq.yes"
-       data-empty-row='{"id":"","opponent":"nezinho"}'
-       data-machine='{"field":"opponent","initial":"nezinho","on":{"click@opponent-trigger-nezinho":[{"guard":{"type":"sitting"},"target":"nezinho","assign":{"opponent":"nezinho","opponent_name":"opponent_nezinho","stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@opponent-trigger-tiao_queijo":[{"guard":{"type":"sitting"},"target":"tiao_queijo","assign":{"opponent":"tiao_queijo","opponent_name":"opponent_tiao_queijo","stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@opponent-trigger-xiru":[{"guard":{"type":"sitting"},"target":"xiru","assign":{"opponent":"xiru","opponent_name":"opponent_xiru","stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@opponent-trigger-osvaldo":[{"guard":{"type":"sitting"},"target":"osvaldo","assign":{"opponent":"osvaldo","opponent_name":"opponent_osvaldo","stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@opponent-trigger-tabare":[{"guard":{"type":"sitting"},"target":"tabare","assign":{"opponent":"tabare","opponent_name":"opponent_tabare","stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@opponent-trigger-jordi":[{"guard":{"type":"sitting"},"target":"jordi","assign":{"opponent":"jordi","opponent_name":"opponent_jordi","stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@opponent-trigger-cida":[{"guard":{"type":"sitting"},"target":"cida","assign":{"opponent":"cida","opponent_name":"opponent_cida","stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@opponent-trigger-tiao":[{"guard":{"type":"sitting"},"target":"tiao","assign":{"opponent":"tiao","opponent_name":"opponent_tiao","stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}],"click@opponent-trigger-ze":[{"guard":{"type":"sitting"},"target":"ze","assign":{"opponent":"ze","opponent_name":"opponent_ze","stake":{"type":"stake0"},"us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing","seed":{"type":"spun"},"my_seat":"you"}}]},"states":{"nezinho":{"on":{"click@opponent-trigger-nezinho":[]}},"tiao_queijo":{"on":{"click@opponent-trigger-tiao_queijo":[]}},"xiru":{"on":{"click@opponent-trigger-xiru":[]}},"osvaldo":{"on":{"click@opponent-trigger-osvaldo":[]}},"tabare":{"on":{"click@opponent-trigger-tabare":[]}},"jordi":{"on":{"click@opponent-trigger-jordi":[]}},"cida":{"on":{"click@opponent-trigger-cida":[]}},"tiao":{"on":{"click@opponent-trigger-tiao":[]}},"ze":{"on":{"click@opponent-trigger-ze":[]}}}}'>
+       data-empty-row='{"id":"table","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":"0","them_score":"0","others_score":"0","stake":"2","hand_no":"1","status":"playing","winner":"","opponent":"nezinho","opponent_name":"opponent_nezinho","opponent_handle":"","filled":"","partner_name":"Bigode","seed":"1","current":"yes","my_seat":"you","locale":"pt-BR","game":"","wake":""}'
+       data-machine='{"field":"opponent","initial":"nezinho","on":{"click@opponent-trigger-nezinho":{"target":"nezinho","assign":{"opponent":"nezinho","opponent_name":"opponent_nezinho","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@opponent-trigger-tiao_queijo":{"target":"tiao_queijo","assign":{"opponent":"tiao_queijo","opponent_name":"opponent_tiao_queijo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@opponent-trigger-xiru":{"target":"xiru","assign":{"opponent":"xiru","opponent_name":"opponent_xiru","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@opponent-trigger-osvaldo":{"target":"osvaldo","assign":{"opponent":"osvaldo","opponent_name":"opponent_osvaldo","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@opponent-trigger-tabare":{"target":"tabare","assign":{"opponent":"tabare","opponent_name":"opponent_tabare","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@opponent-trigger-jordi":{"target":"jordi","assign":{"opponent":"jordi","opponent_name":"opponent_jordi","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@opponent-trigger-cida":{"target":"cida","assign":{"opponent":"cida","opponent_name":"opponent_cida","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@opponent-trigger-tiao":{"target":"tiao","assign":{"opponent":"tiao","opponent_name":"opponent_tiao","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}},"click@opponent-trigger-ze":{"target":"ze","assign":{"opponent":"ze","opponent_name":"opponent_ze","us_score":"0","them_score":"0","others_score":"0","hand_no":"1","winner":"","status":"playing"}}},"states":{"nezinho":{"on":{"click@opponent-trigger-nezinho":[]}},"tiao_queijo":{"on":{"click@opponent-trigger-tiao_queijo":[]}},"xiru":{"on":{"click@opponent-trigger-xiru":[]}},"osvaldo":{"on":{"click@opponent-trigger-osvaldo":[]}},"tabare":{"on":{"click@opponent-trigger-tabare":[]}},"jordi":{"on":{"click@opponent-trigger-jordi":[]}},"cida":{"on":{"click@opponent-trigger-cida":[]}},"tiao":{"on":{"click@opponent-trigger-tiao":[]}},"ze":{"on":{"click@opponent-trigger-ze":[]}}}}'>
     <button type="button" id="picker-open-opponent"
             commandfor="picker-pop-opponent" command="toggle-popover" aria-haspopup="listbox">
       <span class="sr" data-text="{msg.picker_opponent}">Oponente:</span>
-      <span class="pick-label"><i data-t="nezinho" data-text="{msg.bots}">Robôs</i><i data-t="tiao_queijo" data-text="{msg.bots}">Robôs</i><i data-t="xiru" data-text="{msg.bots}">Robôs</i><i data-t="osvaldo" data-text="{msg.bots}">Robôs</i><i data-t="tabare" data-text="{msg.bots}">Robôs</i><i data-t="jordi" data-text="{msg.bots}">Robôs</i><i data-t="cida" data-text="{msg.bots}">Robôs</i><i data-t="tiao" data-text="{msg.bots}">Robôs</i><i data-t="ze" data-text="{msg.bots}">Robôs</i><i data-t="online" data-text="{msg.online_short}">Online</i></span>
+      <span class="pick-label"><i data-t="nezinho" data-text="{msg.bots}">Robôs</i><i data-t="tiao_queijo" data-text="{msg.bots}">Robôs</i><i data-t="xiru" data-text="{msg.bots}">Robôs</i><i data-t="osvaldo" data-text="{msg.bots}">Robôs</i><i data-t="tabare" data-text="{msg.bots}">Robôs</i><i data-t="jordi" data-text="{msg.bots}">Robôs</i><i data-t="cida" data-text="{msg.bots}">Robôs</i><i data-t="tiao" data-text="{msg.bots}">Robôs</i><i data-t="ze" data-text="{msg.bots}">Robôs</i></span>
     </button>
     <ul id="picker-pop-opponent" class="picker-list" popover role="listbox" aria-label="{msg.picker_opponent}">
       <li><button type="button" role="option" value="nezinho" id="opponent-trigger-nezinho" data-opt="nezinho" data-text="{msg.opponent_nezinho_item}"
@@ -209,8 +206,8 @@
     [data-picker="theme"][data-value="madeira"] .pick-label i[data-t="madeira"] { display: inline; }
   </style>
   <div class="picker" data-picker="theme" data-value="{theme}" data-live="match" data-filter="current=eq.yes"
-       data-empty-row='{"id":"","theme":"xadrez"}'
-       data-machine='{"field":"theme","initial":"xadrez","on":{"click@theme-trigger-xadrez":[{"guard":{"type":"sitting"},"target":"xadrez"}],"click@theme-trigger-formica":[{"guard":{"type":"sitting"},"target":"formica"}],"click@theme-trigger-neon":[{"guard":{"type":"sitting"},"target":"neon"}],"click@theme-trigger-madeira":[{"guard":{"type":"sitting"},"target":"madeira"}]},"states":{"xadrez":{"on":{"click@theme-trigger-xadrez":[]}},"formica":{"on":{"click@theme-trigger-formica":[]}},"neon":{"on":{"click@theme-trigger-neon":[]}},"madeira":{"on":{"click@theme-trigger-madeira":[]}}}}'>
+       data-empty-row='{"id":"table","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":"0","them_score":"0","others_score":"0","stake":"2","hand_no":"1","status":"playing","winner":"","opponent":"nezinho","opponent_name":"opponent_nezinho","opponent_handle":"","filled":"","partner_name":"Bigode","seed":"1","current":"yes","my_seat":"you","locale":"pt-BR","game":"","wake":""}'
+       data-machine='{"field":"theme","initial":"xadrez","on":{"click@theme-trigger-xadrez":{"target":"xadrez"},"click@theme-trigger-formica":{"target":"formica"},"click@theme-trigger-neon":{"target":"neon"},"click@theme-trigger-madeira":{"target":"madeira"}},"states":{"xadrez":{"on":{"click@theme-trigger-xadrez":[]}},"formica":{"on":{"click@theme-trigger-formica":[]}},"neon":{"on":{"click@theme-trigger-neon":[]}},"madeira":{"on":{"click@theme-trigger-madeira":[]}}}}'>
     <button type="button" id="picker-open-theme"
             commandfor="picker-pop-theme" command="toggle-popover" aria-haspopup="listbox">
       <span class="sr" data-text="{msg.picker_theme}">Feltro:</span>
@@ -228,10 +225,10 @@
     </ul>
   </div>
 </omnishell--picker>
-          <button type="button" class="btn-online-status" id="btn-open-online" popovertarget="modal-online" popovertargetaction="show" title="{msg.balcao_title}" data-online="false">
+          <button type="button" class="btn-online-status" id="btn-open-online" popovertarget="modal-online" popovertargetaction="show" title="{msg.online_bar_title}">
             <span class="online-pulse" aria-hidden="true"></span>
-            <span class="online-label-full" data-text="{msg.balcao}">Balcão</span>
-            <span class="online-label-short" data-text="{msg.balcao}">Balcão</span>
+            <span class="online-label-full" data-text="{msg.truco_online}">Truco online</span>
+            <span class="online-label-short" data-text="{msg.online_short}">Online</span>
           </button>
           <a class="rules-link" data-route="regras" data-text="{msg.rules}">Regras</a>
         </div>
@@ -241,15 +238,14 @@
            whole screen resolves from. Pinned on the match on the table, so
            a won one stays bound here until another is asked for.
            data-empty-row keeps the table drawn for the beat before the
-           dealer's first match lands. -->
-      <!-- The match wakes the table as well: a sitting that has just been
-           opened has no hand yet, and nothing about a round or a play can say
-           so. -->
+           first match lands. -->
+      <!-- The arena's fold is seated here: every write wakes it, and it plays
+           the game on from the rows (machines/arena.js). -->
       <div class="matchbox"
            data-live="match"
            data-filter="current=eq.yes"
-           data-on-mutation="table" data-reads="match,round,play,held,room_action"
-           data-empty-row='{"id":"","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":0,"them_score":0,"others_score":0,"stake":2,"hand_no":1,"status":"playing","winner":"","opponent":"nezinho","opponent_name":"opponent_nezinho","partner_name":"Bigode","seed":"1","current":"yes","my_seat":"you"}'
+           data-on-mutation="arena" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab"
+           data-empty-row='{"id":"table","variant":"mineiro","seats":"1v1","theme":"xadrez","us_score":"0","them_score":"0","others_score":"0","stake":"2","hand_no":"1","status":"playing","winner":"","opponent":"nezinho","opponent_name":"opponent_nezinho","opponent_handle":"","filled":"","partner_name":"Bigode","seed":"1","current":"yes","my_seat":"you","locale":"pt-BR","game":"","wake":""}'
            data-theme="{theme}"
            data-match-id="{id}"
            data-variant="{variant}"
@@ -262,8 +258,11 @@
            data-status="{status}"
            data-winner="{winner}"
            data-opponent="{opponent}"
+           data-filled="{filled}"
            data-seed="{seed}"
            data-my-seat="{my_seat}">
+
+        <p class="table-filled" role="status" data-text="{msg.table_complete}">Mesa completa!</p>
 
         <div class="scores pad">
           <div class="score us">
@@ -279,7 +278,7 @@
             </span>
           </div>
           <div class="score them">
-            <p class="sect eles-name" data-text="{msg[opponent_name]}"></p>
+            <p class="sect eles-name"><span class="as-cast" data-text="{msg[opponent_name]}"></span><span class="as-handle" data-text="{opponent_handle}"></span></p>
             <p class="figure" data-text="{them_score}"></p>
             <span class="tentos" aria-hidden="true" data-n="{them_score}"><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento" data-last></i></span>
           </div>
@@ -297,9 +296,8 @@
       <!-- The hand on the table. A list of one (current=eq.yes) rather than a
            singleton: a singleton region hydrates no nested region and drives
            no screen state. -->
-      <div class="hands" data-live="round" data-filter="current=eq.yes" data-order="created_at.desc"
-           data-empty-row='{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","truco_state":"none","envido_state":"none","trick_state":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":""}'
-           data-on-mutation="table" data-reads="match,round,play,held,room_action">
+      <div class="hands" data-live="round" data-filter="current=eq.yes" data-order="created_at.desc" data-exit-motion="none"
+           data-empty-row='{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":"","felt_phase":"idle","truco_label":"call_truco","truco_title":"felt_title_raise","truco_blocked":"disabled","raise_label":"raise","raise_blocked":"disabled","next_rung":"0","name_key":"opponent_nezinho","name_handle":"","worth":"2","opponent_name":"opponent_nezinho","opponent_handle":"","opponent":"nezinho","dialogue_key":"","dialogue_state":"","player_shout_state":"","over_key":"","tell":"","said_t":"","shout_word":"","shout_from":"","shout_kind":"","shout_state":"","shout_t":"","shout_seat":"","raise_hint":"felt_raise_to","shout_anim":"1"}'>
         <template data-item>
           <article class="hand" data-phase="{phase}" data-result="{result}" data-round-id="{id}"
                      data-v1="{v1}" data-v2="{v2}" data-v3="{v3}"
@@ -307,7 +305,7 @@
                      data-shout-word="{shout_word}" data-shout-from="{shout_from}" data-shout-state="{shout_state}" data-shout-kind="{shout_kind}" data-shout-seat="{shout_seat}" data-shout-t="{shout_t}"
                      data-envido="{envido}" data-envido-asked="{envido_asked}" data-calls="{envido_calls}"
                      data-leader="{leader}" data-raised="{raised}" data-brink="{brink}" data-ran="{ran}"
-                     data-turn-seat="{turn_seat}" data-ui-deadline="{ui_deadline}" data-backend-deadline="{backend_deadline}">
+                     data-turn-seat="{turn_seat}">
 
             <ol class="spine pad" data-phase="{phase}">
               <li data-node="dealt"><span data-text="{msg.spine_hand}">Mão</span></li>
@@ -325,10 +323,7 @@
               <span class="manilha-note"><span data-text="{msg.manilhas_label}">manilhas: </span><b data-text="{manilha}"></b></span>
             </div>
 
-            <!-- The rodada's verdicts are folded from these rows by a handler,
-                 woken by the beat the felt animates when a rodada completes. -->
             <ul class="log pad" data-live="play" data-filter="round_id=eq.{id}" data-order="seq.asc"
-                data-on-mutation="table" data-reads="match,round,play,held,room_action"
                 data-empty="{msg.empty_log}">
               <template data-item>
                 <li data-seat="{seat}" data-kind="{kind}">
@@ -343,13 +338,11 @@
         </template>
       </div>
 
-      <!-- Everything below is the dealer's: the seats it draws, the mat, your
-           hand, and the one line the table says. -->
-      <div class="play" data-phase="idle">
-        <!-- Chrome the dealer fills: a call is a play row, and a play row has
-             no element on the mat to be. -->
+      <div class="felt" data-live="round" data-filter="current=eq.yes&amp;limit=1" data-exit-motion="none" data-empty-row='{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":"","felt_phase":"idle","truco_label":"call_truco","truco_title":"felt_title_raise","truco_blocked":"disabled","raise_label":"raise","raise_blocked":"disabled","next_rung":"0","name_key":"opponent_nezinho","name_handle":"","worth":"2","opponent_name":"opponent_nezinho","opponent_handle":"","opponent":"nezinho","dialogue_key":"","dialogue_state":"","player_shout_state":"","over_key":"","tell":"","said_t":"","shout_word":"","shout_from":"","shout_kind":"","shout_state":"","shout_t":"","shout_seat":"","raise_hint":"felt_raise_to","shout_anim":"1"}' style="display: contents;">
+        <template data-item>
+      <div class="play" data-phase="{felt_phase}" data-ran="{ran}">
         <div class="bulb" aria-hidden="true"></div>
-        <div class="shout" aria-hidden="true"></div>
+        <div class="shout" aria-hidden="true" data-from="{shout_from}" data-kind="{shout_kind}" data-state="{shout_state}" data-t="{shout_anim}" data-text="{msg[shout_word]}" data-text-format="uppercase"></div>
         <div class="turn-timer" id="turn-timer">
           <div class="rope-fill" id="rope-fill"></div>
           <span class="timer-label" id="timer-label"></span>
@@ -358,24 +351,24 @@
           <div class="opponent-avatar-wrap">
             <div class="opponent-avatar-ring" id="opponent-avatar-ring">
               <div class="opponent-avatar-img" id="opponent-avatar-img"></div>
-              <span class="opponent-avatar-initial" id="opponent-avatar-initial" style="display:none" aria-hidden="true"></span>
-              <span class="opponent-online-dot" id="opponent-online-dot" style="display:none" aria-hidden="true"></span>
+              <span class="opponent-avatar-initial" id="opponent-avatar-initial" aria-hidden="true" data-text="{opponent_handle}" data-text-format="initial"></span>
+              <span class="opponent-online-dot" id="opponent-online-dot" aria-hidden="true"></span>
             </div>
             <span class="opponent-turn-badge" id="opponent-turn-badge" data-text="{msg.turn_badge_them}">Vez dele</span>
             <div class="opponent-nameplate" id="opponent-nameplate">
               <span class="opponent-name-line">
-                <b class="opponent-display-name eles-name" id="opponent-display-name" data-text="{msg[opponent_name]}"></b>
-                <span class="opponent-online-badge" id="opponent-online-badge" style="display:none" data-text="{msg.online_short}">Online</span>
+                <b class="opponent-display-name eles-name" id="opponent-display-name"><span class="as-cast" data-text="{msg[opponent_name]}"></span><span class="as-handle" data-text="{opponent_handle}"></span></b>
+                <span class="opponent-online-badge" id="opponent-online-badge" data-text="{msg.online_short}">Online</span>
               </span>
-              <span class="opponent-role-desc" id="opponent-role-desc" data-text="{msg.role_opponent}">Adversário</span>
+              <span class="opponent-role-desc" id="opponent-role-desc"><span class="as-cast" data-text="{msg.role_bot}"></span><span class="as-handle" data-text="{msg.online_short}"></span></span>
             </div>
           </div>
           <div class="opponent-dialogue-wrap">
-            <div class="speech-bubble" id="opponent-speech-bubble">
+            <div class="speech-bubble" id="opponent-speech-bubble" data-state="{dialogue_state}">
               <div class="bubble-header">
-                <span class="bubble-speaker eles-name" data-text="{msg[opponent_name]}"></span>
+                <span class="bubble-speaker eles-name"><span class="as-cast" data-text="{msg[opponent_name]}"></span><span class="as-handle" data-text="{opponent_handle}"></span></span>
               </div>
-              <div class="opponent-talk" id="opponent-talk"></div>
+              <div class="opponent-talk" id="opponent-talk" data-text="{msg[dialogue_key]}&#10;{worth}&#10;{msg[name_key]}{name_handle}" data-text-format="speech"></div>
             </div>
           </div>
         </div>
@@ -383,11 +376,11 @@
              the reading differs, so what they show is a back. Held rows are
              ordered by slot, which interleaves the seats, and a template
              cannot group what it binds. -->
-        <div class="seats" id="seats">
+        <div class="seats" id="seats" data-tell="{tell}">
           <div class="seat-row house" id="house-eles1" data-seat="eles1"
                data-live="held" data-filter="current=eq.yes&amp;display_seat=eq.eles1" data-order="slot.asc">
             <template data-item>
-              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}" data-on-click="table"></div>
+              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}"></div>
             </template>
           </div>
           <!-- Your partner's cards carry their faces, turned up only while a
@@ -396,13 +389,13 @@
           <div class="seat-row house" data-seat="parca"
                data-live="held" data-filter="current=eq.yes&amp;display_seat=eq.parca" data-order="slot.asc">
             <template data-item>
-              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}" data-on-click="table"><span class="card face" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
+              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}"><span class="card face" data-card="{card}" data-suit="{suit}" data-manilha="{manilha}"><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></span></div>
             </template>
           </div>
           <div class="seat-row house" data-seat="eles2"
                data-live="held" data-filter="current=eq.yes&amp;display_seat=eq.eles2" data-order="slot.asc">
             <template data-item>
-              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}" data-on-click="table"></div>
+              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}"></div>
             </template>
           </div>
           <!-- The third pair. A table of two sides deals these no cards, so
@@ -410,13 +403,13 @@
           <div class="seat-row house" data-seat="eles3"
                data-live="held" data-filter="current=eq.yes&amp;display_seat=eq.eles3" data-order="slot.asc">
             <template data-item>
-              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}" data-on-click="table"></div>
+              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}"></div>
             </template>
           </div>
           <div class="seat-row house" data-seat="eles4"
                data-live="held" data-filter="current=eq.yes&amp;display_seat=eq.eles4" data-order="slot.asc">
             <template data-item>
-              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}" data-on-click="table"></div>
+              <div class="card-back" data-seat="{seat}" data-slot="{slot}" data-row="{id}"></div>
             </template>
           </div>
         </div>
@@ -450,18 +443,17 @@
           </template>
         </div>
         <div class="table-instruction-bar" id="table-instruction-bar">
-          <div class="talk"></div>
+          <div class="talk" data-t="{said_t}" data-text="{msg[said]}&#10;{worth}&#10;{msg[name_key]}{name_handle}" data-text-format="speech"></div>
           <p class="refusal" role="status" data-text="{msg.play_refusal}">A mesa não conseguiu registrar a jogada.</p>
         </div>
-        <div class="player-dialogue-wrap" id="player-dialogue-wrap" aria-live="polite">
+        <div class="player-dialogue-wrap" id="player-dialogue-wrap" data-active="{player_shout_state}" data-t="{shout_anim}" aria-live="polite">
           <div class="player-speech-bubble" id="player-speech-bubble">
-            <span class="player-talk" id="player-talk"></span>
+            <span class="player-talk" id="player-talk" data-text="“{msg[shout_word]}”"></span>
           </div>
         </div>
-        <div class="encobrir-bar" data-live="round" data-filter="current=eq.yes"
-             data-reads="match,round,play,held,room_action"
+        <div class="encobrir-bar" data-live="round" data-filter="current=eq.yes" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab"
              data-empty-row='{"id":"","said":""}'>
-          <button type="button" class="btn-encobrir" id="btn-encobrir" data-on-click="table" title="{msg.encobrir_title_tip}">
+          <button type="button" class="btn-encobrir" id="btn-encobrir" data-on-click="arena" title="{msg.encobrir_title_tip}">
             <span aria-hidden="true">🙈</span>
             <span data-text="{msg.encobrir_btn}">Encobrir</span>
           </button>
@@ -471,12 +463,12 @@
              be animated out when it is spent (ir decision-29). -->
         <div class="seat-row mine" id="seat-you"
              data-live="held" data-filter="current=eq.yes&amp;display_seat=eq.you" data-order="slot.asc"
-             data-reads="match,round,play,held,room_action">
+             data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab">
           <!-- The card carries no whitespace of its own: a text node between
                these spans lands in the card's own text, and what the card then
                reads as would depend on how the spans wrap. -->
           <template data-item>
-            <button type="button" class="card" data-on-click="table" data-row="{id}" data-round="{round_id}" data-card="{card}" data-slot="{slot}"
+            <button type="button" class="card" data-on-click="arena" data-row="{id}" data-round="{round_id}" data-card="{card}" data-slot="{slot}"
                     data-suit="{suit}" data-manilha="{manilha}"
                     style="view-transition-name: card-{card};"
                     disabled="{blocked}"><span class="sr-only" data-text="{msg.play_card}">Jogar </span><span class="corner tl"><b data-text="{rank}"></b><i data-text="{suit}"></i></span><span class="mark" data-text="{face}"></span><span class="corner br"><b data-text="{rank}"></b><i data-text="{suit}"></i></span></button>
@@ -485,8 +477,8 @@
 
         <!-- Game over verdict lands above actions in the flow -->
         <div class="over" id="over">
-          <p class="over-line" id="over-line"></p>
-          <p class="over-say" id="over-say"></p>
+          <p class="over-line" id="over-line" data-text="{msg[over_key]}&#10;{worth}&#10;{msg[name_key]}{name_handle}" data-text-format="speech"></p>
+          <p class="over-say" id="over-say" data-text="{msg[said]}&#10;{worth}&#10;{msg[name_key]}{name_handle}" data-text-format="speech"></p>
           <a class="act ghost" data-route="regras" data-text="{msg.view_rules}">Ver as regras</a>
         </div>
 
@@ -495,13 +487,12 @@
              away every child that is not one of its rows, and the fallback row
              keeps the buttons on the table before a hand exists. -->
         <div class="wager-controls" data-live="round" data-filter="current=eq.yes"
-             data-reads="match,round,play,held,room_action"
-             data-empty-row='{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","truco_state":"none","envido_state":"none","trick_state":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":""}'
-             data-machine='[{"field":"truco_state","initial":"none","onDone":{"target":".none"},"states":{"none":{"on":{"click@btn-truco":{"target":"truco_called","actions":[{"assign":{"asked":"you","rung":1}}]}}},"truco_called":{"on":{"click@btn-accept":{"target":"truco_accepted","actions":[{"assign":{"raised":"them"}}]},"click@btn-raise":{"target":"retruco_called","actions":[{"assign":{"asked":"them","rung":2}}]},"click@btn-run":{"target":"truco_folded"}},"after":{"15000":"truco_folded"},"entry":[{"assign":{"said":"truco"}}],"exit":[{"assign":{"said":""}}]},"retruco_called":{"on":{"click@btn-accept":{"target":"retruco_accepted"},"click@btn-raise":{"target":"vale4_called"},"click@btn-run":{"target":"truco_folded"}},"after":{"15000":"truco_folded"},"entry":[{"assign":{"said":"retruco"}}],"exit":[{"assign":{"said":""}}]},"vale4_called":{"on":{"click@btn-accept":{"target":"vale4_accepted"},"click@btn-run":{"target":"truco_folded"}},"after":{"15000":"truco_folded"},"entry":[{"assign":{"said":"vale4"}}],"exit":[{"assign":{"said":""}}]},"truco_accepted":{"on":{"click@btn-raise":{"target":"retruco_called","actions":[{"assign":{"asked":"them","rung":2}}]},"fold":"truco_folded"}},"retruco_accepted":{"on":{"click@btn-raise":{"target":"vale4_called","actions":[{"assign":{"asked":"them","rung":3}}]},"fold":"truco_folded"}},"vale4_accepted":{"on":{"fold":"truco_folded"}},"truco_folded":{"type":"final","entry":[{"assign":{"ran":"us","said":"ran"},"raise":"fold"}],"exit":[{"assign":{"ran":"","said":""}}]}}},{"field":"envido_state","initial":"none","onDone":{"target":".none"},"states":{"none":{"on":{"click@btn-envido":{"target":"called"},"click@btn-envido-real":{"target":"real_called"},"click@btn-envido-falta":{"target":"falta_called"},"click@btn-flor":{"target":"flor"}},"entry":[{"assign":{"envido_calls":"","envido_rung":0}}]},"called":{"on":{"click@btn-envido-take":{"target":"accepted"},"click@btn-envido-run":{"target":"folded"},"click@btn-envido-real":{"target":"real_called"},"click@btn-envido-falta":{"target":"falta_called"}},"entry":[{"assign":{"envido_calls":"real falta answer","envido_rung":2}}],"exit":[{"assign":{"envido_calls":"","envido_rung":0}}]},"real_called":{"on":{"click@btn-envido-take":{"target":"accepted"},"click@btn-envido-run":{"target":"folded"},"click@btn-envido-falta":{"target":"falta_called"}},"entry":[{"assign":{"envido_calls":"falta answer","envido_rung":4}}],"exit":[{"assign":{"envido_calls":"","envido_rung":0}}]},"falta_called":{"on":{"click@btn-envido-take":{"target":"accepted"},"click@btn-envido-run":{"target":"folded"}},"entry":[{"assign":{"envido_calls":"answer","envido_rung":6}}],"exit":[{"assign":{"envido_calls":"","envido_rung":0}}]},"accepted":{"type":"final","entry":[{"assign":{"envido_calls":"","envido_rung":0}}]},"folded":{"type":"final","entry":[{"assign":{"envido_calls":"","envido_rung":0}}]},"flor":{"type":"final","entry":[{"assign":{"envido_calls":"","envido_rung":0}}]}}}]'
+             data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab"
+             data-empty-row='{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":"","felt_phase":"idle","truco_label":"call_truco","truco_title":"felt_title_raise","truco_blocked":"disabled","raise_label":"raise","raise_blocked":"disabled","next_rung":"0","name_key":"opponent_nezinho","name_handle":"","worth":"2","opponent_name":"opponent_nezinho","opponent_handle":"","opponent":"nezinho","dialogue_key":"","dialogue_state":"","player_shout_state":"","over_key":"","tell":"","said_t":"","shout_word":"","shout_from":"","shout_kind":"","shout_state":"","shout_t":"","shout_seat":"","raise_hint":"felt_raise_to","shout_anim":"1"}'
              style="display: contents;">
         <div class="actions" id="actions"
-             data-leader="{leader}" data-reads="match,round,play,held,room_action">
-          <button type="button" class="act" id="btn-truco" data-on-click="table" data-text="{msg.call_truco}">TRUCO!</button>
+             data-leader="{leader}" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab">
+          <button type="button" class="act" id="btn-truco" data-on-click="arena" disabled="{truco_blocked}" title="{msg[truco_title]}" data-text="{msg[truco_label]}" data-text-format="uppercase">TRUCO!</button>
           <!-- The second wager. One rail carries whichever call is live, and
                the truco standing underneath it is drawn rather than remembered
                (ir decision-33). Which wager the rail is asking about is said in
@@ -511,45 +502,35 @@
             <span class="stood" data-text="{stake}"></span>
           </div>
           <div class="rail-label"><span data-text="{msg.rail_envido}">Responder o envido</span> <b class="wager-stood" data-text="{envido_rung}"></b></div>
-          <button type="button" class="act wager hot" id="btn-envido-take" data-on-click="table" data-text="{msg.envido_took}">Quero</button>
-          <button type="button" class="act wager risk" id="btn-envido-run" data-on-click="table" data-text="{msg.envido_ran}">Não quero</button>
-          <button type="button" class="act wager" id="btn-envido" data-on-click="table" data-text="{msg.call_envido}">ENVIDO!</button>
-          <button type="button" class="act wager" id="btn-envido-real" data-on-click="table" data-text="{msg.envido_real}">REAL ENVIDO!</button>
-          <button type="button" class="act wager" id="btn-envido-falta" data-on-click="table" data-text="{msg.envido_falta}">FALTA ENVIDO!</button>
-          <button type="button" class="act bloom" id="btn-flor" data-on-click="table" data-text="{msg.flor}">FLOR!</button>
+          <button type="button" class="act wager hot" id="btn-envido-take" data-on-click="arena" data-text="{msg.envido_took}">Quero</button>
+          <button type="button" class="act wager risk" id="btn-envido-run" data-on-click="arena" data-text="{msg.envido_ran}">Não quero</button>
+          <button type="button" class="act wager" id="btn-envido" data-on-click="arena" data-text="{msg.call_envido}">ENVIDO!</button>
+          <button type="button" class="act wager" id="btn-envido-real" data-on-click="arena" data-text="{msg.envido_real}">REAL ENVIDO!</button>
+          <button type="button" class="act wager" id="btn-envido-falta" data-on-click="arena" data-text="{msg.envido_falta}">FALTA ENVIDO!</button>
+          <button type="button" class="act bloom" id="btn-flor" data-on-click="arena" data-text="{msg.flor}">FLOR!</button>
           <!-- The brink's decision, offered only while it is this seat's. -->
-          <button type="button" class="act" id="btn-brink-play" data-on-click="table" data-text="{msg.brink_play}">Jogar a mão</button>
-          <button type="button" class="act risk" id="btn-brink-run" data-on-click="table" data-text="{msg.brink_run}">Correr</button>
-          <button type="button" class="act alt" id="btn-bot-play" data-on-click="table" style="display:none" data-text="{msg.bot_plays}">Robô joga</button>
-          <!-- Empty by construction: the dealer writes their labels, so there
-               is no text here for a locale to reach. -->
-          <button type="button" id="btn-set-seat" data-on-click="table" style="display:none"></button>
-          <button type="button" id="btn-bot-truco" data-on-click="table" style="display:none"></button>
-          <button type="button" id="btn-bot-accept" data-on-click="table" style="display:none"></button>
-          <button type="button" id="btn-bot-run" data-on-click="table" style="display:none"></button>
-          <button type="button" class="act ghost" id="btn-next" data-on-click="table" data-text="{msg.next_hand}">Próxima mão</button>
-          <button type="button" class="act ghost risk" id="btn-resign" data-on-click="table" data-text="{msg.resign}">Abandonar</button>
+          <button type="button" class="act" id="btn-brink-play" data-on-click="arena" data-text="{msg.brink_play}">Jogar a mão</button>
+          <button type="button" class="act risk" id="btn-brink-run" data-on-click="arena" data-text="{msg.brink_run}">Correr</button>
+          <button type="button" class="act ghost" id="btn-next" data-on-click="arena" data-text="{msg.next_hand}">Próxima mão</button>
+          <button type="button" class="act ghost risk" id="btn-resign" data-on-click="arena" data-text="{msg.resign}">Abandonar</button>
           <!-- In with the other things the table can be asked for, because a
                control has to sit inside a region to be one. -->
-          <button type="button" class="act" id="btn-again" data-on-click="table" data-text="{msg.play_again}">Outra partida</button>
-          <button type="button" class="act" id="btn-start" data-on-click="table" data-text="{msg.start_match}">Começar partida</button>
+          <button type="button" class="act" id="btn-again" data-on-click="arena" data-text="{msg.play_again}">Outra partida</button>
+          <button type="button" class="act" id="btn-start" data-on-click="arena" data-text="{msg.start_match}">Começar partida</button>
         </div>
 
-        <div class="answers" id="answers"
-             data-reads="match,round,play,held,room_action">
-          <!-- The raise and the fold are arithmetic on two fields and stay the
-               dealer's to write. What accepting costs is the round's own rung,
-               so it binds — and a price is where a language wants a plural. -->
-          <button type="button" class="act" id="btn-accept" data-on-click="table"><b data-text="{msg.accept}">Aceito</b><small data-text="{msg.worth_points}"></small></button>
-          <button type="button" class="act hot" id="btn-raise" data-on-click="table"><b data-text="{msg.raise}">Aumentar</b><small></small></button>
-          <button type="button" class="act risk" id="btn-run" data-on-click="table"><b data-text="{msg.fold}">Corro</b><small></small></button>
+        <div class="answers" id="answers">
+          <!-- A price is where a language wants a plural. -->
+          <button type="button" class="act" id="btn-accept" data-on-click="arena"><b data-text="{msg.accept}">Aceito</b><small data-text="{msg.worth_points}"></small></button>
+          <button type="button" class="act hot" id="btn-raise" data-on-click="arena" disabled="{raise_blocked}"><b data-text="{msg[raise_label]}" data-text-format="uppercase">Aumentar</b><small data-text="{msg[raise_hint]}&#10;{next_rung}&#10;" data-text-format="speech"></small></button>
+          <button type="button" class="act risk" id="btn-run" data-on-click="arena"><b data-text="{msg.fold}">Corro</b><small data-text="{msg.felt_they_take}&#10;{stake}&#10;" data-text-format="speech"></small></button>
         </div>
 
         <div class="boteco-shouts">
-          <button type="button" class="btn-quick-shout" id="shout-chama" data-on-click="table" data-text="{msg.shout_chama}">Chama!</button>
-          <button type="button" class="btn-quick-shout" id="shout-manda" data-on-click="table" data-text="{msg.shout_manda}">Manda vir!</button>
-          <button type="button" class="btn-quick-shout" id="shout-desce" data-on-click="table" data-text="{msg.shout_desce}">Desce a madeira!</button>
-          <button type="button" class="btn-quick-shout" id="shout-chorou" data-on-click="table" data-text="{msg.shout_chorou}">Chorou, parou!</button>
+          <button type="button" class="btn-quick-shout" id="shout-chama" data-on-click="arena" data-text="{msg.shout_chama}">Chama!</button>
+          <button type="button" class="btn-quick-shout" id="shout-manda" data-on-click="arena" data-text="{msg.shout_manda}">Manda vir!</button>
+          <button type="button" class="btn-quick-shout" id="shout-desce" data-on-click="arena" data-text="{msg.shout_desce}">Desce a madeira!</button>
+          <button type="button" class="btn-quick-shout" id="shout-chorou" data-on-click="arena" data-text="{msg.shout_chorou}">Chorou, parou!</button>
         </div>
 
 
@@ -558,10 +539,40 @@
           <p data-text="{msg.empty_table_desc}">O baralho está cortado. Senta que já sai mão.</p>
         </div>
       </div>
+        </template>
+      </div>
 
     </div>
   </div>
 
+  <!-- The bar: root.cue's `lobby`, the fold machines/lobby.js, which holds
+       this tab's presence lease. Every list is a region over the machines'
+       surface rows and every gesture is a row the fold writes. -->
+  <!-- Whether the bar shows you in the round: the lobby fold's word for it,
+       ahead of the seat while a switch is in flight, so every mark of it —
+       the switch, the stamp, the pill, your row — moves on the click. The
+       seat itself still wakes the fold. -->
+  <span id="presence-shown" hidden data-live="lobby_tab" data-filter="id=eq.the" data-empty=""><template data-item><i data-shown="{shown}"></i></template></span>
+  <span hidden data-live="truco_presence_seat" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_presence_command" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_match_seat" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_match_public" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_call_seat" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_call_open" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_voice_seat" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_match_open" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_match_command" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
+  <!-- An online match seats you at this table: your seat's view, the receipts
+       of your commands, a join's answer, what the table's voices say and a code
+       typed in the bar each wake the arena's fold. -->
+  <span hidden data-live="truco_match_seat" data-on-mutation="arena" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_match_command" data-on-mutation="arena" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_match_open" data-on-mutation="arena" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_voice_seat" data-on-mutation="arena" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_voice_command" data-on-mutation="arena" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_voice_open" data-on-mutation="arena" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="truco_voice_public" data-on-mutation="arena" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab" data-empty=""><template data-item><i></i></template></span>
+  <span hidden data-live="lobby_tab" data-filter="id=eq.the" data-on-mutation="arena" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab" data-empty=""><template data-item><i></i></template></span>
   <div id="modal-online" popover class="boteco-modal">
     <div class="boteco-modal-frame pad">
       <header class="modal-header">
@@ -574,127 +585,228 @@
       </header>
 
       <div class="modal-body">
-        <div id="modal-match-active-banner" class="modal-match-active-banner" style="display:none">
-          <span data-text="{msg.match_in_progress}">Partida online em andamento</span>
-          <button type="button" id="btn-modal-resign" class="act risk btn-compact" popovertarget="modal-online" popovertargetaction="hide" data-text="{msg.resign_match}">Abandonar Partida</button>
-        </div>
-
         <section class="lobby-identity-bar">
-          <div class="identity-avatar">👤</div>
-          <div class="identity-main">
-            <label for="my-handle-input" data-text="{msg.your_handle}">Seu Apelido no Boteco</label>
-            <div id="form-handle" class="identity-input-row">
-              <input type="text" id="my-handle-input" class="boteco-input" maxlength="20" placeholder="{msg.handle_placeholder}" autocomplete="off" />
-              <button type="button" id="btn-save-handle" class="act brass btn-compact" commandfor="copy-status" data-text="{msg.save}">Salvar</button>
-            </div>
-          </div>
-          <div class="identity-toggle-wrap">
-            <button type="button" class="btn-online-toggle" id="btn-toggle-online" role="switch" aria-checked="false" data-online="false" title="{msg.online_bar_title}" aria-label="{msg.online_bar_title}" commandfor="copy-status">
-              <span class="toggle-track" aria-hidden="true">
-                <span class="toggle-thumb"></span>
+          <!-- The comanda: the name the bar knows you by, written on the slip
+               itself. The field is the writing — it shows the saved name and
+               is edited in place; the form has no button, so a change saves on
+               Enter or when the field is left, and clearing it leaves you
+               unnamed. The stamp in its head says
+               whether you are in the round (lobby.css, off #presence-shown). -->
+          <div class="comanda" data-live="player" data-filter="id=eq.you" data-empty-row='{"id":"you","handle":""}'>
+            <div class="comanda-head">
+              <span class="comanda-title" data-text="{msg.comanda}">Comanda</span>
+              <span class="comanda-editing">
+                <span class="comanda-keys" aria-hidden="true"><kbd data-text="{msg.enter_key}">Enter</kbd> <span data-text="{msg.enter_saves}">salva</span></span>
               </span>
-              <span class="online-pulse" aria-hidden="true"></span>
-              <span class="toggle-label-off" data-text="{msg.offline}">Offline</span>
-              <span class="toggle-label-on" data-text="{msg.online_short}">Online</span>
-            </button>
+              <span class="stamp stamp-in" data-text="{msg.in_round}">Na roda</span>
+              <span class="stamp stamp-out" data-text="{msg.out_of_round}">Fora da roda</span>
+            </div>
+            <form id="form-handle" class="comanda-line" data-form="handle" data-entity="player" data-action="upsert">
+              <label for="my-handle-input" class="comanda-label" data-text="{msg.nickname}">Apelido</label>
+              <input type="hidden" name="id" data-value="you" />
+              <input type="text" id="my-handle-input" class="comanda-name" name="handle" data-value="{handle}" maxlength="20" placeholder="{msg.handle_placeholder}" autocomplete="nickname" spellcheck="false" />
+              <label for="my-handle-input" class="comanda-pen" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></label>
+            </form>
+          </div>
+          <div class="identity-toggle-wrap" data-live="lobby_tab" data-filter="id=eq.the&me=neq." data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty="">
+            <template data-item data-when="shown=eq.show">
+              <button type="button" class="btn-online-toggle" id="btn-toggle-online" role="switch" aria-checked="true" data-online="true" title="{msg.online_bar_title}" aria-label="{msg.in_round}" data-on-click="lobby">
+                <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+                <span class="toggle-label-off" data-text="{msg.enter_round}">Entrar na roda</span>
+                <span class="toggle-label-on" data-text="{msg.in_round}">Na roda</span>
+              </button>
+            </template>
+            <template data-item>
+              <button type="button" class="btn-online-toggle" id="btn-toggle-online" role="switch" aria-checked="false" data-online="false" title="{msg.online_bar_title}" aria-label="{msg.in_round}" data-on-click="lobby">
+                <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+                <span class="toggle-label-off" data-text="{msg.enter_round}">Entrar na roda</span>
+                <span class="toggle-label-on" data-text="{msg.in_round}">Na roda</span>
+              </button>
+            </template>
           </div>
         </section>
 
+        <div class="lobby-note" data-live="lobby_tab" data-filter="id=eq.the" data-empty="">
+          <template data-item><p class="join-err" role="alert" data-text="{msg[note]}"></p></template>
+        </div>
+
         <section class="modal-sec">
           <div class="sec-header-row">
-            <label data-text="{msg.players_in_bar}">Jogadores no Bar (Desafie Agora)</label>
+            <label data-text="{msg.players_in_bar}">Quem está na roda</label>
           </div>
-          <div id="lobby-players-list" class="lobby-players-list" role="region" aria-live="polite"
-               data-live="lobby" data-order="handle.asc"
-               data-empty="{msg.lobby_empty}">
-            <template data-item>
-              <div class="lobby-player-row" data-id="{id}" data-handle="{handle}" data-updated-at="{updated_at}">
-                <span class="player-avatar-mini" aria-hidden="true">👤</span>
-                <div class="player-info-wrap">
-                  <b class="player-handle" data-text="{handle}"></b>
-                  <span class="player-status-tag" data-status="{status}"></span>
+          <div class="lobby-players-list" role="region" aria-live="polite">
+            <!-- While you are offline the list holds no row of yours; this one
+                 says so, and lobby.css drops it once you are visible. -->
+            <p class="lobby-player-row self-offline" data-text="{msg.identity_offline_row}">Você está offline — fique online para aparecer aqui.</p>
+            <!-- Your own row keeps the list from ever being empty, so the empty
+                 slot's word is said here while you are the only one in it. -->
+            <!-- You, first, drawn from your own name the moment you are shown,
+                 rather than waiting on the listing to bring you back. -->
+            <div data-live="player" data-filter="id=eq.you" data-empty="">
+              <template data-item><div class="lobby-player-row self"><span class="player-avatar-mini" aria-hidden="true">👤</span><div class="player-info-wrap"><b class="player-handle" data-text="{handle}"></b></div><span class="you-tag" data-text="{msg.you}">Você</span></div></template>
+            </div>
+            <p class="lobby-alone" data-text="{msg.lobby_empty}">Ninguém mais na roda agora.</p>
+            <div data-live="lobby_tab" data-filter="id=eq.the" data-empty-row='{"id":"the","lease":"","me":"","note":"","shown":"","code":"","format":"1v1","reserved":"false","chair":"","call":""}' data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table">
+              <template data-item>
+                <div class="lobby-tab-row">
+                  <span hidden data-live="truco_presence_lease" data-filter="id=eq.{lease}" data-on-mutation="lease" data-empty=""></span>
+                  <div id="lobby-players-list" class="lobby-tab-row" data-live="truco_presence_public" data-order="name.asc" data-project='{"me":{"eq":["id","{me}"]}}' data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table"
+                       data-empty="">
+                    <template data-item data-when="me=eq.false">
+                      <div class="lobby-player-row">
+                        <span class="player-avatar-mini" aria-hidden="true">👤</span>
+                        <div class="player-info-wrap">
+                          <b class="player-handle" data-text="{name}"></b>
+                        </div>
+                        <button type="button" id="challenge-{id}" class="btn-challenge" data-on-click="lobby">
+                          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/><path d="M9.5 6.5 13 3h3v3l-3.5 3.5"/><path d="M5 14l-2 2 3 3 2-2"/></svg>
+                          <span data-text="{msg.challenge}">Desafiar!</span>
+                        </button>
+                        <button type="button" id="summon-{id}" class="btn-bar btn-summon" data-on-click="lobby" data-text="{msg.summon}">Chamar</button>
+                      </div>
+                    </template>
+                    <template data-item><i class="listed-self" hidden></i></template>
+                  </div>
                 </div>
-                <button type="button" class="act brass btn-challenge" commandfor="copy-status">
-                  <span data-text="{msg.challenge}">⚔️ Desafiar</span>
-                </button>
+              </template>
+            </div>
+          </div>
+        </section>
+
+        <!-- Your table while it waits (lobby_tab's chairs, machines/lobby.js).
+             A free chair picked is the one the next call from the roda fills;
+             a called one, tapped, takes the call back. -->
+        <section class="modal-sec your-table">
+          <label data-text="{msg.your_table}">Sua mesa</label>
+          <div class="mesa-diagram">
+            <div class="mesa-cloth" aria-hidden="true"><span class="mesa-ring"></span><span class="mesa-deck"><i></i><i></i><b>7♥</b></span></div>
+            <div class="mesa-chairs" data-live="chair" data-order="id.asc" data-empty="" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table">
+              <template data-item data-when="state=eq.you">
+                <div class="chair" data-seat="{id}" data-at="{at}" data-team="{team}" data-state="{state}"><span hidden data-live="truco_voice_public" data-filter="talk=eq.{talk}" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span><span class="chair-seat" aria-hidden="true"></span><b class="chair-name" data-text="{name}"></b><span class="chair-team"><span class="team-nos" data-text="{msg.team_nos}">Nós</span><span class="team-eles" data-text="{msg.team_eles}">Eles</span><span class="team-outros" data-text="{msg.team_outros}">Outros</span></span></div>
+              </template>
+              <template data-item data-when="state=eq.taken">
+                <div class="chair" data-at="{at}" data-team="{team}" data-state="{state}"><span class="chair-seat" aria-hidden="true"></span><b class="chair-name" data-text="{name}"></b><span class="chair-team"><span class="team-nos" data-text="{msg.team_nos}">Nós</span><span class="team-eles" data-text="{msg.team_eles}">Eles</span><span class="team-outros" data-text="{msg.team_outros}">Outros</span></span></div>
+              </template>
+              <template data-item data-when="state=eq.called">
+                <button type="button" id="chair-{id}" class="chair" data-at="{at}" data-team="{team}" data-state="{state}" data-on-click="lobby"><span class="chair-seat" aria-hidden="true"></span><b class="chair-name" data-text="{name}"></b><span class="chair-team" data-text="{msg.chair_called}">chamado</span></button>
+              </template>
+              <template data-item>
+                <button type="button" id="chair-{id}" class="chair" data-at="{at}" data-team="{team}" data-state="{state}" data-picked="{picked}" data-callable="{callable}" data-on-click="lobby"><span class="chair-seat" aria-hidden="true">+</span><b class="chair-name" data-text="{msg.chair_free}">Lugar livre</b><span class="chair-team"><span class="team-nos" data-text="{msg.team_nos}">Nós</span><span class="team-eles" data-text="{msg.team_eles}">Eles</span><span class="team-outros" data-text="{msg.team_outros}">Outros</span></span></button>
+              </template>
+            </div>
+          </div>
+          <p class="modal-hint" data-text="{msg.your_table_hint}">Toque numa cadeira livre e chame alguém da roda pra ela, ou mande o código. A primeira mão sai quando todas as cadeiras tiverem gente.</p>
+          <div class="table-code" data-live="lobby_tab" data-filter="id=eq.the" data-empty="">
+            <template data-item data-when="code=eq."><i hidden></i></template>
+            <template data-item><p class="table-code-line"><span data-text="{msg.table_code}">Código da sua mesa</span> <code id="table-code" data-text="{code}"></code></p></template>
+          </div>
+          <div class="your-table-actions" data-live="lobby_tab" data-filter="id=eq.the" data-empty-row='{"id":"the","lease":"","me":"","note":"","shown":"","code":"","format":"1v1","reserved":"false","chair":"","call":""}' data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table">
+            <template data-item><div class="your-table-buttons"><button type="button" id="close-table" class="btn-ghost" data-on-click="lobby" data-text="{msg.close_table}">Fechar mesa</button><button type="button" id="leave-table" class="btn-ghost" data-on-click="lobby" data-text="{msg.leave_table}">Sair da mesa</button></div></template>
+          </div>
+        </section>
+
+        <!-- The tables waiting on the bar for a player, by who opened them. -->
+        <section class="modal-sec bar-tables">
+          <label data-text="{msg.tables_free_seats}">Mesas com lugar livre</label>
+          <div class="listed-tables" data-live="listed_table" data-order="id.asc" data-empty="" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab">
+            <template data-item>
+              <div class="listed-table">
+                <div class="listed-info">
+                  <b><span data-text="{msg.table_of}">Mesa de</span> <span data-text="{host}"></span></b>
+                  <span class="listed-rules"><span data-text="{msg[rules]}"></span> · <span data-text="{seating}"></span> · <span data-text="{msg.free_seats}">lugares livres:</span> <span data-text="{missing}"></span></span>
+                </div>
+                <button type="button" id="sit-{id}" class="btn-bar" data-on-click="arena" data-text="{msg.sit}">Sentar</button>
+                <span hidden data-live="truco_voice_public" data-filter="talk=eq.{talk}" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty=""><template data-item><i></i></template></span>
               </div>
             </template>
           </div>
         </section>
 
-        <div class="modal-sep" aria-hidden="true"></div>
-
-        <section class="modal-sec">
-          <label for="invite-url-field" data-text="{msg.invite_by_link}">Convidar Amigo por Link</label>
-          <div class="invite-seat-picker" id="invite-seat-picker" role="group">
-            <button type="button" class="btn-invite-seat" data-seat="you" commandfor="invite-url-field" data-text="{msg.you}">Você</button>
-            <button type="button" class="btn-invite-seat active" data-seat="eles1" commandfor="invite-url-field" data-text="{msg.invite_opp1}">Adversário 1</button>
-            <button type="button" class="btn-invite-seat" data-seat="parca" commandfor="invite-url-field" data-text="{msg.invite_partner}">Parça (Dupla)</button>
-            <button type="button" class="btn-invite-seat" data-seat="eles2" commandfor="invite-url-field" data-text="{msg.invite_opp2}">Adversário 2</button>
+        <!-- A table of your own: its seating, and whether the bar lists it or
+             only its code and your calls seat anyone at it. -->
+        <section class="modal-sec open-table">
+          <label data-text="{msg.open_table_heading}">Abrir uma mesa</label>
+          <div class="bar-settings" data-live="lobby_tab" data-filter="id=eq.the" data-empty="" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table">
+            <template data-item>
+              <div class="bar-settings-item">
+              <div class="format-picker" role="group" aria-label="{msg.format_label}" data-format="{format}">
+                <button type="button" id="format-1v1" class="seg" data-on-click="lobby">1v1</button>
+                <button type="button" id="format-2v2" class="seg" data-on-click="lobby">2v2</button>
+                <button type="button" id="format-2v2v2" class="seg" data-on-click="lobby">2v2v2</button>
+              </div>
+              <button type="button" id="reserved-toggle" class="reserve-switch" role="switch" aria-checked="{reserved}" data-on-click="lobby"><span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span><span data-text="{msg.reserved_label}">Reservada</span></button>
+              <p class="modal-hint" data-text="{msg.reserved_hint}">Uma mesa reservada não aparece na lista do bar: só senta quem for chamado ou tiver o código.</p>
+              </div>
+            </template>
           </div>
-          <p class="modal-hint"><span data-text="{msg.invite_hint_before}">Envie este link para qualquer amigo entrar diretamente nesta mesa. Para testar no mesmo computador, abra o link em uma </span><b data-text="{msg.incognito_window}">janela anônima</b><span data-text="{msg.invite_hint_after}"> ou em outro navegador.</span></p>
-          <div class="invite-box">
-            <input type="text" id="invite-url-field" class="boteco-input" readonly value="" />
-            <button type="button" id="btn-copy-invite" class="act brass" commandfor="copy-status" data-text="{msg.copy}">Copiar</button>
+          <div class="invite-box" data-live="lobby_tab" data-filter="id=eq.the" data-empty="" data-reads="match,round,play,held,intent,truco_match_seat,truco_match_command,truco_match_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,player,lobby_tab">
+            <template data-item><button type="button" id="online-create-{msg.table_code_words}" class="btn-bar" data-on-click="arena" data-text="{msg.open_table}">Abrir mesa</button></template>
           </div>
-          <span class="copy-status" id="copy-status" aria-live="polite"></span>
         </section>
 
-        <div class="modal-sep" aria-hidden="true"></div>
-
-        <section class="modal-sec">
-          <label for="input-join-code" data-text="{msg.join_other_table}">Entrar em Outra Mesa</label>
-          <p class="modal-hint" data-text="{msg.join_hint}">Cole o link ou código da mesa criada pelo seu amigo:</p>
-          <div class="join-box">
-            <input type="text" id="input-join-code" class="boteco-input" placeholder="{msg.join_placeholder}" />
-            <button type="button" id="btn-submit-join" class="act" popovertarget="modal-online" popovertargetaction="hide" data-text="{msg.join}">Entrar</button>
-          </div>
-          <p class="join-err" id="join-err" role="alert"></p>
+        <!-- A table a friend opened and sent the code of. -->
+        <section class="modal-sec have-code">
+          <label for="input-join-code" data-text="{msg.have_code}">Tem um código?</label>
+          <form class="join-box" data-form="join-table" data-entity="lobby_tab" data-action="upsert">
+            <input type="hidden" name="id" data-value="the" />
+            <input type="text" id="input-join-code" name="join" class="boteco-input" placeholder="{msg.join_placeholder}" autocomplete="off" required pattern="\s*[A-Za-z]+-[A-Za-z]+-[A-Za-z]+-[A-Za-z0-9]{4}\s*" maxlength="40" aria-describedby="join-code-invalid" />
+            <button type="submit" id="btn-submit-join" class="btn-bar" data-text="{msg.sit}">Sentar</button>
+            <p class="invalid" id="join-code-invalid" hidden data-text="{msg.join_code_invalid}">Um código de mesa são três palavras e quatro letras ou números.</p>
+          </form>
         </section>
+
       </div>
     </div>
   </div>
 
-  <div id="mp-sync-challenge" class="sr-only" data-live="challenge" data-order="created_at.desc">
+  <!-- A call to a chair of a table waiting for you: answering it sits you there. -->
+  <div class="challenges calls" data-live="truco_call_seat" data-filter="phase=eq.offered" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty="">
+    <template data-item data-when="seat=eq.target">
+      <aside class="incoming-challenge-banner incoming-call" role="alert">
+        <div class="challenge-alert-content">
+          <div class="challenge-text">
+            <strong data-text="{caller_name}"></strong>
+            <span data-text="{msg.called_you}">te chamou pra mesa</span>
+            <span class="call-rules" data-text="{seating}"></span>
+          </div>
+        </div>
+        <div class="challenge-alert-actions">
+          <button type="button" id="call-accept-{id}" class="btn-bar" data-on-click="lobby" data-text="{msg.sit}">Sentar</button>
+          <button type="button" id="call-decline-{id}" class="btn-ghost" data-on-click="lobby" data-text="{msg.not_now}">Agora não</button>
+        </div>
+      </aside>
+    </template>
+    <template data-item><i hidden></i></template>
+  </div>
+
+  <!-- Fixed over the table, so the board's grid never sees it: offers stack
+       in it, each answerable. -->
+  <div class="challenges" data-live="truco_challenge_seat" data-filter="phase=eq.offered" data-on-mutation="lobby" data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table" data-empty="">
+    <template data-item data-when="seat=eq.target">
+      <aside class="incoming-challenge-banner" role="alert">
+        <div class="challenge-alert-content">
+          <span class="challenge-icon">⚔️</span>
+          <div class="challenge-text">
+            <strong data-text="{inviter_name}"></strong>
+            <span data-text="{msg.challenged_you}">te desafiou para uma partida de Truco!</span>
+          </div>
+        </div>
+        <div class="challenge-alert-actions">
+          <button type="button" id="accept-{id}" class="act brass btn-challenge-accept" data-on-click="lobby" data-text="{msg.accept_challenge}">✓ Aceitar</button>
+          <button type="button" id="decline-{id}" class="act ghost" data-on-click="lobby" data-text="{msg.decline_challenge}">✕ Recusar</button>
+        </div>
+      </aside>
+    </template>
     <template data-item>
-      <span data-id="{id}" data-status="{status}"></span>
+      <div class="challenge-waiting-overlay">
+        <div class="waiting-card">
+          <div class="spinner-icon">⏳</div>
+          <h4 data-text="{msg.challenging}">Desafiando...</h4>
+          <p data-text="{msg.waiting_accept}">Aguardando o adversário aceitar a partida no bar.</p>
+          <button type="button" id="cancel-{id}" class="act ghost" data-on-click="lobby" data-text="{msg.cancel_challenge}">Cancelar Desafio</button>
+        </div>
+      </div>
     </template>
   </div>
-  <div id="mp-sync-action" class="sr-only" data-live="room_action" data-order="created_at.asc"
-       data-on-mutation="table" data-reads="match,round,play,held,room_action">
-    <template data-item>
-      <span data-id="{id}"></span>
-    </template>
-  </div>
-
-  <aside id="incoming-challenge-banner" class="incoming-challenge-banner" role="alert" style="display:none">
-    <div class="challenge-alert-content">
-      <span class="challenge-icon">⚔️</span>
-      <div class="challenge-text">
-        <strong id="challenge-challenger-name" data-text="{msg.a_player}">Jogador</strong>
-        <span data-text="{msg.challenged_you}">te desafiou para uma partida de Truco!</span>
-      </div>
-    </div>
-    <div id="form-challenge-response" class="challenge-alert-actions">
-      <button type="button" id="btn-challenge-accept" name="decision" value="accept" class="act brass" commandfor="copy-status" data-text="{msg.accept_challenge}">✓ Aceitar</button>
-      <button type="button" id="btn-challenge-decline" name="decision" value="decline" class="act ghost" commandfor="copy-status" data-text="{msg.decline_challenge}">✕ Recusar</button>
-    </div>
-  </aside>
-
-  <div id="challenge-waiting-overlay" class="challenge-waiting-overlay" style="display:none">
-    <div class="waiting-card">
-      <div class="spinner-icon">⏳</div>
-      <h4 id="waiting-target-name" data-text="{msg.challenging}">Desafiando...</h4>
-      <p data-text="{msg.waiting_accept}">Aguardando o adversário aceitar a partida no bar.</p>
-      <div id="form-challenge-cancel">
-        <button type="button" id="btn-cancel-challenge" class="act ghost" commandfor="copy-status" data-text="{msg.cancel_challenge}">Cancelar Desafio</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- The write path. Every one of these is submitted by the dealer or by a
-       control above; none is typed into. -->
-
-
 
 </section>

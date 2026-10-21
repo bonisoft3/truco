@@ -43,10 +43,14 @@
 - [ ] Each opponent gives a tell a beat before they call, in their own words. {#accept-persona-tell}
 - [ ] The hand's plays are recorded and readable as a log — who played what, in which vaza. {#accept-play-log}
 - [ ] After the first load the app makes no network request: a table dealt with the network cut plays to the end. {#accept-offline}
-- [ ] Joining via a match room link seats the player at that active table. {#accept-multiplayer-room}
+- [ ] Typing a table's code in the bar seats the player at that table, in the arena. {#accept-multiplayer-room}
 - [ ] Opponent cards in the synced store remain masked as card backs until played to the mat. {#accept-fog-of-war}
 - [ ] Played cards animate from their specific physical slot in the hand fan (0, 1, or 2). {#accept-slot-tracking}
-- [ ] Active turns display a countdown timer; moves before the backend deadline (including grace window) are accepted, and expired turns allow timeout resolution. {#accept-turn-clock}
 - [ ] The rules screen explains both variants, the card order, and the raise ladder, in the app's own Portuguese. {#accept-rules-screen}
 - [ ] Every screen renders correctly in both light and dark appearance. {#accept-dark-twin}
 - [ ] Nothing on the table is smaller than a thumb, and every animation collapses under reduced motion. {#accept-touch-and-motion}
+- [ ] The Mesa Online pill opens the bar over the table; a name saved there is the one the bar shows after a reload. {#accept-bar-name}
+- [ ] Going online lights the pill and the bar's switch, and another reader's bar lists you by that name. {#accept-bar-online}
+- [ ] The bar holds still while it connects and fills: nothing in it moves once it is open. {#accept-bar-still}
+- [ ] A challenge shows the challenger waiting and the other player a banner; accepting it seats both at one match, each in their own arena, facing the other by name. {#accept-bar-challenge}
+- [ ] A reader whose browser kept an earlier deployment runs the one served now, not the copy it kept. {#accept-upgrade}

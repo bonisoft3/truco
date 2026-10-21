@@ -2,7 +2,11 @@
 include:
 - path: ./compose.browser.yaml
   required: false
-- path: ./compose.caddy.yaml
+- path: ./compose.release-docker.yaml
+  required: false
+- path: ./compose.replay.yaml
+  required: false
+- path: ./compose.ci-replay.yaml
   required: false
 - path: ./compose.setup.yaml
   required: false
@@ -20,6 +24,20 @@ include:
   required: false
 - path: ./compose.ci-visual.yaml
   required: false
+- path: ./compose.ci.yaml
+  required: false
+- path: ./compose.served.yaml
+  required: false
+- path: ./compose.database.yaml
+  required: false
+- path: ./compose.auth.yaml
+  required: false
+- path: ./compose.ticker.yaml
+  required: false
+- path: ./compose.clock.yaml
+  required: false
+- path: ./compose.timer-check.yaml
+  required: false
 - path: ./compose.check-acceptance.yaml
   required: false
 - path: ./compose.ci-acceptance.yaml
@@ -32,11 +50,11 @@ include:
   required: false
 - path: ./compose.ci-window.yaml
   required: false
-- path: ./compose.database.yaml
+- path: ./compose.caddy.yaml
   required: false
 - path: ./compose.crud.yaml
   required: false
-- path: ./compose.auth.yaml
-  required: false
 - path: ./compose.electric.yaml
+  required: false
+- path: ../monorepo/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml
   required: false

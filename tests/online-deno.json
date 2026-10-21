@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "/omnishell/": "../../../plugins/omnishell/"
+  },
+  "nodeModulesDir": "none",
+  "compilerOptions": {"lib": ["deno.window", "dom", "dom.iterable"]}
+}

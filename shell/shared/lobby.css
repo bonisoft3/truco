@@ -1,0 +1,656 @@
+:is(.screen[data-screen="arena"], .online-table) {
+  /* Anchored at the top, not centred: what arrives late extends the bar
+     downwards and never moves what is already drawn. */
+  & .boteco-modal {
+    margin: 6dvh auto auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    max-inline-size: min(90vw, 440px);
+    overflow: visible;
+  }
+  & .boteco-modal::backdrop {
+    background: color-mix(in oklch, #000 65%, transparent);
+    backdrop-filter: blur(4px);
+  }
+  & .boteco-modal-frame {
+    background: var(--pad-bg, #FBF5E8);
+    color: var(--pad-ink, #241A12);
+    border: 2px solid var(--rim, #C2A97C);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 16px 48px color-mix(in oklch, #000 45%, transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  & .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-block-end: 1px solid color-mix(in oklch, var(--pad-dim) 35%, transparent);
+    padding-block-end: 12px;
+  }
+  & .modal-header .avatar {
+    display: inline-grid;
+    place-content: center;
+    inline-size: 32px;
+    block-size: 32px;
+    font-size: 1.25rem;
+  }
+  & .modal-header :is(h1, h3) {
+    margin: 0;
+    font: 800 1.25rem/1.2 ui-sans-serif, system-ui, sans-serif;
+    color: var(--pad-ink, #241A12);
+    letter-spacing: -0.02em;
+  }
+  & .modal-close {
+    margin-inline-start: auto;
+    border: none;
+    background: transparent;
+    color: var(--pad-dim, #6B573D);
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    inline-size: 32px;
+    block-size: 32px;
+    display: grid;
+    place-content: center;
+    border-radius: 4px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  & .modal-close:hover {
+    background: color-mix(in oklch, var(--pad-dim) 20%, transparent);
+    color: var(--pad-ink, #241A12);
+  }
+  & .modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  & .modal-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  & .modal-subtitle {
+    font-size: 0.75rem;
+    color: var(--pad-dim, #6B573D);
+    font-weight: 500;
+  }
+
+  & .lobby-identity-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  /* The comanda: a slip from the pad, ruled in faint pen-blue, with the name
+     written on it in the waiter's hand. The field IS the writing: no box until
+     it is being written in, when the line goes solid, a highlighter wash sits
+     under it, the caret blinks in pen-blue and the pencil nods. Its head's
+     stamp is the one place presence is said, and both stamps share one cell,
+     so flipping it moves nothing. */
+  & .comanda {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    padding: 10px 14px 10px;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 27px, color-mix(in oklch, var(--pen) 10%, transparent) 27px 28px),
+      #FFFDF6;
+    border: 1px solid var(--pad-line);
+    border-radius: var(--r-sm);
+    box-shadow: 0 1px 0 var(--pad-line), 0 8px 14px -10px color-mix(in oklch, var(--pad-ink) 55%, transparent);
+  }
+  & .comanda-head {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding-block-end: 6px;
+    border-block-end: 1px dashed var(--pad-line);
+    font: 800 0.6875rem/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pad-dim);
+  }
+  /* What editing offers sits in the head's middle and is shown or hidden
+     with visibility, so going in and out of the field moves nothing. */
+  & .comanda-editing {
+    visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-inline-size: 0;
+    overflow: hidden;
+  }
+  & .comanda:focus-within .comanda-editing { visibility: visible; }
+  /* A touch keyboard has no Enter to point at. */
+  @media (hover: none) { & .comanda-keys { display: none; } }
+  & .comanda-keys {
+    white-space: nowrap;
+    font: 600 0.625rem/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+  & .comanda-keys kbd {
+    font: 700 0.625rem/1 ui-sans-serif, system-ui, sans-serif;
+    padding: 2px 5px;
+    border: 1px solid var(--pad-line);
+    border-block-end-width: 2px;
+    border-radius: var(--r-sm);
+    background: #FFFDF6;
+    color: var(--pad-ink);
+  }
+  & .stamp {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    rotate: -6deg;
+    padding: 3px 8px;
+    border: 3px double currentColor;
+    border-radius: 6px;
+    font: 400 1.0625rem/1 var(--shout-font);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  & .stamp-in { visibility: hidden; color: #2F6B3A; background: color-mix(in oklch, #2F6B3A 7%, transparent); }
+  & .stamp-out { color: var(--pad-dim); }
+  &:has(#presence-shown [data-shown="show"]) .stamp-in { visibility: visible; }
+  &:has(#presence-shown [data-shown="show"]) .stamp-out { visibility: hidden; }
+
+  & .comanda-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    min-block-size: 52px;
+  }
+  & .comanda-label {
+    font: 700 0.75rem/1 ui-sans-serif, system-ui, sans-serif;
+    color: var(--pad-dim);
+  }
+  & .comanda-name {
+    flex: 1;
+    min-inline-size: 0;
+    block-size: 42px;
+    padding: 0 2px;
+    border: 0;
+    border-block-end: 2px dotted var(--pad-dim);
+    border-radius: 0;
+    background: transparent;
+    font: 700 2rem/1 "Caveat", "Segoe Print", "Bradley Hand", cursive;
+    color: var(--pen);
+    caret-color: var(--pen);
+    outline: none;
+    text-overflow: ellipsis;
+  }
+  & .comanda-name::placeholder { color: color-mix(in oklch, var(--pen) 38%, transparent); }
+  & .comanda-name:focus {
+    border-block-end: 2px solid var(--pen);
+    background: linear-gradient(180deg, transparent 58%, color-mix(in oklch, var(--rim-hi) 30%, transparent) 58%);
+  }
+  & .comanda-name:focus-visible { outline: none; }
+  & .comanda-pen {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: var(--r-full);
+    border: 1px solid var(--rim);
+    background: linear-gradient(180deg, color-mix(in oklch, var(--rim-hi) 60%, #fff), var(--rim-hi) 55%, var(--rim));
+    color: var(--pad-ink);
+    cursor: pointer;
+  }
+  & .comanda:focus-within .comanda-pen {
+    background: var(--pen);
+    border-color: var(--pen);
+    color: var(--lamp);
+    animation: comanda-nib 1.4s ease-in-out infinite;
+  }
+  & .comanda-line .invalid { flex-basis: 100%; margin: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    & .comanda:focus-within .comanda-pen { animation: none; }
+  }
+
+  /* One element per region item; the sections inside lay out as the modal's own. */
+  & .lobby-tab-row { display: contents; }
+  & .identity-toggle-wrap {
+    display: flex;
+    align-items: center;
+    /* Drawn once the lease is admitted; its slot is held so nothing moves when it arrives. */
+    min-block-size: 44px;
+  }
+  & .identity-toggle-wrap .btn-online-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-inline-size: 212px;
+    min-block-size: 44px;
+    padding: 0 16px 0 8px;
+    border-radius: var(--r-full);
+    border: 1px solid var(--pad-line);
+    background: var(--pad-2);
+    color: var(--pad-ink);
+    font: 700 0.875rem/1 ui-sans-serif, system-ui, sans-serif;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  & .identity-toggle-wrap .btn-online-toggle:hover { border-color: var(--rim); }
+  & .identity-toggle-wrap .btn-online-toggle:focus-visible { outline: 2px solid var(--rim); outline-offset: 2px; }
+  & .identity-toggle-wrap .toggle-track {
+    position: relative;
+    display: inline-block;
+    flex: none;
+    inline-size: 40px;
+    block-size: 24px;
+    border-radius: var(--r-full);
+    background: color-mix(in oklch, var(--pad-ink) 28%, transparent);
+    transition: background 0.2s ease;
+  }
+  & .identity-toggle-wrap .toggle-thumb {
+    position: absolute;
+    inset-block-start: 3px;
+    inset-inline-start: 3px;
+    inline-size: 18px;
+    block-size: 18px;
+    border-radius: var(--r-full);
+    background: #FFFDF6;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+  }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] {
+    background: color-mix(in oklch, #2F6B3A 12%, var(--pad));
+    border-color: #2F6B3A;
+  }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-track { background: #2F6B3A; }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-thumb { transform: translateX(16px); }
+  & .identity-toggle-wrap .btn-online-toggle .toggle-label-on { display: none; }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-label-off { display: none; }
+  & .identity-toggle-wrap .btn-online-toggle[data-online="true"] .toggle-label-on { display: inline; color: #2F6B3A; }
+  & .modal-match-active-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(185, 28, 28, 0.18);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: var(--r-sm);
+    color: #fca5a5;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+  & .btn-compact {
+    min-block-size: 32px;
+    padding-inline: 12px;
+    font-size: 0.75rem;
+  }
+  & .btn-text-action {
+    background: none;
+    border: none;
+    color: var(--brass-ink, #8a5814);
+    font: 700 0.75rem ui-sans-serif, system-ui;
+    cursor: pointer;
+    padding: 2px 6px;
+  }
+  & .btn-text-action:hover {
+    text-decoration: underline;
+  }
+
+  & .sec-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  & .lobby-players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    block-size: 136px;
+    min-block-size: 136px;
+    max-block-size: 136px;
+    overflow-y: auto;
+    padding: 6px;
+    background: color-mix(in oklch, var(--pad-1) 85%, #fff);
+    border: 1px solid var(--pad-line);
+    border-radius: var(--r-sm);
+    box-sizing: border-box;
+    scrollbar-gutter: stable;
+  }
+
+  & .lobby-empty {
+    padding: 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--pad-dim);
+    font-size: 0.8125rem;
+    margin: auto;
+  }
+  & .lobby-empty small {
+    font-size: 0.6875rem;
+    color: var(--pad-dim);
+    opacity: 0.85;
+  }
+
+  & .lobby-player-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    min-block-size: 46px;
+    background: #ffffff;
+    border: 1px solid var(--rim);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+  /* You, in the list the others see: first, and marked as you. While you are
+     offline there is no row of yours, and the dashed one says why. */
+  /* Seated at an online match, the bar steps aside for the table. A table
+     still waiting for its players keeps it, since the bar holds its code. */
+  &:has(.matchbox[data-opponent="online"][data-status="playing"]):not(:has(.hand[data-said="waiting_opponent"])) .boteco-modal { display: none; }
+  & .table-code-line {
+    margin: 4px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    font: 700 0.75rem/1.3 ui-sans-serif, system-ui, sans-serif;
+    color: var(--pad-dim);
+  }
+  & .table-code-line code {
+    padding: 6px 10px;
+    border: 1px dashed var(--rim);
+    border-radius: var(--r-sm);
+    background: #FFFDF6;
+    color: var(--pad-ink);
+    font: 600 0.8125rem/1.2 ui-monospace, monospace;
+    user-select: all;
+    overflow-wrap: anywhere;
+  }
+
+  /* The list's region lays out nothing, so its rows are the list's own items
+     and can be ordered. */
+  & .lobby-players-list > [data-live] { display: contents; }
+  & .lobby-player-row.self { display: none; }
+  &:has(#presence-shown [data-shown="show"]) .lobby-player-row.self { display: flex; }
+  & .lobby-player-row.self {
+    order: -1;
+    border: 2px solid #2F6B3A;
+    background: color-mix(in oklch, #2F6B3A 8%, #fff);
+  }
+  & .you-tag {
+    padding: 2px 10px;
+    border-radius: var(--r-full);
+    background: #2F6B3A;
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  & .lobby-player-row.self-offline {
+    order: -1;
+    margin: 0;
+    justify-content: center;
+    border: 1px dashed var(--pad-line);
+    background: transparent;
+    box-shadow: none;
+    color: var(--pad-dim);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+  &:has(#presence-shown [data-shown="show"]) .lobby-player-row.self-offline { display: none; }
+  & .lobby-alone { display: none; order: 1; margin: auto; padding: 12px; text-align: center; color: var(--pad-dim); font-size: 0.8125rem; }
+  &:has(#presence-shown [data-shown="show"]) .lobby-players-list:not(:has(.lobby-player-row:not(.self, .self-offline))) .lobby-alone { display: block; }
+  & .player-avatar-mini {
+    font-size: 1.25rem;
+  }
+  & .player-info-wrap {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  & .player-handle {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--pad-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .player-status-tag {
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+  & .player-status-tag.ready { color: #16a34a; }
+
+  /* Desafiar is a call, so it wears the truco button's metal and lettering —
+     smaller, and still: only the stake on the table pulses. */
+  /* The bar's own gestures — a challenge, opening a table, sitting at one —
+     wear the same chalked-brass plate as the table's shouts. */
+  & .btn-challenge, & .btn-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    min-block-size: 40px;
+    padding: 0 14px;
+    border: 2px solid #fbbf24;
+    border-radius: var(--r-md);
+    background: linear-gradient(135deg, #d97706 0%, #b45309 45%, #78350f 100%);
+    color: #fff;
+    font: 400 1.0625rem/1 var(--shout-font);
+    letter-spacing: 0.06em;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.7), 0 0 8px rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4), 0 4px 10px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    transition: translate var(--motion-fast) var(--motion-ease), filter var(--motion-fast) var(--motion-ease);
+  }
+  & :is(.btn-challenge, .btn-bar):hover { translate: 0 -2px; filter: brightness(1.12); }
+  & :is(.btn-challenge, .btn-bar):active { translate: 0 1px; }
+  & :is(.btn-challenge, .btn-bar):focus-visible { outline: 2px solid var(--rim-hi); outline-offset: 2px; }
+  & .modal-sec {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  & .modal-sec label {
+    font: 700 0.8125rem/1.3 ui-sans-serif, system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--brass-ink, #8a5814);
+  }
+  & .modal-hint {
+    margin: 0;
+    font: 400 0.8125rem/1.4 ui-sans-serif, system-ui, sans-serif;
+    color: var(--pad-dim, #6B573D);
+  }
+  & .invite-seat-picker {
+    display: flex;
+    gap: 6px;
+    margin-block: 4px;
+  }
+
+  & .invite-box, & .join-box {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-block-start: 4px;
+  }
+  /* Regions that fill once the bar connects, held at their drawn size. */
+  & .invite-box { min-block-size: 40px; }
+  & .join-box { flex-wrap: wrap; }
+  & .join-box .invalid { flex-basis: 100%; margin: 0; }
+  & .lobby-note { min-block-size: 18px; }
+  & .boteco-input {
+    flex: 1;
+    min-inline-size: 0;
+    min-block-size: 40px;
+    padding: 6px 10px;
+    border: 1px solid var(--rim, #C2A97C);
+    border-radius: 4px;
+    background: #fff;
+    color: #241A12;
+    font: 600 0.8125rem/1 ui-sans-serif, monospace;
+    outline: none;
+  }
+  & .boteco-input:focus {
+    border-color: var(--brass-ink, #8a5814);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--brass-ink) 25%, transparent);
+  }
+  & .modal-sep {
+    inline-size: 100%;
+    block-size: 1px;
+    background: color-mix(in oklch, var(--pad-dim) 35%, transparent);
+    margin: 4px 0;
+  }
+  & .copy-status {
+    min-block-size: 18px;
+    font: 600 0.75rem/1.2 ui-sans-serif, system-ui, sans-serif;
+    color: #2b7a2b;
+  }
+  & .join-err {
+    margin: 0;
+    min-block-size: 18px;
+    font: 600 0.75rem/1.2 ui-sans-serif, system-ui, sans-serif;
+    color: var(--clr-danger, #9E2B25);
+  }
+}
+
+/* The comanda's pencil writing. Top level: nested in a rule it would be no rule. */
+@keyframes comanda-nib {
+  0%, 100% { rotate: 0deg; translate: 0 0; }
+  50% { rotate: -12deg; translate: 0 -2px; }
+}
+
+/* The bar's tables: yours while it waits, those on its list, and opening one. */
+:is(.screen[data-screen="arena"], .online-table) {
+  /* Your table takes the place of opening one, of a code and of the list. */
+  & .your-table { display: none; }
+  & .boteco-modal:has(.mesa-chairs .chair) .your-table { display: flex; }
+  & .boteco-modal:has(.mesa-chairs .chair) :is(.open-table, .have-code, .bar-tables) { display: none; }
+  & .bar-tables:not(:has(.listed-table)) { display: none; }
+  /* At a table of yours, the roda is called to its free chairs rather than
+     challenged: you sit at one table at a time. */
+  & .btn-summon { display: none; }
+  & .boteco-modal:has(.mesa-chairs .chair) .lobby-player-row .btn-challenge { display: none; }
+  & .boteco-modal:has(.chair[data-callable="yes"]) .lobby-player-row .btn-summon { display: inline-flex; }
+
+  /* A boteco table: wood rim, the checkered cloth, the deck with its vira. */
+  & .mesa-diagram { position: relative; inline-size: min(100%, 440px); block-size: 340px; margin-inline: auto; }
+  & .mesa-cloth {
+    position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+    inline-size: 38%; aspect-ratio: 1; box-sizing: border-box;
+    border: 10px solid #6E4520; border-radius: 6px;
+    background-color: #F3E9D2;
+    background-image: repeating-conic-gradient(#B8382E 0 25%, #F3E9D2 0 50%);
+    background-size: 26px 26px;
+    box-shadow: inset 0 0 0 2px #8A6238, 0 0 0 2px #43270F, 0 10px 22px rgba(0, 0, 0, 0.35);
+  }
+  & .mesa-diagram:has([data-at="eles4"]) .mesa-cloth { inline-size: 52%; aspect-ratio: 23 / 15; }
+  & .mesa-ring { position: absolute; left: 10%; top: 8%; inline-size: 28px; block-size: 28px; border-radius: 50%; border: 3px solid rgba(120, 70, 20, 0.28); }
+  & .mesa-deck { position: absolute; left: 50%; top: 50%; translate: -50% -50%; display: flex; align-items: center; }
+  & .mesa-deck i { inline-size: 22px; block-size: 34px; margin-inline-end: -14px; box-sizing: border-box; border: 2px solid #F7F0DE; border-radius: 3px; background: #7a1d16; rotate: -6deg; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35); }
+  & .mesa-deck b { display: grid; place-items: center; inline-size: 22px; block-size: 34px; margin-inline-start: 22px; border: 1px solid #CBBB98; border-radius: 3px; background: #FFFDF6; color: #A3271F; font: 800 0.6875rem/1 ui-sans-serif, system-ui, sans-serif; rotate: 8deg; }
+  & .mesa-chairs { position: absolute; inset: 0; }
+
+  & .chair {
+    position: absolute; translate: -50% -50%;
+    inline-size: 96px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 0; border: 0; background: none; font: inherit; color: var(--pad-ink); text-align: center;
+  }
+  & button.chair { cursor: pointer; }
+  & .chair[data-team="nos"] { --team: #2F6B3A; }
+  & .chair[data-team="eles"] { --team: #A3271F; }
+  & .chair[data-team="outros"] { --team: #2B5C8A; }
+  & .chair-seat { display: grid; place-items: center; inline-size: 48px; block-size: 48px; box-sizing: border-box; border-radius: 50%; background: var(--team); color: var(--team); font: 700 1.5rem/1 ui-sans-serif, system-ui, sans-serif; }
+  & .chair[data-state="you"] .chair-seat { border: 3px solid #F7F0DE; box-shadow: 0 0 0 3px var(--team); }
+  & .chair[data-state="free"] .chair-seat { border: 3px dashed var(--team); background: #FFFDF6; }
+  & .chair[data-state="free"][data-picked="yes"] .chair-seat { border-style: solid; box-shadow: 0 0 0 4px color-mix(in oklch, var(--team) 30%, transparent); }
+  & .chair[data-state="called"] .chair-seat { border: 3px dashed #F0C46A; background: #6A543C; }
+  & .chair-name { max-inline-size: 96px; overflow: hidden; font-size: 0.8125rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+  & .chair-team { color: var(--team); font-size: 0.625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+  & .chair[data-state="called"] .chair-team { color: #8a5814; }
+  & .chair-team > span { display: none; }
+  & .chair[data-team="nos"] .team-nos, & .chair[data-team="eles"] .team-eles, & .chair[data-team="outros"] .team-outros { display: inline; }
+  /* Where each sits, from you at the foot (chair.at). */
+  & .chair[data-at="you"] { left: 50%; top: 89%; }
+  & .chair[data-at="parca"] { left: 50%; top: 13%; }
+  & .chair[data-at="eles1"] { left: 15%; top: 50%; }
+  & .chair[data-at="eles2"] { left: 85%; top: 50%; }
+  & .mesa-diagram:not(:has([data-at="parca"])) .chair[data-at="eles1"] { left: 50%; top: 13%; }
+  & .mesa-diagram:has([data-at="eles4"]) {
+    & .chair[data-at="you"] { left: 37%; top: 85%; }
+    & .chair[data-at="eles1"] { left: 11%; top: 50%; }
+    & .chair[data-at="eles2"] { left: 37%; top: 15%; }
+    & .chair[data-at="parca"] { left: 63%; top: 15%; }
+    & .chair[data-at="eles3"] { left: 89%; top: 50%; }
+    & .chair[data-at="eles4"] { left: 63%; top: 85%; }
+  }
+  & .your-table-actions { display: flex; justify-content: flex-end; }
+  & #leave-table { display: none; }
+  & .boteco-modal:has(.chair[data-state="you"]:not([data-seat="a"])) {
+    & #close-table { display: none; }
+    & #leave-table { display: inline-flex; }
+  }
+  & .btn-ghost {
+    display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px; padding: 0 14px;
+    border: 2px solid #C77B1E; border-radius: var(--r-md); background: transparent; color: #6b4209;
+    font: 400 1.0625rem/1 var(--shout-font); letter-spacing: 0.06em; cursor: pointer;
+  }
+
+  & .listed-tables { display: flex; flex-direction: column; gap: 8px; }
+  & .listed-table { display: flex; align-items: center; gap: 12px; min-block-size: 56px; padding: 8px 12px; border: 1px solid #E2D3B0; border-radius: var(--r-md); background: #FFFDF6; }
+  & .listed-info { flex: 1; min-inline-size: 0; display: flex; flex-direction: column; gap: 2px; }
+  & .listed-rules { color: var(--pad-dim); font-size: 0.75rem; }
+
+  & .bar-settings-item { display: flex; flex-direction: column; gap: 8px; }
+  & .format-picker { display: flex; gap: 4px; padding: 4px; border-radius: var(--r-md); background: #E2D3B0; }
+  & .format-picker .seg { flex: 1; min-block-size: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--pad-ink); font: 700 0.9375rem/1 ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+  & .format-picker[data-format="1v1"] #format-1v1,
+  & .format-picker[data-format="2v2"] #format-2v2,
+  & .format-picker[data-format="2v2v2"] #format-2v2v2 { background: #241509; color: #F7F0DE; }
+  & .reserve-switch { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; min-block-size: 44px; padding: 0; border: 0; background: none; color: var(--pad-ink); font: 700 0.9375rem/1 ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+  & .reserve-switch .toggle-track { position: relative; inline-size: 44px; block-size: 26px; border-radius: 13px; background: #CBBB98; }
+  & .reserve-switch .toggle-thumb { position: absolute; inset-block-start: 3px; inset-inline-start: 3px; inline-size: 20px; block-size: 20px; border-radius: 50%; background: #fff; transition: translate var(--motion-fast) var(--motion-ease); }
+  & .reserve-switch[aria-checked="true"] .toggle-track { background: #8a5814; }
+  & .reserve-switch[aria-checked="true"] .toggle-thumb { translate: 18px 0; }
+  & .incoming-call .call-rules { display: block; color: #E2D3B0; font-size: 0.75rem; }
+  & .incoming-call .btn-ghost { border-color: #F0C46A; color: #FFE7B0; }
+}
+
+:is(.screen[data-screen="arena"], .online-table) {
+  & .table-filled {
+    position: fixed; inset-inline: 0; inset-block-start: 38%; z-index: var(--layer-3, 30);
+    margin: 0; text-align: center; pointer-events: none;
+    color: #FFE7B0; font: 400 clamp(2.5rem, 7vw, 4.5rem)/1 var(--shout-font); letter-spacing: 0.05em;
+    text-shadow: 0 3px 0 #78350f, 0 0 18px rgba(245, 158, 11, 0.45);
+    opacity: 0;
+  }
+  & .matchbox:not([data-filled="yes"]) .table-filled { display: none; }
+  & .matchbox[data-filled="yes"] .table-filled { animation: table-filled 2.6s var(--motion-ease) forwards; }
+  @media (prefers-reduced-motion: reduce) {
+    & .matchbox[data-filled="yes"] .table-filled { animation: none; opacity: 1; }
+  }
+}
+@keyframes table-filled {
+  0% { opacity: 0; scale: 0.8; }
+  15% { opacity: 1; scale: 1; }
+  80% { opacity: 1; scale: 1; }
+  100% { opacity: 0; scale: 1.04; }
+}

@@ -1,0 +1,54 @@
+# generated from bayt.cue — do not edit
+services:
+  truco-release-docker:
+    build:
+      additional_contexts:
+        truco-database: service:truco-database
+        truco-crud: service:truco-crud
+        truco-caddy: service:truco-caddy
+        truco-auth: service:truco-auth
+      context: ..
+      dockerfile: .bayt/Dockerfile.release-docker
+      target: release-docker
+      tags:
+      - ${BAYT_DOCKER_REPOSITORY:-ghcr.io/bonisoft3/truco}:${BAYT_IMAGE_TAG:-latest}
+      args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: ${BAYT_DOCKER_REPOSITORY:-ghcr.io/bonisoft3/truco}:${BAYT_IMAGE_TAG:-latest}
+    ports:
+    - 8080:8080
+    scale: 0
+  truco-release-docker_bayt:
+    build:
+      additional_contexts:
+        truco-database_bayt: service:truco-database_bayt
+        truco-crud_bayt: service:truco-crud_bayt
+        truco-caddy_bayt: service:truco-caddy_bayt
+        truco-auth_bayt: service:truco-auth_bayt
+        truco-timer-check_bayt: service:truco-timer-check_bayt
+        truco-served_bayt: service:truco-served_bayt
+      context: ..
+      dockerfile: .bayt/Dockerfile.release-docker
+      target: release-docker_bayt
+      args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: bayt-truco-release-docker_bayt:latest
+    scale: 0
+  truco-release-docker_srcs:
+    build:
+      additional_contexts:
+        truco-database_srcs: service:truco-database_srcs
+        truco-caddy_srcs: service:truco-caddy_srcs
+      context: ..
+      dockerfile: .bayt/Dockerfile.release-docker
+      target: release-docker_srcs
+      args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+    image: bayt-truco-release-docker_srcs:latest
+    scale: 0

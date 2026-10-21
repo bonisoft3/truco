@@ -6,7 +6,7 @@ services:
         truco-browser: service:truco-browser
         truco-launch: service:truco-launch
         plugins_omnishell-runtime-image: >-
-          ${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.9.0@sha256:275dddfe0afce4358da916fc3cde9da49516139850d440eb1f4f7d87e56b1fb4}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}
+          ${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.14.0@sha256:014eb4b0ae281bc94b871e134d31f310edb13abaa77c1f585b3772b666b7797a}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}
       context: ..
       dockerfile: .bayt/Dockerfile.check-window
       target: check-window
@@ -14,6 +14,7 @@ services:
       - bayt-truco-check-window:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
       - bayt-truco-check-window:latest
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     command:
@@ -33,6 +34,7 @@ services:
     environment:
       APP_URL: https://caddy:8443
       ORIGIN: ${ORIGIN:-https://localhost:${CADDY_TLS_HOST_PORT:-10374}}
+      SETTLE_TIMEOUT_MS: "50000"
     image: bayt-truco-check-window:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
     scale: 0
   truco-check-window_bayt:
@@ -44,6 +46,7 @@ services:
       dockerfile: .bayt/Dockerfile.check-window
       target: check-window_bayt
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     image: bayt-truco-check-window_bayt:latest
@@ -56,6 +59,7 @@ services:
       dockerfile: .bayt/Dockerfile.check-window
       target: check-window_srcs
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     image: bayt-truco-check-window_srcs:latest

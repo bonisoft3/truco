@@ -11,6 +11,7 @@ services:
       - bayt-truco-build:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
       - bayt-truco-build:latest
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     image: bayt-truco-build:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
@@ -24,6 +25,7 @@ services:
       dockerfile: .bayt/Dockerfile.build
       target: build_bayt
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     image: bayt-truco-build_bayt:latest
@@ -37,6 +39,7 @@ services:
       dockerfile: .bayt/Dockerfile.build
       target: build_srcs
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     image: bayt-truco-build_srcs:latest

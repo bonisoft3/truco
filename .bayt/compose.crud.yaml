@@ -4,6 +4,7 @@ services:
     build:
       additional_contexts:
         truco-database: service:truco-database
+        truco-timer-check: service:truco-timer-check
       context: ..
       dockerfile: .bayt/Dockerfile.crud
       target: crud
@@ -11,15 +12,18 @@ services:
       - bayt-truco-crud:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
       - bayt-truco-crud:latest
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     depends_on:
       truco-database:
         condition: service_healthy
         restart: true
+      truco-timer-check:
+        condition: service_completed_successfully
     environment:
       PGRST_DB_URI: >-
-        postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-truco}
+        postgres://authenticator:${AUTHENTICATOR_PASSWORD:-dev-authenticator-password}@database:5432/${POSTGRES_DB:-truco}
       PGRST_DB_SCHEMA: public
       PGRST_DB_ANON_ROLE: anon
       PGRST_DB_PRE_REQUEST: public.app_pre_request
@@ -46,10 +50,12 @@ services:
     build:
       additional_contexts:
         truco-database_bayt: service:truco-database_bayt
+        truco-timer-check_bayt: service:truco-timer-check_bayt
       context: ..
       dockerfile: .bayt/Dockerfile.crud
       target: crud_bayt
       args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
           docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
     image: bayt-truco-crud_bayt:latest

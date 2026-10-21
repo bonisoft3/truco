@@ -35,9 +35,9 @@ try {
   await pB.locator("#btn-open-online").click();
 
   await pA.locator("#my-handle-input").fill("Davi");
-  await pA.locator("#btn-save-handle").click();
+  await pA.locator("#my-handle-input").press("Enter");
   await pB.locator("#my-handle-input").fill("Carol");
-  await pB.locator("#btn-save-handle").click();
+  await pB.locator("#my-handle-input").press("Enter");
 
   await pA.waitForTimeout(1000);
   await pB.waitForTimeout(1000);

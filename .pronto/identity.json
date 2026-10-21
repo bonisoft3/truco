@@ -1,0 +1,1872 @@
+{
+  "0xd52976f85ecf72cb": {
+    "name": "match",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "variant",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "seats",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "theme",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "us_score",
+        "type": "int",
+        "retired": false
+      },
+      "6": {
+        "name": "them_score",
+        "type": "int",
+        "retired": false
+      },
+      "7": {
+        "name": "others_score",
+        "type": "int",
+        "retired": false
+      },
+      "8": {
+        "name": "stake",
+        "type": "int",
+        "retired": false
+      },
+      "9": {
+        "name": "hand_no",
+        "type": "int",
+        "retired": false
+      },
+      "10": {
+        "name": "status",
+        "type": "text",
+        "retired": false
+      },
+      "11": {
+        "name": "winner",
+        "type": "text",
+        "retired": false
+      },
+      "12": {
+        "name": "opponent",
+        "type": "text",
+        "retired": false
+      },
+      "13": {
+        "name": "opponent_name",
+        "type": "text",
+        "retired": false
+      },
+      "14": {
+        "name": "partner_name",
+        "type": "text",
+        "retired": false
+      },
+      "15": {
+        "name": "seed",
+        "type": "text",
+        "retired": false
+      },
+      "16": {
+        "name": "my_seat",
+        "type": "text",
+        "retired": false
+      },
+      "17": {
+        "name": "current",
+        "type": "text",
+        "retired": false
+      },
+      "18": {
+        "name": "locale",
+        "type": "text",
+        "retired": false
+      },
+      "19": {
+        "name": "created_at",
+        "type": "timestamptz",
+        "retired": false
+      },
+      "20": {
+        "name": "game",
+        "type": "text",
+        "retired": false
+      },
+      "21": {
+        "name": "wake",
+        "type": "text",
+        "retired": false
+      },
+      "22": {
+        "name": "opponent_handle",
+        "type": "text",
+        "retired": false
+      },
+      "23": {
+        "name": "filled",
+        "type": "text",
+        "retired": false
+      },
+      "24": {
+        "name": "tavern_key",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xbf84a01ca299813e": {
+    "name": "round",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "match_id",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "hand_no",
+        "type": "int",
+        "retired": false
+      },
+      "4": {
+        "name": "vira",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "manilha",
+        "type": "text",
+        "retired": false
+      },
+      "6": {
+        "name": "phase",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "truco_state",
+        "type": "text",
+        "retired": true
+      },
+      "8": {
+        "name": "envido_state",
+        "type": "text",
+        "retired": true
+      },
+      "9": {
+        "name": "trick_state",
+        "type": "text",
+        "retired": true
+      },
+      "10": {
+        "name": "ran",
+        "type": "text",
+        "retired": false
+      },
+      "11": {
+        "name": "v1",
+        "type": "text",
+        "retired": false
+      },
+      "12": {
+        "name": "v2",
+        "type": "text",
+        "retired": false
+      },
+      "13": {
+        "name": "v3",
+        "type": "text",
+        "retired": false
+      },
+      "14": {
+        "name": "stake",
+        "type": "int",
+        "retired": false
+      },
+      "15": {
+        "name": "result",
+        "type": "text",
+        "retired": false
+      },
+      "16": {
+        "name": "leader",
+        "type": "text",
+        "retired": false
+      },
+      "17": {
+        "name": "asked",
+        "type": "text",
+        "retired": false
+      },
+      "18": {
+        "name": "raised",
+        "type": "text",
+        "retired": false
+      },
+      "19": {
+        "name": "rung",
+        "type": "int",
+        "retired": false
+      },
+      "20": {
+        "name": "brink",
+        "type": "text",
+        "retired": false
+      },
+      "21": {
+        "name": "envido",
+        "type": "text",
+        "retired": false
+      },
+      "22": {
+        "name": "envido_asked",
+        "type": "text",
+        "retired": false
+      },
+      "23": {
+        "name": "envido_rung",
+        "type": "int",
+        "retired": false
+      },
+      "24": {
+        "name": "envido_calls",
+        "type": "text",
+        "retired": false
+      },
+      "25": {
+        "name": "envido_us",
+        "type": "int",
+        "retired": false
+      },
+      "26": {
+        "name": "envido_them",
+        "type": "int",
+        "retired": false
+      },
+      "27": {
+        "name": "envido_result",
+        "type": "text",
+        "retired": false
+      },
+      "28": {
+        "name": "said",
+        "type": "text",
+        "retired": false
+      },
+      "29": {
+        "name": "shout_state",
+        "type": "text",
+        "retired": false
+      },
+      "30": {
+        "name": "shout_word",
+        "type": "text",
+        "retired": false
+      },
+      "31": {
+        "name": "shout_from",
+        "type": "text",
+        "retired": false
+      },
+      "32": {
+        "name": "shout_kind",
+        "type": "text",
+        "retired": false
+      },
+      "33": {
+        "name": "shout_t",
+        "type": "text",
+        "retired": false
+      },
+      "34": {
+        "name": "shout_done",
+        "type": "text",
+        "retired": false
+      },
+      "35": {
+        "name": "last_remote_shout",
+        "type": "text",
+        "retired": true
+      },
+      "36": {
+        "name": "oculta",
+        "type": "text",
+        "retired": false
+      },
+      "37": {
+        "name": "turn_seat",
+        "type": "text",
+        "retired": false
+      },
+      "38": {
+        "name": "shout_seat",
+        "type": "text",
+        "retired": false
+      },
+      "39": {
+        "name": "ui_deadline",
+        "type": "timestamptz",
+        "retired": true
+      },
+      "40": {
+        "name": "backend_deadline",
+        "type": "timestamptz",
+        "retired": true
+      },
+      "41": {
+        "name": "current",
+        "type": "text",
+        "retired": false
+      },
+      "42": {
+        "name": "created_at",
+        "type": "timestamptz",
+        "retired": false
+      },
+      "43": {
+        "name": "felt_phase",
+        "type": "text",
+        "retired": false
+      },
+      "44": {
+        "name": "truco_label",
+        "type": "text",
+        "retired": false
+      },
+      "45": {
+        "name": "truco_title",
+        "type": "text",
+        "retired": false
+      },
+      "46": {
+        "name": "truco_blocked",
+        "type": "text",
+        "retired": false
+      },
+      "47": {
+        "name": "raise_label",
+        "type": "text",
+        "retired": false
+      },
+      "48": {
+        "name": "raise_blocked",
+        "type": "text",
+        "retired": false
+      },
+      "49": {
+        "name": "next_rung",
+        "type": "text",
+        "retired": false
+      },
+      "50": {
+        "name": "name_key",
+        "type": "text",
+        "retired": false
+      },
+      "51": {
+        "name": "name_handle",
+        "type": "text",
+        "retired": false
+      },
+      "52": {
+        "name": "worth",
+        "type": "text",
+        "retired": false
+      },
+      "53": {
+        "name": "opponent_name",
+        "type": "text",
+        "retired": false
+      },
+      "54": {
+        "name": "opponent_handle",
+        "type": "text",
+        "retired": false
+      },
+      "55": {
+        "name": "opponent",
+        "type": "text",
+        "retired": false
+      },
+      "56": {
+        "name": "dialogue_key",
+        "type": "text",
+        "retired": false
+      },
+      "57": {
+        "name": "dialogue_state",
+        "type": "text",
+        "retired": false
+      },
+      "58": {
+        "name": "player_shout_state",
+        "type": "text",
+        "retired": false
+      },
+      "59": {
+        "name": "over_key",
+        "type": "text",
+        "retired": false
+      },
+      "60": {
+        "name": "tell",
+        "type": "text",
+        "retired": false
+      },
+      "61": {
+        "name": "said_t",
+        "type": "text",
+        "retired": false
+      },
+      "62": {
+        "name": "raise_hint",
+        "type": "text",
+        "retired": false
+      },
+      "63": {
+        "name": "shout_anim",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xef4fd8a8a54ad06a": {
+    "name": "play",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "round_id",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "vaza",
+        "type": "int",
+        "retired": false
+      },
+      "4": {
+        "name": "seat",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "kind",
+        "type": "text",
+        "retired": false
+      },
+      "6": {
+        "name": "count",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "card",
+        "type": "text",
+        "retired": false
+      },
+      "8": {
+        "name": "power",
+        "type": "int",
+        "retired": false
+      },
+      "9": {
+        "name": "said",
+        "type": "text",
+        "retired": false
+      },
+      "10": {
+        "name": "from_slot",
+        "type": "int",
+        "retired": false
+      },
+      "11": {
+        "name": "rank",
+        "type": "text",
+        "retired": false
+      },
+      "12": {
+        "name": "suit",
+        "type": "text",
+        "retired": false
+      },
+      "13": {
+        "name": "face",
+        "type": "text",
+        "retired": false
+      },
+      "14": {
+        "name": "manilha",
+        "type": "text",
+        "retired": false
+      },
+      "15": {
+        "name": "lie",
+        "type": "int",
+        "retired": false
+      },
+      "16": {
+        "name": "win",
+        "type": "text",
+        "retired": false
+      },
+      "17": {
+        "name": "display_seat",
+        "type": "text",
+        "retired": false
+      },
+      "18": {
+        "name": "seq",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0x8a03fd00311a2c7f": {
+    "name": "held",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "round_id",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "seat",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "card",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "rank",
+        "type": "text",
+        "retired": false
+      },
+      "6": {
+        "name": "suit",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "face",
+        "type": "text",
+        "retired": false
+      },
+      "8": {
+        "name": "power",
+        "type": "int",
+        "retired": false
+      },
+      "9": {
+        "name": "manilha",
+        "type": "text",
+        "retired": false
+      },
+      "10": {
+        "name": "slot",
+        "type": "int",
+        "retired": false
+      },
+      "11": {
+        "name": "blocked",
+        "type": "text",
+        "retired": false
+      },
+      "12": {
+        "name": "display_seat",
+        "type": "text",
+        "retired": false
+      },
+      "13": {
+        "name": "current",
+        "type": "text",
+        "retired": false
+      },
+      "14": {
+        "name": "created_at",
+        "type": "timestamptz",
+        "retired": false
+      }
+    }
+  },
+  "0xf0257432a3728c79": {
+    "name": "intent",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "game",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "revision",
+        "type": "int",
+        "retired": false
+      },
+      "4": {
+        "name": "kind",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "slot",
+        "type": "int",
+        "retired": false
+      }
+    }
+  },
+  "0x9508167b0300280e": {
+    "name": "lobby_tab",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "lease",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "me",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "note",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "join",
+        "type": "text",
+        "retired": false
+      },
+      "6": {
+        "name": "shown",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "code",
+        "type": "text",
+        "retired": false
+      },
+      "8": {
+        "name": "format",
+        "type": "text",
+        "retired": false
+      },
+      "9": {
+        "name": "reserved",
+        "type": "text",
+        "retired": false
+      },
+      "10": {
+        "name": "chair",
+        "type": "text",
+        "retired": false
+      },
+      "11": {
+        "name": "call",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xc3359028234fc245": {
+    "name": "chair",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "at",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "team",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "state",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "name",
+        "type": "text",
+        "retired": false
+      },
+      "6": {
+        "name": "picked",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "talk",
+        "type": "text",
+        "retired": false
+      },
+      "8": {
+        "name": "callable",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xebac2f35581d06ae": {
+    "name": "listed_table",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "host",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "rules",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "seating",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "missing",
+        "type": "int",
+        "retired": false
+      },
+      "6": {
+        "name": "seated",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "talk",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0x9aa9daec2ff92f99": {
+    "name": "online_view",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "room",
+        "type": "text",
+        "retired": true
+      },
+      "3": {
+        "name": "covered",
+        "type": "text",
+        "retired": true
+      },
+      "4": {
+        "name": "status",
+        "type": "text",
+        "retired": true
+      },
+      "5": {
+        "name": "bare",
+        "type": "text",
+        "retired": true
+      },
+      "6": {
+        "name": "seated",
+        "type": "int",
+        "retired": true
+      },
+      "7": {
+        "name": "places",
+        "type": "int",
+        "retired": true
+      },
+      "8": {
+        "name": "place",
+        "type": "int",
+        "retired": true
+      },
+      "9": {
+        "name": "team",
+        "type": "text",
+        "retired": true
+      },
+      "10": {
+        "name": "my_place",
+        "type": "int",
+        "retired": true
+      },
+      "11": {
+        "name": "mine",
+        "type": "text",
+        "retired": true
+      },
+      "12": {
+        "name": "three",
+        "type": "text",
+        "retired": true
+      },
+      "13": {
+        "name": "a",
+        "type": "text",
+        "retired": true
+      },
+      "14": {
+        "name": "b",
+        "type": "text",
+        "retired": true
+      },
+      "15": {
+        "name": "c",
+        "type": "text",
+        "retired": true
+      },
+      "16": {
+        "name": "hand_no",
+        "type": "text",
+        "retired": true
+      },
+      "17": {
+        "name": "goal",
+        "type": "int",
+        "retired": true
+      },
+      "18": {
+        "name": "stake",
+        "type": "text",
+        "retired": true
+      },
+      "19": {
+        "name": "variant",
+        "type": "text",
+        "retired": true
+      },
+      "20": {
+        "name": "vira",
+        "type": "text",
+        "retired": true
+      },
+      "21": {
+        "name": "error",
+        "type": "text",
+        "retired": true
+      },
+      "22": {
+        "name": "vira_rank",
+        "type": "text",
+        "retired": true
+      },
+      "23": {
+        "name": "vira_suit",
+        "type": "text",
+        "retired": true
+      }
+    }
+  },
+  "0x880030777488c9c9": {
+    "name": "online_item",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "room",
+        "type": "text",
+        "retired": true
+      },
+      "3": {
+        "name": "kind",
+        "type": "text",
+        "retired": true
+      },
+      "4": {
+        "name": "key",
+        "type": "text",
+        "retired": true
+      },
+      "5": {
+        "name": "n",
+        "type": "int",
+        "retired": true
+      },
+      "6": {
+        "name": "place",
+        "type": "int",
+        "retired": true
+      },
+      "7": {
+        "name": "team",
+        "type": "text",
+        "retired": true
+      },
+      "8": {
+        "name": "count",
+        "type": "int",
+        "retired": true
+      },
+      "9": {
+        "name": "card",
+        "type": "text",
+        "retired": true
+      },
+      "10": {
+        "name": "turn",
+        "type": "text",
+        "retired": true
+      },
+      "11": {
+        "name": "win",
+        "type": "text",
+        "retired": true
+      },
+      "12": {
+        "name": "rank",
+        "type": "text",
+        "retired": true
+      },
+      "13": {
+        "name": "suit",
+        "type": "text",
+        "retired": true
+      },
+      "14": {
+        "name": "face",
+        "type": "text",
+        "retired": true
+      }
+    }
+  },
+  "0xbf622bf2877be5e1": {
+    "name": "player",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "handle",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0x87dfc52192b0bed2": {
+    "name": "app_user",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "uuid",
+        "retired": false
+      },
+      "2": {
+        "name": "handle",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xb747b4f38713de3a": {
+    "name": "lobby",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "handle",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "room_seed",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "variant",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "seats",
+        "type": "text",
+        "retired": false
+      },
+      "6": {
+        "name": "status",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "updated_at",
+        "type": "timestamptz",
+        "retired": false
+      }
+    }
+  },
+  "0xd5c31f118f7fd374": {
+    "name": "challenge",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "challenger_id",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "challenger_name",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "target_id",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "seed",
+        "type": "text",
+        "retired": false
+      },
+      "6": {
+        "name": "variant",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "status",
+        "type": "text",
+        "retired": false
+      },
+      "8": {
+        "name": "created_at",
+        "type": "timestamptz",
+        "retired": false
+      }
+    }
+  },
+  "0x90978f86a2a391ed": {
+    "name": "room_action",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "room_seed",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "player_id",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "action",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "card",
+        "type": "text",
+        "retired": false
+      },
+      "6": {
+        "name": "slot",
+        "type": "int",
+        "retired": false
+      },
+      "7": {
+        "name": "created_at",
+        "type": "timestamptz",
+        "retired": false
+      }
+    }
+  },
+  "0xdd3ab423a96611ad": {
+    "name": "truco_match_seat",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "seat",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "phase",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "view",
+        "type": "json",
+        "retired": false
+      },
+      "8": {
+        "name": "variant",
+        "type": "text",
+        "retired": false
+      },
+      "9": {
+        "name": "seating",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xc2f365219663ff96": {
+    "name": "truco_match_command",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "request",
+        "type": "json",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "outcome",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "reason",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xb9f0ce0b5f6d366a": {
+    "name": "truco_match_open",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "kind",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "input",
+        "type": "json",
+        "retired": false
+      },
+      "6": {
+        "name": "outcome",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "reason",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0x84994355cbadc403": {
+    "name": "truco_match_public",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "variant",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "seating",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "seated",
+        "type": "int",
+        "retired": false
+      },
+      "5": {
+        "name": "places",
+        "type": "int",
+        "retired": false
+      },
+      "6": {
+        "name": "talk",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xd43827101fd40e58": {
+    "name": "truco_presence_seat",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "seat",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "phase",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "view",
+        "type": "json",
+        "retired": false
+      },
+      "8": {
+        "name": "name",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xbc2d854330fd1375": {
+    "name": "truco_presence_command",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "request",
+        "type": "json",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "outcome",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "reason",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xe7296ad47e7148de": {
+    "name": "truco_presence_public",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "name",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xa54af1a27a6dcb29": {
+    "name": "truco_presence_lease",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "beat",
+        "type": "int",
+        "retired": false
+      }
+    }
+  },
+  "0x9e9e70618bb84472": {
+    "name": "truco_challenge_seat",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "seat",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "phase",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "view",
+        "type": "json",
+        "retired": false
+      },
+      "8": {
+        "name": "inviter_name",
+        "type": "text",
+        "retired": false
+      },
+      "9": {
+        "name": "target_name",
+        "type": "text",
+        "retired": false
+      },
+      "10": {
+        "name": "variant",
+        "type": "text",
+        "retired": false
+      },
+      "11": {
+        "name": "seating",
+        "type": "text",
+        "retired": false
+      },
+      "12": {
+        "name": "room",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xbda53dd590cd2c52": {
+    "name": "truco_challenge_command",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "request",
+        "type": "json",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "outcome",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "reason",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xe38c09fb70857d4b": {
+    "name": "truco_call_seat",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "seat",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "phase",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "view",
+        "type": "json",
+        "retired": false
+      },
+      "8": {
+        "name": "caller_name",
+        "type": "text",
+        "retired": false
+      },
+      "9": {
+        "name": "room",
+        "type": "text",
+        "retired": false
+      },
+      "10": {
+        "name": "chair",
+        "type": "text",
+        "retired": false
+      },
+      "11": {
+        "name": "variant",
+        "type": "text",
+        "retired": false
+      },
+      "12": {
+        "name": "seating",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xae74254574267c30": {
+    "name": "truco_call_command",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "request",
+        "type": "json",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "outcome",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "reason",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xc0af59b67adbc842": {
+    "name": "truco_call_open",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "kind",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "input",
+        "type": "json",
+        "retired": false
+      },
+      "6": {
+        "name": "outcome",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "reason",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0x9c520d97bad055f1": {
+    "name": "truco_voice_seat",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "seat",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "phase",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "view",
+        "type": "json",
+        "retired": false
+      }
+    }
+  },
+  "0xec4776be6e7b1aa0": {
+    "name": "truco_voice_command",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "request",
+        "type": "json",
+        "retired": false
+      },
+      "5": {
+        "name": "revision",
+        "type": "bigint",
+        "retired": false
+      },
+      "6": {
+        "name": "outcome",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "reason",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xb29a44d03d2325fb": {
+    "name": "truco_voice_open",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "kind",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "input",
+        "type": "json",
+        "retired": false
+      },
+      "6": {
+        "name": "outcome",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "reason",
+        "type": "text",
+        "retired": false
+      }
+    }
+  },
+  "0xd1c2085f6b491920": {
+    "name": "truco_voice_public",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "talk",
+        "type": "text",
+        "retired": false
+      },
+      "3": {
+        "name": "seat",
+        "type": "text",
+        "retired": false
+      },
+      "4": {
+        "name": "name",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "word",
+        "type": "text",
+        "retired": false
+      },
+      "6": {
+        "name": "n",
+        "type": "bigint",
+        "retired": false
+      }
+    }
+  },
+  "0xedb2c41c1aa9d5d1": {
+    "name": "truco_challenge_open",
+    "fields": {
+      "1": {
+        "name": "id",
+        "type": "text",
+        "retired": false
+      },
+      "2": {
+        "name": "instance_id",
+        "type": "uuid",
+        "retired": false
+      },
+      "3": {
+        "name": "actor",
+        "type": "uuid",
+        "retired": false
+      },
+      "4": {
+        "name": "kind",
+        "type": "text",
+        "retired": false
+      },
+      "5": {
+        "name": "input",
+        "type": "json",
+        "retired": false
+      },
+      "6": {
+        "name": "outcome",
+        "type": "text",
+        "retired": false
+      },
+      "7": {
+        "name": "reason",
+        "type": "text",
+        "retired": false
+      }
+    }
+  }
+}

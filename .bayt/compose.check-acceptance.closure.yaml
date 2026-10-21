@@ -2,11 +2,21 @@
 include:
 - path: .././.bayt/compose.browser.yaml
   required: false
-- path: .././.bayt/compose.caddy.yaml
+- path: .././.bayt/compose.release-docker.yaml
+  required: false
+- path: .././.bayt/compose.database.yaml
   required: false
 - path: .././.bayt/compose.crud.yaml
   required: false
-- path: .././.bayt/compose.database.yaml
+- path: .././.bayt/compose.timer-check.yaml
+  required: false
+- path: .././.bayt/compose.caddy.yaml
+  required: false
+- path: .././.bayt/compose.served.yaml
+  required: false
+- path: .././.bayt/compose.auth.yaml
+  required: false
+- path: .././.bayt/compose.replay.yaml
   required: false
 - path: .././.bayt/compose.setup.yaml
   required: false
@@ -22,7 +32,9 @@ include:
   required: false
 - path: .././.bayt/compose.electric.yaml
   required: false
-- path: .././.bayt/compose.auth.yaml
+- path: .././.bayt/compose.clock.yaml
+  required: false
+- path: .././.bayt/compose.ticker.yaml
   required: false
 - path: .././.bayt/compose.integrate.yaml
   required: false
@@ -32,9 +44,7 @@ include:
   required: false
 - path: .././.bayt/compose.check-window.yaml
   required: false
-- path: ../mecha/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml
-  required: false
-- path: ../omnishell/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml
+- path: ../monorepo/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml
   required: false
 services:
   bayt:

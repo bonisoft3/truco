@@ -22,7 +22,12 @@ const onTable = async (width: number, height: number, fn: (page: Page) => Promis
     await page.waitForSelector(".board.table-frame", { timeout: 25000 });
     // Wait for the seated match
     await page.waitForFunction(
-      () => /^m[0-9a-z]+$/.test(document.querySelector(".matchbox")?.getAttribute("data-match-id") ?? ""),
+      () => {
+        // Seated is a hand dealt by the game the seat's draw names.
+        const seed = document.querySelector(".matchbox")?.getAttribute("data-seed") ?? "";
+        const round = document.querySelector("#seat-you .card")?.getAttribute("data-round") ?? "";
+        return /^[0-9]+$/.test(seed) && round.startsWith(`g${seed}/`);
+      },
       undefined,
       { timeout: 25000 },
     );
@@ -135,6 +140,9 @@ async function main() {
 
   console.log("\nChecking trick spatial alignment invariants (no card creep/shrinking across rodadas)...");
   await onTable(1280, 800, async (page) => {
+    // Card-dependent angles change projected height; isolate scale and baseline
+    // while retaining the transforms that would expose a shrinking closed trick.
+    await page.addStyleTag({ content: ".trick .played { rotate: 0deg !important; }" });
     // Play trick 1
     const card1 = page.locator(".seat-row.mine .card:not([disabled])").first();
     await card1.click();
@@ -185,21 +193,35 @@ async function main() {
         }
         console.log(`✓ Card opacity invariant: all ${opacities.length} table cards strictly opaque (1.0)`);
 
-        // Stacking invariant: sequentially played cards physically stack on top (later cards over earlier)
+        // Decided tricks raise the winner; open and tied tricks keep play order.
         const stacking = await page.evaluate(() => {
-          const played = Array.from(document.querySelectorAll('.trick[data-t="1"] .played')) as HTMLElement[];
-          if (played.length < 2) return null;
-          const z0 = parseInt(getComputedStyle(played[0]).zIndex) || 0;
-          const z1 = parseInt(getComputedStyle(played[1]).zIndex) || 0;
           const trick = document.querySelector('.trick[data-t="1"]') as HTMLElement;
-          const trickBorder = getComputedStyle(trick).borderStyle;
-          return { z0, z1, trickBorder };
+          const played = Array.from(trick.querySelectorAll<HTMLElement>(".played"));
+          return {
+            outcome: trick.closest(".matcards")?.getAttribute("data-v1"),
+            cards: played.map((card) => ({
+              winner: card.dataset.win === "yes",
+              z: Number(getComputedStyle(card).zIndex),
+            })),
+            border: getComputedStyle(trick).borderStyle,
+          };
         });
-        if (stacking) {
-          assert(stacking.z1 > stacking.z0, `sequentially played card must have higher z-index (card 0: ${stacking.z0}, card 1: ${stacking.z1})`);
-          assert(stacking.trickBorder === "none", `trick container must not have artificial grouping border: got ${stacking.trickBorder}`);
-          console.log(`✓ Stacking & border invariant: later card has higher z-index (${stacking.z1} > ${stacking.z0}), trick border is none`);
+        assert(stacking.cards.length >= 2, "completed trick has at least two played cards");
+        assert(stacking.cards.every((card: { z: number }) => Number.isFinite(card.z)), "played cards have numeric stacking order");
+        if (stacking.outcome === "us" || stacking.outcome === "them") {
+          const winners = stacking.cards.filter((card: { winner: boolean }) => card.winner);
+          const beaten = stacking.cards.filter((card: { winner: boolean }) => !card.winner);
+          assert(winners.length > 0 && beaten.length > 0, "decided trick identifies winning and beaten cards");
+          assert(Math.min(...winners.map((card: { z: number }) => card.z)) > Math.max(...beaten.map((card: { z: number }) => card.z)),
+            `winning cards must stack above beaten cards: ${JSON.stringify(stacking)}`);
+        } else {
+          for (let i = 1; i < stacking.cards.length; i++) {
+            assert(stacking.cards[i].z > stacking.cards[i - 1].z,
+              `undecided or tied trick stacks in play order: ${JSON.stringify(stacking)}`);
+          }
         }
+        assertEquals(stacking.border, "none", "trick container has no artificial grouping border");
+        console.log("✓ Stacking & border invariant: trick outcome determines stacking, trick border is none");
       }
     }
   });

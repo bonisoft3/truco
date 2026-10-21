@@ -48,4 +48,222 @@ CREATE TABLE IF NOT EXISTS room_action (
   "scope_id" TEXT GENERATED ALWAYS AS ('public:') STORED NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS truco_match_seat (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 64),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid NOT NULL,
+  "seat" TEXT NOT NULL CHECK (char_length(seat) <= 16),
+  "revision" BIGINT NOT NULL,
+  "phase" TEXT NOT NULL CHECK (char_length(phase) <= 16),
+  "view" json NOT NULL CONSTRAINT "truco_match_seat_view_type" CHECK ("view" IS NULL OR public.portable_json_valid("view") IS TRUE) CHECK (public.portable_shape_valid(view, '{"kind":"object","fields":{"actions":{"kind":"array","maxItems":14,"items":{"kind":"string","sizeMax":12}},"answers":{"kind":"array","maxItems":3,"items":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}},"available":{"kind":"array","maxItems":3,"items":{"kind":"integer","intMin":0,"intMax":2}},"brink":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"caller":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"counts":{"kind":"array","maxItems":6,"items":{"kind":"object","fields":{"count":{"kind":"integer","intMin":0,"intMax":3},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]}}}},"deadline":{"kind":"integer","intMin":0,"intMax":9007199254740991},"envido":{"kind":"integer","intMin":0,"intMax":33},"envido_caller":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"envido_chain":{"kind":"array","maxItems":3,"items":{"kind":"string","enumValues":["envido","envido_real","envido_falta"]}},"envido_done":{"kind":"string","enumValues":["","accepted","refused","flor"]},"envido_scores":{"kind":"array","maxItems":3,"items":{"kind":"object","fields":{"count":{"kind":"integer","intMin":0,"intMax":33},"side":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}}}},"folded":{"kind":"array","maxItems":3,"items":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}},"goal":{"kind":"integer","intMin":0,"intMax":30},"hand":{"kind":"array","maxItems":3,"items":{"kind":"integer","intMin":-1,"intMax":40}},"hand_no":{"kind":"integer","intMin":0,"intMax":9007199254740991},"joined":{"kind":"array","maxItems":6,"items":{"kind":"string","enumValues":["a","b","c","d","e","f"]}},"leader":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"log":{"kind":"array","maxItems":40,"items":{"kind":"object","fields":{"at":{"kind":"integer","intMin":0,"intMax":18},"count":{"kind":"integer","intMin":0,"intMax":41},"kind":{"kind":"string","enumValues":["raise","accept","fold","envido","envido_real","envido_falta","envido_take","envido_run","envido_count","envido_good","flor"]},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]}}}},"offer":{"kind":"integer","intMin":0,"intMax":30},"opponent_count":{"kind":"integer","intMin":0,"intMax":12},"partners":{"kind":"array","maxItems":1,"items":{"kind":"object","fields":{"hand":{"kind":"array","maxItems":3,"items":{"kind":"integer","intMin":-1,"intMax":40}},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]}}}},"phase":{"kind":"string","enumValues":["waiting","dealing","brink","playing","wager","envido","resolving","hand_over","finished"]},"plays":{"kind":"array","maxItems":18,"items":{"kind":"object","fields":{"card":{"kind":"integer","intMin":-1,"intMax":40},"covered":{"kind":"boolean"},"power":{"kind":"integer","intMin":-1,"intMax":103},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"slot":{"kind":"integer","intMin":0,"intMax":2},"trick":{"kind":"integer","intMin":0,"intMax":2},"win":{"kind":"boolean"}}}},"powers":{"kind":"array","maxItems":3,"items":{"kind":"integer","intMin":-1,"intMax":103}},"reserved":{"kind":"boolean"},"result":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"right":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"score_a":{"kind":"integer","intMin":0,"intMax":30},"score_b":{"kind":"integer","intMin":0,"intMax":30},"score_c":{"kind":"integer","intMin":0,"intMax":30},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"seating":{"kind":"string","enumValues":["1v1","2v2","2v2v2"]},"seats":{"kind":"array","maxItems":6,"items":{"kind":"string","enumValues":["a","b","c","d","e","f"]}},"side":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"stake":{"kind":"integer","intMin":0,"intMax":30},"talk":{"kind":"string","sizeMax":36},"tricks":{"kind":"array","maxItems":3,"items":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}},"turn":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"turn_ms":{"kind":"integer","intMin":0,"intMax":600000},"variant":{"kind":"string","enumValues":["mineiro","paulista","gaucho","truc","argentino","uruguayo","paraguayo","douradinha","douradao"]},"vira":{"kind":"integer","intMin":-1,"intMax":40},"winner":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}}}'::jsonb)),
+  "variant" TEXT CHECK (char_length(variant) <= 10),
+  "seating" TEXT CHECK (char_length(seating) <= 6),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_match_command (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 128),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "request" json NOT NULL CONSTRAINT "truco_match_command_request_type" CHECK ("request" IS NULL OR public.portable_json_valid("request") IS TRUE) CHECK (public.portable_shape_valid(request, '{"kind":"object","fields":{"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["accept","envido","envido_falta","envido_real","envido_run","envido_take","flor","fold","next","play","raise","resign","stand"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}'::jsonb)),
+  "revision" BIGINT,
+  "outcome" TEXT CHECK (outcome IN ('', 'accepted', 'rejected')),
+  "reason" TEXT CHECK (char_length(reason) <= 64),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_match_open (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 128),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "kind" TEXT NOT NULL CHECK (kind IN ('create', 'join')),
+  "input" json NOT NULL CONSTRAINT "truco_match_open_input_type" CHECK ("input" IS NULL OR public.portable_json_valid("input") IS TRUE),
+  "outcome" TEXT CHECK (outcome IN ('', 'accepted', 'rejected')),
+  "reason" TEXT CHECK (char_length(reason) <= 64),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_match_public (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 36),
+  "variant" TEXT NOT NULL CHECK (char_length(variant) <= 10),
+  "seating" TEXT NOT NULL CHECK (char_length(seating) <= 6),
+  "seated" INTEGER NOT NULL CHECK (seated >= 0 AND seated <= 6),
+  "places" INTEGER NOT NULL CHECK (places >= 2 AND places <= 6),
+  "talk" TEXT NOT NULL CHECK (char_length(talk) <= 36),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('public:') STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_presence_seat (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 64),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid NOT NULL,
+  "seat" TEXT NOT NULL CHECK (char_length(seat) <= 16),
+  "revision" BIGINT NOT NULL,
+  "phase" TEXT NOT NULL CHECK (char_length(phase) <= 16),
+  "view" json NOT NULL CONSTRAINT "truco_presence_seat_view_type" CHECK ("view" IS NULL OR public.portable_json_valid("view") IS TRUE) CHECK (public.portable_shape_valid(view, '{"kind":"object","fields":{"leases":{"kind":"array","maxItems":16,"items":{"kind":"object","fields":{"id":{"kind":"string","sizeMax":36},"until":{"kind":"integer","intMin":0,"intMax":9007199254740991}}}},"name":{"kind":"string","sizeMax":32},"phase":{"kind":"string","enumValues":["hidden","visible"]},"until":{"kind":"integer","intMin":0,"intMax":9007199254740991}}}'::jsonb)),
+  "name" TEXT CHECK (char_length(name) <= 32),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_presence_command (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 128),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "request" json NOT NULL CONSTRAINT "truco_presence_command_request_type" CHECK ("request" IS NULL OR public.portable_json_valid("request") IS TRUE) CHECK (public.portable_shape_valid(request, '{"kind":"object","fields":{"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["hide","show"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}'::jsonb)),
+  "revision" BIGINT,
+  "outcome" TEXT CHECK (outcome IN ('', 'accepted', 'rejected')),
+  "reason" TEXT CHECK (char_length(reason) <= 64),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_presence_public (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 36),
+  "name" TEXT NOT NULL CHECK (char_length(name) <= 32),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('public:') STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_presence_lease (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) = 36),
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "beat" INTEGER NOT NULL CHECK (beat >= 0),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_challenge_seat (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 64),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid NOT NULL,
+  "seat" TEXT NOT NULL CHECK (char_length(seat) <= 16),
+  "revision" BIGINT NOT NULL,
+  "phase" TEXT NOT NULL CHECK (char_length(phase) <= 16),
+  "view" json NOT NULL CONSTRAINT "truco_challenge_seat_view_type" CHECK ("view" IS NULL OR public.portable_json_valid("view") IS TRUE) CHECK (public.portable_shape_valid(view, '{"kind":"object","fields":{"deadline":{"kind":"integer","intMin":0,"intMax":9007199254740991},"inviter":{"kind":"string","sizeMax":36},"inviter_name":{"kind":"string","sizeMax":32},"phase":{"kind":"string","enumValues":["offered","accepted","declined","cancelled","expired"]},"room":{"kind":"string","sizeMax":36},"seating":{"kind":"string","enumValues":["1v1","2v2","2v2v2"]},"talk":{"kind":"string","sizeMax":36},"target":{"kind":"string","sizeMax":36},"target_name":{"kind":"string","sizeMax":32},"variant":{"kind":"string","enumValues":["mineiro","paulista","gaucho","truc","argentino","uruguayo","paraguayo","douradinha","douradao"]}}}'::jsonb)),
+  "inviter_name" TEXT CHECK (char_length(inviter_name) <= 32),
+  "target_name" TEXT CHECK (char_length(target_name) <= 32),
+  "variant" TEXT CHECK (char_length(variant) <= 10),
+  "seating" TEXT CHECK (char_length(seating) <= 6),
+  "room" TEXT CHECK (char_length(room) <= 36),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_challenge_command (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 128),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "request" json NOT NULL CONSTRAINT "truco_challenge_command_request_type" CHECK ("request" IS NULL OR public.portable_json_valid("request") IS TRUE) CHECK (public.portable_shape_valid(request, '{"kind":"object","fields":{"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["accept","cancel","decline"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}'::jsonb)),
+  "revision" BIGINT,
+  "outcome" TEXT CHECK (outcome IN ('', 'accepted', 'rejected')),
+  "reason" TEXT CHECK (char_length(reason) <= 64),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_call_seat (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 64),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid NOT NULL,
+  "seat" TEXT NOT NULL CHECK (char_length(seat) <= 16),
+  "revision" BIGINT NOT NULL,
+  "phase" TEXT NOT NULL CHECK (char_length(phase) <= 16),
+  "view" json NOT NULL CONSTRAINT "truco_call_seat_view_type" CHECK ("view" IS NULL OR public.portable_json_valid("view") IS TRUE) CHECK (public.portable_shape_valid(view, '{"kind":"object","fields":{"caller":{"kind":"string","sizeMax":36},"caller_name":{"kind":"string","sizeMax":32},"chair":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"deadline":{"kind":"integer","intMin":0,"intMax":9007199254740991},"phase":{"kind":"string","enumValues":["offered","accepted","declined","cancelled","expired"]},"room":{"kind":"string","sizeMax":36},"seating":{"kind":"string","enumValues":["1v1","2v2","2v2v2"]},"target":{"kind":"string","sizeMax":36},"target_name":{"kind":"string","sizeMax":32},"variant":{"kind":"string","enumValues":["mineiro","paulista","gaucho","truc","argentino","uruguayo","paraguayo","douradinha","douradao"]}}}'::jsonb)),
+  "caller_name" TEXT CHECK (char_length(caller_name) <= 32),
+  "room" TEXT CHECK (char_length(room) <= 36),
+  "chair" TEXT CHECK (char_length(chair) <= 1),
+  "variant" TEXT CHECK (char_length(variant) <= 10),
+  "seating" TEXT CHECK (char_length(seating) <= 6),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_call_command (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 128),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "request" json NOT NULL CONSTRAINT "truco_call_command_request_type" CHECK ("request" IS NULL OR public.portable_json_valid("request") IS TRUE) CHECK (public.portable_shape_valid(request, '{"kind":"object","fields":{"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["accept","cancel","decline"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}'::jsonb)),
+  "revision" BIGINT,
+  "outcome" TEXT CHECK (outcome IN ('', 'accepted', 'rejected')),
+  "reason" TEXT CHECK (char_length(reason) <= 64),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_call_open (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 128),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "kind" TEXT NOT NULL CHECK (kind IN ('create', 'join')),
+  "input" json NOT NULL CONSTRAINT "truco_call_open_input_type" CHECK ("input" IS NULL OR public.portable_json_valid("input") IS TRUE),
+  "outcome" TEXT CHECK (outcome IN ('', 'accepted', 'rejected')),
+  "reason" TEXT CHECK (char_length(reason) <= 64),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_voice_seat (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 64),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid NOT NULL,
+  "seat" TEXT NOT NULL CHECK (char_length(seat) <= 16),
+  "revision" BIGINT NOT NULL,
+  "phase" TEXT NOT NULL CHECK (char_length(phase) <= 16),
+  "view" json NOT NULL CONSTRAINT "truco_voice_seat_view_type" CHECK ("view" IS NULL OR public.portable_json_valid("view") IS TRUE) CHECK (public.portable_shape_valid(view, '{"kind":"object","fields":{"n":{"kind":"integer","intMin":0,"intMax":9007199254740991},"name":{"kind":"string","sizeMax":32},"phase":{"kind":"string","enumValues":["quiet","seated"]},"room":{"kind":"string","sizeMax":36},"seat":{"kind":"string","enumValues":["","a","b","c","d","e","f"]},"talk":{"kind":"string","sizeMax":36},"word":{"kind":"string","enumValues":["","chama","manda","desce","chorou"]}}}'::jsonb)),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_voice_command (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 128),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "request" json NOT NULL CONSTRAINT "truco_voice_command_request_type" CHECK ("request" IS NULL OR public.portable_json_valid("request") IS TRUE) CHECK (public.portable_shape_valid(request, '{"kind":"object","fields":{"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["rise","shout","sit"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}'::jsonb)),
+  "revision" BIGINT,
+  "outcome" TEXT CHECK (outcome IN ('', 'accepted', 'rejected')),
+  "reason" TEXT CHECK (char_length(reason) <= 64),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_voice_open (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 128),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "kind" TEXT NOT NULL CHECK (kind IN ('create', 'join')),
+  "input" json NOT NULL CONSTRAINT "truco_voice_open_input_type" CHECK ("input" IS NULL OR public.portable_json_valid("input") IS TRUE),
+  "outcome" TEXT CHECK (outcome IN ('', 'accepted', 'rejected')),
+  "reason" TEXT CHECK (char_length(reason) <= 64),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_voice_public (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 36),
+  "talk" TEXT NOT NULL CHECK (char_length(talk) <= 36),
+  "seat" TEXT NOT NULL CHECK (char_length(seat) <= 1),
+  "name" TEXT NOT NULL CHECK (char_length(name) <= 32),
+  "word" TEXT NOT NULL CHECK (char_length(word) <= 12),
+  "n" BIGINT NOT NULL CHECK (n >= 0),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('public:') STORED NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS truco_challenge_open (
+  "id" TEXT PRIMARY KEY CHECK (char_length(id) <= 128),
+  "instance_id" uuid NOT NULL,
+  "actor" uuid DEFAULT auth_uid() NOT NULL,
+  "kind" TEXT NOT NULL CHECK (kind IN ('create', 'join')),
+  "input" json NOT NULL CONSTRAINT "truco_challenge_open_input_type" CHECK ("input" IS NULL OR public.portable_json_valid("input") IS TRUE),
+  "outcome" TEXT CHECK (outcome IN ('', 'accepted', 'rejected')),
+  "reason" TEXT CHECK (char_length(reason) <= 64),
+  "txid" BIGINT DEFAULT pg_current_xact_id()::text::bigint,
+  "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
+);
+
 COMMIT;

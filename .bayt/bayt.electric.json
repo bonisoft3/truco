@@ -4,7 +4,7 @@
     "up": false,
     "manual": false,
     "environment": {
-      "DATABASE_URL": "postgresql://electric:electric@database:5432/${POSTGRES_DB:-truco}?sslmode=disable",
+      "DATABASE_URL": "postgresql://electric:${ELECTRIC_PASSWORD:-dev-electric-password}@database:5432/${POSTGRES_DB:-truco}?sslmode=disable",
       "ELECTRIC_SECRET": "${ELECTRIC_SECRET:-dev-electric-secret}",
       "ELECTRIC_MANUAL_TABLE_PUBLISHING": "true"
     },
@@ -13,6 +13,9 @@
     "depends_on": {
       "truco-database": {
         "condition": "service_healthy"
+      },
+      "truco-timer-check": {
+        "condition": "service_completed_successfully"
       }
     },
     "networks": {
@@ -109,7 +112,8 @@
       },
       "upClosure": [
         "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.database.yaml"
+        "./.bayt/compose.database.yaml",
+        "./.bayt/compose.timer-check.yaml"
       ]
     },
     "outs": {
@@ -138,29 +142,43 @@
       },
       "upClosure": [
         "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.database.yaml"
+        "./.bayt/compose.database.yaml",
+        "./.bayt/compose.timer-check.yaml"
       ]
     }
   },
   "visibility": "internal",
   "emitsSrcs": false,
   "deps": [
-    "database_outs"
+    "database_outs",
+    "timer-check_outs"
   ],
   "sameProjectDeps": [
-    "database_outs"
+    "database_outs",
+    "timer-check_outs"
   ],
   "transitiveDeps": [
-    "database_outs"
+    "database_outs",
+    "timer-check_outs"
   ],
   "transitiveCrossDeps": [],
   "upClosure": [
     "./.bayt/compose.electric.yaml",
-    "./.bayt/compose.database.yaml"
+    "./.bayt/compose.database.yaml",
+    "./.bayt/compose.timer-check.yaml"
   ],
   "chainedDeps": [
     {
       "name": "database_outs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "timer-check_outs",
       "project": "truco",
       "dir": ".",
       "outs": {

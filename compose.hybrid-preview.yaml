@@ -1,0 +1,11 @@
+services:
+  truco-caddy:
+    build:
+      additional_contexts:
+        plugins_omnishell-runtime-image: ../../../plugins/omnishell
+    volumes:
+      - ../.certs:/certs:ro
+      - ../.preview/Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "127.0.0.1:10374:8443"
+      - "[::1]:10374:8443"

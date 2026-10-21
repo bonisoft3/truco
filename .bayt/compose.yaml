@@ -11,12 +11,27 @@ services:
       service: truco-browser
     profiles:
     - browser
-  caddy:
+    scale: 1
+  release-docker:
     extends:
-      file: ./compose.caddy.yaml
-      service: truco-caddy
+      file: ./compose.release-docker.yaml
+      service: truco-release-docker
     profiles:
-    - caddy
+    - release-docker
+    scale: 1
+  replay:
+    extends:
+      file: ./compose.replay.yaml
+      service: truco-replay
+    profiles:
+    - replay
+    scale: 1
+  ci-replay:
+    extends:
+      file: ./compose.ci-replay.yaml
+      service: truco-ci-replay
+    profiles:
+    - ci-replay
     scale: 1
   setup:
     extends:
@@ -24,6 +39,7 @@ services:
       service: truco-setup
     profiles:
     - setup
+    scale: 1
   lint:
     extends:
       file: ./compose.lint.yaml
@@ -68,6 +84,56 @@ services:
       service: truco-ci-visual
     profiles:
     - ci-visual
+    scale: 1
+  ci:
+    extends:
+      file: ./compose.ci.yaml
+      service: truco-ci
+    profiles:
+    - ci
+    scale: 1
+  served:
+    extends:
+      file: ./compose.served.yaml
+      service: truco-served
+    profiles:
+    - served
+    scale: 1
+  database:
+    extends:
+      file: ./compose.database.yaml
+      service: truco-database
+    profiles:
+    - database
+    scale: 1
+  auth:
+    extends:
+      file: ./compose.auth.yaml
+      service: truco-auth
+    profiles:
+    - auth
+    scale: 1
+  ticker:
+    extends:
+      file: ./compose.ticker.yaml
+      service: truco-ticker
+    profiles:
+    - ticker
+    scale: 1
+  clock:
+    extends:
+      file: ./compose.clock.yaml
+      service: truco-clock
+    profiles:
+    - clock
+    scale: 1
+  timer-check:
+    extends:
+      file: ./compose.timer-check.yaml
+      service: truco-timer-check
+    profiles:
+    - timer-check
+    scale: 1
   check-acceptance:
     extends:
       file: ./compose.check-acceptance.yaml
@@ -81,6 +147,7 @@ services:
       service: truco-ci-acceptance
     profiles:
     - ci-acceptance
+    scale: 1
   check-fit:
     extends:
       file: ./compose.check-fit.yaml
@@ -94,6 +161,7 @@ services:
       service: truco-ci-fit
     profiles:
     - ci-fit
+    scale: 1
   check-window:
     extends:
       file: ./compose.check-window.yaml
@@ -107,12 +175,13 @@ services:
       service: truco-ci-window
     profiles:
     - ci-window
-  database:
+    scale: 1
+  caddy:
     extends:
-      file: ./compose.database.yaml
-      service: truco-database
+      file: ./compose.caddy.yaml
+      service: truco-caddy
     profiles:
-    - database
+    - caddy
     scale: 1
   crud:
     extends:
@@ -120,13 +189,6 @@ services:
       service: truco-crud
     profiles:
     - crud
-    scale: 1
-  auth:
-    extends:
-      file: ./compose.auth.yaml
-      service: truco-auth
-    profiles:
-    - auth
     scale: 1
   electric:
     extends:

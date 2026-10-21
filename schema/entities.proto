@@ -5,4 +5,483 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
 
+message AppUser {
+  optional string id = 1 [json_name = "id"];
+  optional string handle = 2 [json_name = "handle"];
+}
 
+message Chair {
+  optional string id = 1 [json_name = "id"];
+  optional string at = 2 [json_name = "at"];
+  optional string team = 3 [json_name = "team"];
+  optional string state = 4 [json_name = "state"];
+  optional string name = 5 [json_name = "name"];
+  optional string picked = 6 [json_name = "picked"];
+  optional string callable = 8 [json_name = "callable"];
+  optional string talk = 7 [json_name = "talk"];
+}
+
+message Challenge {
+  optional string id = 1 [json_name = "id"];
+  optional string challenger_id = 2 [json_name = "challenger_id"];
+  optional string challenger_name = 3 [json_name = "challenger_name"];
+  optional string target_id = 4 [json_name = "target_id"];
+  optional string seed = 5 [json_name = "seed"];
+  optional string variant = 6 [json_name = "variant"];
+  optional string status = 7 [json_name = "status"];
+  google.protobuf.Timestamp created_at = 8 [json_name = "created_at"];
+}
+
+message Held {
+  optional string id = 1 [json_name = "id"];
+  optional string round_id = 2 [json_name = "round_id"];
+  optional string seat = 3 [json_name = "seat"];
+  optional string card = 4 [json_name = "card"];
+  optional string rank = 5 [json_name = "rank"];
+  optional string suit = 6 [json_name = "suit"];
+  optional string face = 7 [json_name = "face"];
+  optional int32 power = 8 [json_name = "power"];
+  optional string manilha = 9 [json_name = "manilha"];
+  optional int32 slot = 10 [json_name = "slot"];
+  optional string blocked = 11 [json_name = "blocked"];
+  optional string display_seat = 12 [json_name = "display_seat"];
+  optional string current = 13 [json_name = "current"];
+  google.protobuf.Timestamp created_at = 14 [json_name = "created_at"];
+}
+
+message Intent {
+  optional string id = 1 [json_name = "id"];
+  optional string game = 2 [json_name = "game"];
+  optional int32 revision = 3 [json_name = "revision"];
+  optional string kind = 4 [json_name = "kind"];
+  optional int32 slot = 5 [json_name = "slot"];
+}
+
+message ListedTable {
+  optional string id = 1 [json_name = "id"];
+  optional string host = 2 [json_name = "host"];
+  optional string rules = 3 [json_name = "rules"];
+  optional string seating = 4 [json_name = "seating"];
+  optional int32 missing = 5 [json_name = "missing"];
+  optional string seated = 6 [json_name = "seated"];
+  optional string talk = 7 [json_name = "talk"];
+}
+
+message Lobby {
+  optional string id = 1 [json_name = "id"];
+  optional string handle = 2 [json_name = "handle"];
+  optional string room_seed = 3 [json_name = "room_seed"];
+  optional string variant = 4 [json_name = "variant"];
+  optional string seats = 5 [json_name = "seats"];
+  optional string status = 6 [json_name = "status"];
+  google.protobuf.Timestamp updated_at = 7 [json_name = "updated_at"];
+}
+
+message LobbyTab {
+  optional string id = 1 [json_name = "id"];
+  optional string lease = 2 [json_name = "lease"];
+  optional string me = 3 [json_name = "me"];
+  optional string note = 4 [json_name = "note"];
+  optional string join = 5 [json_name = "join"];
+  optional string shown = 6 [json_name = "shown"];
+  optional string code = 7 [json_name = "code"];
+  optional string format = 8 [json_name = "format"];
+  optional string reserved = 9 [json_name = "reserved"];
+  optional string chair = 10 [json_name = "chair"];
+  optional string call = 11 [json_name = "call"];
+}
+
+message Match {
+  optional string id = 1 [json_name = "id"];
+  optional string variant = 2 [json_name = "variant"];
+  optional string seats = 3 [json_name = "seats"];
+  optional string theme = 4 [json_name = "theme"];
+  optional int32 us_score = 5 [json_name = "us_score"];
+  optional int32 them_score = 6 [json_name = "them_score"];
+  optional int32 others_score = 7 [json_name = "others_score"];
+  optional int32 stake = 8 [json_name = "stake"];
+  optional int32 hand_no = 9 [json_name = "hand_no"];
+  optional string status = 10 [json_name = "status"];
+  optional string winner = 11 [json_name = "winner"];
+  optional string opponent = 12 [json_name = "opponent"];
+  optional string opponent_name = 13 [json_name = "opponent_name"];
+  optional string partner_name = 14 [json_name = "partner_name"];
+  optional string seed = 15 [json_name = "seed"];
+  optional string my_seat = 16 [json_name = "my_seat"];
+  optional string current = 17 [json_name = "current"];
+  optional string locale = 18 [json_name = "locale"];
+  optional string game = 20 [json_name = "game"];
+  optional string wake = 21 [json_name = "wake"];
+  optional string opponent_handle = 22 [json_name = "opponent_handle"];
+  optional string tavern_key = 24 [json_name = "tavern_key"];
+  optional string filled = 23 [json_name = "filled"];
+  google.protobuf.Timestamp created_at = 19 [json_name = "created_at"];
+}
+
+message OnlineItem {
+  optional string id = 1 [json_name = "id"];
+  reserved 2;
+  reserved "room";
+  reserved 3;
+  reserved "kind";
+  reserved 4;
+  reserved "key";
+  reserved 5;
+  reserved "n";
+  reserved 6;
+  reserved "place";
+  reserved 7;
+  reserved "team";
+  reserved 8;
+  reserved "count";
+  reserved 9;
+  reserved "card";
+  reserved 10;
+  reserved "turn";
+  reserved 11;
+  reserved "win";
+  reserved 12;
+  reserved "rank";
+  reserved 13;
+  reserved "suit";
+  reserved 14;
+  reserved "face";
+}
+
+message OnlineView {
+  optional string id = 1 [json_name = "id"];
+  reserved 2;
+  reserved "room";
+  reserved 3;
+  reserved "covered";
+  reserved 4;
+  reserved "status";
+  reserved 5;
+  reserved "bare";
+  reserved 6;
+  reserved "seated";
+  reserved 7;
+  reserved "places";
+  reserved 8;
+  reserved "place";
+  reserved 9;
+  reserved "team";
+  reserved 10;
+  reserved "my_place";
+  reserved 11;
+  reserved "mine";
+  reserved 12;
+  reserved "three";
+  reserved 13;
+  reserved "a";
+  reserved 14;
+  reserved "b";
+  reserved 15;
+  reserved "c";
+  reserved 16;
+  reserved "hand_no";
+  reserved 17;
+  reserved "goal";
+  reserved 18;
+  reserved "stake";
+  reserved 19;
+  reserved "variant";
+  reserved 20;
+  reserved "vira";
+  reserved 21;
+  reserved "error";
+  reserved 22;
+  reserved "vira_rank";
+  reserved 23;
+  reserved "vira_suit";
+}
+
+message Play {
+  optional string id = 1 [json_name = "id"];
+  optional string round_id = 2 [json_name = "round_id"];
+  optional int32 vaza = 3 [json_name = "vaza"];
+  optional string seat = 4 [json_name = "seat"];
+  optional string kind = 5 [json_name = "kind"];
+  optional string count = 6 [json_name = "count"];
+  optional string card = 7 [json_name = "card"];
+  optional int32 power = 8 [json_name = "power"];
+  optional string said = 9 [json_name = "said"];
+  optional int32 from_slot = 10 [json_name = "from_slot"];
+  optional string rank = 11 [json_name = "rank"];
+  optional string suit = 12 [json_name = "suit"];
+  optional string face = 13 [json_name = "face"];
+  optional string manilha = 14 [json_name = "manilha"];
+  optional int32 lie = 15 [json_name = "lie"];
+  optional string win = 16 [json_name = "win"];
+  optional string display_seat = 17 [json_name = "display_seat"];
+  optional string seq = 18 [json_name = "seq"];
+}
+
+message Player {
+  optional string id = 1 [json_name = "id"];
+  optional string handle = 2 [json_name = "handle"];
+}
+
+message RoomAction {
+  optional string id = 1 [json_name = "id"];
+  optional string room_seed = 2 [json_name = "room_seed"];
+  optional string player_id = 3 [json_name = "player_id"];
+  optional string action = 4 [json_name = "action"];
+  optional string card = 5 [json_name = "card"];
+  optional int32 slot = 6 [json_name = "slot"];
+  google.protobuf.Timestamp created_at = 7 [json_name = "created_at"];
+}
+
+message Round {
+  optional string id = 1 [json_name = "id"];
+  optional string match_id = 2 [json_name = "match_id"];
+  optional int32 hand_no = 3 [json_name = "hand_no"];
+  optional string vira = 4 [json_name = "vira"];
+  optional string manilha = 5 [json_name = "manilha"];
+  optional string phase = 6 [json_name = "phase"];
+  optional string ran = 10 [json_name = "ran"];
+  optional string v1 = 11 [json_name = "v1"];
+  optional string v2 = 12 [json_name = "v2"];
+  optional string v3 = 13 [json_name = "v3"];
+  optional int32 stake = 14 [json_name = "stake"];
+  optional string result = 15 [json_name = "result"];
+  optional string leader = 16 [json_name = "leader"];
+  optional string asked = 17 [json_name = "asked"];
+  optional string raised = 18 [json_name = "raised"];
+  optional int32 rung = 19 [json_name = "rung"];
+  optional string brink = 20 [json_name = "brink"];
+  optional string envido = 21 [json_name = "envido"];
+  optional string envido_asked = 22 [json_name = "envido_asked"];
+  optional int32 envido_rung = 23 [json_name = "envido_rung"];
+  optional string envido_calls = 24 [json_name = "envido_calls"];
+  optional int32 envido_us = 25 [json_name = "envido_us"];
+  optional int32 envido_them = 26 [json_name = "envido_them"];
+  optional string envido_result = 27 [json_name = "envido_result"];
+  optional string said = 28 [json_name = "said"];
+  optional string shout_state = 29 [json_name = "shout_state"];
+  optional string shout_word = 30 [json_name = "shout_word"];
+  optional string shout_from = 31 [json_name = "shout_from"];
+  optional string shout_kind = 32 [json_name = "shout_kind"];
+  optional string shout_t = 33 [json_name = "shout_t"];
+  optional string shout_done = 34 [json_name = "shout_done"];
+  optional string oculta = 36 [json_name = "oculta"];
+  optional string turn_seat = 37 [json_name = "turn_seat"];
+  optional string shout_seat = 38 [json_name = "shout_seat"];
+  optional string current = 41 [json_name = "current"];
+  google.protobuf.Timestamp created_at = 42 [json_name = "created_at"];
+  optional string felt_phase = 43 [json_name = "felt_phase"];
+  optional string truco_label = 44 [json_name = "truco_label"];
+  optional string truco_title = 45 [json_name = "truco_title"];
+  optional string truco_blocked = 46 [json_name = "truco_blocked"];
+  optional string raise_label = 47 [json_name = "raise_label"];
+  optional string raise_blocked = 48 [json_name = "raise_blocked"];
+  optional string next_rung = 49 [json_name = "next_rung"];
+  optional string name_key = 50 [json_name = "name_key"];
+  optional string name_handle = 51 [json_name = "name_handle"];
+  optional string worth = 52 [json_name = "worth"];
+  optional string opponent_name = 53 [json_name = "opponent_name"];
+  optional string opponent_handle = 54 [json_name = "opponent_handle"];
+  optional string opponent = 55 [json_name = "opponent"];
+  optional string dialogue_key = 56 [json_name = "dialogue_key"];
+  optional string dialogue_state = 57 [json_name = "dialogue_state"];
+  optional string player_shout_state = 58 [json_name = "player_shout_state"];
+  optional string over_key = 59 [json_name = "over_key"];
+  optional string tell = 60 [json_name = "tell"];
+  optional string said_t = 61 [json_name = "said_t"];
+  optional string raise_hint = 62 [json_name = "raise_hint"];
+  optional string shout_anim = 63 [json_name = "shout_anim"];
+  reserved 7;
+  reserved "truco_state";
+  reserved 8;
+  reserved "envido_state";
+  reserved 9;
+  reserved "trick_state";
+  reserved 35;
+  reserved "last_remote_shout";
+  reserved 39;
+  reserved "ui_deadline";
+  reserved 40;
+  reserved "backend_deadline";
+}
+
+message TrucoCallCommand {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  google.protobuf.Value request = 4 [json_name = "request"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string outcome = 6 [json_name = "outcome"];
+  optional string reason = 7 [json_name = "reason"];
+}
+
+message TrucoCallOpen {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  optional string kind = 4 [json_name = "kind"];
+  google.protobuf.Value input = 5 [json_name = "input"];
+  optional string outcome = 6 [json_name = "outcome"];
+  optional string reason = 7 [json_name = "reason"];
+}
+
+message TrucoCallSeat {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  optional string seat = 4 [json_name = "seat"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string phase = 6 [json_name = "phase"];
+  google.protobuf.Value view = 7 [json_name = "view"];
+  optional string caller_name = 8 [json_name = "caller_name"];
+  optional string room = 9 [json_name = "room"];
+  optional string chair = 10 [json_name = "chair"];
+  optional string variant = 11 [json_name = "variant"];
+  optional string seating = 12 [json_name = "seating"];
+}
+
+message TrucoChallengeCommand {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  google.protobuf.Value request = 4 [json_name = "request"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string outcome = 6 [json_name = "outcome"];
+  optional string reason = 7 [json_name = "reason"];
+}
+
+message TrucoChallengeOpen {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  optional string kind = 4 [json_name = "kind"];
+  google.protobuf.Value input = 5 [json_name = "input"];
+  optional string outcome = 6 [json_name = "outcome"];
+  optional string reason = 7 [json_name = "reason"];
+}
+
+message TrucoChallengeSeat {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  optional string seat = 4 [json_name = "seat"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string phase = 6 [json_name = "phase"];
+  google.protobuf.Value view = 7 [json_name = "view"];
+  optional string inviter_name = 8 [json_name = "inviter_name"];
+  optional string target_name = 9 [json_name = "target_name"];
+  optional string variant = 10 [json_name = "variant"];
+  optional string seating = 11 [json_name = "seating"];
+  optional string room = 12 [json_name = "room"];
+}
+
+message TrucoMatchCommand {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  google.protobuf.Value request = 4 [json_name = "request"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string outcome = 6 [json_name = "outcome"];
+  optional string reason = 7 [json_name = "reason"];
+}
+
+message TrucoMatchOpen {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  optional string kind = 4 [json_name = "kind"];
+  google.protobuf.Value input = 5 [json_name = "input"];
+  optional string outcome = 6 [json_name = "outcome"];
+  optional string reason = 7 [json_name = "reason"];
+}
+
+message TrucoMatchPublic {
+  optional string id = 1 [json_name = "id"];
+  optional string variant = 2 [json_name = "variant"];
+  optional string seating = 3 [json_name = "seating"];
+  optional int32 seated = 4 [json_name = "seated"];
+  optional int32 places = 5 [json_name = "places"];
+  optional string talk = 6 [json_name = "talk"];
+}
+
+message TrucoMatchSeat {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  optional string seat = 4 [json_name = "seat"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string phase = 6 [json_name = "phase"];
+  google.protobuf.Value view = 7 [json_name = "view"];
+  optional string variant = 8 [json_name = "variant"];
+  optional string seating = 9 [json_name = "seating"];
+}
+
+message TrucoPresenceCommand {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  google.protobuf.Value request = 4 [json_name = "request"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string outcome = 6 [json_name = "outcome"];
+  optional string reason = 7 [json_name = "reason"];
+}
+
+message TrucoPresenceLease {
+  optional string id = 1 [json_name = "id"];
+  optional string actor = 2 [json_name = "actor"];
+  optional int32 beat = 3 [json_name = "beat"];
+}
+
+message TrucoPresencePublic {
+  optional string id = 1 [json_name = "id"];
+  optional string name = 2 [json_name = "name"];
+}
+
+message TrucoPresenceSeat {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  optional string seat = 4 [json_name = "seat"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string phase = 6 [json_name = "phase"];
+  google.protobuf.Value view = 7 [json_name = "view"];
+  optional string name = 8 [json_name = "name"];
+}
+
+message TrucoVoiceCommand {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  google.protobuf.Value request = 4 [json_name = "request"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string outcome = 6 [json_name = "outcome"];
+  optional string reason = 7 [json_name = "reason"];
+}
+
+message TrucoVoiceOpen {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  optional string kind = 4 [json_name = "kind"];
+  google.protobuf.Value input = 5 [json_name = "input"];
+  optional string outcome = 6 [json_name = "outcome"];
+  optional string reason = 7 [json_name = "reason"];
+}
+
+message TrucoVoicePublic {
+  optional string id = 1 [json_name = "id"];
+  optional string talk = 2 [json_name = "talk"];
+  optional string seat = 3 [json_name = "seat"];
+  optional string name = 4 [json_name = "name"];
+  optional string word = 5 [json_name = "word"];
+  optional int64 n = 6 [json_name = "n"];
+}
+
+message TrucoVoiceSeat {
+  optional string id = 1 [json_name = "id"];
+  optional string instance_id = 2 [json_name = "instance_id"];
+  optional string actor = 3 [json_name = "actor"];
+  optional string seat = 4 [json_name = "seat"];
+  optional int64 revision = 5 [json_name = "revision"];
+  optional string phase = 6 [json_name = "phase"];
+  google.protobuf.Value view = 7 [json_name = "view"];
+}

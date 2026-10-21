@@ -21,6 +21,9 @@
       },
       "truco-auth": {
         "condition": "service_started"
+      },
+      "truco-clock": {
+        "condition": "service_started"
       }
     },
     "networks": {
@@ -141,8 +144,7 @@
           ".bayt/Dockerfile.*",
           ".bayt/bayt.*.json",
           ".bayt/Taskfile.*.yaml",
-          "mecha/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml",
-          "omnishell/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml"
+          "monorepo/${MONOREPO_COMPOSE_MODE:-docker-image}.yaml"
         ],
         "exclude": []
       },
@@ -162,8 +164,12 @@
         "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.crud.yaml",
         "./.bayt/compose.database.yaml",
+        "./.bayt/compose.timer-check.yaml",
+        "./.bayt/compose.served.yaml",
         "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.auth.yaml"
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.clock.yaml",
+        "./.bayt/compose.ticker.yaml"
       ]
     },
     "outs": {
@@ -195,8 +201,12 @@
         "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.crud.yaml",
         "./.bayt/compose.database.yaml",
+        "./.bayt/compose.timer-check.yaml",
+        "./.bayt/compose.served.yaml",
         "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.auth.yaml"
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.clock.yaml",
+        "./.bayt/compose.ticker.yaml"
       ]
     }
   },
@@ -207,21 +217,24 @@
     "database_outs",
     "crud_outs",
     "electric_outs",
-    "auth_outs"
+    "auth_outs",
+    "clock_outs"
   ],
   "sameProjectDeps": [
     "caddy_outs",
     "database_outs",
     "crud_outs",
     "electric_outs",
-    "auth_outs"
+    "auth_outs",
+    "clock_outs"
   ],
   "transitiveDeps": [
     "caddy_outs",
     "database_outs",
     "crud_outs",
     "electric_outs",
-    "auth_outs"
+    "auth_outs",
+    "clock_outs"
   ],
   "transitiveCrossDeps": [],
   "upClosure": [
@@ -229,8 +242,12 @@
     "./.bayt/compose.caddy.yaml",
     "./.bayt/compose.crud.yaml",
     "./.bayt/compose.database.yaml",
+    "./.bayt/compose.timer-check.yaml",
+    "./.bayt/compose.served.yaml",
     "./.bayt/compose.electric.yaml",
-    "./.bayt/compose.auth.yaml"
+    "./.bayt/compose.auth.yaml",
+    "./.bayt/compose.clock.yaml",
+    "./.bayt/compose.ticker.yaml"
   ],
   "chainedDeps": [
     {
@@ -271,6 +288,15 @@
     },
     {
       "name": "auth_outs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [],
+        "exclude": []
+      }
+    },
+    {
+      "name": "clock_outs",
       "project": "truco",
       "dir": ".",
       "outs": {

@@ -12,6 +12,10 @@ import { baseUrl } from "omnishell/base-url.ts";
 type Case = { id: string; accepts: string[]; run: (p: Page) => Promise<void> };
 // deno-lint-ignore no-explicit-any
 type Page = any;
+// deno-lint-ignore no-explicit-any
+type Route = any;
+// deno-lint-ignore no-explicit-any
+type Request = any;
 
 const APP = Deno.args[0] ?? ".";
 
@@ -108,26 +112,25 @@ const hand = (p: Page) =>
 // catch, and at a tenth of a beat it is still open.
 const TEMPO = "clock=manual";
 
-async function resetTable(p: Page) {
-  await p.evaluate(() => {
-    localStorage.clear();
-  }).catch(() => {});
-  await sleep(100);
+/** Arrive at `url` with nothing kept from an earlier sitting. The table is
+    cleared from a page of the origin that runs no store: a running screen
+    flushes its rows behind a clear, and the reload then resumes the sitting
+    the case meant to leave. */
+async function freshStart(p: Page, url: string) {
+  await p.goto(`${new URL(url).origin}/robots.txt`, { waitUntil: "domcontentloaded" });
+  await p.evaluate(() => localStorage.clear());
+  await p.goto(url, { waitUntil: "domcontentloaded" });
 }
 
-async function injectMatch(p: Page, r: any) {
-  await p.evaluate((row: any) => {
-    localStorage.clear();
-    const formatted = {
-      ...row,
-      us_score: Number(row.us_score),
-      them_score: Number(row.them_score),
-      stake: Number(row.stake),
-      hand_no: Number(row.hand_no),
-    };
-    localStorage.setItem("mecha:match", JSON.stringify({ [`s:${row.id}`]: { versionKey: "v1", data: formatted } }));
-  }, r);
-  await sleep(100);
+/** The game on the table, as the arena keeps it: on the match row it stores
+    on the device, beside the seed it was dealt from. */
+type Game = { seed: string; revision: number; state: Record<string, unknown> & { phase: string; hand_no: number } };
+async function storedGame(p: Page): Promise<Game | null> {
+  return await p.evaluate(() => {
+    const rows = JSON.parse(localStorage.getItem("mecha:match") ?? "{}") as Record<string, { data: { game?: string } }>;
+    const table = Object.values(rows)[0]?.data.game;
+    return table === undefined ? null : JSON.parse(table);
+  });
 }
 
 /** The door this page came through. A route is a real path, so the origin is
@@ -135,15 +138,18 @@ async function injectMatch(p: Page, r: any) {
 const origin = (p: Page) => new URL(p.url()).origin;
 
 async function freshTable(p: Page, base: string, clock: "fast" | "real" = "fast") {
-  await p.goto(`${base}/${clock === "fast" ? `?${TEMPO}` : ""}`, { waitUntil: "domcontentloaded" });
-  await resetTable(p);
-  await p.reload({ waitUntil: "domcontentloaded" });
-  await until(p, "a dealt hand", 20000, async () => {
-    if ((await count(p, ".seat-row.mine .card")) !== 3) return false;
-    const id = await attr(p, ".matchbox", "data-match-id");
-    const roundAttr = await attr(p, "#seat-you .card", "data-round");
-    return id !== null && id !== "" && roundAttr !== null && roundAttr.startsWith(id);
-  });
+  await freshStart(p, `${base}/${clock === "fast" ? `?${TEMPO}` : ""}`);
+  await until(p, "a dealt hand", 20000, () => dealtHand(p));
+}
+
+/** Three cards in your hand, dealt by the game on the table: a hand is the
+    game's, and the game is named by the seat's draw. */
+async function dealtHand(p: Page, hand?: number) {
+  if ((await count(p, ".seat-row.mine .card")) !== 3) return false;
+  const seed = await attr(p, ".matchbox", "data-seed");
+  const roundAttr = await attr(p, "#seat-you .card", "data-round");
+  return seed !== null && seed !== "" && roundAttr !== null &&
+    roundAttr.startsWith(`g${seed}/`) && (hand === undefined || roundAttr === `g${seed}/h${hand}`);
 }
 
 /** Between screens the way a reader crosses: the link, not the address bar. A
@@ -183,28 +189,103 @@ async function pick(p: Page, picker: string, opt: string) {
   });
 }
 
-/** Sit down at a stated table. Everything about how a sitting plays out is
-    folded from its seed — the shuffle every hand gets, and the opponent, who
-    is `CAST_KEYS[seed % 4]` — and whether they call is their persona's
-    threshold against the hand they were dealt. So a case that needs a call
-    can have one by naming the table rather than by playing until somebody
-    obliges, which is a wait on a coin rather than on the table.
-    Seed 2 is Tião, who calls on the lowest hand of the four, and calls on the
-    first hand of this shuffle. */
-async function seatedAt(p: Page, seed: number) {
-  await injectMatch(p, {
-    id: "mseed", variant: "paulista", seats: "1v1", theme: "xadrez",
-    us_score: "0", them_score: "0", stake: "1", hand_no: "1",
-    status: "playing", winner: "", opponent: "tiao",
-    opponent_name: "Tião Pandeiro", partner_name: "Bigode", seed: String(seed), current: "yes",
-  });
+/** Sit down at a stated table. Every draw the terminal makes follows from the
+    address's seed, so the same seed and the same picks deal the same game,
+    and a case that needs a call can have one by naming the table rather than
+    by playing until somebody obliges, which is a wait on a coin rather than
+    on the table. The picks are made in a fixed order, each a draw of its own. */
+type Rules = { variant?: string; seats?: string; opponent?: string };
+/** The seeds the seeded cases sit at, each named for what it promises. A
+    seed names the arena's own draw stream (the terminal draws per actor), so
+    a promise holds whatever the bar did first. Found by search: a seed that
+    stops keeping its promise is replaced, not reasoned about. */
+const SEEDS = {
+  /** Paulista against Tião: he calls on the first hand. */
+  tiaoCalls: 2,
+  /** Mineiro 2v2 against Tião: a sitting that reaches the mão de dez. */
+  maoDeDez: 2,
+  /** Mineiro against Tião: a sitting that reaches the mão de ferro. */
+  maoDeFerro: 2,
+  /** Truc and mineiro against Zé Nezinho: a call is heard, and a last hand is reached. */
+  talk: 3,
+  /** Mineiro against Nezinho, second hand: the house leads, you hold the led rank, neither a manilha. */
+  tie: 8,
+  /** Douradinha with three pairs: a table that plays. */
+  threePairs: 7,
+  /** Two seeds that deal different hands. */
+  replay: ["7", "8"],
+};
+const TIAO_CALLS: Rules = { variant: "paulista", opponent: "tiao" };
+async function seatedAt(p: Page, seed: number, rules: Rules = {}, clock: "fast" | "real" = "fast") {
+  await freshStart(p, `${origin(p)}/?seed=${seed}${clock === "fast" ? `&${TEMPO}` : ""}`);
+  await until(p, "a seeded hand", 20000, () => dealtHand(p));
+  // A pick that moves the rules deals a new game, so each is waited on by the
+  // seed changing: the old game's hand would pass for the new one's.
+  for (const picker of ["variant", "seats", "opponent"] as const) {
+    const opt = rules[picker];
+    if (opt === undefined || (await attr(p, ".matchbox", `data-${picker}`)) === opt) continue;
+    const before = await attr(p, ".matchbox", "data-seed");
+    await pick(p, picker, opt);
+    await until(p, `a game dealt for ${opt}`, 20000, async () =>
+      (await attr(p, ".matchbox", "data-seed")) !== before && await dealtHand(p)).catch(async (err) => {
+      const now = await p.evaluate(() => ({
+        seed: document.querySelector(".matchbox")?.getAttribute("data-seed"),
+        opponent: document.querySelector(".matchbox")?.getAttribute("data-opponent"),
+        round: document.querySelector("#seat-you .card")?.getAttribute("data-round"),
+        cards: document.querySelectorAll(".seat-row.mine .card").length,
+      }));
+      throw new Error(`${err.message}: the seed was ${before}, the table now ${JSON.stringify(now)}`);
+    });
+  }
+}
+
+/** Play the hand on the table out: your cards as they come, every call
+    accepted, until the game stands between hands. */
+async function toHandOver(p: Page) {
+  const playing = forTable(90000);
+  while (playing()) {
+    if ((await storedGame(p))?.state.phase === "hand_over") return;
+    if (await p.locator("#btn-brink-play").isVisible()) await p.locator("#btn-brink-play").click().catch(() => {});
+    await answerIfRaised(p);
+    if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p).catch(() => {});
+    await tick(p, 300);
+    await sleep(20);
+  }
+  throw new Error(`the hand never ended: ${(await storedGame(p))?.state.phase}`);
+}
+
+/** Play on until the match is over. */
+async function toFinished(p: Page) {
+  const playing = forTable(120000);
+  while (playing()) {
+    if ((await storedGame(p))?.state.phase === "finished") return;
+    if (await p.locator("#btn-brink-play").isVisible()) await p.locator("#btn-brink-play").click().catch(() => {});
+    await answerIfRaised(p);
+    if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p).catch(() => {});
+    await tick(p, 300);
+    await sleep(20);
+  }
+  throw new Error(`the match never ended: ${(await storedGame(p))?.state.phase}`);
+}
+
+/** The score a hand is dealt at, set between hands: the stored game is given
+    the score and the machine deals the next hand from it, so whatever a score
+    decides at the deal — a mão de dez, a mão de ferro — is the machine's. */
+async function scoredAt(p: Page, score: { us: number; them: number }) {
+  await toHandOver(p);
+  const hand = (await storedGame(p))!.state.hand_no + 1;
+  await p.evaluate((score: { us: number; them: number }) => {
+    const rows = JSON.parse(localStorage.getItem("mecha:match")!) as Record<string, { data: { game: string } }>;
+    const row = Object.values(rows)[0];
+    const game = JSON.parse(row.data.game);
+    game.state.score_a = score.us;
+    game.state.score_b = score.them;
+    row.data.game = JSON.stringify(game);
+    localStorage.setItem("mecha:match", JSON.stringify(rows));
+  }, score);
   await p.reload({ waitUntil: "domcontentloaded" });
-  await until(p, "a dealt hand", 20000, async () => {
-    if ((await count(p, ".seat-row.mine .card")) !== 3) return false;
-    const id = await attr(p, ".matchbox", "data-match-id");
-    const roundAttr = await attr(p, "#seat-you .card", "data-round");
-    return id === "mseed" && roundAttr !== null && roundAttr.startsWith("mseed");
-  });
+  await until(p, `hand ${hand} dealt at ${score.us}–${score.them}`, 20000, () => dealtHand(p, hand));
+  assert(await count(p, ".play") === 1 && await count(p, ".hand") === 1, "the previous hand leaves duplicate controls or phase data");
 }
 
 /** The house may raise before it plays; a driver that ignores a raise is a
@@ -296,6 +377,12 @@ const CASES: Case[] = [
         assert((await text(p, ".vira")).trim().length > 0, "the strip names no turn-up");
       }
       assert((await count(p, ".seatbar .avatar")) === 1, "no seat is shown at the table");
+      // The felt is the board: a region added beside it takes a grid row of
+      // its own, empty or not, and the table shrinks to what is left.
+      const felt = await p.evaluate(() =>
+        document.querySelector(".mat")!.getBoundingClientRect().height /
+        document.querySelector(".board")!.getBoundingClientRect().height);
+      assert(felt > 0.95, `the felt takes ${Math.round(felt * 100)}% of the board`);
       const first = await hand(p);
       // A second deal from a second shuffle: the odds of an identical
       // three-card hand are ~1 in 10k, so equality here is a broken shuffle.
@@ -358,11 +445,11 @@ const CASES: Case[] = [
       // house can raise mid-hand — so the exit condition is the score, not a
       // count of clicks.
       const playing = forTable(45000);
-      let sitting = await attr(p, ".matchbox", "data-match-id");
+      let sitting = await attr(p, ".matchbox", "data-seed");
       let before = await total();
       while (playing()) {
         await answerIfRaised(p);
-        const now = await attr(p, ".matchbox", "data-match-id");
+        const now = await attr(p, ".matchbox", "data-seed");
         // A stake of twelve is on the ladder, so the hand being measured can
         // be the one that ends the sitting — and the next opens at nothing,
         // which reads as a scoreboard going backwards. The match's own id is
@@ -588,15 +675,15 @@ const CASES: Case[] = [
     accepts: ["accept-same-table"],
     run: async (p) => {
       await playOne(p);
-      const before = await attr(p, ".matchbox", "data-match-id");
+      const before = await attr(p, ".matchbox", "data-seed");
       const hand = await attr(p, ".matchbox", "data-hand");
       assert((before ?? "") !== "", "the table has no match to keep");
       // No clear: the point is the sitting that survives the tab.
       await p.reload({ waitUntil: "domcontentloaded" });
       await until(p, "the table again", 20000, async () => (await count(p, ".seat-row.mine .card")) > 0);
       assert(
-        (await attr(p, ".matchbox", "data-match-id")) === before,
-        `the reload opened a second table: ${before} then ${await attr(p, ".matchbox", "data-match-id")}`,
+        (await attr(p, ".matchbox", "data-seed")) === before,
+        `the reload opened a second table: ${before} then ${await attr(p, ".matchbox", "data-seed")}`,
       );
       assert((await attr(p, ".matchbox", "data-hand")) === hand, "the reload lost the hand it was on");
       // And the dealer is writing to the one on the board: a picker that
@@ -646,7 +733,7 @@ const CASES: Case[] = [
       // exactly what was accepted. A stake that climbs only in the banner
       // while the badge holds the base pays the base, and nobody can say
       // what the hand is worth.
-      await seatedAt(p, 2);
+      await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS);
       const calling = forTable(60000);
       let adopted = 0;
       while (calling()) {
@@ -687,7 +774,7 @@ const CASES: Case[] = [
         Number(await text(p, ".score.us .figure")) + Number(await text(p, ".score.them .figure"));
       const before = await total();
       // The sitting can end under the measurement, as it can above.
-      const sitting = await attr(p, ".matchbox", "data-match-id");
+      const sitting = await attr(p, ".matchbox", "data-seed");
       const playing = forTable(60000);
       // The banner lives only for the pause between hands, shorter than a
       // stride at speed — it is read inside the loop or not at all.
@@ -697,7 +784,7 @@ const CASES: Case[] = [
         await answerIfRaised(p);
         const m = /\+(\d+)/.exec(await text(p, ".talk").catch(() => ""));
         if (m !== null) worth = Number(m[1]);
-        if ((await attr(p, ".matchbox", "data-match-id")) !== sitting) { ended = true; break; }
+        if ((await attr(p, ".matchbox", "data-seed")) !== sitting) { ended = true; break; }
         if ((await total()) > before) break;
         if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) {
           await playOne(p).catch(() => {});
@@ -739,17 +826,14 @@ const CASES: Case[] = [
         };
         requestAnimationFrame(probe);
       });
-      await injectMatch(p, {
-        id: "mwon9", variant: "mineiro", seats: "1v1", theme: "xadrez",
-        us_score: "12", them_score: "4", stake: "2", hand_no: "7",
-        status: "over", winner: "us", opponent: "cida",
-        opponent_name: "Dona Cida", partner_name: "Bigode", seed: "424242", current: "yes",
-      });
+      // Eleven all at paulista: whoever takes the hand takes the match.
+      await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS);
+      await scoredAt(p, { us: 11, them: 11 });
+      await toFinished(p);
+      const won = await attr(p, ".matchbox", "data-seed");
       await p.reload({ waitUntil: "domcontentloaded" });
       await until(p, "a fresh sitting to open itself", 20000, async () =>
-        (await count(p, ".seat-row.mine .card")) === 3);
-      const id = await attr(p, ".matchbox", "data-match-id");
-      assert(id !== "" && id !== "mwon9", `the won match was reopened: ${id}`);
+        await dealtHand(p) && (await attr(p, ".matchbox", "data-seed")) !== won);
       assert(Number(await text(p, ".score.us .figure")) === 0, "the old score bled into the new sitting");
       // If the start affordance painted at all, it painted as a pill — a
       // stretching grid track renders it at card proportions, and only a
@@ -762,17 +846,13 @@ const CASES: Case[] = [
     id: "the mão de dez is decided with your partner's cards face up, and no truco",
     accepts: ["accept-mao-de-dez"],
     run: async (p) => {
-      await injectMatch(p, {
-        id: "mdez", variant: "mineiro", seats: "2v2", theme: "xadrez",
-        us_score: "10", them_score: "0", stake: "2", hand_no: "1",
-        status: "playing", winner: "", opponent: "tiao",
-        opponent_name: "Tião Pandeiro", partner_name: "Bigode", seed: "2", current: "yes",
-      });
-      await p.reload({ waitUntil: "domcontentloaded" });
-      await until(p, "the brink offered", 20000, async () => {
-        const id = await attr(p, ".matchbox", "data-match-id");
-        return id === "mdez" && await p.locator("#btn-brink-play").isVisible();
-      });
+      await seatedAt(p, SEEDS.maoDeDez, { variant: "mineiro", seats: "2v2", opponent: "tiao" });
+      await scoredAt(p, { us: 10, them: 0 });
+      await until(p, "the brink offered", 20000, () => p.locator("#btn-brink-play").isVisible());
+      // The rail, the felt and each seat's hand are regions of their own, and
+      // the felt can draw the new hand a pass after the rail does.
+      await until(p, "the felt on the new hand", 5000, async () =>
+        (await count(p, ".hand")) === 1 && (await count(p, '.seat-row[data-seat="parca"] .card-back')) === 3);
       assert(await p.locator("#btn-brink-run").isVisible(), "running from the mão de dez is not offered");
       assert(!(await p.locator("#btn-truco").isVisible()), "truco is offered in the mão de dez");
       assert((await count(p, ".seat-row.mine .card:not([disabled])")) === 0, "a card can be laid before the decision");
@@ -803,15 +883,9 @@ const CASES: Case[] = [
     id: "the mão de ferro is played face down",
     accepts: ["accept-mao-de-dez"],
     run: async (p) => {
-      await injectMatch(p, {
-        id: "mferro", variant: "mineiro", seats: "1v1", theme: "xadrez",
-        us_score: "10", them_score: "10", stake: "2", hand_no: "1",
-        status: "playing", winner: "", opponent: "tiao",
-        opponent_name: "Tião Pandeiro", partner_name: "Bigode", seed: "2", current: "yes",
-      });
-      await p.reload({ waitUntil: "domcontentloaded" });
+      await seatedAt(p, SEEDS.maoDeFerro, { variant: "mineiro", opponent: "tiao" });
+      await scoredAt(p, { us: 10, them: 10 });
       await until(p, "a playable blind hand", 20000, async () =>
-        (await attr(p, ".matchbox", "data-match-id")) === "mferro" &&
         (await count(p, ".seat-row.mine .card:not([disabled])")) === 3);
       assert(await attr(p, ".hand", "data-brink") === "both", "10-10 is not a mão de ferro");
       assert(!(await p.locator("#btn-brink-play").isVisible()), "the mão de ferro asked you to decide");
@@ -829,7 +903,7 @@ const CASES: Case[] = [
     accepts: ["accept-variant-switch"],
     run: async (p) => {
       const variant = () => attr(p, ".matchbox", "data-variant");
-      const seated = async () => /^m[0-9a-z]+$/.test((await attr(p, ".matchbox", "data-match-id")) ?? "");
+      const seated = () => dealtHand(p);
       const pickCountry = async (locale: string, path: string, want: string) => {
         await p.locator("#picker-open-country").click();
         await p.locator(`[data-picker="country"] a[data-locale="${locale}"]`).click();
@@ -865,15 +939,10 @@ const CASES: Case[] = [
     run: async (p) => {
       // Truc on the Argentine page: the controls are Spanish, the call is
       // Catalan, because the player making it is at a truc table.
-      await injectMatch(p, {
-        id: "mvoice", variant: "truc", seats: "1v1", theme: "xadrez",
-        us_score: "0", them_score: "0", stake: "1", hand_no: "1",
-        status: "playing", winner: "", opponent: "nezinho",
-        opponent_name: "Seu Nezinho", partner_name: "Bigode", seed: "3", current: "yes",
-      });
+      await seatedAt(p, SEEDS.talk, { variant: "truc", opponent: "nezinho" });
       await p.goto(`${origin(p)}/ar?${TEMPO}`, { waitUntil: "domcontentloaded" });
       await until(p, "a truc hand you lead", 20000, async () =>
-        (await attr(p, ".matchbox", "data-match-id")) === "mvoice" &&
+        (await attr(p, ".matchbox", "data-variant")) === "truc" &&
         (await count(p, ".seat-row.mine .card:not([disabled])")) === 3);
       const said = (sel: string) => p.locator(sel).first().evaluate((el: Element) => (el.textContent ?? "").trim());
       assert((await said("#btn-accept b")) === "Quiero", `the Argentine page's answer reads "${await said("#btn-accept b")}"`);
@@ -881,15 +950,8 @@ const CASES: Case[] = [
 
       // Mineiro on the Brazilian page, at its last hand: whoever takes the
       // match says so the way Minas does.
-      await injectMatch(p, {
-        id: "mminas", variant: "mineiro", seats: "1v1", theme: "xadrez",
-        us_score: "10", them_score: "10", stake: "2", hand_no: "1",
-        status: "playing", winner: "", opponent: "nezinho",
-        opponent_name: "Seu Nezinho", partner_name: "Bigode", seed: "3", current: "yes",
-      });
-      await p.goto(`${origin(p)}/?${TEMPO}`, { waitUntil: "domcontentloaded" });
-      await until(p, "the mão de ferro dealt", 20000, async () =>
-        (await attr(p, ".matchbox", "data-match-id")) === "mminas" && (await count(p, ".seat-row.mine .card")) === 3);
+      await seatedAt(p, SEEDS.talk, { variant: "mineiro", opponent: "nezinho" });
+      await scoredAt(p, { us: 10, them: 10 });
       const playing = forTable(90000);
       while (playing() && (await attr(p, ".play", "data-phase")) !== "over") {
         if ((await count(p, ".seat-row.mine .card:not([disabled])")) > 0) await playOne(p).catch(() => {});
@@ -904,18 +966,15 @@ const CASES: Case[] = [
     id: "a tie and the rodada that breaks it are laid side by side",
     accepts: ["accept-vaza-tie"],
     run: async (p) => {
-      // Seed 1's second hand: the house leads 6♥ and you hold 6♠, so the
-      // first rodada ties; you answer the second with 2♥.
-      await injectMatch(p, {
-        id: "mtie", variant: "mineiro", seats: "1v1", theme: "xadrez",
-        us_score: "0", them_score: "0", stake: "2", hand_no: "2",
-        status: "playing", winner: "", opponent: "nezinho",
-        opponent_name: "Seu Nezinho", partner_name: "Bigode", seed: "1", current: "yes",
-      });
-      await p.reload({ waitUntil: "domcontentloaded" });
-      await until(p, "the house's lead and your hand", 20000, async () =>
-        (await count(p, '.trick[data-t="1"] .played')) === 1 &&
-        (await count(p, '.seat-row.mine .card[data-card="6♠"]:not([disabled])')) === 1);
+      await seatedAt(p, SEEDS.tie, { variant: "mineiro", opponent: "nezinho" });
+      await toHandOver(p);
+      await until(p, "the house's lead on the second hand", 20000, async () =>
+        await dealtHand(p, 2) && (await count(p, '.trick[data-t="1"] .played')) === 1);
+      const led = p.locator('.trick[data-t="1"] .played .card').first();
+      const rank = ((await led.getAttribute("data-card")) ?? "").slice(0, -1);
+      assert((await led.getAttribute("data-manilha")) !== "yes", "the house led a manilha, which nothing ties");
+      const twin = p.locator(`.seat-row.mine .card:not([disabled]):not([data-manilha="yes"])[data-card^="${rank}"]`);
+      assert((await twin.count()) === 1, `no card of rank ${rank} in your hand to tie it`);
       // Where two cards are, how far the second sits past the first — and
       // whether each lies square.
       const lay = (t: number) => p.locator(`.trick[data-t="${t}"] .played`).evaluateAll((els: Element[]) => {
@@ -939,20 +998,19 @@ const CASES: Case[] = [
           }), t, { timeout: 5000 });
         return lay(t);
       };
-      await p.locator('.seat-row.mine .card[data-card="6♠"]').click();
+      await twin.click();
       await until(p, "both first cards down", 10000, async () => (await count(p, '.trick[data-t="1"] .played')) === 2);
-      await until(p, "the first card lands across", 2000, async () => (await lay(1)).gap < 0);
-      const falling = await lay(1);
-      assert(falling.gap < 0, `before the verdict the first rodada lies ${falling.gap}px apart, not across each other`);
+      // The hybrid commits the last card and verdict together; their layout
+      // settles on the browser's clock while the table's clock stays held.
       await until(p, "the tie", 10000, async () => (await attr(p, ".matcards", "data-v1")) === "tie");
       const tied = await laid(1);
       assert(tied.gap >= 0 && tied.square, `the tie lies ${tied.gap}px apart, square: ${tied.square}`);
 
       await until(p, "the second rodada to be yours", 10000, async () => {
         await answerIfRaised(p);
-        return (await count(p, '.seat-row.mine .card[data-card="2♥"]:not([disabled])')) === 1;
+        return (await count(p, ".seat-row.mine .card:not([disabled])")) > 0;
       });
-      await p.locator('.seat-row.mine .card[data-card="2♥"]').click();
+      await p.locator(".seat-row.mine .card:not([disabled])").first().click();
       await until(p, "both second cards down", 10000, async () => (await count(p, '.trick[data-t="2"] .played')) === 2);
       const deciding = await laid(2);
       assert(deciding.gap >= 0 && deciding.square, `the deciding rodada lies ${deciding.gap}px apart, square: ${deciding.square}`);
@@ -966,16 +1024,9 @@ const CASES: Case[] = [
       // the board is clipped, so a table that plays is one where nothing did.
       await p.setViewportSize({ width: 390, height: 844 });
       try {
-        await injectMatch(p, {
-          id: "msix", variant: "douradinha", seats: "2v2v2", theme: "xadrez",
-          us_score: "0", them_score: "0", stake: "2", hand_no: "1",
-          status: "playing", winner: "", opponent: "nezinho",
-          opponent_name: "Seu Nezinho", partner_name: "Bigode", seed: "7", current: "yes",
-        });
-        await p.reload({ waitUntil: "domcontentloaded" });
+        await seatedAt(p, SEEDS.threePairs, { variant: "douradinha", seats: "2v2v2" });
         await until(p, "a dealt six-seat hand", 20000, async () =>
-          (await attr(p, ".matchbox", "data-match-id")) === "msix" &&
-          (await count(p, ".seat-row.mine .card")) === 3);
+          (await attr(p, ".matchbox", "data-seats")) === "2v2v2" && await dealtHand(p));
         const inside = (sel: string) => p.evaluate((sel: string) => {
           const board = document.querySelector(".board")!.getBoundingClientRect();
           return [...document.querySelectorAll(sel)].every((e) => {
@@ -1011,22 +1062,15 @@ const CASES: Case[] = [
       // swaps in its empty row the instant the match closes, and the score
       // case's restart-on-new-id reads that as a fresh sitting rather than a
       // frozen one — which is how a table with no way forward passed.
-      await injectMatch(p, {
-        id: "malmost", variant: "paulista", seats: "1v1", theme: "xadrez",
-        us_score: "11", them_score: "0", stake: "1", hand_no: "1",
-        status: "playing", winner: "", opponent: "tiao",
-        opponent_name: "Tião Pandeiro", partner_name: "Bigode", seed: "2", current: "yes",
-      });
-      await p.reload({ waitUntil: "domcontentloaded" });
-      await until(p, "a dealt hand", 20000, async () => {
-        if ((await count(p, ".seat-row.mine .card")) !== 3) return false;
-        const id = await attr(p, ".matchbox", "data-match-id");
-        const roundAttr = await attr(p, "#seat-you .card", "data-round");
-        return id === "malmost" && roundAttr !== null && roundAttr.startsWith("malmost");
-      });
+      await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS);
+      await scoredAt(p, { us: 11, them: 0 });
+      const almost = await attr(p, ".matchbox", "data-seed");
       // Eleven is paulista's brink, so the hand is the mão de onze and is
       // played only once you say so.
-      const playing = forTable(90000);
+      // The brink hand and the ones after it to twelve: each raise answered
+      // spends table seconds polling for the log, more on a slower browser,
+      // and three hands at 11 ran the budget down to its last beats.
+      const playing = forTable(240000);
       while (playing()) {
         if ((await attr(p, ".play", "data-phase")) === "over") break;
         if (await p.locator("#btn-brink-play").isVisible()) await p.locator("#btn-brink-play").click();
@@ -1036,19 +1080,15 @@ const CASES: Case[] = [
         await sleep(20);
       }
       assert(await attr(p, ".play", "data-phase") === "over", "one point from twelve, the match never closed");
-      assert(await attr(p, ".matchbox", "data-match-id") === "malmost", "the won match left the table");
+      assert(await attr(p, ".matchbox", "data-seed") === almost, "the won match left the table");
       assert(Number(await text(p, ".score.us .figure")) === 12, "the closing score is not on the board");
       assert(/Partida sua/.test(await text(p, "#over-line")), "the table does not say who won");
       assert(await attr(p, ".shout", "data-state") === "live", "the partida closed without a shout");
       assert((await text(p, ".shout")).replace(/\s+/g, "") === "ÉNOSSA!", `the closing shout says ${await text(p, ".shout")}`);
       assert((await text(p, "#over-say")).trim().length > 0, "eles had nothing to say about losing");
       await p.locator("#btn-again").click();
-      await until(p, "a fresh sitting", 20000, async () => {
-        if ((await count(p, ".seat-row.mine .card")) !== 3) return false;
-        const id = await attr(p, ".matchbox", "data-match-id");
-        const roundAttr = await attr(p, "#seat-you .card", "data-round");
-        return id !== null && id !== "" && id !== "malmost" && roundAttr !== null && roundAttr.startsWith(id);
-      });
+      await until(p, "a fresh sitting", 20000, async () =>
+        await dealtHand(p) && (await attr(p, ".matchbox", "data-seed")) !== almost);
       assert(await attr(p, ".matchbox", "data-status") === "playing", "the new sitting is not playing");
       assert(Number(await text(p, ".score.us .figure")) === 0, "the new sitting inherited the old score");
     },
@@ -1180,11 +1220,10 @@ const CASES: Case[] = [
       // is then replaced by the call; a case whose whole subject is that beat
       // has to watch it at the length a player sees, or it is asserting about
       // a window its own sampling cannot fit inside.
-      await freshTable(p, origin(p), "real");
       // Seated across from Tião on a shuffle he calls the first hand of: a
       // random deal against Zé, who calls only on a great hand, can run a
       // minute of real clock without a single call to observe.
-      await seatedAt(p, 2);
+      await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS, "real");
       // The page keeps the line, because this driver cannot watch it. The tell
       // stands for one beat and the call replaces it, and a loop that samples
       // is inside playOne for whole seconds at a time — long enough for the
@@ -1270,7 +1309,7 @@ const CASES: Case[] = [
       // next is dealt. A fold that scores on the same wake as the run, or
       // deals on the same wake as the score, passes every other case here
       // and shows a player nothing.
-      await seatedAt(p, 2);
+      await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS);
       const calling = forTable(60000);
       let raised = false;
       while (calling()) {
@@ -1294,7 +1333,12 @@ const CASES: Case[] = [
       assert(/fez a mão/.test(await text(p, ".talk")), `the score line did not replace the run: ${await text(p, ".talk")}`);
       await tick(p, 600);
       assert(await attr(p, ".hand", "data-round-id") === handId, "the resolved hand was dealt over before it could be read");
-      await tick(p, 2400);
+      await tick(p, 500);
+      await until(p, "the run to uncover the paid result", 8000, async () =>
+        (await attr(p, ".shout", "data-state")) !== "live" &&
+        await p.locator(".table-instruction-bar").evaluate((el: HTMLElement) => Number(getComputedStyle(el).opacity) > 0));
+      assert(await attr(p, ".hand", "data-round-id") === handId, "the run faded only when the next hand arrived");
+      await tick(p, 1900);
       await until(p, "the next hand", 8000, async () =>
         (await attr(p, ".hand", "data-round-id")) !== handId && (await count(p, ".seat-row.mine .card")) === 3);
       assert((await attr(p, ".shout", "data-state")) !== "live", "the run shout remained live into the next hand");
@@ -1304,14 +1348,9 @@ const CASES: Case[] = [
     id: "the answers say what they cost, and the call is shouted",
     accepts: ["accept-truco-call", "accept-raise-ladder", "accept-stake-badge"],
     run: async (p) => {
-      // The prices under the three plates are arithmetic on two fields of the
-      // round, written by the dealer on each redraw: a redraw that skips them
-      // leaves the last call's prices under this call's words, and no binding
-      // catches it. The shout fires off a transition the dealer keeps in memory
-      // (asked: nobody -> a seat); a dealer that compared against the row
-      // instead would either shout on every redraw or never.
-      // Tião calls on the first hand of seed 2, under paulista: 1 -> 3 -> 6.
-      await seatedAt(p, 2);
+      // Each call must replace the previous prices and shout from its own side.
+      // Tião calls on the first hand, under paulista: 1 -> 3 -> 6.
+      await seatedAt(p, SEEDS.tiaoCalls, TIAO_CALLS);
       const LADDER = [1, 3, 6, 9, 12];
       const WORD: Record<number, string> = { 3: "TRUCO!", 6: "SEIS!", 9: "NOVE!", 12: "DOZE!" };
       const above = (r: number) => LADDER[LADDER.indexOf(r) + 1];
@@ -1371,20 +1410,13 @@ const CASES: Case[] = [
         // The same seed deals the same hand only from the same state: the
         // match is device-durable, so a leftover one would make this the
         // second hand of an old sitting rather than the first of a new one.
-        await p.goto(`${base}/?seed=${seed}&${TEMPO}`, { waitUntil: "domcontentloaded" });
-        await resetTable(p);
-        await p.reload({ waitUntil: "domcontentloaded" });
-        await until(p, "a seeded hand", 20000, async () => {
-          if ((await count(p, ".seat-row.mine .card")) !== 3) return false;
-          const id = await attr(p, ".matchbox", "data-match-id");
-          const roundAttr = await attr(p, "#seat-you .card", "data-round");
-          return id !== null && id !== "" && roundAttr !== null && roundAttr.startsWith(id);
-        });
+        await freshStart(p, `${base}/?seed=${seed}&${TEMPO}`);
+        await until(p, "a seeded hand", 20000, () => dealtHand(p));
         return await hand(p);
       };
-      const first = await dealt("7");
-      const again = await dealt("7");
-      const other = await dealt("8");
+      const first = await dealt(SEEDS.replay[0]);
+      const again = await dealt(SEEDS.replay[0]);
+      const other = await dealt(SEEDS.replay[1]);
       assert(first === again, `the same seed dealt two different hands: ${first} vs ${again}`);
       assert(first !== other, `two seeds dealt the same hand: ${first}`);
     },
@@ -1417,8 +1449,12 @@ const CASES: Case[] = [
     id: "the table owes the network nothing",
     accepts: ["accept-offline"],
     run: async (p) => {
+      // A request the worker answers from its copy never reaches the network;
+      // one it does not, or that nothing answers, does.
       const seen: string[] = [];
-      const listener = (r: { url: () => string }) => seen.push(r.url());
+      const listener = (r: Request) => void r.response().then((answer) => {
+        if (!answer?.fromServiceWorker()) seen.push(r.url());
+      });
       await p.context().setOffline(true);
       try {
         p.on("request", listener);
@@ -1426,43 +1462,278 @@ const CASES: Case[] = [
         await tick(p, 2500);
         await sleep(20);
         p.off("request", listener);
-        // Long-poll shape requests belong to the terminal's sync plane, which a
-        // tab-path app never uses; anything else here is the app fetching.
-        const app = seen.filter((u) => !u.includes("/v1/shape") && !u.startsWith("data:"));
-        assert(app.length === 0, `the table made ${app.length} request(s): ${app.slice(0, 3).join(", ")}`);
+        // Shapes and the token that authorizes them are the terminal's sync
+        // plane, which the bar's rows ride; anything else is the app fetching.
+        const app = seen.filter((u) => !u.includes("/v1/shape") && !u.endsWith("/auth/shape") && !u.startsWith("data:"));
+        assert(app.length === 0, `the table made ${app.length} request(s): ${app.join(", ")}`);
       } finally {
         await p.context().setOffline(false);
       }
     },
   },
+  {
+    id: "a name saved in the bar is the bar's after a reload",
+    accepts: ["accept-bar-name"],
+    run: async (p) => {
+      await nameInBar(p, "Davi");
+      await p.reload({ waitUntil: "domcontentloaded" });
+      await openBar(p);
+      await until(p, "the saved name in the bar", 10000, async () => (await p.locator("#my-handle-input").inputValue()) === "Davi");
+    },
+  },
+  {
+    id: "going online lights the pill and lists you in another reader's bar",
+    accepts: ["accept-bar-online"],
+    run: async (p) => {
+      await realTable(p);
+      const ana = runName("Ana");
+      await goOnline(p, ana);
+      // Lit is the pulse running; its colour depends on the frame sampled.
+      const lit = await p.locator("#btn-open-online .online-pulse").evaluate((el: Element) => getComputedStyle(el).animationName);
+      assert(lit === "pulse-dot", `the pill's dot runs "${lit}" while you are online`);
+      const other = await reader(p);
+      try {
+        await openBar(other);
+        await until(other, "Ana in the other reader's bar", 20000, async () =>
+          (await other.locator("#lobby-players-list .lobby-player-row", { hasText: ana }).count()) === 1);
+      } finally {
+        await other.context().close();
+      }
+    },
+  },
+  {
+    id: "the bar holds still while it connects and fills",
+    accepts: ["accept-bar-still"],
+    run: async (p) => {
+      await realTable(p);
+      await p.click("#btn-open-online");
+      const where = () => p.locator("#modal-online .modal-sec, #modal-online .lobby-identity-bar").evaluateAll((els: Element[]) =>
+        els.map((el) => Math.round(el.getBoundingClientRect().top)).join(","));
+      const opened = await where();
+      await until(p, "the bar connected", 10000, async () => (await count(p, "#btn-toggle-online")) === 1);
+      const other = await reader(p);
+      try {
+        await goOnline(other, runName("Bia"));
+        await until(p, "Bia listed", 20000, async () => (await count(p, "#lobby-players-list .lobby-player-row")) > 0);
+      } finally {
+        await other.context().close();
+      }
+      assert((await where()) === opened, `the bar moved as it filled: ${opened} then ${await where()}`);
+    },
+  },
+  // A browser that kept an earlier deployment ran the scripts it had kept
+  // against the markup served now, and the bar's switch never drew. The
+  // earlier deployment is served first: this one's entry, its map naming an
+  // interpreter that says it ran, at an address of its own. Then the door
+  // serves this one, and a reload must end running it.
+  {
+    id: "a deployment newer than the browser's copy is the one that runs",
+    accepts: ["accept-upgrade"],
+    run: async (p) => {
+      const MAP = /(<script\b[^>]*\bid="pronto-assets"[^>]*>)([\s\S]*?)(<\/script>)/;
+      const sha = async (text: string) => `'sha256-${btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)))))}'`;
+      const now = JSON.parse(MAP.exec(await p.evaluate(() => fetch("/", { cache: "no-store" }).then((r) => r.text())))![2]) as { imports: Record<string, string> };
+      const chrome = now.imports["/omnishell/interpreter/chrome.js"];
+      const marked = await p.evaluate((url) => fetch(url).then((r) => r.text()), chrome) + "\nglobalThis.__earlierDeployment = true;\n";
+      const markedAt = chrome.replace(/_immutable-[0-9a-f]{64}-/, `_immutable-${"e".repeat(64)}-`);
+      // A browser whose first visit was the earlier deployment.
+      const context = await p.context().browser().newContext({ locale: "pt-BR", viewport: { width: 1280, height: 900 }, ignoreHTTPSErrors: true });
+      try {
+        const q = await context.newPage();
+        const earlier = () => q.evaluate(() => (globalThis as Record<string, unknown>).__earlierDeployment === true);
+        // The page restarts into a deployment, so a read can meet the
+        // navigation: that is "not yet", and anything else is a failure.
+        const settled = (read: () => Promise<boolean>) => async () => {
+          try {
+            return await read();
+          } catch (error) {
+            if (/Execution context was destroyed/.test(String(error))) return false;
+            throw error;
+          }
+        };
+        const isEntry = (url: URL) => url.pathname === "/";
+        const entry = async (route: Route) => {
+          const served = await route.fetch();
+          const html = await served.text();
+          const map = MAP.exec(html)![2];
+          const then = JSON.stringify({ ...JSON.parse(map), imports: { ...JSON.parse(map).imports, "/omnishell/interpreter/chrome.js": markedAt } });
+          // The entry names its map's hash in its policy, the header's and its own.
+          const [was, is] = [await sha(map), await sha(then)];
+          const headers = { ...served.headers() };
+          headers["content-security-policy"] = headers["content-security-policy"].replace(was, is);
+          await route.fulfill({ response: served, headers, body: html.replace(MAP, (_, open, _map, close) => open + then + close).replace(was, is) });
+        };
+        const interpreter = (route: Route) => route.fulfill({ contentType: "text/javascript", body: marked });
+        await context.route(isEntry, entry);
+        await context.route(`**${markedAt}`, interpreter);
+        // The app's origin, by a file that registers no worker.
+        await q.goto(`${origin(p)}/robots.txt`);
+        await realTable(q);
+        await until(q, "the earlier deployment's worker in control", 10000, async () => await q.evaluate(() => navigator.serviceWorker.controller !== null));
+        await q.reload({ waitUntil: "domcontentloaded" });
+        // A served document shows the hand before any module has run.
+        await until(q, "the earlier deployment running while it is the one served", 20000, settled(async () => await earlier() && await dealtHand(q)));
+        // The deployment: the door serves this one from here on.
+        await context.unroute(isEntry, entry);
+        await q.reload({ waitUntil: "domcontentloaded" });
+        await until(q, "the deployment served now running", 30000, settled(async () => !(await earlier()) && await dealtHand(q)));
+      } finally {
+        await context.close();
+      }
+    },
+  },
+  {
+    id: "an accepted challenge seats both players at one table",
+    accepts: ["accept-bar-challenge"],
+    run: async (p) => {
+      await realTable(p);
+      const ana = runName("Ana"), bia = runName("Bia");
+      await goOnline(p, ana);
+      const other = await reader(p);
+      try {
+        await goOnline(other, bia);
+        const row = other.locator("#lobby-players-list .lobby-player-row", { hasText: ana });
+        await until(other, "Ana to challenge", 20000, async () => (await row.count()) === 1);
+        await row.locator(".btn-challenge").click();
+        await until(other, "the challenger waiting", 10000, async () => await other.locator(".challenge-waiting-overlay").isVisible());
+        const banner = p.locator(".incoming-challenge-banner", { hasText: bia });
+        await until(p, "Bia's challenge", 20000, async () => await banner.isVisible());
+        await banner.locator(".btn-challenge-accept").click();
+        // No table of its own to go to: each is seated where they were, at the
+        // arena, facing the other by name.
+        // The name across is the other's voice, which sits after their seat does.
+        for (const [who, page, them] of [["Ana", p, bia], ["Bia", other, ana]] as const) {
+          await until(page, `${who} seated with a hand, facing ${them}`, 20000, async () =>
+            (await count(page, '.matchbox[data-opponent="online"]')) === 1 && (await count(page, "#seat-you .card")) === 3 &&
+            (await page.locator("#opponent-display-name .as-handle").textContent())?.trim() === them);
+          assert(new URL(page.url()).pathname === "/", `${who} left the arena for ${page.url()}`);
+        }
+      } finally {
+        await other.context().close();
+      }
+    },
+  },
+  {
+    id: "your quick shout stays in your speech bubble",
+    accepts: ["accept-instant-table"],
+    run: async (p) => {
+      await freshTable(p, origin(p));
+      await p.click("#shout-chama");
+      await until(p, "your quick shout", 2000, async () =>
+        await attr(p, "#player-dialogue-wrap", "data-active") === "yes");
+      assert(await p.locator("#player-talk").isVisible(), "your quick shout hides its bubble");
+      assert(!await p.locator(".shout").isVisible(), "your quick shout duplicates the central overlay");
+      assert(await p.locator(".table-instruction-bar").evaluate((el: HTMLElement) =>
+        Number(getComputedStyle(el).opacity) > 0), "your quick shout hides the table instruction");
+      const animation = () => p.locator("#player-dialogue-wrap").evaluate((el: HTMLElement) => getComputedStyle(el).animationName);
+      const first = await animation();
+      await p.click("#shout-manda");
+      await until(p, "the repeated shout to animate again", 2000, async () => await animation() !== first);
+      await p.click("#btn-truco");
+      await until(p, "the quick shout to expire after raising", 3000, async () =>
+        await attr(p, "#player-dialogue-wrap", "data-active") === "no");
+      assert(await attr(p, ".shout", "data-kind") !== "quick", "the quick shout masked the wager or its answer");
+    },
+  },
+  {
+    id: "the storyboard poses one felt with distinct actions, verdict and picker states",
+    accepts: ["accept-instant-table", "accept-truco-call", "accept-match-over"],
+    run: async (p) => {
+      await p.goto(`${origin(p)}/?storybook`, {waitUntil: "domcontentloaded"});
+      await p.locator("#arena-picking .screen[data-storybook]").waitFor();
+      assert(await p.locator("#arena-empty .play").count() === 0, "the empty frame invents a hand");
+      for (const state of ["populated", "raised", "resolved", "match-over", "picking"]) {
+        assert(await p.locator(`#arena-${state} .play`).count() === 1, `${state} duplicates the felt`);
+        assert(await p.locator(`#arena-${state} #btn-truco`).count() === 1, `${state} duplicates control IDs`);
+      }
+      assert(await p.locator("#arena-raised .answers").isVisible(), "the raised frame hides its answers");
+      assert(await p.locator("#arena-resolved #btn-next").isVisible(), "the resolved frame hides its next hand");
+      assert(await p.locator("#arena-match-over .over").isVisible(), "the finished frame hides its verdict");
+      assert(await p.locator('#arena-picking [data-picker="theme"] .picker-list').isVisible(), "the picking frame hides its menu");
+    },
+  },
+
 ];
+
+/** A closed reader stays listed in the bar until its lease lapses on the
+    ticker, so each case's players are named for the case and this run. */
+const RUN = Date.now().toString(36).slice(-4);
+let named = 0;
+const runName = (name: string) => `${name}${RUN}${named++}`;
+
+/** A reader on the real clock. A presence lease lapses on the server's time
+    and is renewed on the terminal's, so a reader held at the driver's clock
+    drops out of the bar while the driver waits on another. */
+async function realTable(p: Page) {
+  await p.goto(`${origin(p)}/`, { waitUntil: "domcontentloaded" });
+  await until(p, "a dealt hand", 20000, () => dealtHand(p));
+}
+
+/** The bar is the arena's popover, opened by the Mesa Online pill. */
+async function openBar(p: Page) {
+  await p.click("#btn-open-online");
+  await until(p, "the bar open", 5000, async () => await p.locator("#modal-online").isVisible());
+}
+
+async function nameInBar(p: Page, name: string) {
+  await openBar(p);
+  // The comanda has no save button: Enter writes the name, as leaving the field does.
+  await p.fill("#my-handle-input", name);
+  await p.press("#my-handle-input", "Enter");
+}
+
+async function goOnline(p: Page, name: string) {
+  await nameInBar(p, name);
+  await until(p, "the switch", 10000, async () => (await count(p, "#btn-toggle-online")) === 1);
+  // The switch toggles, so a reader already online is left on.
+  if ((await attr(p, "#btn-toggle-online", "aria-checked")) !== "true") await p.click("#btn-toggle-online");
+  await until(p, "the switch on", 10000, async () => (await attr(p, "#btn-toggle-online", "aria-checked")) === "true");
+}
+
+/** A second player: another browser context is another guest. Its clock is
+    real, since nothing it waits for is the driver's to advance. */
+async function reader(p: Page): Promise<Page> {
+  const context = await p.context().browser().newContext({ locale: "pt-BR", viewport: { width: 1280, height: 900 }, ignoreHTTPSErrors: true });
+  const other = await context.newPage();
+  await other.goto(`${origin(p)}/`, { waitUntil: "domcontentloaded" });
+  await until(other, "the other reader's table", 20000, async () => (await count(other, ".seat-row.mine .card")) === 3);
+  return other;
+}
 
 async function main(): Promise<number> {
   const { chromium } = await import("npm:playwright@1.61.1");
   const base = await baseUrl(APP);
+  // A deployment is a worker and the files it fetches, which a case serves by
+  // routing; Chromium routes a worker's requests only behind this switch.
+  Deno.env.set("PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS", "1");
   const browser = await chromium.launch({ args: ["--ignore-certificate-errors"] });
-  // Every case below reads the table in Brazilian Portuguese, and an
-  // unprefixed address takes its language from Accept-Language — so the driver
-  // states the reader it is rather than inheriting the runner's.
-  const context = await browser.newContext({
-    locale: "pt-BR",
-    viewport: { width: 1280, height: 900 },
-  });
-  const page = await context.newPage();
   const errors: string[] = [];
-  page.on("console", (m: { type: () => string; text: () => string }) => {
-    if (m.type() === "error" && !m.text().includes("ERR_INTERNET_DISCONNECTED")) errors.push(m.text());
-  });
+  // A reader per case: a context is a guest of its own, so no case inherits
+  // another's sitting, name or presence. One guest loading the table a
+  // hundred times would hold more live leases than the bar admits.
+  // Every case reads the table in Brazilian Portuguese, and an unprefixed
+  // address takes its language from Accept-Language — so the driver states
+  // the reader it is rather than inheriting the runner's.
+  const readerFor = async () => {
+    const context = await browser.newContext({
+      locale: "pt-BR",
+      viewport: { width: 1280, height: 900 },
+    });
+    const page = await context.newPage();
+    page.on("console", (m: { type: () => string; text: () => string }) => {
+      if (m.type() === "error" && !m.text().includes("ERR_INTERNET_DISCONNECTED")) errors.push(m.text());
+    });
+    return page;
+  };
 
   let failed = 0;
   const filter = Deno.args[1];
   const cases = filter ? CASES.filter((c) => c.id.includes(filter)) : CASES;
   try {
     for (const c of cases) {
+      // Every case starts from a dealt table.
+      const page = await readerFor();
       try {
-        // Every case starts from a dealt table. Cases that share a page share
-        // its state, and a case that fails because the one before it left a
-        // raise pending is a false report about the app.
         await freshTable(page, base);
         errors.length = 0;
         await c.run(page);
@@ -1470,9 +1741,8 @@ async function main(): Promise<number> {
       } catch (err) {
         failed++;
         console.log(`FAIL  ${c.id}  [${c.accepts.join(" ")}]\n      ${err instanceof Error ? err.message : err}`);
-        // A failed case leaves the table wherever it broke; the next case
-        // starts from a fresh one so one failure does not cascade.
-        await freshTable(page, base).catch(() => {});
+      } finally {
+        await page.context().close();
       }
     }
   } finally {

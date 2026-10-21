@@ -7,15 +7,16 @@ BEGIN;
 -- tier: container
 DO $$ DECLARE t text; BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'truco_cdc') THEN
-    CREATE PUBLICATION truco_cdc FOR TABLE app_user,lobby,challenge,room_action WITH (publish_generated_columns = stored);
+    CREATE PUBLICATION truco_cdc FOR TABLE app_user,lobby,challenge,room_action,truco_match_seat,truco_match_command,truco_match_open,truco_match_public,truco_presence_seat,truco_presence_command,truco_presence_public,truco_presence_lease,truco_challenge_seat,truco_challenge_command,truco_call_seat,truco_call_command,truco_call_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,truco_challenge_open;
   END IF;
-  FOREACH t IN ARRAY ARRAY['app_user','lobby','challenge','room_action'] LOOP
+  FOREACH t IN ARRAY ARRAY['app_user','lobby','challenge','room_action','truco_match_seat','truco_match_command','truco_match_open','truco_match_public','truco_presence_seat','truco_presence_command','truco_presence_public','truco_presence_lease','truco_challenge_seat','truco_challenge_command','truco_call_seat','truco_call_command','truco_call_open','truco_voice_seat','truco_voice_command','truco_voice_open','truco_voice_public','truco_challenge_open'] LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_publication_tables
                    WHERE pubname = 'truco_cdc' AND schemaname = 'public' AND tablename = t) THEN
       EXECUTE format('ALTER PUBLICATION truco_cdc ADD TABLE %I', t);
     END IF;
   END LOOP;
 END $$;
+ALTER PUBLICATION truco_cdc SET (publish_generated_columns = stored);
 -- tier: any
 
 -- Electric's own publication, declared rather than left to it.
@@ -27,20 +28,39 @@ END $$;
 -- tier: container
 DO $$ DECLARE t text; BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'electric_publication_default') THEN
-    CREATE PUBLICATION electric_publication_default FOR TABLE app_user,lobby,challenge,room_action WITH (publish_generated_columns = stored);
+    CREATE PUBLICATION electric_publication_default FOR TABLE app_user,lobby,challenge,room_action,truco_match_seat,truco_match_command,truco_match_open,truco_match_public,truco_presence_seat,truco_presence_command,truco_presence_public,truco_presence_lease,truco_challenge_seat,truco_challenge_command,truco_call_seat,truco_call_command,truco_call_open,truco_voice_seat,truco_voice_command,truco_voice_open,truco_voice_public,truco_challenge_open;
   END IF;
-  FOREACH t IN ARRAY ARRAY['app_user','lobby','challenge','room_action'] LOOP
+  FOREACH t IN ARRAY ARRAY['app_user','lobby','challenge','room_action','truco_match_seat','truco_match_command','truco_match_open','truco_match_public','truco_presence_seat','truco_presence_command','truco_presence_public','truco_presence_lease','truco_challenge_seat','truco_challenge_command','truco_call_seat','truco_call_command','truco_call_open','truco_voice_seat','truco_voice_command','truco_voice_open','truco_voice_public','truco_challenge_open'] LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_publication_tables
                    WHERE pubname = 'electric_publication_default' AND schemaname = 'public' AND tablename = t) THEN
       EXECUTE format('ALTER PUBLICATION electric_publication_default ADD TABLE %I', t);
     END IF;
   END LOOP;
 END $$;
+ALTER PUBLICATION electric_publication_default SET (publish_generated_columns = stored);
 
 ALTER TABLE app_user REPLICA IDENTITY FULL;
 ALTER TABLE lobby REPLICA IDENTITY FULL;
 ALTER TABLE challenge REPLICA IDENTITY FULL;
 ALTER TABLE room_action REPLICA IDENTITY FULL;
+ALTER TABLE truco_match_seat REPLICA IDENTITY FULL;
+ALTER TABLE truco_match_command REPLICA IDENTITY FULL;
+ALTER TABLE truco_match_open REPLICA IDENTITY FULL;
+ALTER TABLE truco_match_public REPLICA IDENTITY FULL;
+ALTER TABLE truco_presence_seat REPLICA IDENTITY FULL;
+ALTER TABLE truco_presence_command REPLICA IDENTITY FULL;
+ALTER TABLE truco_presence_public REPLICA IDENTITY FULL;
+ALTER TABLE truco_presence_lease REPLICA IDENTITY FULL;
+ALTER TABLE truco_challenge_seat REPLICA IDENTITY FULL;
+ALTER TABLE truco_challenge_command REPLICA IDENTITY FULL;
+ALTER TABLE truco_call_seat REPLICA IDENTITY FULL;
+ALTER TABLE truco_call_command REPLICA IDENTITY FULL;
+ALTER TABLE truco_call_open REPLICA IDENTITY FULL;
+ALTER TABLE truco_voice_seat REPLICA IDENTITY FULL;
+ALTER TABLE truco_voice_command REPLICA IDENTITY FULL;
+ALTER TABLE truco_voice_open REPLICA IDENTITY FULL;
+ALTER TABLE truco_voice_public REPLICA IDENTITY FULL;
+ALTER TABLE truco_challenge_open REPLICA IDENTITY FULL;
 -- tier: any
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO anon;
 

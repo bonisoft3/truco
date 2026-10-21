@@ -11,6 +11,7 @@
 // CHECK body and nothing for CUE.
 package truco
 
+import "list"
 import "strings"
 
 code: state: entities: {
@@ -31,9 +32,12 @@ code: state: entities: {
 			opponent_name?: strings.MinRunes(1)
 			partner_name?: strings.MinRunes(1)
 			seed?: strings.MaxRunes(12)
-			my_seat?: ("" | "you" | "eles1" | "parca" | "eles2")
+			my_seat?: ("" | "you" | "eles1" | "parca" | "eles2" | "eles3" | "eles4")
 			current?: ("yes" | "no")
 			locale?: ("" | "pt-BR" | "es-AR" | "es-UY" | "es-PY" | "ca-ES")
+			wake?: strings.MaxRunes(96)
+			opponent_handle?: strings.MaxRunes(32)
+			filled?: ("" | "yes")
 		}]
 		cel: {
 			enums: {
@@ -44,9 +48,10 @@ code: state: entities: {
 				status: ["playing","over"]
 				winner: ["","us","them","others"]
 				opponent: ["nezinho","cida","tiao","ze","xiru","osvaldo","tiao_queijo","tabare","jordi","online"]
-				my_seat: ["","you","eles1","parca","eles2"]
+				my_seat: ["","you","eles1","parca","eles2","eles3","eles4"]
 				current: ["yes","no"]
 				locale: ["","pt-BR","es-AR","es-UY","es-PY","ca-ES"]
+				filled: ["","yes"]
 			}
 			bounds: {
 				id: {sizeMax: 64}
@@ -57,6 +62,8 @@ code: state: entities: {
 				opponent_name: {sizeMin: 1}
 				partner_name: {sizeMin: 1}
 				seed: {sizeMax: 12}
+				wake: {sizeMax: 96}
+				opponent_handle: {sizeMax: 32}
 			}
 		}
 	}
@@ -68,9 +75,6 @@ code: state: entities: {
 			vira?: strings.MaxRunes(4)
 			manilha?: strings.MinRunes(1)
 			phase?: ("dealt" | "v1" | "v2" | "v3" | "result")
-			truco_state?: ("" | "none" | "truco_called" | "retruco_called" | "vale4_called" | "truco_accepted" | "retruco_accepted" | "vale4_accepted" | "truco_folded")
-			envido_state?: ("" | "none" | "called" | "real_called" | "falta_called" | "accepted" | "folded" | "flor")
-			trick_state?: ("" | "dealt" | "v1_in_progress" | "v1_us" | "v1_them" | "v1_tie" | "v2_tie" | "result")
 			ran?: ("" | "us" | "them" | "others")
 			v1?: ("" | "us" | "them" | "others" | "tie")
 			v2?: ("" | "us" | "them" | "others" | "tie")
@@ -96,18 +100,15 @@ code: state: entities: {
 			shout_kind?: ("" | "call" | "accept" | "run" | "win" | "close" | "quick")
 			shout_t?: strings.MaxRunes(16)
 			shout_done?: ("" | "yes" | "no")
-			last_remote_shout?: strings.MaxRunes(64)
 			oculta?: ("" | "yes" | "no")
 			turn_seat?: ("" | "you" | "parca" | "eles1" | "eles2" | "eles3" | "eles4")
 			shout_seat?: ("" | "you" | "parca" | "eles1" | "eles2" | "eles3" | "eles4")
 			current?: ("yes" | "no")
+			shout_anim?: ("1" | "2")
 		}]
 		cel: {
 			enums: {
 				phase: ["dealt","v1","v2","v3","result"]
-				truco_state: ["","none","truco_called","retruco_called","vale4_called","truco_accepted","retruco_accepted","vale4_accepted","truco_folded"]
-				envido_state: ["","none","called","real_called","falta_called","accepted","folded","flor"]
-				trick_state: ["","dealt","v1_in_progress","v1_us","v1_them","v1_tie","v2_tie","result"]
 				ran: ["","us","them","others"]
 				v1: ["","us","them","others","tie"]
 				v2: ["","us","them","others","tie"]
@@ -128,6 +129,7 @@ code: state: entities: {
 				turn_seat: ["","you","parca","eles1","eles2","eles3","eles4"]
 				shout_seat: ["","you","parca","eles1","eles2","eles3","eles4"]
 				current: ["yes","no"]
+				shout_anim: ["1","2"]
 			}
 			bounds: {
 				id: {sizeMax: 64}
@@ -144,7 +146,6 @@ code: state: entities: {
 				shout_word: {sizeMax: 60}
 				shout_from: {sizeMax: 16}
 				shout_t: {sizeMax: 16}
-				last_remote_shout: {sizeMax: 64}
 			}
 		}
 	}
@@ -207,7 +208,7 @@ code: state: entities: {
 			manilha?: ("" | "yes" | "no")
 			slot?: >=0 & <=2
 			blocked?: ("" | "disabled")
-			display_seat?: ("" | "you" | "eles1" | "parca" | "eles2")
+			display_seat?: ("" | "you" | "eles1" | "parca" | "eles2" | "eles3" | "eles4")
 			current?: ("yes" | "no")
 		}]
 		cel: {
@@ -216,7 +217,7 @@ code: state: entities: {
 				suit: ["","♠","♥","♦","♣"]
 				manilha: ["","yes","no"]
 				blocked: ["","disabled"]
-				display_seat: ["","you","eles1","parca","eles2"]
+				display_seat: ["","you","eles1","parca","eles2","eles3","eles4"]
 				current: ["yes","no"]
 			}
 			bounds: {
@@ -226,6 +227,142 @@ code: state: entities: {
 				face: {sizeMax: 2}
 				power: {intMin: 0, intMax: 100}
 				slot: {intMin: 0, intMax: 2}
+			}
+		}
+	}
+	Intent: {
+		seed: [...{
+			id?: strings.MaxRunes(96)
+			game?: strings.MaxRunes(16)
+			revision?: >=0
+			kind?: ("play" | "raise" | "accept" | "fold" | "envido" | "envido_real" | "envido_falta" | "envido_take" | "envido_run" | "flor" | "next" | "resign" | "again" | "encobrir" | "shout_chama" | "shout_manda" | "shout_desce" | "shout_chorou")
+			slot?: >=0 & <=2
+		}]
+		cel: {
+			enums: {
+				kind: ["play","raise","accept","fold","envido","envido_real","envido_falta","envido_take","envido_run","flor","next","resign","again","encobrir","shout_chama","shout_manda","shout_desce","shout_chorou"]
+			}
+			bounds: {
+				id: {sizeMax: 96}
+				game: {sizeMax: 16}
+				revision: {intMin: 0}
+				slot: {intMin: 0, intMax: 2}
+			}
+		}
+	}
+	LobbyTab: {
+		seed: [...{
+			id?: "the"
+			lease?: strings.MaxRunes(36)
+			me?: strings.MaxRunes(36)
+			note?: strings.MaxRunes(40)
+			join?: strings.MaxRunes(40)
+			shown?: ("" | "show" | "hide")
+			code?: strings.MaxRunes(40)
+			format?: ("1v1" | "2v2" | "2v2v2")
+			reserved?: ("false" | "true")
+			chair?: ("" | "a" | "b" | "c" | "d" | "e" | "f")
+			call?: strings.MaxRunes(48)
+		}]
+		cel: {
+			enums: {
+				id: ["the"]
+				shown: ["","show","hide"]
+				format: ["1v1","2v2","2v2v2"]
+				reserved: ["false","true"]
+				chair: ["","a","b","c","d","e","f"]
+			}
+			bounds: {
+				lease: {sizeMax: 36}
+				me: {sizeMax: 36}
+				note: {sizeMax: 40}
+				join: {sizeMax: 40}
+				code: {sizeMax: 40}
+				call: {sizeMax: 48}
+			}
+		}
+	}
+	Chair: {
+		seed: [...{
+			id?: ("a" | "b" | "c" | "d" | "e" | "f")
+			at?: ("you" | "parca" | "eles1" | "eles2" | "eles3" | "eles4")
+			team?: ("nos" | "eles" | "outros")
+			state?: ("you" | "taken" | "called" | "free")
+			name?: strings.MaxRunes(32)
+			picked?: ("" | "yes")
+			callable?: ("" | "yes")
+			talk?: strings.MaxRunes(16)
+		}]
+		cel: {
+			enums: {
+				id: ["a","b","c","d","e","f"]
+				at: ["you","parca","eles1","eles2","eles3","eles4"]
+				team: ["nos","eles","outros"]
+				state: ["you","taken","called","free"]
+				picked: ["","yes"]
+				callable: ["","yes"]
+			}
+			bounds: {
+				name: {sizeMax: 32}
+				talk: {sizeMax: 16}
+			}
+		}
+	}
+	ListedTable: {
+		seed: [...{
+			id?: strings.MinRunes(36) & strings.MaxRunes(36)
+			host?: strings.MaxRunes(32)
+			rules?: strings.MaxRunes(32)
+			seating?: ("1v1" | "2v2" | "2v2v2")
+			missing?: >=1 & <=5
+			seated?: strings.MaxRunes(12)
+			talk?: strings.MaxRunes(16)
+		}]
+		cel: {
+			enums: {
+				seating: ["1v1","2v2","2v2v2"]
+			}
+			bounds: {
+				id: {sizeMin: 36, sizeMax: 36}
+				host: {sizeMax: 32}
+				rules: {sizeMax: 32}
+				missing: {intMin: 1, intMax: 5}
+				seated: {sizeMax: 12}
+				talk: {sizeMax: 16}
+			}
+		}
+	}
+	OnlineView: {
+		seed: [...{
+			id?: strings.MaxRunes(36)
+		}]
+		cel: {
+			bounds: {
+				id: {sizeMax: 36}
+			}
+		}
+	}
+	OnlineItem: {
+		seed: [...{
+			id?: strings.MaxRunes(64)
+		}]
+		cel: {
+			bounds: {
+				id: {sizeMax: 64}
+			}
+		}
+	}
+	Player: {
+		seed: [...{
+			id?: "you"
+			handle?: strings.MaxRunes(20)
+		}]
+		cel: {
+			enums: {
+				id: ["you"]
+			}
+			bounds: {
+				handle: {sizeMax: 20}
 			}
 		}
 	}
@@ -319,6 +456,459 @@ code: state: entities: {
 				player_id: {sizeMax: 64}
 				card: {sizeMax: 4}
 				slot: {intMin: 0, intMax: 12}
+			}
+		}
+	}
+	TrucoMatchSeat: {
+		seed: [...{
+			id?: strings.MaxRunes(64)
+			seat?: strings.MaxRunes(16)
+			phase?: strings.MaxRunes(16)
+			view?: close({actions: [...strings.MaxRunes(12)] & list.MaxItems(14), answers: [...("" | "a" | "b" | "c" | "tie" | "draw" | "both")] & list.MaxItems(3), available: [...int & >=0 & <=2] & list.MaxItems(3), brink: ("" | "a" | "b" | "c" | "tie" | "draw" | "both"), caller: ("" | "a" | "b" | "c" | "tie" | "draw" | "both"), counts: [...close({count: int & >=0 & <=3, seat: ("a" | "b" | "c" | "d" | "e" | "f")})] & list.MaxItems(6), deadline: int & >=0 & <=9007199254740991, envido: int & >=0 & <=33, envido_caller: ("" | "a" | "b" | "c" | "tie" | "draw" | "both"), envido_chain: [...("envido" | "envido_real" | "envido_falta")] & list.MaxItems(3), envido_done: ("" | "accepted" | "refused" | "flor"), envido_scores: [...close({count: int & >=0 & <=33, side: ("" | "a" | "b" | "c" | "tie" | "draw" | "both")})] & list.MaxItems(3), folded: [...("" | "a" | "b" | "c" | "tie" | "draw" | "both")] & list.MaxItems(3), goal: int & >=0 & <=30, hand: [...int & >=-1 & <=40] & list.MaxItems(3), hand_no: int & >=0 & <=9007199254740991, joined: [...("a" | "b" | "c" | "d" | "e" | "f")] & list.MaxItems(6), leader: ("a" | "b" | "c" | "d" | "e" | "f"), log: [...close({at: int & >=0 & <=18, count: int & >=0 & <=41, kind: ("raise" | "accept" | "fold" | "envido" | "envido_real" | "envido_falta" | "envido_take" | "envido_run" | "envido_count" | "envido_good" | "flor"), seat: ("a" | "b" | "c" | "d" | "e" | "f")})] & list.MaxItems(40), offer: int & >=0 & <=30, opponent_count: int & >=0 & <=12, partners: [...close({hand: [...int & >=-1 & <=40] & list.MaxItems(3), seat: ("a" | "b" | "c" | "d" | "e" | "f")})] & list.MaxItems(1), phase: ("waiting" | "dealing" | "brink" | "playing" | "wager" | "envido" | "resolving" | "hand_over" | "finished"), plays: [...close({card: int & >=-1 & <=40, covered: bool, power: int & >=-1 & <=103, seat: ("a" | "b" | "c" | "d" | "e" | "f"), slot: int & >=0 & <=2, trick: int & >=0 & <=2, win: bool})] & list.MaxItems(18), powers: [...int & >=-1 & <=103] & list.MaxItems(3), reserved: bool, result: ("" | "a" | "b" | "c" | "tie" | "draw" | "both"), right: ("" | "a" | "b" | "c" | "tie" | "draw" | "both"), score_a: int & >=0 & <=30, score_b: int & >=0 & <=30, score_c: int & >=0 & <=30, seat: ("a" | "b" | "c" | "d" | "e" | "f"), seating: ("1v1" | "2v2" | "2v2v2"), seats: [...("a" | "b" | "c" | "d" | "e" | "f")] & list.MaxItems(6), side: ("" | "a" | "b" | "c" | "tie" | "draw" | "both"), stake: int & >=0 & <=30, talk: strings.MaxRunes(36), tricks: [...("" | "a" | "b" | "c" | "tie" | "draw" | "both")] & list.MaxItems(3), turn: ("a" | "b" | "c" | "d" | "e" | "f"), turn_ms: int & >=0 & <=600000, variant: ("mineiro" | "paulista" | "gaucho" | "truc" | "argentino" | "uruguayo" | "paraguayo" | "douradinha" | "douradao"), vira: int & >=-1 & <=40, winner: ("" | "a" | "b" | "c" | "tie" | "draw" | "both")})
+			variant?: strings.MaxRunes(10)
+			seating?: strings.MaxRunes(6)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 64"
+				seat: "char_length(seat) <= 16"
+				phase: "char_length(phase) <= 16"
+				view: "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"actions\":{\"kind\":\"array\",\"maxItems\":14,\"items\":{\"kind\":\"string\",\"sizeMax\":12}},\"answers\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}},\"available\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2}},\"brink\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"caller\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"counts\":{\"kind\":\"array\",\"maxItems\":6,\"items\":{\"kind\":\"object\",\"fields\":{\"count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":3},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}},\"deadline\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"envido\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":33},\"envido_caller\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"envido_chain\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"envido\",\"envido_real\",\"envido_falta\"]}},\"envido_done\":{\"kind\":\"string\",\"enumValues\":[\"\",\"accepted\",\"refused\",\"flor\"]},\"envido_scores\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"object\",\"fields\":{\"count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":33},\"side\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}}}},\"folded\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}},\"goal\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"hand\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40}},\"hand_no\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"joined\":{\"kind\":\"array\",\"maxItems\":6,\"items\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}},\"leader\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"log\":{\"kind\":\"array\",\"maxItems\":40,\"items\":{\"kind\":\"object\",\"fields\":{\"at\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":18},\"count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":41},\"kind\":{\"kind\":\"string\",\"enumValues\":[\"raise\",\"accept\",\"fold\",\"envido\",\"envido_real\",\"envido_falta\",\"envido_take\",\"envido_run\",\"envido_count\",\"envido_good\",\"flor\"]},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}},\"offer\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"opponent_count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":12},\"partners\":{\"kind\":\"array\",\"maxItems\":1,\"items\":{\"kind\":\"object\",\"fields\":{\"hand\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40}},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"waiting\",\"dealing\",\"brink\",\"playing\",\"wager\",\"envido\",\"resolving\",\"hand_over\",\"finished\"]},\"plays\":{\"kind\":\"array\",\"maxItems\":18,\"items\":{\"kind\":\"object\",\"fields\":{\"card\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40},\"covered\":{\"kind\":\"boolean\"},\"power\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":103},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"slot\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"trick\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"win\":{\"kind\":\"boolean\"}}}},\"powers\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":103}},\"reserved\":{\"kind\":\"boolean\"},\"result\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"right\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"score_a\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"score_b\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"score_c\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"seating\":{\"kind\":\"string\",\"enumValues\":[\"1v1\",\"2v2\",\"2v2v2\"]},\"seats\":{\"kind\":\"array\",\"maxItems\":6,\"items\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}},\"side\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"stake\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"talk\":{\"kind\":\"string\",\"sizeMax\":36},\"tricks\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}},\"turn\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"turn_ms\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":600000},\"variant\":{\"kind\":\"string\",\"enumValues\":[\"mineiro\",\"paulista\",\"gaucho\",\"truc\",\"argentino\",\"uruguayo\",\"paraguayo\",\"douradinha\",\"douradao\"]},\"vira\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40},\"winner\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}}}'::jsonb)"
+				variant: "char_length(variant) <= 10"
+				seating: "char_length(seating) <= 6"
+			}
+			bounds: {
+				id: {sizeMax: 64}
+				seat: {sizeMax: 16}
+				phase: {sizeMax: 16}
+				view: {kind: "object", fields: {"actions":{"kind":"array","maxItems":14,"items":{"kind":"string","sizeMax":12}},"answers":{"kind":"array","maxItems":3,"items":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}},"available":{"kind":"array","maxItems":3,"items":{"kind":"integer","intMin":0,"intMax":2}},"brink":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"caller":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"counts":{"kind":"array","maxItems":6,"items":{"kind":"object","fields":{"count":{"kind":"integer","intMin":0,"intMax":3},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]}}}},"deadline":{"kind":"integer","intMin":0,"intMax":9007199254740991},"envido":{"kind":"integer","intMin":0,"intMax":33},"envido_caller":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"envido_chain":{"kind":"array","maxItems":3,"items":{"kind":"string","enumValues":["envido","envido_real","envido_falta"]}},"envido_done":{"kind":"string","enumValues":["","accepted","refused","flor"]},"envido_scores":{"kind":"array","maxItems":3,"items":{"kind":"object","fields":{"count":{"kind":"integer","intMin":0,"intMax":33},"side":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}}}},"folded":{"kind":"array","maxItems":3,"items":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}},"goal":{"kind":"integer","intMin":0,"intMax":30},"hand":{"kind":"array","maxItems":3,"items":{"kind":"integer","intMin":-1,"intMax":40}},"hand_no":{"kind":"integer","intMin":0,"intMax":9007199254740991},"joined":{"kind":"array","maxItems":6,"items":{"kind":"string","enumValues":["a","b","c","d","e","f"]}},"leader":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"log":{"kind":"array","maxItems":40,"items":{"kind":"object","fields":{"at":{"kind":"integer","intMin":0,"intMax":18},"count":{"kind":"integer","intMin":0,"intMax":41},"kind":{"kind":"string","enumValues":["raise","accept","fold","envido","envido_real","envido_falta","envido_take","envido_run","envido_count","envido_good","flor"]},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]}}}},"offer":{"kind":"integer","intMin":0,"intMax":30},"opponent_count":{"kind":"integer","intMin":0,"intMax":12},"partners":{"kind":"array","maxItems":1,"items":{"kind":"object","fields":{"hand":{"kind":"array","maxItems":3,"items":{"kind":"integer","intMin":-1,"intMax":40}},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]}}}},"phase":{"kind":"string","enumValues":["waiting","dealing","brink","playing","wager","envido","resolving","hand_over","finished"]},"plays":{"kind":"array","maxItems":18,"items":{"kind":"object","fields":{"card":{"kind":"integer","intMin":-1,"intMax":40},"covered":{"kind":"boolean"},"power":{"kind":"integer","intMin":-1,"intMax":103},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"slot":{"kind":"integer","intMin":0,"intMax":2},"trick":{"kind":"integer","intMin":0,"intMax":2},"win":{"kind":"boolean"}}}},"powers":{"kind":"array","maxItems":3,"items":{"kind":"integer","intMin":-1,"intMax":103}},"reserved":{"kind":"boolean"},"result":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"right":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"score_a":{"kind":"integer","intMin":0,"intMax":30},"score_b":{"kind":"integer","intMin":0,"intMax":30},"score_c":{"kind":"integer","intMin":0,"intMax":30},"seat":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"seating":{"kind":"string","enumValues":["1v1","2v2","2v2v2"]},"seats":{"kind":"array","maxItems":6,"items":{"kind":"string","enumValues":["a","b","c","d","e","f"]}},"side":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]},"stake":{"kind":"integer","intMin":0,"intMax":30},"talk":{"kind":"string","sizeMax":36},"tricks":{"kind":"array","maxItems":3,"items":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}},"turn":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"turn_ms":{"kind":"integer","intMin":0,"intMax":600000},"variant":{"kind":"string","enumValues":["mineiro","paulista","gaucho","truc","argentino","uruguayo","paraguayo","douradinha","douradao"]},"vira":{"kind":"integer","intMin":-1,"intMax":40},"winner":{"kind":"string","enumValues":["","a","b","c","tie","draw","both"]}}}
+				variant: {sizeMax: 10}
+				seating: {sizeMax: 6}
+			}
+		}
+	}
+	TrucoMatchCommand: {
+		seed: [...{
+			id?: strings.MaxRunes(128)
+			request?: close({event: close({kind: ("accept" | "envido" | "envido_falta" | "envido_real" | "envido_run" | "envido_take" | "flor" | "fold" | "next" | "play" | "raise" | "resign" | "stand"), payload: {...}}), expected_revision: strings.MaxRunes(20), version: int & >=1 & <=9007199254740991})
+			outcome?: ("" | "accepted" | "rejected")
+			reason?: strings.MaxRunes(64)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 128"
+				request: "public.portable_shape_valid(request, '{\"kind\":\"object\",\"fields\":{\"event\":{\"kind\":\"object\",\"fields\":{\"kind\":{\"kind\":\"string\",\"enumValues\":[\"accept\",\"envido\",\"envido_falta\",\"envido_real\",\"envido_run\",\"envido_take\",\"flor\",\"fold\",\"next\",\"play\",\"raise\",\"resign\",\"stand\"]},\"payload\":{\"kind\":\"object\"}}},\"expected_revision\":{\"kind\":\"string\",\"sizeMax\":20},\"version\":{\"kind\":\"integer\",\"intMin\":1,\"intMax\":9007199254740991}}}'::jsonb)"
+				outcome: "outcome IN ('', 'accepted', 'rejected')"
+				reason: "char_length(reason) <= 64"
+			}
+			enums: {
+				outcome: ["","accepted","rejected"]
+			}
+			bounds: {
+				id: {sizeMax: 128}
+				request: {kind: "object", fields: {"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["accept","envido","envido_falta","envido_real","envido_run","envido_take","flor","fold","next","play","raise","resign","stand"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}
+				reason: {sizeMax: 64}
+			}
+		}
+	}
+	TrucoMatchOpen: {
+		seed: [...{
+			id?: strings.MaxRunes(128)
+			kind?: ("create" | "join")
+			outcome?: ("" | "accepted" | "rejected")
+			reason?: strings.MaxRunes(64)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 128"
+				kind: "kind IN ('create', 'join')"
+				outcome: "outcome IN ('', 'accepted', 'rejected')"
+				reason: "char_length(reason) <= 64"
+			}
+			enums: {
+				kind: ["create","join"]
+				outcome: ["","accepted","rejected"]
+			}
+			bounds: {
+				id: {sizeMax: 128}
+				reason: {sizeMax: 64}
+			}
+		}
+	}
+	TrucoMatchPublic: {
+		seed: [...{
+			id?: strings.MaxRunes(36)
+			variant?: strings.MaxRunes(10)
+			seating?: strings.MaxRunes(6)
+			seated?: >=0 & <=6
+			places?: >=2 & <=6
+			talk?: strings.MaxRunes(36)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 36"
+				variant: "char_length(variant) <= 10"
+				seating: "char_length(seating) <= 6"
+				seated: "seated >= 0 AND seated <= 6"
+				places: "places >= 2 AND places <= 6"
+				talk: "char_length(talk) <= 36"
+			}
+			bounds: {
+				id: {sizeMax: 36}
+				variant: {sizeMax: 10}
+				seating: {sizeMax: 6}
+				seated: {intMin: 0, intMax: 6}
+				places: {intMin: 2, intMax: 6}
+				talk: {sizeMax: 36}
+			}
+		}
+	}
+	TrucoPresenceSeat: {
+		seed: [...{
+			id?: strings.MaxRunes(64)
+			seat?: strings.MaxRunes(16)
+			phase?: strings.MaxRunes(16)
+			view?: close({leases: [...close({id: strings.MaxRunes(36), until: int & >=0 & <=9007199254740991})] & list.MaxItems(16), name: strings.MaxRunes(32), phase: ("hidden" | "visible"), until: int & >=0 & <=9007199254740991})
+			name?: strings.MaxRunes(32)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 64"
+				seat: "char_length(seat) <= 16"
+				phase: "char_length(phase) <= 16"
+				view: "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"leases\":{\"kind\":\"array\",\"maxItems\":16,\"items\":{\"kind\":\"object\",\"fields\":{\"id\":{\"kind\":\"string\",\"sizeMax\":36},\"until\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991}}}},\"name\":{\"kind\":\"string\",\"sizeMax\":32},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"hidden\",\"visible\"]},\"until\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991}}}'::jsonb)"
+				name: "char_length(name) <= 32"
+			}
+			bounds: {
+				id: {sizeMax: 64}
+				seat: {sizeMax: 16}
+				phase: {sizeMax: 16}
+				view: {kind: "object", fields: {"leases":{"kind":"array","maxItems":16,"items":{"kind":"object","fields":{"id":{"kind":"string","sizeMax":36},"until":{"kind":"integer","intMin":0,"intMax":9007199254740991}}}},"name":{"kind":"string","sizeMax":32},"phase":{"kind":"string","enumValues":["hidden","visible"]},"until":{"kind":"integer","intMin":0,"intMax":9007199254740991}}}
+				name: {sizeMax: 32}
+			}
+		}
+	}
+	TrucoPresenceCommand: {
+		seed: [...{
+			id?: strings.MaxRunes(128)
+			request?: close({event: close({kind: ("hide" | "show"), payload: {...}}), expected_revision: strings.MaxRunes(20), version: int & >=1 & <=9007199254740991})
+			outcome?: ("" | "accepted" | "rejected")
+			reason?: strings.MaxRunes(64)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 128"
+				request: "public.portable_shape_valid(request, '{\"kind\":\"object\",\"fields\":{\"event\":{\"kind\":\"object\",\"fields\":{\"kind\":{\"kind\":\"string\",\"enumValues\":[\"hide\",\"show\"]},\"payload\":{\"kind\":\"object\"}}},\"expected_revision\":{\"kind\":\"string\",\"sizeMax\":20},\"version\":{\"kind\":\"integer\",\"intMin\":1,\"intMax\":9007199254740991}}}'::jsonb)"
+				outcome: "outcome IN ('', 'accepted', 'rejected')"
+				reason: "char_length(reason) <= 64"
+			}
+			enums: {
+				outcome: ["","accepted","rejected"]
+			}
+			bounds: {
+				id: {sizeMax: 128}
+				request: {kind: "object", fields: {"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["hide","show"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}
+				reason: {sizeMax: 64}
+			}
+		}
+	}
+	TrucoPresencePublic: {
+		seed: [...{
+			id?: strings.MaxRunes(36)
+			name?: strings.MaxRunes(32)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 36"
+				name: "char_length(name) <= 32"
+			}
+			bounds: {
+				id: {sizeMax: 36}
+				name: {sizeMax: 32}
+			}
+		}
+	}
+	TrucoPresenceLease: {
+		seed: [...{
+			id?: strings.MinRunes(36) & strings.MaxRunes(36)
+			beat?: >=0
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) = 36"
+				beat: "beat >= 0"
+			}
+			bounds: {
+				id: {sizeMin: 36, sizeMax: 36}
+				beat: {intMin: 0}
+			}
+		}
+	}
+	TrucoChallengeSeat: {
+		seed: [...{
+			id?: strings.MaxRunes(64)
+			seat?: strings.MaxRunes(16)
+			phase?: strings.MaxRunes(16)
+			view?: close({deadline: int & >=0 & <=9007199254740991, inviter: strings.MaxRunes(36), inviter_name: strings.MaxRunes(32), phase: ("offered" | "accepted" | "declined" | "cancelled" | "expired"), room: strings.MaxRunes(36), seating: ("1v1" | "2v2" | "2v2v2"), talk: strings.MaxRunes(36), target: strings.MaxRunes(36), target_name: strings.MaxRunes(32), variant: ("mineiro" | "paulista" | "gaucho" | "truc" | "argentino" | "uruguayo" | "paraguayo" | "douradinha" | "douradao")})
+			inviter_name?: strings.MaxRunes(32)
+			target_name?: strings.MaxRunes(32)
+			variant?: strings.MaxRunes(10)
+			seating?: strings.MaxRunes(6)
+			room?: strings.MaxRunes(36)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 64"
+				seat: "char_length(seat) <= 16"
+				phase: "char_length(phase) <= 16"
+				view: "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"deadline\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"inviter\":{\"kind\":\"string\",\"sizeMax\":36},\"inviter_name\":{\"kind\":\"string\",\"sizeMax\":32},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"offered\",\"accepted\",\"declined\",\"cancelled\",\"expired\"]},\"room\":{\"kind\":\"string\",\"sizeMax\":36},\"seating\":{\"kind\":\"string\",\"enumValues\":[\"1v1\",\"2v2\",\"2v2v2\"]},\"talk\":{\"kind\":\"string\",\"sizeMax\":36},\"target\":{\"kind\":\"string\",\"sizeMax\":36},\"target_name\":{\"kind\":\"string\",\"sizeMax\":32},\"variant\":{\"kind\":\"string\",\"enumValues\":[\"mineiro\",\"paulista\",\"gaucho\",\"truc\",\"argentino\",\"uruguayo\",\"paraguayo\",\"douradinha\",\"douradao\"]}}}'::jsonb)"
+				inviter_name: "char_length(inviter_name) <= 32"
+				target_name: "char_length(target_name) <= 32"
+				variant: "char_length(variant) <= 10"
+				seating: "char_length(seating) <= 6"
+				room: "char_length(room) <= 36"
+			}
+			bounds: {
+				id: {sizeMax: 64}
+				seat: {sizeMax: 16}
+				phase: {sizeMax: 16}
+				view: {kind: "object", fields: {"deadline":{"kind":"integer","intMin":0,"intMax":9007199254740991},"inviter":{"kind":"string","sizeMax":36},"inviter_name":{"kind":"string","sizeMax":32},"phase":{"kind":"string","enumValues":["offered","accepted","declined","cancelled","expired"]},"room":{"kind":"string","sizeMax":36},"seating":{"kind":"string","enumValues":["1v1","2v2","2v2v2"]},"talk":{"kind":"string","sizeMax":36},"target":{"kind":"string","sizeMax":36},"target_name":{"kind":"string","sizeMax":32},"variant":{"kind":"string","enumValues":["mineiro","paulista","gaucho","truc","argentino","uruguayo","paraguayo","douradinha","douradao"]}}}
+				inviter_name: {sizeMax: 32}
+				target_name: {sizeMax: 32}
+				variant: {sizeMax: 10}
+				seating: {sizeMax: 6}
+				room: {sizeMax: 36}
+			}
+		}
+	}
+	TrucoChallengeCommand: {
+		seed: [...{
+			id?: strings.MaxRunes(128)
+			request?: close({event: close({kind: ("accept" | "cancel" | "decline"), payload: {...}}), expected_revision: strings.MaxRunes(20), version: int & >=1 & <=9007199254740991})
+			outcome?: ("" | "accepted" | "rejected")
+			reason?: strings.MaxRunes(64)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 128"
+				request: "public.portable_shape_valid(request, '{\"kind\":\"object\",\"fields\":{\"event\":{\"kind\":\"object\",\"fields\":{\"kind\":{\"kind\":\"string\",\"enumValues\":[\"accept\",\"cancel\",\"decline\"]},\"payload\":{\"kind\":\"object\"}}},\"expected_revision\":{\"kind\":\"string\",\"sizeMax\":20},\"version\":{\"kind\":\"integer\",\"intMin\":1,\"intMax\":9007199254740991}}}'::jsonb)"
+				outcome: "outcome IN ('', 'accepted', 'rejected')"
+				reason: "char_length(reason) <= 64"
+			}
+			enums: {
+				outcome: ["","accepted","rejected"]
+			}
+			bounds: {
+				id: {sizeMax: 128}
+				request: {kind: "object", fields: {"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["accept","cancel","decline"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}
+				reason: {sizeMax: 64}
+			}
+		}
+	}
+	TrucoCallSeat: {
+		seed: [...{
+			id?: strings.MaxRunes(64)
+			seat?: strings.MaxRunes(16)
+			phase?: strings.MaxRunes(16)
+			view?: close({caller: strings.MaxRunes(36), caller_name: strings.MaxRunes(32), chair: ("a" | "b" | "c" | "d" | "e" | "f"), deadline: int & >=0 & <=9007199254740991, phase: ("offered" | "accepted" | "declined" | "cancelled" | "expired"), room: strings.MaxRunes(36), seating: ("1v1" | "2v2" | "2v2v2"), target: strings.MaxRunes(36), target_name: strings.MaxRunes(32), variant: ("mineiro" | "paulista" | "gaucho" | "truc" | "argentino" | "uruguayo" | "paraguayo" | "douradinha" | "douradao")})
+			caller_name?: strings.MaxRunes(32)
+			room?: strings.MaxRunes(36)
+			chair?: strings.MaxRunes(1)
+			variant?: strings.MaxRunes(10)
+			seating?: strings.MaxRunes(6)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 64"
+				seat: "char_length(seat) <= 16"
+				phase: "char_length(phase) <= 16"
+				view: "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"caller\":{\"kind\":\"string\",\"sizeMax\":36},\"caller_name\":{\"kind\":\"string\",\"sizeMax\":32},\"chair\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"deadline\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"offered\",\"accepted\",\"declined\",\"cancelled\",\"expired\"]},\"room\":{\"kind\":\"string\",\"sizeMax\":36},\"seating\":{\"kind\":\"string\",\"enumValues\":[\"1v1\",\"2v2\",\"2v2v2\"]},\"target\":{\"kind\":\"string\",\"sizeMax\":36},\"target_name\":{\"kind\":\"string\",\"sizeMax\":32},\"variant\":{\"kind\":\"string\",\"enumValues\":[\"mineiro\",\"paulista\",\"gaucho\",\"truc\",\"argentino\",\"uruguayo\",\"paraguayo\",\"douradinha\",\"douradao\"]}}}'::jsonb)"
+				caller_name: "char_length(caller_name) <= 32"
+				room: "char_length(room) <= 36"
+				chair: "char_length(chair) <= 1"
+				variant: "char_length(variant) <= 10"
+				seating: "char_length(seating) <= 6"
+			}
+			bounds: {
+				id: {sizeMax: 64}
+				seat: {sizeMax: 16}
+				phase: {sizeMax: 16}
+				view: {kind: "object", fields: {"caller":{"kind":"string","sizeMax":36},"caller_name":{"kind":"string","sizeMax":32},"chair":{"kind":"string","enumValues":["a","b","c","d","e","f"]},"deadline":{"kind":"integer","intMin":0,"intMax":9007199254740991},"phase":{"kind":"string","enumValues":["offered","accepted","declined","cancelled","expired"]},"room":{"kind":"string","sizeMax":36},"seating":{"kind":"string","enumValues":["1v1","2v2","2v2v2"]},"target":{"kind":"string","sizeMax":36},"target_name":{"kind":"string","sizeMax":32},"variant":{"kind":"string","enumValues":["mineiro","paulista","gaucho","truc","argentino","uruguayo","paraguayo","douradinha","douradao"]}}}
+				caller_name: {sizeMax: 32}
+				room: {sizeMax: 36}
+				chair: {sizeMax: 1}
+				variant: {sizeMax: 10}
+				seating: {sizeMax: 6}
+			}
+		}
+	}
+	TrucoCallCommand: {
+		seed: [...{
+			id?: strings.MaxRunes(128)
+			request?: close({event: close({kind: ("accept" | "cancel" | "decline"), payload: {...}}), expected_revision: strings.MaxRunes(20), version: int & >=1 & <=9007199254740991})
+			outcome?: ("" | "accepted" | "rejected")
+			reason?: strings.MaxRunes(64)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 128"
+				request: "public.portable_shape_valid(request, '{\"kind\":\"object\",\"fields\":{\"event\":{\"kind\":\"object\",\"fields\":{\"kind\":{\"kind\":\"string\",\"enumValues\":[\"accept\",\"cancel\",\"decline\"]},\"payload\":{\"kind\":\"object\"}}},\"expected_revision\":{\"kind\":\"string\",\"sizeMax\":20},\"version\":{\"kind\":\"integer\",\"intMin\":1,\"intMax\":9007199254740991}}}'::jsonb)"
+				outcome: "outcome IN ('', 'accepted', 'rejected')"
+				reason: "char_length(reason) <= 64"
+			}
+			enums: {
+				outcome: ["","accepted","rejected"]
+			}
+			bounds: {
+				id: {sizeMax: 128}
+				request: {kind: "object", fields: {"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["accept","cancel","decline"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}
+				reason: {sizeMax: 64}
+			}
+		}
+	}
+	TrucoCallOpen: {
+		seed: [...{
+			id?: strings.MaxRunes(128)
+			kind?: ("create" | "join")
+			outcome?: ("" | "accepted" | "rejected")
+			reason?: strings.MaxRunes(64)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 128"
+				kind: "kind IN ('create', 'join')"
+				outcome: "outcome IN ('', 'accepted', 'rejected')"
+				reason: "char_length(reason) <= 64"
+			}
+			enums: {
+				kind: ["create","join"]
+				outcome: ["","accepted","rejected"]
+			}
+			bounds: {
+				id: {sizeMax: 128}
+				reason: {sizeMax: 64}
+			}
+		}
+	}
+	TrucoVoiceSeat: {
+		seed: [...{
+			id?: strings.MaxRunes(64)
+			seat?: strings.MaxRunes(16)
+			phase?: strings.MaxRunes(16)
+			view?: close({n: int & >=0 & <=9007199254740991, name: strings.MaxRunes(32), phase: ("quiet" | "seated"), room: strings.MaxRunes(36), seat: ("" | "a" | "b" | "c" | "d" | "e" | "f"), talk: strings.MaxRunes(36), word: ("" | "chama" | "manda" | "desce" | "chorou")})
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 64"
+				seat: "char_length(seat) <= 16"
+				phase: "char_length(phase) <= 16"
+				view: "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"n\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"name\":{\"kind\":\"string\",\"sizeMax\":32},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"quiet\",\"seated\"]},\"room\":{\"kind\":\"string\",\"sizeMax\":36},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"talk\":{\"kind\":\"string\",\"sizeMax\":36},\"word\":{\"kind\":\"string\",\"enumValues\":[\"\",\"chama\",\"manda\",\"desce\",\"chorou\"]}}}'::jsonb)"
+			}
+			bounds: {
+				id: {sizeMax: 64}
+				seat: {sizeMax: 16}
+				phase: {sizeMax: 16}
+				view: {kind: "object", fields: {"n":{"kind":"integer","intMin":0,"intMax":9007199254740991},"name":{"kind":"string","sizeMax":32},"phase":{"kind":"string","enumValues":["quiet","seated"]},"room":{"kind":"string","sizeMax":36},"seat":{"kind":"string","enumValues":["","a","b","c","d","e","f"]},"talk":{"kind":"string","sizeMax":36},"word":{"kind":"string","enumValues":["","chama","manda","desce","chorou"]}}}
+			}
+		}
+	}
+	TrucoVoiceCommand: {
+		seed: [...{
+			id?: strings.MaxRunes(128)
+			request?: close({event: close({kind: ("rise" | "shout" | "sit"), payload: {...}}), expected_revision: strings.MaxRunes(20), version: int & >=1 & <=9007199254740991})
+			outcome?: ("" | "accepted" | "rejected")
+			reason?: strings.MaxRunes(64)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 128"
+				request: "public.portable_shape_valid(request, '{\"kind\":\"object\",\"fields\":{\"event\":{\"kind\":\"object\",\"fields\":{\"kind\":{\"kind\":\"string\",\"enumValues\":[\"rise\",\"shout\",\"sit\"]},\"payload\":{\"kind\":\"object\"}}},\"expected_revision\":{\"kind\":\"string\",\"sizeMax\":20},\"version\":{\"kind\":\"integer\",\"intMin\":1,\"intMax\":9007199254740991}}}'::jsonb)"
+				outcome: "outcome IN ('', 'accepted', 'rejected')"
+				reason: "char_length(reason) <= 64"
+			}
+			enums: {
+				outcome: ["","accepted","rejected"]
+			}
+			bounds: {
+				id: {sizeMax: 128}
+				request: {kind: "object", fields: {"event":{"kind":"object","fields":{"kind":{"kind":"string","enumValues":["rise","shout","sit"]},"payload":{"kind":"object"}}},"expected_revision":{"kind":"string","sizeMax":20},"version":{"kind":"integer","intMin":1,"intMax":9007199254740991}}}
+				reason: {sizeMax: 64}
+			}
+		}
+	}
+	TrucoVoiceOpen: {
+		seed: [...{
+			id?: strings.MaxRunes(128)
+			kind?: ("create" | "join")
+			outcome?: ("" | "accepted" | "rejected")
+			reason?: strings.MaxRunes(64)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 128"
+				kind: "kind IN ('create', 'join')"
+				outcome: "outcome IN ('', 'accepted', 'rejected')"
+				reason: "char_length(reason) <= 64"
+			}
+			enums: {
+				kind: ["create","join"]
+				outcome: ["","accepted","rejected"]
+			}
+			bounds: {
+				id: {sizeMax: 128}
+				reason: {sizeMax: 64}
+			}
+		}
+	}
+	TrucoVoicePublic: {
+		seed: [...{
+			id?: strings.MaxRunes(36)
+			talk?: strings.MaxRunes(36)
+			seat?: strings.MaxRunes(1)
+			name?: strings.MaxRunes(32)
+			word?: strings.MaxRunes(12)
+			n?: >=0
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 36"
+				talk: "char_length(talk) <= 36"
+				seat: "char_length(seat) <= 1"
+				name: "char_length(name) <= 32"
+				word: "char_length(word) <= 12"
+				n: "n >= 0"
+			}
+			bounds: {
+				id: {sizeMax: 36}
+				talk: {sizeMax: 36}
+				seat: {sizeMax: 1}
+				name: {sizeMax: 32}
+				word: {sizeMax: 12}
+				n: {intMin: 0}
+			}
+		}
+	}
+	TrucoChallengeOpen: {
+		seed: [...{
+			id?: strings.MaxRunes(128)
+			kind?: ("create" | "join")
+			outcome?: ("" | "accepted" | "rejected")
+			reason?: strings.MaxRunes(64)
+		}]
+		cel: {
+			checks: {
+				id: "char_length(id) <= 128"
+				kind: "kind IN ('create', 'join')"
+				outcome: "outcome IN ('', 'accepted', 'rejected')"
+				reason: "char_length(reason) <= 64"
+			}
+			enums: {
+				kind: ["create","join"]
+				outcome: ["","accepted","rejected"]
+			}
+			bounds: {
+				id: {sizeMax: 128}
+				reason: {sizeMax: 64}
 			}
 		}
 	}
