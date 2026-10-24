@@ -4,7 +4,7 @@ import (
 	"list"
 
 	pronto "github.com/bonisoft3/pronto"
-	game "bonisoft.org/apps/truco/machines:trucomatch"
+	game "github.com/bonisoft3/truco/machines:trucomatch"
 )
 
 // What a reader reaches each Mecha machine through (pronto's mecha-surface.ts):

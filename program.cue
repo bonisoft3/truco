@@ -13,7 +13,7 @@ import (
 	"list"
 
 	pronto "github.com/bonisoft3/pronto"
-	game "bonisoft.org/apps/truco/machines:trucomatch"
+	game "github.com/bonisoft3/truco/machines:trucomatch"
 )
 
 _designMd: _ @embed(file="DESIGN.md", type=text)
@@ -449,6 +449,7 @@ code: pronto.#App & {
 		auth: {
 			required: false
 			service:  "/auth"
+			promote:  true
 		}
 		blobs: false
 		hatches: {}

@@ -8,5 +8,6 @@
     "anon",
     "app_user",
     "service"
-  ]
+  ],
+  "drains": []
 }

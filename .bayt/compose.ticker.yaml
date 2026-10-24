@@ -5,7 +5,7 @@ services:
       additional_contexts:
         truco-crud: service:truco-crud
         libraries_mecha-ticker-image: >-
-          ${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-ticker:0.14.0@sha256:3f020f4d233531de81a2ab3ba31f734149b2ecadf95fca655e48020016ae9140}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-ticker-image}
+          ${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-ticker:0.17.0@sha256:e85f3cba4582e29f1d95bde4fad82b965746fe89600657319d6f5b5d6dde2a19}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-ticker-image}
       context: ..
       dockerfile: .bayt/Dockerfile.ticker
       target: ticker
@@ -15,7 +15,7 @@ services:
       args:
         BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
-          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+          docker/dockerfile:1.27@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
     depends_on:
       truco-crud:
         condition: service_healthy
@@ -42,6 +42,6 @@ services:
       args:
         BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
         BUILDKIT_SYNTAX: >-
-          docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+          docker/dockerfile:1.27@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
     image: bayt-truco-ticker_bayt:latest
     scale: 0

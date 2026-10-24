@@ -4,8 +4,6 @@ include:
   required: false
 - path: ./compose.release-docker.yaml
   required: false
-- path: ./compose.replay.yaml
-  required: false
 - path: ./compose.ci-replay.yaml
   required: false
 - path: ./compose.setup.yaml
@@ -27,6 +25,8 @@ include:
 - path: ./compose.ci.yaml
   required: false
 - path: ./compose.served.yaml
+  required: false
+- path: ./compose.served-release.yaml
   required: false
 - path: ./compose.database.yaml
   required: false

@@ -55,8 +55,8 @@ app: truco
 auth:
   required: false
   service: /auth
+  promote: true
   mode: passkey
-  promote: false
 floors:
   touch: 24
 i18n:

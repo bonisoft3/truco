@@ -1,16 +1,16 @@
 // Regression rationale: asserts deterministic fuel bounds, outbox conflict rollback, and read-only frame isolation.
-import { describe, expect, it } from "@test/harness";
+import { describe, expect, it } from "/omnishell/test/harness.ts";
 import { parseHTML } from "linkedom";
-import { batched } from "../../../plugins/omnishell/interpreter/batched-store.js";
-import { FuelMeter, FuelLimitExceededError } from "../../../plugins/omnishell/test/fuel-meter.ts";
-import { OutboxSimulator } from "../../../plugins/omnishell/test/outbox-simulator.ts";
+import { batched } from "/omnishell/interpreter/batched-store.js";
+import { FuelMeter, FuelLimitExceededError } from "/omnishell/test/fuel-meter.ts";
+import { OutboxSimulator } from "/omnishell/test/outbox-simulator.ts";
 import {
   extractRegions,
   generateIsolatedFrames,
   generatePairwiseFrames,
   generateCoveringArrayFrames,
-} from "../../../plugins/omnishell/test/storybook-injector.ts";
-import { ensureSes } from "../../../plugins/omnishell/interpreter/jessie.js";
+} from "/omnishell/test/storybook-injector.ts";
+import { ensureSes } from "/omnishell/interpreter/jessie.js";
 
 const ROUND_MACHINE = {
   type: "parallel",
@@ -238,7 +238,7 @@ describe("1. Deterministic Fuel Budgets for Automated Tests", () => {
     </section>`;
 
     const { document, Event, store } = bootHarness(HTML, { phase: "v1", truco_state: "none", envido_state: "none", said: "", ran: "" });
-    const { interpretScreen } = await import("../../../plugins/omnishell/interpreter/screen.js");
+    const { interpretScreen } = await import("/omnishell/interpreter/screen.js");
     const mount = document.getElementById("shell");
     const route = { screen: "arena", files: { html: "arena.html", css: "arena.css", handlers: [] }, states: ["playing"] };
 
@@ -454,7 +454,7 @@ describe("3. Storybook State Injection without Mutations", () => {
 
   it("poses each visual state in LinkeDOM completely read-only with zero mutations", async () => {
     await ensureSes();
-    const { interpretScreen } = await import("../../../plugins/omnishell/interpreter/screen.js");
+    const { interpretScreen } = await import("/omnishell/interpreter/screen.js");
 
     const HTML = `<section class="screen" data-screen="arena">
       <div id="round-region" data-live="round" data-filter="id=eq.r1"
@@ -488,6 +488,33 @@ describe("3. Storybook State Injection without Mutations", () => {
 
       // Invariant: ZERO mutations were dispatched during Storybook state rendering!
       expect(puts.length).toBe(0);
+    }
+  });
+
+  // douradinha/douradao pin seats="2v2v2" while 2-team variants use dynamic handler
+  // seats2; posing unpartitioned pairs crashes arena.js, and applying variant default
+  // assigns after posed fields clobbers posed theme/opponent states.
+  it("derives variant-seating partition constraints from arena.html picker transitions without clobbering posed fields", async () => {
+    const html = await Deno.readTextFile(new URL("../shell/screens/arena.html", import.meta.url));
+    const { document } = parseHTML(`<!doctype html><html><body>${html}</body></html>`);
+    const regions = [...document.querySelectorAll("[data-machine]")].flatMap(
+      (el: { getAttribute: (a: string) => string | null }) =>
+        extractRegions(JSON.parse(el.getAttribute("data-machine")!), "match"),
+    );
+    const frames = generateCoveringArrayFrames(regions, { match: { id: "m1" } });
+    expect(frames.length).toBeGreaterThan(0);
+
+    for (const f of frames) {
+      const v = f.visualInvariants.variant;
+      const s = f.visualInvariants.seats;
+      if (v === "douradinha" || v === "douradao") {
+        expect(s).toBe("2v2v2");
+      } else {
+        expect(s === "1v1" || s === "2v2").toBe(true);
+      }
+      for (const [field, val] of Object.entries(f.visualInvariants)) {
+        expect(f.row[field]).toBe(val);
+      }
     }
   });
 });

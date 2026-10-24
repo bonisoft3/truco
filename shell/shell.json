@@ -74,8 +74,8 @@
   "auth": {
     "required": false,
     "service": "/auth",
-    "mode": "passkey",
-    "promote": false
+    "promote": true,
+    "mode": "passkey"
   },
   "floors": {
     "touch": 24

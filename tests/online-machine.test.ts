@@ -1,9 +1,11 @@
 import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1.0.11";
 import { type Answer, hybridFixture, initialMatch, matchFixture } from "./online-fixture.ts";
-import { compileHybrid } from "../../../plugins/pronto/hybrid.ts";
-import { walk } from "../../../plugins/pronto/hybrid-battery.ts";
-import { instrument } from "../../../plugins/omnishell/instrument.ts";
-import { executeHybrid } from "../../../plugins/pronto/hybrid-local.ts";
+import { compileHybrid } from "/pronto/hybrid.ts";
+import { walk } from "/pronto/hybrid-battery.ts";
+import { instrument } from "/omnishell/instrument.ts";
+
+const terminal = { instrument, ses: await Deno.readTextFile(new URL(import.meta.resolve("/omnishell/interpreter/vendor/ses.umd.min.js"))) };
+import { executeHybrid } from "/pronto/hybrid-local.ts";
 
 Deno.test("online match deals privately and completes both variants through the chart", async () => {
   const {step} = await matchFixture();
@@ -250,7 +252,7 @@ Deno.test("a timeout that asks the wake for its sender is refused, not run with 
     `return runEnvido(state, event, {...context, actor: active(state).find(s => side(state, s) !== state.envido_caller)});`,
     `return runEnvido(state, event, context);`);
   assert(buggy !== rules, "the fixed timeout is still the one this restores");
-  const compiled = await compileHybrid(spec, buggy, instrument);
+  const compiled = await compileHybrid(spec, buggy, terminal);
   let state = (await executeHybrid(compiled.source, spec.fuel, {state: initialMatch("argentino"), event: {kind: "start", payload: {seats: ["a", "b"]}},
     viewers: ["a", "b"], context: {tier: "mecha", now: 1000, entropy: "0123456789abcdef".repeat(16)}}) as Answer).state;
   state = (await executeHybrid(compiled.source, spec.fuel, {state, event: {kind: "envido", payload: {}},

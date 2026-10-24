@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "linkedom": "npm:linkedom@0.18.4",
+    "http://app.test/": "../"
+  },
+  "nodeModulesDir": "none"
+}

@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1.0.11";
-import { DATABASE, ROOT, run, uuid } from "../../../plugins/pronto/testdata/hybrid-fixtures.ts";
+import { DATABASE, ROOT, run, uuid } from "/pronto/testdata/hybrid-fixtures.ts";
 import { matchFixture, type View } from "./online-fixture.ts";
-import { type Catalog, CATALOG_SQL, unrecorded } from "../../../plugins/pronto/sql-recorded.ts";
+import { type Catalog, CATALOG_SQL, unrecorded } from "/pronto/sql-recorded.ts";
 
 // Truco's machines through their surface, as the browser reaches them: every
 // request a row a reader inserts under the generated policies, every answer a

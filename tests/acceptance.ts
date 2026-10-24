@@ -7,7 +7,7 @@
 // fail is not a case, so every assertion names a value the table computes
 // rather than a value it merely displays.
 
-import { baseUrl } from "omnishell/base-url.ts";
+import { baseUrl } from "/omnishell/base-url.ts";
 
 type Case = { id: string; accepts: string[]; serial?: boolean; run: (p: Page) => Promise<void> };
 // deno-lint-ignore no-explicit-any
@@ -143,8 +143,10 @@ const TEMPO = "clock=manual";
     flushes its rows behind a clear, and the reload then resumes the sitting
     the case meant to leave. */
 async function freshStart(p: Page, url: string) {
-  await p.goto(`${new URL(url).origin}/robots.txt`, { waitUntil: "domcontentloaded" });
-  await p.evaluate(() => localStorage.clear());
+  if (p.url() !== "about:blank") {
+    await p.goto(`${new URL(url).origin}/robots.txt`, { waitUntil: "domcontentloaded" });
+    await p.evaluate(() => localStorage.clear());
+  }
   await p.goto(url, { waitUntil: "domcontentloaded" });
 }
 
@@ -928,7 +930,9 @@ const CASES: Case[] = [
         await p.locator("#picker-open-country").click();
         await p.locator(`[data-picker="country"] a[data-locale="${locale}"]`).click();
         await until(p, `${path} dealing ${want}`, 20000, async () =>
-          new URL(p.url()).pathname === path && await seated() && (await variant()) === want &&
+          new URL(p.url()).pathname === path &&
+          (await attr(p, ".screen[data-screen=arena]", "data-locale")) === locale &&
+          await seated() && (await variant()) === want &&
           (await count(p, ".seat-row.mine .card")) === 3);
       };
       assert((await variant()) === "mineiro", `the table opened on ${await variant()}`);
@@ -1503,6 +1507,7 @@ const CASES: Case[] = [
     run: async (p) => {
       // A request the worker answers from its copy never reaches the network;
       // one it does not, or that nothing answers, does.
+      await p.waitForLoadState("load");
       const seen: string[] = [];
       const listener = (r: Request) => void r.response().then((answer) => {
         if (!answer?.fromServiceWorker()) seen.push(r.url());
@@ -1537,7 +1542,6 @@ const CASES: Case[] = [
     accepts: ["accept-bar-online"],
     serial: true,
     run: async (p) => {
-      await realTable(p);
       const ana = runName("Ana");
       await goOnline(p, ana);
       // Lit is the pulse running; its colour depends on the frame sampled.
@@ -1549,7 +1553,7 @@ const CASES: Case[] = [
         await until(other, "Ana in the other reader's bar", 20000, async () =>
           (await other.locator("#lobby-players-list .lobby-player-row", { hasText: ana }).count()) === 1);
       } finally {
-        await other.context().close();
+        await closeContext(other.context());
       }
     },
   },
@@ -1558,7 +1562,6 @@ const CASES: Case[] = [
     accepts: ["accept-bar-still"],
     serial: true,
     run: async (p) => {
-      await realTable(p);
       await p.click("#btn-open-online");
       const where = () => p.locator("#modal-online .modal-sec, #modal-online .lobby-identity-bar").evaluateAll((els: Element[]) =>
         els.map((el) => Math.round(el.getBoundingClientRect().top)).join(","));
@@ -1569,7 +1572,7 @@ const CASES: Case[] = [
         await goOnline(other, runName("Bia"));
         await until(p, "Bia listed", 20000, async () => (await count(p, "#lobby-players-list .lobby-player-row")) > 0);
       } finally {
-        await other.context().close();
+        await closeContext(other.context());
       }
       assert((await where()) === opened, `the bar moved as it filled: ${opened} then ${await where()}`);
       const vp = p.viewportSize()!;
@@ -1634,9 +1637,7 @@ const CASES: Case[] = [
         const interpreter = (route: Route) => route.fulfill({ contentType: "text/javascript", body: marked });
         await context.route(isEntry, entry);
         await context.route(`**${markedAt}`, interpreter);
-        // The app's origin, by a file that registers no worker.
-        await q.goto(`${origin(p)}/robots.txt`);
-        await realTable(q);
+        await freshTable(q, origin(p), "real");
         await until(q, "the earlier deployment's worker in control", 10000, async () => await q.evaluate(() => navigator.serviceWorker.controller !== null));
         await q.reload({ waitUntil: "domcontentloaded" });
         // A served document shows the hand before any module has run.
@@ -1646,7 +1647,7 @@ const CASES: Case[] = [
         await q.reload({ waitUntil: "domcontentloaded" });
         await until(q, "the deployment served now running", 30000, settled(async () => !(await earlier()) && await dealtHand(q)));
       } finally {
-        await context.close();
+        await closeContext(context);
       }
     },
   },
@@ -1655,7 +1656,6 @@ const CASES: Case[] = [
     accepts: ["accept-bar-challenge"],
     serial: true,
     run: async (p) => {
-      await realTable(p);
       const ana = runName("Ana"), bia = runName("Bia");
       await goOnline(p, ana);
       const other = await reader(p);
@@ -1678,7 +1678,7 @@ const CASES: Case[] = [
           assert(new URL(page.url()).pathname === "/", `${who} left the arena for ${page.url()}`);
         }
       } finally {
-        await other.context().close();
+        await closeContext(other.context());
       }
     },
   },
@@ -1686,7 +1686,6 @@ const CASES: Case[] = [
     id: "your quick shout stays in your speech bubble",
     accepts: ["accept-instant-table"],
     run: async (p) => {
-      await freshTable(p, origin(p));
       await p.click("#shout-chama");
       await until(p, "your quick shout", 2000, async () =>
         await attr(p, "#player-dialogue-wrap", "data-active") === "yes");
@@ -1730,14 +1729,6 @@ const RUN = Date.now().toString(36).slice(-4);
 let named = 0;
 const runName = (name: string) => `${name}${RUN}${named++}`;
 
-/** A reader on the real clock. A presence lease lapses on the server's time
-    and is renewed on the terminal's, so a reader held at the driver's clock
-    drops out of the bar while the driver waits on another. */
-async function realTable(p: Page) {
-  await p.goto(`${origin(p)}/`, { waitUntil: "domcontentloaded" });
-  await until(p, "a dealt hand", 20000, () => dealtHand(p));
-}
-
 /** The bar is the arena's popover, opened by the Mesa Online pill. */
 async function openBar(p: Page) {
   await p.click("#btn-open-online");
@@ -1762,16 +1753,20 @@ async function goOnline(p: Page, name: string) {
 let crudTurn = Promise.resolve();
 
 // deno-lint-ignore no-explicit-any
-async function newContext(browser: any) {
+async function newContext(browser: any, online = false) {
   const context = await browser.newContext({
     locale: "pt-BR",
     viewport: { width: 1280, height: 900 },
     ignoreHTTPSErrors: true,
   });
   await context.route("**/crud/truco_*", (route: Route) => {
+    if (!online) {
+      void route.fulfill({ status: 201, contentType: "application/json", body: "[]" }).catch(() => {});
+      return;
+    }
     const next = crudTurn.then(async () => {
       for (let attempt = 0; attempt < 5; attempt++) {
-        const response = await route.fetch().catch(() => null);
+        const response = await route.fetch({ timeout: 5000 }).catch(() => null);
         if (response === null) {
           await sleep(30);
           await route.abort().catch(() => {});
@@ -1789,13 +1784,18 @@ async function newContext(browser: any) {
   return context;
 }
 
+// deno-lint-ignore no-explicit-any
+async function closeContext(context: any) {
+  await context.unrouteAll({ behavior: "ignoreErrors" });
+  await context.close();
+}
+
 /** A second player: another browser context is another guest. Its clock is
     real, since nothing it waits for is the driver's to advance. */
 async function reader(p: Page): Promise<Page> {
-  const context = await newContext(p.context().browser());
+  const context = await newContext(p.context().browser(), true);
   const other = await context.newPage();
-  await other.goto(`${origin(p)}/`, { waitUntil: "domcontentloaded" });
-  await until(other, "the other reader's table", 20000, async () => (await count(other, ".seat-row.mine .card")) === 3);
+  await freshTable(other, origin(p), "real");
   return other;
 }
 
@@ -1813,12 +1813,24 @@ async function main(): Promise<number> {
   // Every case reads the table in Brazilian Portuguese, and an unprefixed
   // address takes its language from Accept-Language — so the driver states
   // the reader it is rather than inheriting the runner's.
-  const readerFor = async () => {
-    const context = await newContext(browser);
+  const readerFor = async (online = false) => {
+    const context = await newContext(browser, online);
     const page = await context.newPage();
     const caseErrors: string[] = [];
     page.on("console", (m: { type: () => string; text: () => string }) => {
-      if (m.type() === "error" && !m.text().includes("ERR_INTERNET_DISCONNECTED")) caseErrors.push(m.text());
+      if (m.type() !== "error") return;
+      const text = m.text();
+      if (text.includes("ERR_INTERNET_DISCONNECTED")) return;
+      if (
+        !online && (
+          text.includes("Failed to fetch") ||
+          /a subset of truco_\w+ failed; asking again in/.test(text) ||
+          /at send \(.*data-sync\.js/.test(text)
+        )
+      ) {
+        return;
+      }
+      caseErrors.push(text);
     });
     return { page, caseErrors };
   };
@@ -1828,9 +1840,9 @@ async function main(): Promise<number> {
   const cases = filter ? CASES.filter((c) => c.id.includes(filter)) : CASES;
   const runCase = async (c: Case) => {
     // Every case starts from a dealt table.
-    const { page, caseErrors } = await readerFor();
+    const { page, caseErrors } = await readerFor(Boolean(c.serial));
     try {
-      await freshTable(page, base);
+      await freshTable(page, base, c.serial ? "real" : "fast");
       caseErrors.length = 0;
       await c.run(page);
       errors.push(...caseErrors);
@@ -1839,10 +1851,10 @@ async function main(): Promise<number> {
       failed++;
       console.log(`FAIL  ${c.id}  [${c.accepts.join(" ")}]\n      ${err instanceof Error ? err.message : err}`);
     } finally {
-      await page.context().close();
+      await closeContext(page.context());
     }
   };
-  const LANES = 4;
+  const LANES = 6;
   const HEAVY = new Set([
     "eles tell you before they call",
     "a deployment newer than the browser's copy is the one that runs",

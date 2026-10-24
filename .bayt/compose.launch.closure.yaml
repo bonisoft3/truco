@@ -14,9 +14,11 @@ include:
   required: false
 - path: .././.bayt/compose.served.yaml
   required: false
+- path: .././.bayt/compose.served-release.yaml
+  required: false
 - path: .././.bayt/compose.auth.yaml
   required: false
-- path: .././.bayt/compose.replay.yaml
+- path: .././.bayt/compose.ci-replay.yaml
   required: false
 - path: .././.bayt/compose.setup.yaml
   required: false

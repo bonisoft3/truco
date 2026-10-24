@@ -19,20 +19,12 @@ services:
     profiles:
     - release-docker
     scale: 1
-  replay:
-    extends:
-      file: ./compose.replay.yaml
-      service: truco-replay
-    profiles:
-    - replay
-    scale: 1
   ci-replay:
     extends:
       file: ./compose.ci-replay.yaml
       service: truco-ci-replay
     profiles:
     - ci-replay
-    scale: 1
   setup:
     extends:
       file: ./compose.setup.yaml
@@ -98,6 +90,13 @@ services:
       service: truco-served
     profiles:
     - served
+    scale: 1
+  served-release:
+    extends:
+      file: ./compose.served-release.yaml
+      service: truco-served-release
+    profiles:
+    - served-release
     scale: 1
   database:
     extends:

@@ -4,10 +4,6 @@ includes:
     taskfile: ./Taskfile.browser.yaml
     dir: ../
     optional: true
-  replay:
-    taskfile: ./Taskfile.replay.yaml
-    dir: ../
-    optional: true
   ci-replay:
     taskfile: ./Taskfile.ci-replay.yaml
     dir: ../

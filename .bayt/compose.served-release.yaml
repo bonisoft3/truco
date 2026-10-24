@@ -1,0 +1,45 @@
+# generated from bayt.cue — do not edit
+services:
+  truco-served-release:
+    build:
+      additional_contexts:
+        plugins_omnishell-runtime-image: >-
+          ${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.18.0@sha256:d9e29732173131baa7088e04c2e441fb07c7d3d70d9a1da6b189bd849c648e28}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}
+      context: ..
+      dockerfile: .bayt/Dockerfile.served-release
+      target: served-release
+      tags:
+      - bayt-truco-served-release:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
+      - bayt-truco-served-release:latest
+      args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.27@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+    image: bayt-truco-served-release:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
+    networks:
+      default:
+        aliases:
+        - served-release
+    scale: 0
+  truco-served-release_bayt:
+    build:
+      context: ..
+      dockerfile: .bayt/Dockerfile.served-release
+      target: served-release_bayt
+      args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.27@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+    image: bayt-truco-served-release_bayt:latest
+    scale: 0
+  truco-served-release_srcs:
+    build:
+      context: ..
+      dockerfile: .bayt/Dockerfile.served-release
+      target: served-release_srcs
+      args:
+        BAYT_DIR: ${MONOREPO_COMPOSE_MODE:+apps/truco}
+        BUILDKIT_SYNTAX: >-
+          docker/dockerfile:1.27@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+    image: bayt-truco-served-release_srcs:latest
+    scale: 0

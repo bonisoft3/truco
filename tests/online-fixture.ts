@@ -1,8 +1,10 @@
 import { fileURLToPath } from "node:url";
-import { compileHybrid, type HybridMachine } from "../../../plugins/pronto/hybrid.ts";
-import { readCheckInputs } from "../../../plugins/pronto/check-inputs.ts";
-import { instrument } from "../../../plugins/omnishell/instrument.ts";
-import { executeHybrid } from "../../../plugins/pronto/hybrid-local.ts";
+import { compileHybrid, type HybridMachine } from "/pronto/hybrid.ts";
+import { readCheckInputs } from "/pronto/check-inputs.ts";
+import { instrument } from "/omnishell/instrument.ts";
+
+const terminal = { instrument, ses: await Deno.readTextFile(new URL(import.meta.resolve("/omnishell/interpreter/vendor/ses.umd.min.js"))) };
+import { executeHybrid } from "/pronto/hybrid-local.ts";
 
 const APP_DIR = fileURLToPath(new URL("../", import.meta.url)).replace(/[/\\]$/, "");
 let hybridsPromise: Promise<Record<string, HybridMachine>> | undefined;
@@ -17,7 +19,7 @@ export function hybridFixture(name: string) {
       const spec = hybrids[`truco_${name}`];
       if (!spec) throw new Error(`unknown hybrid machine truco_${name}`);
       const rules = await Deno.readTextFile(`${APP_DIR}/machines/${name}.js`);
-      const compiled = await compileHybrid(spec, rules, instrument);
+      const compiled = await compileHybrid(spec, rules, terminal);
       return {spec, rules, compiled};
     })();
     compiledFixtures.set(name, cached);

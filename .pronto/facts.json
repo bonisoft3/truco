@@ -2079,7 +2079,7 @@
     {"path":"shell/shared/table.css","token":"--tilt"}
   ],
   "artifact": [
-    {"path":"program.cue","sha256":"b1430e1545459a1ed44c3dbe16f430763e88c3c7ca920de03006fbc06b6489a4","derived":false},
+    {"path":"program.cue","sha256":"26929a891e1b2de2af7c08ccf674a4ebb3b6bd3cee06a5f84acc9360489c6768","derived":false},
     {"path":"DESIGN.md","sha256":"4cf5129a10d21c04f09d7b1b5d75a16c360d3619bd11aedf186a8319f25e60cc","derived":false},
     {"path":"ir.html","sha256":"93e3d680b4d8ce0ced84d2b63fafecd6d5ddad6ec44b08fa06bc9b2746284ed2","derived":false},
     {"path":"acceptance.md","sha256":"ff85cb3adba6a7bf376c20680957bc692ca88350e60f797e2f08469e382b2a1f","derived":false},
@@ -4155,6 +4155,9 @@
     {"locale":"pt-BR","key":"route_rules","arm":"","value":"regras"},
     {"locale":"pt-BR","key":"nav_table","arm":"","value":"Mesa"},
     {"locale":"pt-BR","key":"chrome_signout","arm":"","value":"sair"},
+    {"locale":"pt-BR","key":"chrome_passkey","arm":"","value":"Entrar"},
+    {"locale":"pt-BR","key":"chrome_passkey_create","arm":"","value":"Criar chave de acesso"},
+    {"locale":"pt-BR","key":"chrome_passkey_failed","arm":"","value":"Não foi possível entrar"},
     {"locale":"pt-BR","key":"you","arm":"","value":"Você"},
     {"locale":"pt-BR","key":"lead_title","arm":"","value":"Sua posição nesta mão: mão joga primeiro, pé joga por último"},
     {"locale":"pt-BR","key":"hand_role_mao","arm":"","value":"mão"},
@@ -4891,6 +4894,9 @@
     {"locale":"es-AR","key":"route_rules","arm":"","value":"reglas"},
     {"locale":"es-AR","key":"nav_table","arm":"","value":"Mesa"},
     {"locale":"es-AR","key":"chrome_signout","arm":"","value":"salir"},
+    {"locale":"es-AR","key":"chrome_passkey","arm":"","value":"Ingresar"},
+    {"locale":"es-AR","key":"chrome_passkey_create","arm":"","value":"Crear una clave de acceso"},
+    {"locale":"es-AR","key":"chrome_passkey_failed","arm":"","value":"No se pudo ingresar"},
     {"locale":"es-AR","key":"you","arm":"","value":"Vos"},
     {"locale":"es-AR","key":"lead_title","arm":"","value":"Tu posición en esta mano: mano juega primero, pie juega al final"},
     {"locale":"es-AR","key":"hand_role_mao","arm":"","value":"mano"},
@@ -5627,6 +5633,9 @@
     {"locale":"es-UY","key":"route_rules","arm":"","value":"reglas"},
     {"locale":"es-UY","key":"nav_table","arm":"","value":"Mesa"},
     {"locale":"es-UY","key":"chrome_signout","arm":"","value":"salir"},
+    {"locale":"es-UY","key":"chrome_passkey","arm":"","value":"Ingresar"},
+    {"locale":"es-UY","key":"chrome_passkey_create","arm":"","value":"Crear una clave de acceso"},
+    {"locale":"es-UY","key":"chrome_passkey_failed","arm":"","value":"No se pudo ingresar"},
     {"locale":"es-UY","key":"you","arm":"","value":"Vos"},
     {"locale":"es-UY","key":"lead_title","arm":"","value":"Tu posición en esta mano: mano juega primero, pie juega al final"},
     {"locale":"es-UY","key":"hand_role_mao","arm":"","value":"mano"},
@@ -6363,6 +6372,9 @@
     {"locale":"es-PY","key":"route_rules","arm":"","value":"reglas"},
     {"locale":"es-PY","key":"nav_table","arm":"","value":"Mesa"},
     {"locale":"es-PY","key":"chrome_signout","arm":"","value":"salir"},
+    {"locale":"es-PY","key":"chrome_passkey","arm":"","value":"Ingresar"},
+    {"locale":"es-PY","key":"chrome_passkey_create","arm":"","value":"Crear una clave de acceso"},
+    {"locale":"es-PY","key":"chrome_passkey_failed","arm":"","value":"No se pudo ingresar"},
     {"locale":"es-PY","key":"you","arm":"","value":"Vos"},
     {"locale":"es-PY","key":"lead_title","arm":"","value":"Tu posición en esta mano: mano juega primero, pie juega al final"},
     {"locale":"es-PY","key":"hand_role_mao","arm":"","value":"mano"},
@@ -7099,6 +7111,9 @@
     {"locale":"ca-ES","key":"route_rules","arm":"","value":"regles"},
     {"locale":"ca-ES","key":"nav_table","arm":"","value":"Taula"},
     {"locale":"ca-ES","key":"chrome_signout","arm":"","value":"sortir"},
+    {"locale":"ca-ES","key":"chrome_passkey","arm":"","value":"Iniciar sessió"},
+    {"locale":"ca-ES","key":"chrome_passkey_create","arm":"","value":"Crear una clau d'accés"},
+    {"locale":"ca-ES","key":"chrome_passkey_failed","arm":"","value":"No s'ha pogut iniciar sessió"},
     {"locale":"ca-ES","key":"you","arm":"","value":"Tu"},
     {"locale":"ca-ES","key":"lead_title","arm":"","value":"La teva posició en aquesta mà: la mà juga primer, el peu juga l'últim"},
     {"locale":"ca-ES","key":"hand_role_mao","arm":"","value":"mà"},
@@ -8443,6 +8458,13 @@
   "screen": [
     {"name":"arena"},
     {"name":"regras"}
+  ],
+  "script_declared": [
+
+  ],
+  "script_platform": [
+    {"path":"offline-first-sw.js"},
+    {"path":"shell/boot.js"}
   ],
   "served_file": [
     {"file":"shell/index.html","target":"/srv/shell/index.html"},
