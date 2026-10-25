@@ -24,8 +24,7 @@ services:
     - sh
     - -c
     - >-
-      for f in tests/*.app.json; do [ ! -e "$$f" ] || cp "$$f"
-      "$${f%.app.json}.json"; done && deno run --config tests/deno.json --no-lock --allow-read --allow-write
+      deno run --config tests/deno.json --no-lock --allow-read --allow-write
       --allow-net --allow-env --allow-run --allow-sys
       --unsafely-ignore-certificate-errors=caddy tests/acceptance.ts .
     depends_on:
