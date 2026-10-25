@@ -939,7 +939,7 @@ loop: (pronto.#DefaultLoop & {"code": code, "cluster": cluster, "terminal": term
 loop: surface: checks: "arena": {
 	verb: "test"
 	cmds: [
-		"deno test --config tests/deno.json --no-lock --no-check --allow-env --allow-read tests/arena.test.ts",
+		"deno test --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --no-check --allow-env --allow-read tests/arena.test.ts",
 	]
 	note: "the whole screen mounted against a stepped clock: one sitting, conserved score, a fresh epoch"
 }
@@ -947,7 +947,7 @@ loop: surface: checks: "arena": {
 loop: surface: checks: "fuel_mutations": {
 	verb: "test"
 	cmds: [
-		"deno test --config tests/deno.json --no-lock --no-check --allow-env --allow-read tests/fuel_mutations_storybook.test.ts",
+		"deno test --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --no-check --allow-env --allow-read tests/fuel_mutations_storybook.test.ts",
 	]
 	note: "deterministic fuel budget, outbox mutation lifecycle, and read-only storybook state injection"
 }
@@ -955,8 +955,8 @@ loop: surface: checks: "fuel_mutations": {
 loop: surface: checks: "online_machine": {
 	verb: "test"
 	cmds: [
-		"deno test --config tests/online-deno.json --no-lock --allow-env --allow-read tests/online-machine.test.ts tests/lobby-machine.test.ts",
-		"deno test --config tests/online-deno.json --no-lock --no-check --allow-env --allow-read tests/online-screens.test.ts",
+		"deno test --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --allow-env --allow-read tests/online-machine.test.ts tests/lobby-machine.test.ts",
+		"deno test --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --no-check --allow-env --allow-read tests/online-screens.test.ts",
 	]
 	note: "complete hybrid matches, wager authority, private hands, brink decisions and deadlines; the bar's and the table's folds mounted"
 }
@@ -970,7 +970,7 @@ build: (pronto.#DefaultBuild & {"code": code, "loop": loop, "cluster": cluster, 
 build: checks: "acceptance": {
 	browser: true
 	cmds: [
-		"deno run --config tests/deno.json --no-lock --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/acceptance.ts .",
+		"deno run --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/acceptance.ts .",
 	]
 	note: "walks the brief's acceptance checklist against the running table: deal, play, raise, score, pickers, both screens"
 }

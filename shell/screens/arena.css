@@ -1456,6 +1456,7 @@ body:has([data-screen="arena"]) > nav a {
   & .log {
     grid-area: log;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: end;
     min-block-size: clamp(32px, 4.2dvh, 38px);
     block-size: clamp(32px, 4.2dvh, 38px);
@@ -1481,7 +1482,14 @@ body:has([data-screen="arena"]) > nav a {
     display: grid;
     grid-template-columns: 1.6rem 3.4rem 1fr;
     gap: 6px;
+    min-inline-size: 0;
     white-space: nowrap;
+  }
+
+  & .log .what {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   & .log .v::after { content: "ª"; }
@@ -1518,7 +1526,14 @@ body:has([data-screen="arena"]) > nav a {
     & .log li[data-seat="you"] .who::before { content: "eles"; }
     & .log li[data-seat="parca"] .who::before { content: "eles 2"; }
   }
-  & .log .empty { margin: 0; grid-column: 1 / -1; }
+  & .log .empty {
+    display: block;
+    margin: 0;
+    grid-column: 1 / -1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   & .play { position: relative; }
   & .shout {

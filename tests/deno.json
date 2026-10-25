@@ -1,8 +1,8 @@
 {
   "imports": {
-    "linkedom": "npm:linkedom@0.18.4",
-    "/omnishell/": "/root/.local/share/mise/installs/github-bonisoft3-omnishell/latest/",
     "http://app.test/": "../"
   },
-  "nodeModulesDir": "none"
+  "compilerOptions": {
+    "lib": ["deno.window", "dom", "dom.iterable"]
+  }
 }

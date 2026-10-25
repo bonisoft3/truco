@@ -1,16 +1,6 @@
 // Regression rationale: asserts deterministic fuel bounds, outbox conflict rollback, and read-only frame isolation.
-import { describe, expect, it } from "/omnishell/test/harness.ts";
-import { parseHTML } from "linkedom";
-import { batched } from "/omnishell/interpreter/batched-store.js";
-import { FuelMeter, FuelLimitExceededError } from "/omnishell/test/fuel-meter.ts";
-import { OutboxSimulator } from "/omnishell/test/outbox-simulator.ts";
-import {
-  extractRegions,
-  generateIsolatedFrames,
-  generatePairwiseFrames,
-  generateCoveringArrayFrames,
-} from "/omnishell/test/storybook-injector.ts";
-import { ensureSes } from "/omnishell/interpreter/jessie.js";
+import { describe, expect, it, batched, FuelMeter, FuelLimitExceededError, OutboxSimulator, extractRegions, generateIsolatedFrames, generatePairwiseFrames, generateCoveringArrayFrames, ensureSes, loadScreen } from "./platform.ts";
+import { parseHTML } from "npm:linkedom@0.18.4";
 
 const ROUND_MACHINE = {
   type: "parallel",
@@ -238,7 +228,7 @@ describe("1. Deterministic Fuel Budgets for Automated Tests", () => {
     </section>`;
 
     const { document, Event, store } = bootHarness(HTML, { phase: "v1", truco_state: "none", envido_state: "none", said: "", ran: "" });
-    const { interpretScreen } = await import("/omnishell/interpreter/screen.js");
+    const { interpretScreen } = await loadScreen();
     const mount = document.getElementById("shell");
     const route = { screen: "arena", files: { html: "arena.html", css: "arena.css", handlers: [] }, states: ["playing"] };
 
@@ -454,7 +444,7 @@ describe("3. Storybook State Injection without Mutations", () => {
 
   it("poses each visual state in LinkeDOM completely read-only with zero mutations", async () => {
     await ensureSes();
-    const { interpretScreen } = await import("/omnishell/interpreter/screen.js");
+    const { interpretScreen } = await loadScreen();
 
     const HTML = `<section class="screen" data-screen="arena">
       <div id="round-region" data-live="round" data-filter="id=eq.r1"

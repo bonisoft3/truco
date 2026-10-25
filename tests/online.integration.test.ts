@@ -1,7 +1,8 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1.0.11";
-import { DATABASE, ROOT, run, uuid } from "/pronto/testdata/hybrid-fixtures.ts";
+// Pronto's own fixtures, which run it from the monorepo's root.
+import { DATABASE, ROOT, run, uuid } from "../../../plugins/pronto/testdata/hybrid-fixtures.ts";
+import { type Catalog, CATALOG_SQL, unrecorded } from "../../../plugins/pronto/sql-recorded.ts";
 import { matchFixture, type View } from "./online-fixture.ts";
-import { type Catalog, CATALOG_SQL, unrecorded } from "/pronto/sql-recorded.ts";
 
 // Truco's machines through their surface, as the browser reaches them: every
 // request a row a reader inserts under the generated policies, every answer a
@@ -11,7 +12,9 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
   const container = `truco-online-${crypto.randomUUID().slice(0, 8)}`;
   const started = await run("docker", ["run", "-d", "--rm", "--name", container, "-p", "127.0.0.1::3000", "-e", "POSTGRES_PASSWORD=proof", DATABASE]);
   if (!started.ok) throw new Error(started.err);
-  const psql = (source: string) => run("docker", ["exec", "-i", container, "psql", "-qtAX", "-v", "ON_ERROR_STOP=1", "-U", "postgres"], source);
+  // As the gateway does: each transaction starts at the role's isolation,
+  // which this superuser session has to say for itself.
+  const psql = (source: string) => run("docker", ["exec", "-i", container, "psql", "-qtAX", "-v", "ON_ERROR_STOP=1", "-U", "postgres"], `SET default_transaction_isolation TO 'serializable';\n${source}`);
   // As the writers do: a transaction a serialization conflict aborted is run
   // again, so racing callers see some serial order of their steps.
   const sql = async (source: string) => {
@@ -265,7 +268,8 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
         }
         let moves = 0;
         while (current.value.phase !== "finished") {
-          assert(++moves < 700, "team game did not finish");
+          // 2v2v2 plays up to 4 games * 16 hands * 19 moves (1216) plus drawn hands under random deals.
+          assert(++moves < 1500, "team game did not finish");
           const state = current.value;
           const seat = state.phase === "brink" ? seats.find(s => "ab"[seats.indexOf(s) % 2] === state.brink)! : state.turn;
           const player = (await view(room, actors[seat]))!;
@@ -513,17 +517,17 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       const read = async (actor: number, table: string, filter: string) => {
         const response = await fetch(`${origin}/${table}?${filter}`, {headers: {Authorization: `Bearer ${tokens[actor]}`}});
         if (!response.ok) throw new Error(`${table}: ${response.status} ${await response.text()}`);
-        return await response.json() as Record<string, string>[];
+        return await response.json() as Record<string, unknown>[];
       };
       const room = uuid(30);
-      await post(1, "truco_match_open", {id: room, instance_id: room, kind: "create", input: JSON.stringify({variant: "mineiro", seating: "1v1", talk: talkOf(990)})});
-      await post(2, "truco_match_open", {id: `join/${room}/2`, instance_id: room, kind: "join", input: "{}"});
+      await post(1, "truco_match_open", {id: room, instance_id: room, kind: "create", input: {variant: "mineiro", seating: "1v1", talk: talkOf(990)}});
+      await post(2, "truco_match_open", {id: `join/${room}/2`, instance_id: room, kind: "join", input: {}});
       assertEquals((await read(1, "truco_match_seat", `instance_id=eq.${room}`)).map(s => s.seat), ["a"], "each reader reads their own seat");
       let moves = 0;
       for (;;) {
         const [a] = await read(1, "truco_match_seat", `instance_id=eq.${room}`);
         const [b] = await read(2, "truco_match_seat", `instance_id=eq.${room}`);
-        const views = {a: JSON.parse(a.view) as View, b: JSON.parse(b.view) as View};
+        const views = {a: a.view as View, b: b.view as View};
         if (views.a.phase === "finished") break;
         assert(++moves < 400, "match did not finish over HTTP");
         const seat = views.a.phase === "brink" ? views.a.brink : views.a.turn as "a" | "b";
@@ -531,7 +535,7 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
         const kind = views.a.phase === "hand_over" ? "next" : views.a.phase === "brink" ? "accept" : "play";
         const payload = kind === "play" ? {slot: views[seat as "a" | "b"].available[0], covered: false} : {};
         const id = `${room}/${mine.revision}/${seat}/${kind}${kind === "play" ? (payload as {slot: number}).slot : ""}`;
-        const request = JSON.stringify({version: spec.version, expected_revision: String(mine.revision), event: {kind, payload}});
+        const request = {version: spec.version, expected_revision: String(mine.revision), event: {kind, payload}};
         await post(seat === "a" ? 1 : 2, "truco_match_command", {id, instance_id: room, request});
         // A lost reply resends the same row, which is absorbed.
         await post(seat === "a" ? 1 : 2, "truco_match_command", {id, instance_id: room, request});

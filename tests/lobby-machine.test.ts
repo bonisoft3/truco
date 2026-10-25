@@ -1,7 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1.0.11";
-import { executeHybrid } from "/pronto/hybrid-local.ts";
-import { uuid } from "/pronto/testdata/hybrid-fixtures.ts";
-import { hybridFixture } from "./online-fixture.ts";
+import { executeHybrid } from "./platform.ts";
+import { hybridFixture, uuid } from "./online-fixture.ts";
 
 async function fixture<T>(name: string) {
   const {spec, compiled} = await hybridFixture(name);

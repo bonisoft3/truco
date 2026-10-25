@@ -1,11 +1,8 @@
 import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1.0.11";
 import { type Answer, hybridFixture, initialMatch, matchFixture } from "./online-fixture.ts";
-import { compileHybrid } from "/pronto/hybrid.ts";
-import { walk } from "/pronto/hybrid-battery.ts";
-import { instrument } from "/omnishell/instrument.ts";
+import { compileHybrid, walk, instrument, executeHybrid, ses } from "./platform.ts";
 
-const terminal = { instrument, ses: await Deno.readTextFile(new URL(import.meta.resolve("/omnishell/interpreter/vendor/ses.umd.min.js"))) };
-import { executeHybrid } from "/pronto/hybrid-local.ts";
+const terminal = { instrument, ses };
 
 Deno.test("online match deals privately and completes both variants through the chart", async () => {
   const {step} = await matchFixture();

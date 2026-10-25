@@ -3,7 +3,7 @@
 // receipts — so what is checked here is the browser's half of the protocol:
 // every gesture a keyed row, every draw the terminal's, nothing else.
 import { assert, assertEquals } from "jsr:@std/assert@1.0.11";
-import { mountApp, type Mounted } from "/omnishell/test/screen-harness.ts";
+import { mountApp, type Mounted } from "./platform.ts";
 import { initialMatch, matchFixture } from "./online-fixture.ts";
 
 const APP = new URL("../", import.meta.url);

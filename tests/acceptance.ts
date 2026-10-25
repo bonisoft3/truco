@@ -7,7 +7,7 @@
 // fail is not a case, so every assertion names a value the table computes
 // rather than a value it merely displays.
 
-import { baseUrl } from "/omnishell/base-url.ts";
+import { baseUrl } from "./platform.ts";
 
 type Case = { id: string; accepts: string[]; serial?: boolean; run: (p: Page) => Promise<void> };
 // deno-lint-ignore no-explicit-any

@@ -1,14 +1,13 @@
 import { fileURLToPath } from "node:url";
-import { compileHybrid, type HybridMachine } from "/pronto/hybrid.ts";
-import { readCheckInputs } from "/pronto/check-inputs.ts";
-import { instrument } from "/omnishell/instrument.ts";
+import { compileHybrid, type HybridMachine, readCheckInputs, instrument, executeHybrid, ses } from "./platform.ts";
 
-const terminal = { instrument, ses: await Deno.readTextFile(new URL(import.meta.resolve("/omnishell/interpreter/vendor/ses.umd.min.js"))) };
-import { executeHybrid } from "/pronto/hybrid-local.ts";
+const terminal = { instrument, ses };
 
 const APP_DIR = fileURLToPath(new URL("../", import.meta.url)).replace(/[/\\]$/, "");
 let hybridsPromise: Promise<Record<string, HybridMachine>> | undefined;
 const compiledFixtures = new Map<string, Promise<{spec: HybridMachine; rules: string; compiled: Awaited<ReturnType<typeof compileHybrid>>}>>();
+
+export const uuid = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, "0")}`;
 
 export function hybridFixture(name: string) {
   let cached = compiledFixtures.get(name);

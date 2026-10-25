@@ -6,8 +6,7 @@
 // passes at once, a draw comes from a list), and re-run the seated fold until
 // it writes nothing. The mounted cases run the real screen on the harness's
 // held clock.
-import { assert, mountApp, type Mounted, only } from "/omnishell/test/screen-harness.ts";
-import { evaluateRole } from "/omnishell/interpreter/jessie.js";
+import { assert, mountApp, type Mounted, only, evaluateRole } from "./platform.ts";
 
 const APP = new URL("../", import.meta.url);
 

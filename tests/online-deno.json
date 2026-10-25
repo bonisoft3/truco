@@ -1,8 +1,0 @@
-{
-  "imports": {
-    "/omnishell/": "/root/.local/share/mise/installs/github-bonisoft3-omnishell/latest/",
-    "/pronto/": "/root/.local/share/mise/installs/github-bonisoft3-pronto/latest/", "/root/.local/share/mise/installs/github-bonisoft3-pronto/omnishell/": "/root/.local/share/mise/installs/github-bonisoft3-omnishell/latest/"
-  },
-  "nodeModulesDir": "none",
-  "compilerOptions": {"lib": ["deno.window", "dom", "dom.iterable"]}
-}
