@@ -102,6 +102,7 @@ code: state: entities: {
 	TrucoPresenceLease: _private & {
 		id:    "0xa54af1a27a6dcb29"
 		table: "truco_presence_lease"
+		indexes: [{on: "actor"}]
 		fields: [
 			// One per tab, from the terminal's draw.
 			{ordinal: 1, name: "id", type: "text", pk: true, cel: "this.size() == 36"},

@@ -4737,6 +4737,7 @@
       "ir": "TrucoPresenceLease",
       "id": "0xa54af1a27a6dcb29",
       "table": "truco_presence_lease",
+      "durability": "live",
       "fields": [
         {
           "name": "id",
@@ -4766,14 +4767,14 @@
           "cel": "this >= 0"
         }
       ],
-      "read": "eager",
-      "seed": [],
-      "durability": "live",
-      "access": {
-        "scope": "private",
-        "owner": "actor"
-      },
+      "indexes": [
+        {
+          "on": "actor",
+          "using": "btree"
+        }
+      ],
       "level": "compensable",
+      "seed": [],
       "server": true,
       "writers": [
         {
@@ -4784,6 +4785,10 @@
           ]
         }
       ],
+      "access": {
+        "scope": "private",
+        "owner": "actor"
+      },
       "cel": {
         "checks": {
           "id": "char_length(id) = 36",
@@ -4800,6 +4805,7 @@
           }
         }
       },
+      "read": "eager",
       "uniques": [],
       "validations": {}
     },
@@ -8084,10 +8090,12 @@
           "on": {
             "start": {
               "reduce": "admit",
-              "requires": {
-                "sql": "NOT EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.member o ON o.actor = m.actor AND o.instance_id <> m.instance_id JOIN hybrid_truco_match.instance g ON g.id = o.instance_id WHERE m.instance_id = game.id AND g.state->>'phase' = 'waiting')",
-                "reason": "seated_elsewhere"
-              }
+              "requires": [
+                {
+                  "sql": "NOT EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.member o ON o.actor = m.actor AND o.instance_id <> m.instance_id JOIN hybrid_truco_match.instance g ON g.id = o.instance_id WHERE m.instance_id = game.id AND g.state->>'phase' = 'waiting')",
+                  "reason": "seated_elsewhere"
+                }
+              ]
             },
             "stand": {
               "guard": "mayStand",
@@ -8366,10 +8374,12 @@
           {
             "phase": "waiting",
             "event": "start",
-            "requires": {
-              "sql": "NOT EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.member o ON o.actor = m.actor AND o.instance_id <> m.instance_id JOIN hybrid_truco_match.instance g ON g.id = o.instance_id WHERE m.instance_id = game.id AND g.state->>'phase' = 'waiting')",
-              "reason": "seated_elsewhere"
-            },
+            "requires": [
+              {
+                "sql": "NOT EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.member o ON o.actor = m.actor AND o.instance_id <> m.instance_id JOIN hybrid_truco_match.instance g ON g.id = o.instance_id WHERE m.instance_id = game.id AND g.state->>'phase' = 'waiting')",
+                "reason": "seated_elsewhere"
+              }
+            ],
             "sql": ""
           },
           {
@@ -9074,10 +9084,12 @@
             "accept": {
               "target": "accepted",
               "guard": "mayAnswer",
-              "requires": {
-                "sql": "hybrid_truco_presence.available((game.state->>'inviter')::uuid) AND hybrid_truco_presence.available((game.state->>'target')::uuid)",
-                "reason": "player_unavailable"
-              },
+              "requires": [
+                {
+                  "sql": "hybrid_truco_presence.available((game.state->>'inviter')::uuid) AND hybrid_truco_presence.available((game.state->>'target')::uuid)",
+                  "reason": "player_unavailable"
+                }
+              ],
               "actions": [
                 {
                   "spawn": {
@@ -9170,10 +9182,12 @@
           {
             "phase": "offered",
             "event": "accept",
-            "requires": {
-              "sql": "hybrid_truco_presence.available((game.state->>'inviter')::uuid) AND hybrid_truco_presence.available((game.state->>'target')::uuid)",
-              "reason": "player_unavailable"
-            },
+            "requires": [
+              {
+                "sql": "hybrid_truco_presence.available((game.state->>'inviter')::uuid) AND hybrid_truco_presence.available((game.state->>'target')::uuid)",
+                "reason": "player_unavailable"
+              }
+            ],
             "sql": "PERFORM hybrid_truco_match.spawn((game.state->>'room')::uuid, jsonb_build_object('variant', game.state->>'variant', 'seating', game.state->>'seating', 'turn_ms', 20000, 'reserved', false, 'talk', game.state->>'talk'), jsonb_build_object('a', game.state->>'inviter', 'b', game.state->>'target'), now_ms);\nPERFORM hybrid_truco_match.deliver((game.state->>'room')::uuid, jsonb_build_object('kind', 'start', 'payload', jsonb_build_object('seats', '[\"a\",\"b\"]'::jsonb)), now_ms);"
           }
         ]
@@ -9485,10 +9499,12 @@
             "sit": {
               "target": "seated",
               "reduce": "sit",
-              "requires": {
-                "sql": "EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.instance g ON g.id = m.instance_id WHERE m.instance_id::text = request->'event'->'payload'->>'room' AND m.actor = dispatch.actor AND m.seat = request->'event'->'payload'->>'seat' AND g.state->>'talk' = request->'event'->'payload'->>'talk')",
-                "reason": "not_seated"
-              }
+              "requires": [
+                {
+                  "sql": "EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.instance g ON g.id = m.instance_id WHERE m.instance_id::text = request->'event'->'payload'->>'room' AND m.actor = dispatch.actor AND m.seat = request->'event'->'payload'->>'seat' AND g.state->>'talk' = request->'event'->'payload'->>'talk')",
+                  "reason": "not_seated"
+                }
+              ]
             }
           }
         },
@@ -9497,10 +9513,12 @@
           "on": {
             "sit": {
               "reduce": "sit",
-              "requires": {
-                "sql": "EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.instance g ON g.id = m.instance_id WHERE m.instance_id::text = request->'event'->'payload'->>'room' AND m.actor = dispatch.actor AND m.seat = request->'event'->'payload'->>'seat' AND g.state->>'talk' = request->'event'->'payload'->>'talk')",
-                "reason": "not_seated"
-              }
+              "requires": [
+                {
+                  "sql": "EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.instance g ON g.id = m.instance_id WHERE m.instance_id::text = request->'event'->'payload'->>'room' AND m.actor = dispatch.actor AND m.seat = request->'event'->'payload'->>'seat' AND g.state->>'talk' = request->'event'->'payload'->>'talk')",
+                  "reason": "not_seated"
+                }
+              ]
             },
             "shout": {
               "guard": "mayShout",
@@ -9527,19 +9545,23 @@
           {
             "phase": "quiet",
             "event": "sit",
-            "requires": {
-              "sql": "EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.instance g ON g.id = m.instance_id WHERE m.instance_id::text = request->'event'->'payload'->>'room' AND m.actor = dispatch.actor AND m.seat = request->'event'->'payload'->>'seat' AND g.state->>'talk' = request->'event'->'payload'->>'talk')",
-              "reason": "not_seated"
-            },
+            "requires": [
+              {
+                "sql": "EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.instance g ON g.id = m.instance_id WHERE m.instance_id::text = request->'event'->'payload'->>'room' AND m.actor = dispatch.actor AND m.seat = request->'event'->'payload'->>'seat' AND g.state->>'talk' = request->'event'->'payload'->>'talk')",
+                "reason": "not_seated"
+              }
+            ],
             "sql": ""
           },
           {
             "phase": "seated",
             "event": "sit",
-            "requires": {
-              "sql": "EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.instance g ON g.id = m.instance_id WHERE m.instance_id::text = request->'event'->'payload'->>'room' AND m.actor = dispatch.actor AND m.seat = request->'event'->'payload'->>'seat' AND g.state->>'talk' = request->'event'->'payload'->>'talk')",
-              "reason": "not_seated"
-            },
+            "requires": [
+              {
+                "sql": "EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.instance g ON g.id = m.instance_id WHERE m.instance_id::text = request->'event'->'payload'->>'room' AND m.actor = dispatch.actor AND m.seat = request->'event'->'payload'->>'seat' AND g.state->>'talk' = request->'event'->'payload'->>'talk')",
+                "reason": "not_seated"
+              }
+            ],
             "sql": ""
           }
         ]

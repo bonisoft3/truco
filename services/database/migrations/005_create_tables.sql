@@ -266,4 +266,6 @@ CREATE TABLE IF NOT EXISTS truco_challenge_open (
   "scope_id" TEXT GENERATED ALWAYS AS ('user:' || "actor") STORED NOT NULL
 );
 
+CREATE INDEX IF NOT EXISTS idx_truco_presence_lease_actor ON truco_presence_lease USING btree (actor);
+
 COMMIT;

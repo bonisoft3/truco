@@ -12,17 +12,11 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
   const container = `truco-online-${crypto.randomUUID().slice(0, 8)}`;
   const started = await run("docker", ["run", "-d", "--rm", "--name", container, "-p", "127.0.0.1::3000", "-e", "POSTGRES_PASSWORD=proof", DATABASE]);
   if (!started.ok) throw new Error(started.err);
-  // As the gateway does: each transaction starts at the role's isolation,
-  // which this superuser session has to say for itself.
-  const psql = (source: string) => run("docker", ["exec", "-i", container, "psql", "-qtAX", "-v", "ON_ERROR_STOP=1", "-U", "postgres"], `SET default_transaction_isolation TO 'serializable';\n${source}`);
-  // As the writers do: a transaction a serialization conflict aborted is run
-  // again, so racing callers see some serial order of their steps.
+  const psql = (source: string) => run("docker", ["exec", "-i", container, "psql", "-qtAX", "-v", "ON_ERROR_STOP=1", "-U", "postgres"], source);
   const sql = async (source: string) => {
-    for (let attempt = 0; ; attempt++) {
-      const result = await psql(source);
-      if (result.ok) return result.out;
-      if (!result.err.includes("could not serialize") || attempt >= 20) throw new Error(result.err);
-    }
+    const result = await psql(source);
+    if (result.ok) return result.out;
+    throw new Error(result.err);
   };
   const as = (actor: number, source: string) =>
     `SET ROLE app_user; SET request.jwt.claims = '${JSON.stringify({sub: uuid(actor)})}'; SET app.scopes = 'public:,user:${uuid(actor)}'; ${source}`;
@@ -84,7 +78,7 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
     }
     const migrations = new URL("apps/truco/services/database/migrations/", ROOT);
     const generated = await Deno.readTextFile(new URL("016_mecha_actors.sql", migrations));
-    assertStringIncludes(generated, compiled.sql.split("CREATE FUNCTION hybrid_truco_match.settle")[0]);
+    assertStringIncludes(generated, compiled.sql.split("CREATE OR REPLACE FUNCTION hybrid_truco_match.settle")[0]);
     const files: string[] = [];
     for await (const entry of Deno.readDir(migrations)) if (entry.name.endsWith(".sql")) files.push(entry.name);
     for (const name of files.sort()) await sql(await Deno.readTextFile(new URL(name, migrations)));

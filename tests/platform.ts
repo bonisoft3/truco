@@ -14,7 +14,7 @@ export { describe, expect, it } from "https://raw.githubusercontent.com/bonisoft
 export { OutboxSimulator } from "https://raw.githubusercontent.com/bonisoft3/omnishell/v0.20.3/test/outbox-simulator.ts";
 export { assert, mountApp, type Mounted, only } from "https://raw.githubusercontent.com/bonisoft3/omnishell/v0.20.3/test/screen-harness.ts";
 export { extractRegions, generateCoveringArrayFrames, generateIsolatedFrames, generatePairwiseFrames } from "https://raw.githubusercontent.com/bonisoft3/omnishell/v0.20.3/test/storybook-injector.ts";
-export { readCheckInputs } from "https://raw.githubusercontent.com/bonisoft3/pronto/v0.25.3/check-inputs.ts";
-export { walk } from "https://raw.githubusercontent.com/bonisoft3/pronto/v0.25.3/hybrid-battery.ts";
-export { executeHybrid } from "https://raw.githubusercontent.com/bonisoft3/pronto/v0.25.3/hybrid-local.ts";
-export { compileHybrid, type HybridMachine } from "https://raw.githubusercontent.com/bonisoft3/pronto/v0.25.3/hybrid.ts";
+export { readCheckInputs } from "https://raw.githubusercontent.com/bonisoft3/pronto/v0.26.1/check-inputs.ts";
+export { walk } from "https://raw.githubusercontent.com/bonisoft3/pronto/v0.26.1/hybrid-battery.ts";
+export { executeHybrid } from "https://raw.githubusercontent.com/bonisoft3/pronto/v0.26.1/hybrid-local.ts";
+export { compileHybrid, type HybridMachine } from "https://raw.githubusercontent.com/bonisoft3/pronto/v0.26.1/hybrid.ts";

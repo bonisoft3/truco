@@ -48,7 +48,7 @@ Deno.test("a voice sits only where a match seated it, and counts its shouts", as
   const risen = await step(once.state, "rise", {});
   assertEquals([risen.state.phase, risen.public], ["quiet", null]);
   // That the match seated the voice where it sits is the database's to check (maySit): a step cannot see it.
-  assertEquals(spec.states.seated.on.sit.requires?.reason, "not_seated");
+  assertEquals(spec.states.seated.on.sit.requires?.[0].reason, "not_seated");
 });
 
 Deno.test("a table still waiting is closed by its opener alone; a guest stands up from it", async () => {
