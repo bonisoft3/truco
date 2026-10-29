@@ -128,8 +128,8 @@ services:
         path: ../documents/uy/reglas/index.html
         target: /srv/uy/reglas/index.html
       - action: rebuild
-        path: ../brief.html
-        target: /srv/docs/brief.html
+        path: ../journal.html
+        target: /srv/docs/journal.html
       - action: rebuild
         path: ../ir.html
         target: /srv/docs/ir.html
@@ -142,6 +142,24 @@ services:
       - action: rebuild
         path: ../DESIGN.md
         target: /srv/docs/DESIGN.md
+      - action: rebuild
+        path: ../journal/2026-10-19-hatch-free-argentina.png
+        target: /srv/docs/journal/2026-10-19-hatch-free-argentina.png
+      - action: rebuild
+        path: ../journal/2026-10-19-hatch-free-desktop.png
+        target: /srv/docs/journal/2026-10-19-hatch-free-desktop.png
+      - action: rebuild
+        path: ../journal/2026-10-19-hatch-free-mobile.png
+        target: /srv/docs/journal/2026-10-19-hatch-free-mobile.png
+      - action: rebuild
+        path: ../journal/2026-10-19-hatch-free-quick-shout.png
+        target: /srv/docs/journal/2026-10-19-hatch-free-quick-shout.png
+      - action: rebuild
+        path: ../journal/2026-10-19-shout-expiry-after.png
+        target: /srv/docs/journal/2026-10-19-shout-expiry-after.png
+      - action: rebuild
+        path: ../journal/2026-10-19-shout-expiry-before.png
+        target: /srv/docs/journal/2026-10-19-shout-expiry-before.png
       - action: rebuild
         path: ../robots.txt
         target: /srv/robots.txt

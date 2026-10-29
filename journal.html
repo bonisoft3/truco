@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Truco — Journal</title>
+<style>
+  :root { color-scheme: light; --ink:#25251f; --muted:#69695e; --line:#deddd2; --paper:#fffef8; --accent:#8a4a05; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#f0efe7; color:var(--ink); font:17px/1.65 system-ui,sans-serif; }
+  main { max-width:1120px; margin:48px auto; padding:48px 60px; background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:0 12px 48px #2927190a; display:grid; gap:40px; }
+  h1 { font-size:clamp(2.4rem,6vw,4rem); line-height:1.05; letter-spacing:-.055em; margin:12px 0 8px; }
+  h2 { margin:8px 0 12px; font-size:1.5rem; letter-spacing:-.025em; }
+  h3 { margin:16px 0 6px; font-size:1.15rem; }
+  p { max-width:82ch; margin:0 0 12px; }
+  article { border-top:1px solid var(--line); padding-top:28px; }
+  article time, .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.15em; font-size:12px; font-weight:750; display:block; }
+  .subtitle { color:var(--muted); margin-bottom:16px; font-size:1.1rem; }
+  a { color:var(--accent); text-underline-offset:3px; }
+  code { font:.86em/1.5 ui-monospace,monospace; background:#eeede4; border-radius:4px; padding:2px 5px; overflow-wrap:anywhere; }
+  .gallery { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin:24px 0; align-items:start; }
+  figure { margin:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#f7f5ec; }
+  figure a { display:flex; justify-content:center; background:#15110d; }
+  img { display:block; width:100%; height:auto; max-height:620px; object-fit:contain; }
+  figcaption { padding:14px 18px; line-height:1.45; font-size:14px; }
+  figcaption strong, figcaption span { display:block; }
+  figcaption span { color:var(--muted); margin-top:4px; }
+  .table-wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14px; text-align:left; }
+  th,td { padding:12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:#eeede4; font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
+  ul { max-width:82ch; margin:0 0 12px; padding-left:22px; }
+  @media(max-width:700px) { main { margin:0; border:0; border-radius:0; padding:32px 20px; } .gallery { grid-template-columns:1fr; } body { font-size:16px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="eyebrow">Truco · Project journal</span>
+    <h1>Truco — Paulista &amp; Mineiro Card Table</h1>
+    <p>The iconic South American trick-taking and bluffing card game built for quick, tactical four-seat matches: play Truco Paulista (rotating vira manilhas) or Mineiro (fixed manilhas) solo against boteco regulars or online with friends via a shared table link, with regional dialogue across Brazil and Argentina. <a href="#initial-brief">Latest product brief ↓</a></p>
+  </header>
+
+  <article id="turn-2026-10-19-edge">
+    <time datetime="2026-10-19">2026-10-19 · Edge Runtime Review</time>
+    <h2>Fair deals and durable deadlines</h2>
+    <p>The Cloudflare release uses the shared cluster and machine engine. Review found that UUID version and variant bits entered the deal’s random stream, failed deadlines could block later ones, and an alarm could boot a directory during import. The corrected compiler omits those fixed bits; the edge engine starts fresh rules and the same fuel budget for every step. Resolved deadlines advance their watermark, failed deadlines retry after a bounded delay, and future deadlines keep their alarm. Reset clears alarms before loading data.</p>
+    <p>The ticker image now includes its shared tick key and CRUD protocol. Rendered documents carry the release’s security policy on fresh and cached responses.</p>
+    <div class="table-wrap"><table><tr><th>Runtime proof</th><th>Observed result</th></tr><tr><td>PostgreSQL machine oracle</td><td>Exit 0; 17 steps</td></tr><tr><td>Cloudflare machine oracle</td><td>Exit 0; 12 steps</td></tr><tr><td>Pinned edge clock and object regressions</td><td>Exit 0; three tests and 13 integration steps, including a healthy future deadline firing without incoming requests despite an earlier failing deadline</td></tr><tr><td>Entropy, fuel parity, machine contracts and SSR headers</td><td>Exit 0; 24 focused tests</td></tr><tr><td>Backend and QA review</td><td>No remaining actionable findings after the alarm retry correction</td></tr></table></div>
+  </article>
+
+  <article id="turn-2026-10-19-shout-expiry">
+    <time datetime="2026-10-19">2026-10-19 · Review Follow-up</time>
+    <h2>Quick shouts expire during play</h2>
+    <p>Before, shouting and immediately raising could leave the player’s speech bubble visible indefinitely and suppress later announcements. Gameplay invalidated the revision-bound expiry; a queued move could also consume its timer. Expiry now follows the game and shout identity independently of gameplay. A stale reply stays silent but still schedules expiry, and old timers cannot affect a newer shout.</p>
+    <section class="gallery" aria-label="Shout expiry before and after">
+      <figure><a href="journal/2026-10-19-shout-expiry-before.png"><img src="journal/2026-10-19-shout-expiry-before.png" alt="Before: Chama remains over the player’s cards after the hand resolves"></a><figcaption><strong>Before</strong><span>The quick shout remains over the cards after raising and resolving the hand.</span></figcaption></figure>
+      <figure><a href="journal/2026-10-19-shout-expiry-after.png"><img src="journal/2026-10-19-shout-expiry-after.png" alt="After: the quick shout is gone and the opponent’s fold announcement is visible"></a><figcaption><strong>After</strong><span>The player’s bubble clears and the opponent’s fold announcement is visible.</span></figcaption></figure>
+    </section>
+    <div class="table-wrap"><table><tr><th>Follow-up check</th><th>Observed result</th></tr><tr><td>Sayt generate, lint and test</td><td>Exit 0; arena suite 32 cases, including immediate raise and stale timer regressions</td></tr><tr><td>Sayt integrate, bridge port 32375</td><td>Exit 0; browser acceptance 39/39, fit, window, visual and replay passed</td></tr><tr><td>Visual scan after correcting settling</td><td>Zero critical findings; 466 major and 1,245 minor advisories</td></tr></table></div>
+  </article>
+
+  <article id="turn-2026-10-19-hatch-free">
+    <time datetime="2026-10-19">2026-10-19 · Hatch Removal</time>
+    <h2>Remove the last hatch</h2>
+    <p>Truco now declares zero escape hatches. Previously, the dealer observed and changed the host DOM to present the table. Its 930-line module is deleted. The existing hybrid machines project presentation fields; native regions, bindings, pure text renderers, CSS and terminal timers display them. Country selection uses a declarative chart. The execution contract is in <a href="ir.html#presentation">Table presentation</a>.</p>
+    <section class="gallery" aria-label="Inspected screenshots">
+      <figure><a href="journal/2026-10-19-hatch-free-desktop.png"><img src="journal/2026-10-19-hatch-free-desktop.png" alt="Dealt desktop table"></a><figcaption><strong>Desktop</strong><span>Dealt desktop table</span></figcaption></figure>
+      <figure><a href="journal/2026-10-19-hatch-free-quick-shout.png"><img src="journal/2026-10-19-hatch-free-quick-shout.png" alt="Player shout without a central duplicate"></a><figcaption><strong>Quick shout</strong><span>Player shout without a central duplicate</span></figcaption></figure>
+      <figure><a href="journal/2026-10-19-hatch-free-mobile.png"><img src="journal/2026-10-19-hatch-free-mobile.png" alt="Phone after playing a card"></a><figcaption><strong>Mobile</strong><span>Phone after playing a card</span></figcaption></figure>
+      <figure><a href="journal/2026-10-19-hatch-free-argentina.png"><img src="journal/2026-10-19-hatch-free-argentina.png" alt="Country navigation and regional dialogue"></a><figcaption><strong>Argentina</strong><span>Country navigation and regional dialogue</span></figcaption></figure>
+    </section>
+    <div class="table-wrap"><table><tr><th>Check</th><th>Result</th></tr><tr><td><code>./saytw generate</code></td><td>Exit 0</td></tr><tr><td><code>./saytw lint</code></td><td>Exit 0</td></tr><tr><td><code>./saytw test</code></td><td>Exit 0; includes 20 online/lobby machine cases and four mounted screen cases</td></tr><tr><td><code>./saytw integrate --docker-bridge-port 32375</code></td><td>Exit 0; acceptance 39/39, fit, window, visual and replay</td></tr></table></div>
+  </article>
+
+  <article id="initial-brief">
+    <time datetime="2026-10-01">2026-10-01 · Initial Brief</time>
+    <h2>Truco Paulista &amp; Mineiro (Multiplayer &amp; Boteco Edition)</h2>
+    <p>Truco is the iconic Brazilian card game built for quick, tactical matches. Open it and a table is set: playable with friends over the internet via link (<code>#match/:id</code>) or against boteco regulars. Local-first optimistic mutations with cluster sync (<code>durability: "offline"</code>), syncing game state reactively across tables.</p>
+    <h3>Data</h3>
+    <ul>
+      <li><code>Match</code>: Tracks match status, seat assignments (<code>you</code>, <code>partner</code>, <code>opponent1</code>, <code>opponent2</code>), total score (<code>US</code> vs <code>THEM</code>), and game variant.</li>
+      <li><code>Round</code>: Tracks tricks won (<code>1st</code>, <code>2nd</code>, <code>3rd</code> tricks), current phase, active seat, and turn deadlines (<code>ui_deadline</code>, <code>backend_deadline</code>).</li>
+      <li><code>Held</code>: Tracks 3-card hands per seat and slot index (<code>slot: 0, 1, 2</code>). Opponent cards are masked as face-down backs in the synced state, preserving fog of war against client snooping while keeping slot spatial continuity.</li>
+      <li><code>Play</code>: Records cards played on the table, which slot they were played from (<code>from_slot</code>), and Truco calls.</li>
+    </ul>
+    <h3>Screens &amp; Modes</h3>
+    <ul>
+      <li><strong>Truco Paulista</strong>: Vira rank determines the cyclic Manilhas (<code>Vira + 1</code>). Manilha suits order: <code>4♣ (Zap) &gt; 7♥ (Copas) &gt; A♠ (Espadilha) &gt; 7♦ (Ouros)</code>.</li>
+      <li><strong>Truco Mineiro</strong>: Fixed Manilhas (<code>4♣ Zap</code>, <code>7♥ Copas</code>, <code>A♠ Espadilha</code>, <code>7♦ Ouros</code>). Truco raises start at 2 points and climb <code>Truco 4</code> → <code>Seis 8</code> → <code>Nove 10</code> → <code>Doze 12</code>.</li>
+      <li><strong>2-Player (1v1) &amp; 4-Player (2v2) Arena Modes</strong>: Play 1v1 or 2v2 across devices via match room links, or with boteco bots (Seu Nezinho, Dona Cida, Tião Pandeiro, Zé da Bicicleta, Bigode) filling vacant seats.</li>
+      <li><strong>Boteco Visuals &amp; Turn Clock</strong>: Checked cloth, worn cards, fanned angles, burning rope turn timer, phase tracker, stake badge, and four table themes (Toalha xadrez, Fórmica azul, Neon do bar, Madeira crua).</li>
+    </ul>
+  </article>
+</main>
+</body>
+</html>
