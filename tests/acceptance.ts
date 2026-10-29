@@ -1508,19 +1508,34 @@ const CASES: Case[] = [
       // A request the worker answers from its copy never reaches the network;
       // one it does not, or that nothing answers, does.
       await p.waitForLoadState("load");
-      const seen: string[] = [];
-      const listener = (r: Request) => void r.response().then((answer) => {
-        if (!answer?.fromServiceWorker()) seen.push(r.url());
-      });
+      // The offline cases fulfill sync writes locally. Count only a successful
+      // fixture response as local; the app can still attempt background sync.
+      const seen: Promise<{ url: string; fixture: boolean; network: boolean }>[] = [];
+      const listener = (r: Request) => {
+        const url = r.url();
+        if (url.includes("/v1/shape") || url.endsWith("/auth/shape") || url.startsWith("data:")) return;
+        seen.push((async () => {
+          const answer = await r.response();
+          const fixture = await fixtureResponses.get(p.context())?.get(r) ?? false;
+          return { url, fixture, network: !fixture && !answer?.fromServiceWorker() };
+        })());
+      };
       await p.context().setOffline(true);
       try {
         p.on("request", listener);
+        const probeUrl = `${origin(p)}/crud/offline-probe?${crypto.randomUUID()}`;
+        const probe = await p.evaluate(async (url: string) => {
+          const stub = await fetch("/crud/truco_offline_probe", { method: "POST" });
+          const missing = await fetch(url, { method: "POST" }).then(() => false, () => true);
+          return { stub: stub.status, missing };
+        }, probeUrl);
+        const probes = await Promise.all([...seen]);
+        assert(probe.stub === 201 && probes.some(r => r.url.endsWith("/crud/truco_offline_probe") && r.fixture && !r.network), "a locally fulfilled request was counted as network");
+        assert(probe.missing && probes.some(r => r.url === probeUrl && r.network), "an unhandled offline request escaped the network audit");
         await playOne(p);
         await tick(p, 2500);
         p.off("request", listener);
-        // Shapes and the token that authorizes them are the terminal's sync
-        // plane, which the bar's rows ride; anything else is the app fetching.
-        const app = seen.filter((u) => !u.includes("/v1/shape") && !u.endsWith("/auth/shape") && !u.startsWith("data:"));
+        const app = (await Promise.all(seen)).filter(r => r.network && r.url !== probeUrl).map(r => r.url);
         assert(app.length === 0, `the table made ${app.length} request(s): ${app.join(", ")}`);
       } finally {
         await p.context().setOffline(false);
@@ -1751,6 +1766,7 @@ async function goOnline(p: Page, name: string) {
 }
 
 let crudTurn = Promise.resolve();
+const fixtureResponses = new WeakMap<object, WeakMap<object, Promise<boolean>>>();
 
 // deno-lint-ignore no-explicit-any
 async function newContext(browser: any, online = false) {
@@ -1759,10 +1775,13 @@ async function newContext(browser: any, online = false) {
     viewport: { width: 1280, height: 900 },
     ignoreHTTPSErrors: true,
   });
+  const fixtures = new WeakMap<object, Promise<boolean>>();
+  fixtureResponses.set(context, fixtures);
   await context.route("**/crud/truco_*", (route: Route) => {
     if (!online) {
-      void route.fulfill({ status: 201, contentType: "application/json", body: "[]" }).catch(() => {});
-      return;
+      const fulfilled = route.fulfill({ status: 201, contentType: "application/json", body: "[]" }).then(() => true, () => false);
+      fixtures.set(route.request(), fulfilled);
+      return fulfilled;
     }
     const next = crudTurn.then(async () => {
       for (let attempt = 0; attempt < 5; attempt++) {
