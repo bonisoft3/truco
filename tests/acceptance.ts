@@ -1508,6 +1508,22 @@ const CASES: Case[] = [
       // A request the worker answers from its copy never reaches the network;
       // one it does not, or that nothing answers, does.
       await p.waitForLoadState("load");
+      // The table schedules linked-screen prefetches after its first paint;
+      // the document's load event does not wait for those requests.
+      await p.waitForFunction(() => {
+        const imports = JSON.parse(document.getElementById("pronto-assets")!.textContent!).imports;
+        const paths = ["/shell/screens/regras.html", "/shell/screens/regras.css"];
+        return paths.every((path) => {
+          const address = imports[path];
+          if (!address) return false;
+          const url = new URL(address, location.origin).href;
+          const link = [...document.querySelectorAll<HTMLLinkElement>('link[rel="prefetch"]')].find((item) => item.href === url);
+          return link && performance.getEntriesByName(url, "resource").some((entry) => {
+            const resource = entry as PerformanceResourceTiming;
+            return resource.responseEnd > 0 && resource.responseStatus >= 200 && resource.responseStatus < 300;
+          });
+        });
+      }, undefined, { timeout: 30000 });
       // The offline cases fulfill sync writes locally. Count only a successful
       // fixture response as local; the app can still attempt background sync.
       const seen: Promise<{ url: string; fixture: boolean; network: boolean }>[] = [];
