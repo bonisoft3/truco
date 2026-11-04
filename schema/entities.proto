@@ -279,7 +279,6 @@ message Round {
   optional string raise_label = 47 [json_name = "raise_label"];
   optional string raise_blocked = 48 [json_name = "raise_blocked"];
   optional string next_rung = 49 [json_name = "next_rung"];
-  optional string name_key = 50 [json_name = "name_key"];
   optional string name_handle = 51 [json_name = "name_handle"];
   optional string worth = 52 [json_name = "worth"];
   optional string opponent_name = 53 [json_name = "opponent_name"];
@@ -305,6 +304,8 @@ message Round {
   reserved "ui_deadline";
   reserved 40;
   reserved "backend_deadline";
+  reserved 50;
+  reserved "name_key";
 }
 
 message TrucoCallCommand {

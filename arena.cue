@@ -238,7 +238,7 @@ _arenaReads: #"data-reads="match,round,play,held,intent,truco_match_seat,truco_m
 // see different ones.
 _lobbyReads: #"data-reads="truco_voice_seat,truco_call_open,truco_match_open,truco_match_command,lobby_tab,truco_presence_lease,truco_presence_seat,truco_presence_command,truco_challenge_seat,player,match,truco_match_seat,truco_match_public,truco_voice_public,truco_call_seat,chair,listed_table""#
 
-_round: #"{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":"","felt_phase":"idle","truco_label":"call_truco","truco_title":"felt_title_raise","truco_blocked":"disabled","raise_label":"raise","raise_blocked":"disabled","next_rung":"0","name_key":"opponent_nezinho","name_handle":"","worth":"2","opponent_name":"opponent_nezinho","opponent_handle":"","opponent":"nezinho","dialogue_key":"","dialogue_state":"","player_shout_state":"","over_key":"","tell":"","said_t":"","shout_word":"","shout_from":"","shout_kind":"","shout_state":"","shout_t":"","shout_seat":"","raise_hint":"felt_raise_to","shout_anim":"1","oculta":"no","turn_seat":""}"#
+_round: #"{"id":"","hand_no":1,"vira":"","manilha":"","phase":"dealt","ran":"","v1":"","v2":"","v3":"","stake":2,"result":"","said":"","leader":"you","asked":"","raised":"","rung":0,"brink":"","envido":"","envido_asked":"","envido_rung":0,"envido_calls":"","envido_us":0,"envido_them":0,"envido_result":"","current":"yes","created_at":"","felt_phase":"idle","truco_label":"call_truco","truco_title":"felt_title_raise","truco_blocked":"disabled","raise_label":"raise","raise_blocked":"disabled","next_rung":"0","name_handle":"","worth":"2","opponent_name":"opponent_nezinho","opponent_handle":"","opponent":"nezinho","dialogue_key":"","dialogue_state":"","player_shout_state":"","over_key":"","tell":"","said_t":"","shout_word":"","shout_from":"","shout_kind":"","shout_state":"","shout_t":"","shout_seat":"","raise_hint":"felt_raise_to","shout_anim":"1","oculta":"no","turn_seat":""}"#
 
 _arenaMarkup: #"""
 <section class="screen" data-screen="arena">
@@ -447,7 +447,7 @@ _arenaMarkup: #"""
               <div class="bubble-header">
                 <span class="bubble-speaker eles-name"><span class="as-cast" data-text="{msg[opponent_name]}"></span><span class="as-handle" data-text="{opponent_handle}"></span></span>
               </div>
-              <div class="opponent-talk" id="opponent-talk" data-text="{msg[dialogue_key]}&#10;{worth}&#10;{msg[name_key]}{name_handle}" data-text-format="speech"></div>
+              <div class="opponent-talk" id="opponent-talk" data-text="{msg[dialogue_key]}"></div>
             </div>
           </div>
         </div>
@@ -522,7 +522,7 @@ _arenaMarkup: #"""
           </template>
         </div>
         <div class="table-instruction-bar" id="table-instruction-bar">
-          <div class="talk" data-t="{said_t}" data-text="{msg[said]}&#10;{worth}&#10;{msg[name_key]}{name_handle}" data-text-format="speech"></div>
+          <div class="talk" data-t="{said_t}" data-text="{msg[said]}"></div>
           <p class="refusal" role="status" data-text="{msg.play_refusal}">A mesa não conseguiu registrar a jogada.</p>
         </div>
         <div class="player-dialogue-wrap" id="player-dialogue-wrap" data-active="{player_shout_state}" data-t="{shout_anim}" aria-live="polite">
@@ -556,8 +556,8 @@ _arenaMarkup: #"""
 
         <!-- Game over verdict lands above actions in the flow -->
         <div class="over" id="over">
-          <p class="over-line" id="over-line" data-text="{msg[over_key]}&#10;{worth}&#10;{msg[name_key]}{name_handle}" data-text-format="speech"></p>
-          <p class="over-say" id="over-say" data-text="{msg[said]}&#10;{worth}&#10;{msg[name_key]}{name_handle}" data-text-format="speech"></p>
+          <p class="over-line" id="over-line" data-text="{msg[over_key]}"></p>
+          <p class="over-say" id="over-say" data-text="{msg[said]}"></p>
           <a class="act ghost" data-route="regras" data-text="{msg.view_rules}">Ver as regras</a>
         </div>
 
@@ -601,8 +601,8 @@ _arenaMarkup: #"""
         <div class="answers" id="answers">
           <!-- A price is where a language wants a plural. -->
           <button type="button" class="act" id="btn-accept" data-on-click="arena"><b data-text="{msg.accept}">Aceito</b><small data-text="{msg.worth_points}"></small></button>
-          <button type="button" class="act hot" id="btn-raise" data-on-click="arena" disabled="{raise_blocked}"><b data-text="{msg[raise_label]}" data-text-format="uppercase">Aumentar</b><small data-text="{msg[raise_hint]}&#10;{next_rung}&#10;" data-text-format="speech"></small></button>
-          <button type="button" class="act risk" id="btn-run" data-on-click="arena"><b data-text="{msg.fold}">Corro</b><small data-text="{msg.felt_they_take}&#10;{stake}&#10;" data-text-format="speech"></small></button>
+          <button type="button" class="act hot" id="btn-raise" data-on-click="arena" disabled="{raise_blocked}"><b data-text="{msg[raise_label]}" data-text-format="uppercase">Aumentar</b><small data-text="{msg[raise_hint]}"></small></button>
+          <button type="button" class="act risk" id="btn-run" data-on-click="arena"><b data-text="{msg.fold}">Corro</b><small data-text="{msg.felt_they_take}"></small></button>
         </div>
 
         <div class="boteco-shouts">

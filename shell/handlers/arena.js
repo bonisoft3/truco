@@ -373,7 +373,7 @@ const app = // arena — the local table: truco_match played by the terminal, as
       truco_title: view.right === mine ? "felt_title_ours" : ownTurn ? "felt_title_raise" : "felt_title_not_yours",
       truco_blocked: can("raise") ? "" : "disabled",
       raise_label: nextRung ? `felt_call_${VOICE_OF[variant]}_${nextRung}` : "felt_at_max", raise_hint: nextRung ? "felt_raise_to" : "felt_ceiling", raise_blocked: can("raise") && nextRung ? "" : "disabled", next_rung: txt(nextRung),
-      name_key: g.online ? "" : `opponent_${g.opponent}`, name_handle: g.online ? g.opponent_name : "", worth: txt(asked ? rung : view.stake),
+      name_handle: g.online ? g.opponent_name : "", worth: txt(asked ? rung : view.stake),
       opponent_name: matchRow.opponent_name, opponent_handle: matchRow.opponent_handle, opponent: g.opponent,
       dialogue_key: quick && shout.from === "them" ? shout.word : g.online ? "" : /^(tell_|call_|retort_)/.test(said) || told ? said : `idle_${g.opponent}`,
       dialogue_state: !g.online || quick && shout.from === "them" ? "live" : "gone",

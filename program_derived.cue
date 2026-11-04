@@ -737,4 +737,4 @@ if !_deriving {
 	code: meta: tests: [Id=string]: accepts: _irAccepts[Id]
 }
 
-code: meta: ladder: ["journal/2026-10-19-hatch-free-argentina.png","journal/2026-10-19-hatch-free-desktop.png","journal/2026-10-19-hatch-free-mobile.png","journal/2026-10-19-hatch-free-quick-shout.png","journal/2026-10-19-shout-expiry-after.png","journal/2026-10-19-shout-expiry-before.png"]
+code: meta: ladder: ["ir/neighbourhood-app.svg","ir/neighbourhood-arena.svg","ir/neighbourhood-regras.svg","journal/2026-10-19-hatch-free-argentina.png","journal/2026-10-19-hatch-free-desktop.png","journal/2026-10-19-hatch-free-mobile.png","journal/2026-10-19-hatch-free-quick-shout.png","journal/2026-10-19-shout-expiry-after.png","journal/2026-10-19-shout-expiry-before.png"]

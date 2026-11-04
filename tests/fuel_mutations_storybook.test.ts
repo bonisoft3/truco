@@ -187,9 +187,11 @@ function bootHarness(html: string, initialRow: Record<string, unknown> = {}) {
     },
     create: async () => {},
     update: async () => {},
-    put: async (_table: string, row: Record<string, unknown>) => {
+    put: async (_table: string, stated: Record<string, unknown>, _onRefused?: unknown, absent?: Record<string, unknown>) => {
+      // `absent` states the fallback's columns only where the row is inserted, as data-sync does.
+      const i = rows.findIndex((r) => r.id === stated.id);
+      const row = i < 0 ? { ...absent, ...stated } : stated;
       puts.push({ ...row });
-      const i = rows.findIndex((r) => r.id === row.id);
       if (i < 0) rows.push({ ...row } as never);
       else rows[i] = { ...rows[i], ...row };
       for (const cb of subs) setTimeout(cb, 0);

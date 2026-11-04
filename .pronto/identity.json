@@ -390,7 +390,7 @@
       "50": {
         "name": "name_key",
         "type": "text",
-        "retired": false
+        "retired": true
       },
       "51": {
         "name": "name_handle",

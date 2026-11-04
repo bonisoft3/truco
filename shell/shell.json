@@ -308,10 +308,6 @@
         "type": "text"
       },
       {
-        "name": "name_key",
-        "type": "text"
-      },
-      {
         "name": "name_handle",
         "type": "text"
       },
@@ -563,7 +559,6 @@
           "shell/shared/lobby.css"
         ],
         "renderers": [
-          "shell/renderers/speech.js",
           "shell/renderers/initial.js",
           "shell/renderers/uppercase.js"
         ]
@@ -1329,11 +1324,6 @@
         },
         {
           "name": "next_rung",
-          "type": "text",
-          "required": false
-        },
-        {
-          "name": "name_key",
           "type": "text",
           "required": false
         },

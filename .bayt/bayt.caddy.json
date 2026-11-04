@@ -149,11 +149,6 @@
         },
         {
           "action": "rebuild",
-          "path": "../shell/renderers/speech.js",
-          "target": "/srv/shell/renderers/speech.js"
-        },
-        {
-          "action": "rebuild",
           "path": "../shell/renderers/uppercase.js",
           "target": "/srv/shell/renderers/uppercase.js"
         },
@@ -251,6 +246,21 @@
           "action": "rebuild",
           "path": "../DESIGN.md",
           "target": "/srv/docs/DESIGN.md"
+        },
+        {
+          "action": "rebuild",
+          "path": "../ir/neighbourhood-app.svg",
+          "target": "/srv/docs/ir/neighbourhood-app.svg"
+        },
+        {
+          "action": "rebuild",
+          "path": "../ir/neighbourhood-arena.svg",
+          "target": "/srv/docs/ir/neighbourhood-arena.svg"
+        },
+        {
+          "action": "rebuild",
+          "path": "../ir/neighbourhood-regras.svg",
+          "target": "/srv/docs/ir/neighbourhood-regras.svg"
         },
         {
           "action": "rebuild",

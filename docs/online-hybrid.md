@@ -77,9 +77,10 @@ machine's own rules. The game lives on the table's row, seeded by the
 terminal's recorded draw; a click records an intent; the fold seated on the
 table's row applies it, lets the house choose from each seat's own view on the
 terminal's clock, and draws the felt from yours. Native bindings render the phase,
-wager authority, dialogue and identity. Pure renderers format initials and speech;
-CSS draws card travel, dealing, tells and shout transitions. The app declares no
-escape hatch. Country links record their locale and regional rules through a
+wager authority, dialogue and identity. Speech lines are catalogue messages whose
+arguments bind the row's columns; pure renderers only initial a handle and
+uppercase a shout. CSS draws card travel, dealing, tells and shout transitions.
+The app declares no escape hatch. Country links record their locale and regional rules through a
 declarative chart before navigating; reloading an address preserves the selected game.
 
 ## Lobby and challenges

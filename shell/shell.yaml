@@ -181,8 +181,6 @@ optional:
       type: text
     - name: next_rung
       type: text
-    - name: name_key
-      type: text
     - name: name_handle
       type: text
     - name: worth
@@ -320,7 +318,6 @@ routes:
         - shell/shared/table.css
         - shell/shared/lobby.css
       renderers:
-        - shell/renderers/speech.js
         - shell/renderers/initial.js
         - shell/renderers/uppercase.js
     ssr: spa
@@ -866,9 +863,6 @@ schema:
         type: text
         required: false
       - name: next_rung
-        type: text
-        required: false
-      - name: name_key
         type: text
         required: false
       - name: name_handle

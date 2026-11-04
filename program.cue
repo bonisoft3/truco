@@ -150,7 +150,6 @@ code: pronto.#App & {
 					{ordinal: 47, name: "raise_label", type: "text", required: false},
 					{ordinal: 48, name: "raise_blocked", type: "text", required: false},
 					{ordinal: 49, name: "next_rung", type: "text", required: false},
-					{ordinal: 50, name: "name_key", type: "text", required: false},
 					{ordinal: 51, name: "name_handle", type: "text", required: false},
 					{ordinal: 52, name: "worth", type: "text", required: false},
 					{ordinal: 53, name: "opponent_name", type: "text", required: false},
@@ -170,6 +169,7 @@ code: pronto.#App & {
 					{ordinal: 35, name: "last_remote_shout", type: "text", retired: true},
 					{ordinal: 39, name: "ui_deadline", type: "timestamptz", retired: true},
 					{ordinal: 40, name: "backend_deadline", type: "timestamptz", retired: true},
+					{ordinal: 50, name: "name_key", type: "text", retired: true},
 				]
 				// A table turns a card up, or names its trumps in the rules, or
 				// has none at all; no table does two of those. The two columns are
@@ -496,7 +496,7 @@ code: pronto.#App & {
 				ssr: "spa"
 				files: {
 					shared: ["shell/shared/table.css", "shell/shared/lobby.css"]
-					renderers: ["shell/renderers/speech.js", "shell/renderers/initial.js", "shell/renderers/uppercase.js"]
+					renderers: ["shell/renderers/initial.js", "shell/renderers/uppercase.js"]
 				}
 			}
 			regras: {

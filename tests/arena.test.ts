@@ -6,7 +6,8 @@
 // passes at once, a draw comes from a list), and re-run the seated fold until
 // it writes nothing. The mounted cases run the real screen on the harness's
 // held clock.
-import { assert, mountApp, type Mounted, only, evaluateRole } from "./platform.ts";
+import { fileURLToPath } from "node:url";
+import { assert, mountApp, type Mounted, only, evaluateRole, parseMessage, readCheckInputs } from "./platform.ts";
 
 const APP = new URL("../", import.meta.url);
 
@@ -276,6 +277,45 @@ Deno.test("every ladder the rules climb is drawn on the rules screen and voiced 
   for (const [variant, ladder] of ladders) assert(prices.includes(`${variant}: [${ladder.join(", ")}]`), `arena.js prices ${variant} otherwise`);
 });
 
+// A cast name missing from a select over `opponent` falls to `other`, which
+// binds the empty handle: the line names nobody.
+Deno.test("every select over the opponent names each cast member as that catalogue's cast names them", async () => {
+  type Field = { name: string; cel?: string };
+  const { entities } = await readCheckInputs<{ fields: Field[] }>(fileURLToPath(APP).replace(/[/\\]$/, ""));
+  const cel = entities.Match.fields.find((f) => f.name === "opponent")?.cel ?? "";
+  const opponents = [...(cel.match(/^this in \[(.*)\]$/)?.[1] ?? "").matchAll(/'(\w+)'/g)].map(([, v]) => v);
+  // An online opponent is named by the player's own handle, through `other`.
+  assert(opponents.includes("online") && opponents.length > 1, `Match.opponent is no enum with online in it: ${cel}`);
+  const cast = opponents.filter((v) => v !== "online");
+  type Node = { type: number; value: string; options?: Record<string, { value: Node[] }> };
+  // parseMessage hands a message with no placeholder back as its string.
+  const selects = (nodes: Node[] | string): Node[] => typeof nodes === "string" ? [] : nodes.flatMap((n) => [
+    ...(n.type === 5 && n.value === "opponent" ? [n] : []),
+    ...Object.values(n.options ?? {}).flatMap((arm) => selects(arm.value)),
+  ]);
+  for await (const entry of Deno.readDir(new URL("messages/", APP))) {
+    const locale = entry.name.replace(/\.json$/, "");
+    const catalogue: Record<string, string> = JSON.parse(await Deno.readTextFile(new URL(`messages/${entry.name}`, APP)));
+    let seen = 0;
+    for (const [key, text] of Object.entries(catalogue)) {
+      for (const select of selects(parseMessage(text) as Node[] | string)) {
+        seen++;
+        const arms = select.options!;
+        for (const value of cast) {
+          const arm = arms[value]?.value;
+          assert(arm !== undefined, `${locale} ${key}: no arm for opponent ${value}`);
+          const said = arm.length === 1 && arm[0].type === 0 ? arm[0].value : JSON.stringify(arm);
+          assert(said === catalogue[`opponent_${value}`], `${locale} ${key}: opponent ${value} is "${said}", and opponent_${value} is "${catalogue[`opponent_${value}`]}"`);
+        }
+        assert(arms.online === undefined, `${locale} ${key}: an online opponent has an arm of its own, not the player's handle`);
+        const other = arms.other?.value ?? [];
+        assert(other.length === 1 && other[0].type === 1 && other[0].value === "name_handle", `${locale} ${key}: other is ${JSON.stringify(other)}, not {name_handle}`);
+      }
+    }
+    assert(seen > 0, `${locale} has no select over opponent`);
+  }
+});
+
 /* --- the screen ------------------------------------------------------------ */
 
 // The bar renews this tab's presence lease forever, so settle() would never
@@ -522,17 +562,39 @@ for (const [params, priced] of [
   });
 }
 
-Deno.test("speech localizes names without interpreting a player's braces or newlines", async () => {
-  const speech = await evaluateRole(await Deno.readTextFile(new URL("shell/renderers/speech.js", APP)), "renderer") as (value: string) => string[];
-  for (const locale of ["pt-BR", "es-AR", "ca-ES"]) {
-    const messages = JSON.parse(await Deno.readTextFile(new URL(`messages/${locale}.json`, APP)));
-    assert(Object.values(messages).every(text => typeof text !== "string" || !text.includes("\n")), "speech templates must fit one line");
-    const template = messages.turn_of;
-    const name = messages.opponent_nezinho;
-    assert(speech(`${template}\n3\n${name}`)[0] === template.replace("{name}", name), `${locale} lost the localized name`);
-  }
-  const name = "{worth}\n<img src=x>";
-  assert(speech(`{name} · {worth}\n6\n${name}`)[0] === `${name} · 6`, "a handle became template syntax");
+Deno.test({
+  name: "the felt's lines bind the opponent's name, the stake and the next rung from the hand's row",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    // Every argument binds a column of the hand's row: the opponent's name is
+    // a select over `opponent`, and the raise hint prices the rung it climbs
+    // to (next_rung), not the stake on the table.
+    for (const [params, turn, raise, run] of [
+      [{}, (name: string) => `Vez de ${name}.`, "sobe pra", "eles levam"],
+      [{ locale: "es-AR" }, (name: string) => `Turno de ${name}.`, "sube a", "ellos se llevan"],
+      [{ locale: "ca-ES" }, (name: string) => `Torn de ${name}.`, "puja a", "ells s’enduen"],
+    ] as [Record<string, string>, (name: string) => string, string, string][]) {
+      const m = await screen(params);
+      try {
+        await settled(m);
+        const hand = onFelt(m);
+        const tag = params.locale ?? "pt-BR";
+        assert(m.one("#btn-raise small").textContent?.trim() === `${raise} ${hand.next_rung}`, `${tag}: the raise hint`);
+        assert(m.one("#btn-run small").textContent?.trim() === `${run} ${hand.stake}`, `${tag}: what running costs`);
+        await m.store.update("round", hand.id, { said: "turn_of" });
+        await settled(m);
+        const name = JSON.parse(await Deno.readTextFile(new URL(`messages/${tag}.json`, APP))).opponent_nezinho;
+        assert(m.one(".talk").textContent?.trim() === turn(name), `${tag}: "${m.one(".talk").textContent}"`);
+        // An online handle is the player's own text, never message syntax.
+        await m.store.update("round", hand.id, { opponent: "online", name_handle: "{worth}\n<img src=x>" });
+        await settled(m);
+        assert(m.one(".talk").textContent?.trim() === turn("{worth}\n<img src=x>"), `${tag}: the handle became syntax`);
+      } finally {
+        await m.stop();
+      }
+    }
+  },
 });
 
 Deno.test({

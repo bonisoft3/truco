@@ -90,7 +90,7 @@
           "name": "truco-crud"
         },
         "srcs": [
-          "/usr/bin/postgrest"
+          "/bin/postgrest"
         ],
         "dst": "/usr/local/bin/postgrest",
         "link": true,
@@ -380,7 +380,6 @@
           "shell/handlers/variant2.js",
           "shell/handlers/variant3.js",
           "shell/renderers/initial.js",
-          "shell/renderers/speech.js",
           "shell/renderers/uppercase.js",
           "shell/shared/lobby.css",
           "shell/shared/table.css",
@@ -410,6 +409,9 @@
           "ir/card.css",
           "acceptance.md",
           "DESIGN.md",
+          "ir/neighbourhood-app.svg",
+          "ir/neighbourhood-arena.svg",
+          "ir/neighbourhood-regras.svg",
           "journal/2026-10-19-hatch-free-argentina.png",
           "journal/2026-10-19-hatch-free-desktop.png",
           "journal/2026-10-19-hatch-free-mobile.png",
@@ -495,7 +497,6 @@
               "shell/handlers/variant2.js",
               "shell/handlers/variant3.js",
               "shell/renderers/initial.js",
-              "shell/renderers/speech.js",
               "shell/renderers/uppercase.js",
               "shell/shared/lobby.css",
               "shell/shared/table.css",
@@ -525,6 +526,9 @@
               "ir/card.css",
               "acceptance.md",
               "DESIGN.md",
+              "ir/neighbourhood-app.svg",
+              "ir/neighbourhood-arena.svg",
+              "ir/neighbourhood-regras.svg",
               "journal/2026-10-19-hatch-free-argentina.png",
               "journal/2026-10-19-hatch-free-desktop.png",
               "journal/2026-10-19-hatch-free-mobile.png",

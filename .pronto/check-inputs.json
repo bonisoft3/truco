@@ -1,4 +1,26 @@
 {
+  "cortex": {
+    "root": {
+      "id": "root",
+      "initial": "local",
+      "states": {
+        "local": {
+          "meta": {
+            "screen": "arena"
+          },
+          "invoke": [
+            {
+              "src": "arena"
+            },
+            {
+              "src": "lobby"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "machines": {},
   "version": 1,
   "types": {
     "types": {
@@ -1064,14 +1086,6 @@
           "required": false
         },
         {
-          "name": "name_key",
-          "ordinal": 50,
-          "retired": false,
-          "type": "text",
-          "pk": false,
-          "required": false
-        },
-        {
           "name": "name_handle",
           "ordinal": 51,
           "retired": false,
@@ -1221,6 +1235,14 @@
           "ordinal": 40,
           "retired": true,
           "type": "timestamptz",
+          "pk": false,
+          "required": false
+        },
+        {
+          "name": "name_key",
+          "ordinal": 50,
+          "retired": true,
+          "type": "text",
           "pk": false,
           "required": false
         }
