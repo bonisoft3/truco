@@ -131,6 +131,7 @@ const mayRaise = (state, event, context) => {
 const mayPlay = (state, event, context) => mayAct(state, event, context) !== true ? mayAct(state, event, context) : state.turn !== context.actor ? "not_your_turn" : state[context.actor][event.payload.slot] < 0 ? "card_already_played" : true;
 // A table still waiting is closed by its opener; a guest stands up from it.
 const mayResign = (state, _event, context) => state.phase !== "waiting" || context.actor === "a" ? true : "not_the_opener";
+const mayStand = (state, _event, context) => context.actor !== "a" && state.joined.includes(context.actor) ? true : "not_a_guest";
 return {
   initial: input => {
     if ((input.seating === "2v2v2") !== ["douradinha", "douradao"].includes(input.variant)) throw new Error("variant does not support this seating");
@@ -149,7 +150,7 @@ return {
   },
   admit: (state, event) => ({...state, joined: event.payload.seats}),
   mayResign,
-  mayStand: (state, _event, context) => context.actor !== "a" && state.joined.includes(context.actor) ? true : "not_a_guest",
+  mayStand,
   stand: (state, _event, context) => ({...state, joined: state.joined.filter(seat => seat !== context.actor)}),
   full: state => state.joined.length === state.seats.length,
   needsBrink: state => ["a", "b"].includes(state.brink),
@@ -210,6 +211,7 @@ return {
     const {a, b, c, d, e, f, ...visible} = state;
     const own = state[viewer], team = side(state, viewer), context = {actor: viewer, now: 0};
     const actions = [];
+    if (state.phase === "waiting" && mayStand(state, {}, context) === true) actions.push("stand");
     if (state.phase !== "finished" && mayResign(state, {}, context) === true) actions.push("resign");
     if (state.phase === "hand_over") actions.push("next");
     if (state.phase === "playing" && mayAct(state, {}, context) === true) { actions.push("fold"); if (state.turn === viewer) actions.push("play"); }

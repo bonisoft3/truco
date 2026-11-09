@@ -161,6 +161,8 @@ Deno.test("folding a hand concedes only that hand, while resigning hands the hou
   assert(second !== first, "folding hand 1 did not deal hand 2");
   t.click("btn-resign");
   assert(t.table().status === "over" && t.table().winner === "them", `the match went to "${t.table().winner}"`);
+  assert(t.hand().felt_phase === "over" && t.hand().said === "resigned_you", `resigned hand reads felt_phase=${t.hand().felt_phase} said=${t.hand().said}`);
+  assert(t.rows.held.every((h) => h.current === "no"), "resigning left held cards on the felt");
   t.click("btn-again");
   assert(t.table().seed === "777" && t.hand().id.startsWith("g777/"), `the next game is ${t.hand().id}`);
   assert(t.table().us_score === "0" && t.table().them_score === "0" && t.table().us_games === "0" && t.table().them_games === "0" && t.table().status === "playing", "the new game kept the old score");
@@ -740,4 +742,47 @@ Deno.test("shout timers follow the shout rather than the game revision", () => {
     const foreign = arena({rows: t.rows}, {type: "beat", with: {...due, kind, game: "another-game"}});
     assert(foreign.updates.length === 0 && foreign.then === undefined, `another game's ${kind} affected the shout`);
   }
+});
+
+Deno.test("paraguayo envido chain accepts all four calls and marks the responder's turn and dialogue", () => {
+  // Regression: envido_chain capped maxItems at 3 so envido -> envido -> real -> falta threw,
+  // and house envido calls left felt_phase="waiting", turn_seat="", and dialogue_key="idle_osvaldo".
+  const t = terminal([4242], seated("paraguayo", "1v1", "osvaldo"));
+  t.settle();
+  const g = t.game();
+  t.table().game = JSON.stringify({
+    ...g,
+    revision: g.revision + 1,
+    state: {
+      ...g.state,
+      phase: "envido",
+      envido_caller: "b",
+      envido_chain: ["envido", "envido", "envido_real"],
+      log: [{ seat: "b", kind: "envido_real", count: 0, at: 1 }],
+    },
+  });
+  arena({ rows: t.rows }, { type: "mutation" }).updates.forEach((u) => t.write([u]));
+  const round = t.hand();
+  assert(round.felt_phase === "your-turn", `expected felt_phase="your-turn" during house envido, got "${round.felt_phase}"`);
+  assert(round.turn_seat === "you", `expected turn_seat="you" during house envido, got "${round.turn_seat}"`);
+  assert(round.dialogue_key === "envido_real", `expected dialogue_key="envido_real" during house envido, got "${round.dialogue_key}"`);
+  t.click("btn-envido-falta");
+  assert(t.game().state.envido_chain.length === 4 || t.game().state.envido_done !== "", "four-step envido chain failed");
+});
+
+Deno.test({
+  name: "resigning mid-hand removes held cards from the DOM so the verdict banner is unobscured",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const m = await screen({ locale: "es-PY" });
+    await settled(m);
+    assert(m.all(".seat-row.mine .card").length === 3, "expected 3 cards dealt");
+    m.fire("#btn-resign");
+    await settled(m);
+    assert(m.one(".play").getAttribute("data-phase") === "over", "expected felt data-phase=over after resign");
+    assert(m.all(".seat-row.mine .card").length === 0, "expected held cards removed from DOM on resign");
+    assert(m.one("#over-say").textContent?.trim() === "Abandonaste la partida.", `unexpected #over-say: ${m.one("#over-say").textContent}`);
+    await m.stop();
+  },
 });

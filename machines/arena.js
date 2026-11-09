@@ -311,6 +311,7 @@
     const line = () => {
       if (told) return told.startsWith("call_") ? `call_${VOICE_OF[variant]}_${told.slice(5)}` : told;
       if (view.phase === "waiting") return "waiting_opponent";
+      if (finished && result === "them" && ![view.score_a, view.score_b, view.score_c].includes(view.goal)) return "resigned_you";
       if (result !== "") return unpaid !== null ? (brinkHand ? `brink_ran_${side(fold.seat)}` : "ran")
         : result === "draw" ? "draw_hand" : result === "us" ? "you_won_hand" : "they_won_hand";
       if (view.phase === "brink") return `brink_${variant}_${relOf(view.brink) ?? view.brink}`;
@@ -352,7 +353,7 @@
     const previous = (rows.round ?? []).find(r => r.id === roundId);
     const word = shout?.word ?? previous?.shout_word ?? "";
     const said = line();
-    const ownTurn = can("play") || calls.split(" ").includes("brink");
+    const ownTurn = can("play") || can("envido_take") || calls.split(" ").includes("brink");
     const nextRung = ladder[ladder.indexOf(Number(rung)) + 1] ?? 0;
     const quick = shout?.kind === "quick" && shout.state === "live";
     const newQuick = quick && face.quick.t !== game?.face.quick?.t;
@@ -374,7 +375,7 @@
       raise_label: nextRung ? `felt_call_${VOICE_OF[variant]}_${nextRung}` : "felt_at_max", raise_hint: nextRung ? "felt_raise_to" : "felt_ceiling", raise_blocked: can("raise") && nextRung ? "" : "disabled", next_rung: txt(nextRung),
       name_handle: g.online ? g.opponent_name : "", worth: txt(asked ? rung : view.stake),
       opponent_name: matchRow.opponent_name, opponent_handle: matchRow.opponent_handle, opponent: g.opponent,
-      dialogue_key: quick && shout.from === "them" ? shout.word : g.online ? "" : /^(tell_|call_|retort_)/.test(said) || told ? said : `idle_${g.opponent}`,
+      dialogue_key: quick && shout.from === "them" ? shout.word : g.online ? "" : /^(tell_|call_|retort_)/.test(said) || told || (view.phase === "envido" && side(call.seat) === "them") ? said : `idle_${g.opponent}`,
       dialogue_state: !g.online || quick && shout.from === "them" ? "live" : "gone",
       player_shout_state: quick && shout.seat === "you" ? "yes" : "no",
       over_key: finished ? winner === "us" ? "felt_match_yours" : "felt_match_theirs" : "",
@@ -389,29 +390,31 @@
       shout_t: txt(shoutT), shout_anim: txt(shoutT % 2 + 1),
       shout_done: shout?.state === "live" ? "no" : "yes",
       oculta: face.oculta ? "yes" : "no",
-      turn_seat: view.phase === "playing" ? at(view.turn) : "",
+      turn_seat: ownTurn ? "you" : view.phase === "playing" ? at(view.turn) : "",
       current: "yes",
     };
 
     const held = [];
-    for (const slot of view.available) {
-      held.push({
-        id: `${roundId}/you/${slot}`, round_id: roundId, seat: "you", ...(view.hand[slot] < 0 ? back : card(view.hand[slot])),
-        power: strengthOf(view.powers[slot]), manilha: view.powers[slot] >= 50 ? "yes" : "no", slot: txt(slot),
-        blocked: can("play") ? "" : "disabled", display_seat: "you", current: "yes",
-      });
-    }
-    // Everyone else's cards are backs, but for a partner's on your side's brink.
-    for (const {seat, count} of view.counts) {
-      if (seat === me) continue;
-      const partner = view.partners.find(p => p.seat === seat)?.hand ?? [];
-      const slots = [0, 1, 2].filter(s => !view.plays.some(p => p.seat === seat && p.slot === s)).slice(0, count);
-      for (const slot of slots) {
-        const shown = partner[slot];
+    if (!finished) {
+      for (const slot of view.available) {
         held.push({
-          id: `${roundId}/${at(seat)}/${slot}`, round_id: roundId, seat: at(seat), ...(shown === undefined || shown < 0 ? back : card(shown)),
-          power: "0", manilha: "no", slot: txt(slot), blocked: "disabled", display_seat: at(seat), current: "yes",
+          id: `${roundId}/you/${slot}`, round_id: roundId, seat: "you", ...(view.hand[slot] < 0 ? back : card(view.hand[slot])),
+          power: strengthOf(view.powers[slot]), manilha: view.powers[slot] >= 50 ? "yes" : "no", slot: txt(slot),
+          blocked: can("play") ? "" : "disabled", display_seat: "you", current: "yes",
         });
+      }
+      // Everyone else's cards are backs, but for a partner's on your side's brink.
+      for (const {seat, count} of view.counts) {
+        if (seat === me) continue;
+        const partner = view.partners.find(p => p.seat === seat)?.hand ?? [];
+        const slots = [0, 1, 2].filter(s => !view.plays.some(p => p.seat === seat && p.slot === s)).slice(0, count);
+        for (const slot of slots) {
+          const shown = partner[slot];
+          held.push({
+            id: `${roundId}/${at(seat)}/${slot}`, round_id: roundId, seat: at(seat), ...(shown === undefined || shown < 0 ? back : card(shown)),
+            power: "0", manilha: "no", slot: txt(slot), blocked: "disabled", display_seat: at(seat), current: "yes",
+          });
+        }
       }
     }
     // The hand's log: what was said and what was laid, in the order it happened.
@@ -671,9 +674,10 @@
         return {updates: rise(), then: {type: "dealt", seed: true, with: g.back}};
       }
       if (kind.startsWith("shout_")) return {updates: voice === undefined || voice.view.room !== g.room ? [] : speak("shout", {word: kind.slice("shout_".length)}, `${kind}${voiceCommands.length}`)};
-      if (pendingIn(g) || !g.view.actions.includes(kind)) return {updates: []};
-      if (kind === "play") return {updates: [...command(g, "play", {slot: Number(slot), covered: g.face.oculta}, `play${slot}`), ...draw({...g, face: {...g.face, oculta: false}}, true)]};
-      return {updates: command(g, kind, {})};
+      const onlineKind = kind === "resign" && g.view.actions.includes("stand") ? "stand" : kind;
+      if (pendingIn(g) || !g.view.actions.includes(onlineKind)) return {updates: []};
+      if (onlineKind === "play") return {updates: [...command(g, "play", {slot: Number(slot), covered: g.face.oculta}, `play${slot}`), ...draw({...g, face: {...g.face, oculta: false}}, true)]};
+      return {updates: command(g, onlineKind, {})};
     }
     const clicked = Number(txt(table?.wake ?? "").split("/")[2] ?? "0") + 1;
     const id = `${game.id}/${game.revision}/${String(clicked).padStart(8, "0")}/${kind}${slot}`;

@@ -40,7 +40,7 @@ import (
  // table without naming its room, which is its code.
  talk: {type: "string", maxLength: 36}
  folded: #Sides, answers: #Sides
- envido_chain: {type: "array", maxItems: 3, items: {type: "string", maxLength: 12, values: ["envido", "envido_real", "envido_falta"]}}
+ envido_chain: {type: "array", maxItems: 4, items: {type: "string", maxLength: 12, values: ["envido", "envido_real", "envido_falta"]}}
  envido_caller: #Side
  envido_done: {type: "string", maxLength: 8, values: ["", "accepted", "refused", "flor"]}
  envido_scores: {type: "array", maxItems: 3, items: {type: "object", fields: {side: #Side, count: {type: "integer", min: 0, max: 33}}}}

@@ -2228,7 +2228,7 @@
               },
               "envido_chain": {
                 "kind": "array",
-                "maxItems": 3,
+                "maxItems": 4,
                 "items": {
                   "kind": "string",
                   "enumValues": [
