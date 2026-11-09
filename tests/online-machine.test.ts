@@ -1,8 +1,6 @@
-import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1.0.11";
-import { type Answer, hybridFixture, initialMatch, matchFixture } from "./online-fixture.ts";
-import { compileHybrid, walk, instrument, executeHybrid, ses } from "./platform.ts";
-
-const terminal = { instrument, ses };
+import { assert, assertEquals } from "jsr:@std/assert@1.0.11";
+import { engine, mechaFixture, initialMatch, matchFixture, sha256 } from "./online-fixture.ts";
+import { executeMecha, walk } from "./platform.ts";
 
 Deno.test("online match deals privately and completes both variants through the chart", async () => {
   const {step} = await matchFixture();
@@ -28,9 +26,9 @@ Deno.test("online match deals privately and completes both variants through the 
 });
 
 Deno.test("a voice sits only where a match seated it, and counts its shouts", async () => {
-  const {spec, compiled} = await hybridFixture("voice");
+  const {spec, source} = await mechaFixture("voice");
   type Voice = {phase: string; room: string; talk: string; seat: string; name: string; word: string; n: number};
-  const step = async (state: Voice, kind: string, payload: unknown) => await executeHybrid(compiled.source, spec.fuel, {
+  const step = async (state: Voice, kind: string, payload: unknown) => await executeMecha(source, spec.fuel, {
     state, event: {kind, payload}, viewers: ["owner"], context: {actor: "owner", tier: "omnishell", now: 1000},
   }) as {kind: string; reason?: string; state: Voice; public: unknown};
   const opened: Voice = {phase: "quiet", room: "", talk: "", seat: "", name: "", word: "", n: 0};
@@ -152,8 +150,7 @@ Deno.test("three pairs answer independently and folding removes a team from the 
   state = (await step(state, "fold", "f")).state;
   assertEquals([state.phase, state.stake, state.folded], ["playing", 4, ["c"]]);
   assertEquals((await step(state, "play", "c", {slot: 0, covered: false})).reason, "not_active");
-  // Dourado tables are Minas's game: a pair runs from a call, never mid-play.
-  assertEquals((await step(state, "fold", "b")).reason, "fold_unavailable");
+  assertEquals((await step(state, "fold", "c")).reason, "not_active");
   state = (await step(state, "play", "a", {slot: 0, covered: false})).state;
   state = (await step(state, "raise", "b")).state;
   state = (await step(state, "fold", "a")).state;
@@ -241,30 +238,14 @@ Deno.test("an envido nobody answers in time is refused for the side that owed it
   assertEquals(timed.state.score_a, 1);
 });
 
-Deno.test("a timeout that asks the wake for its sender is refused, not run with a null seat", async () => {
-  // The bug above, as it was written: the timeout's contract reads no sender,
-  // so the read is refused at the step instead of logging a null seat.
-  const {spec, rules} = await matchFixture();
-  const buggy = rules.replace(
-    `return runEnvido(state, event, {...context, actor: active(state).find(s => side(state, s) !== state.envido_caller)});`,
-    `return runEnvido(state, event, context);`);
-  assert(buggy !== rules, "the fixed timeout is still the one this restores");
-  const compiled = await compileHybrid(spec, buggy, terminal);
-  let state = (await executeHybrid(compiled.source, spec.fuel, {state: initialMatch("argentino"), event: {kind: "start", payload: {seats: ["a", "b"]}},
-    viewers: ["a", "b"], context: {tier: "mecha", now: 1000, entropy: "0123456789abcdef".repeat(16)}}) as Answer).state;
-  state = (await executeHybrid(compiled.source, spec.fuel, {state, event: {kind: "envido", payload: {}},
-    viewers: ["a", "b"], context: {actor: "a", tier: "omnishell", now: 1000, entropy: "0123456789abcdef".repeat(16)}}) as Answer).state;
-  await assertRejects(() => executeHybrid(compiled.source, spec.fuel, {state, event: {kind: "timeout", payload: {}},
-    viewers: ["a", "b"], context: {tier: "mecha", now: state.deadline, entropy: "0123456789abcdef".repeat(16)}}), Error, "timeout reads actor outside its contract");
-});
-
-Deno.test("only the river's tables and the truc leave a hand unasked, and an early exit concedes the envido", async () => {
+Deno.test("every table allows leaving a hand unasked, and an early exit on an envido table concedes the envido", async () => {
   const {step} = await matchFixture();
   const started = await step(initialMatch("mineiro"), "start");
   const mineiro = started.state;
-  assertEquals((await step(mineiro, "fold", "a")).reason, "fold_unavailable");
   const yours = started.views.find((v) => v.viewer === "a");
-  assert(yours !== undefined && !yours.value.actions.includes("fold"), `mineiro offers ${yours?.value.actions}`);
+  assert(yours !== undefined && yours.value.actions.includes("fold"), `mineiro offers ${yours?.value.actions}`);
+  const foldedMineiro = (await step(mineiro, "fold", "a")).state;
+  assertEquals([foldedMineiro.phase, foldedMineiro.score_b], ["hand_over", 2]);
   const argentino = (await step(initialMatch("argentino"), "start")).state;
   const left = (await step(argentino, "fold", "a")).state;
   assertEquals([left.phase, left.score_b], ["hand_over", 2]);
@@ -293,20 +274,31 @@ Deno.test("Truco's machines hold under any input a step can be given", async () 
     ["truco_presence", {}, ["owner"], ["hidden", "visible"]],
   ];
   for (const [name, input, seats, reached] of machines) {
-    const {spec, compiled} = await hybridFixture(name.replace("truco_", ""));
+    const {spec, source} = await mechaFixture(name.replace("truco_", ""));
     const context = {tier: "mecha", now: 1000, entropy: "0123456789abcdef".repeat(16)};
-    const fresh = (await executeHybrid(compiled.source, spec.fuel, {initialize: true, payload: input, viewers: [], context}) as {state: {phase: string; seats?: string[]}}).state;
+    const fresh = (await executeMecha(source, spec.fuel, {initialize: true, payload: input, viewers: [], context}) as {state: {phase: string; seats?: string[]}}).state;
     // A match waits for its table, which only a full one leaves: it is walked
     // from the hand its players were dealt.
     const start = fresh.phase === "waiting"
-      ? (await executeHybrid(compiled.source, spec.fuel, {state: fresh, event: {kind: "start", payload: {seats: fresh.seats}}, viewers: seats, context}) as {state: unknown}).state
+      ? (await executeMecha(source, spec.fuel, {state: fresh, event: {kind: "start", payload: {seats: fresh.seats}}, viewers: seats, context}) as {state: unknown}).state
       : fresh;
     const visited = new Set<string>();
     for (const seed of [1, 2, 3]) {
-      const walked = await walk(spec, compiled.source, start, seats, seed, 300);
+      const walked = await walk(spec, source, start, seats, seed, 300);
       assertEquals(walked.crashes, [], `${name} from ${JSON.stringify(input)}, seed ${seed}`);
       for (const p of walked.visited) visited.add(p);
     }
     for (const phase of reached) assert(visited.has(phase), `${name} from ${JSON.stringify(input)} never stood in ${phase}: ${[...visited].sort().join(", ")}`);
+  }
+});
+
+Deno.test("the retained runtime upgrade contains the current engine for every mecha", async () => {
+  const upgrade = await Deno.readTextFile(new URL("../services/database/sql/019_mecha_engines.sql", import.meta.url));
+  assert(upgrade.includes("-- tier: container\n"));
+  assert(upgrade.endsWith("-- tier: any\n"));
+  for (const name of ["call", "challenge", "match", "presence", "voice"]) {
+    const installed = upgrade.match(new RegExp(`CREATE OR REPLACE FUNCTION hybrid_truco_${name}\\.engine\\(input jsonb\\) RETURNS jsonb LANGUAGE plv8 AS \\$mecha\\$[\\s\\S]*?\\$mecha\\$;`))?.[0];
+    assert(installed, `the upgrade installs no engine for ${name}`);
+    assertEquals(await sha256(installed), await engine(name), `the upgrade has a stale engine for ${name}`);
   }
 });

@@ -194,8 +194,14 @@ async function cross(p: Page, from: string, to: string, what: string, ms: number
   assert(new URL(p.url()).pathname === href, `clicking ${href} landed on ${p.url()}`);
 }
 
-const toRules = (p: Page) =>
-  cross(p, "arena", "regras", "the rules screen", 10000, async () => (await count(p, ".ladder li:visible")) >= 4);
+const toRules = async (p: Page) => {
+  const variant = await attr(p, ".matchbox", "data-variant");
+  const theme = await attr(p, ".matchbox", "data-theme");
+  await cross(p, "arena", "regras", "the rules screen", 10000, async () =>
+    (await count(p, ".ladder li:visible")) >= 4 &&
+    (await attr(p, ".rules-head", "data-variant")) === variant &&
+    (await attr(p, ".rules-head", "data-theme")) === theme);
+};
 
 const toTable = (p: Page) =>
   cross(p, "regras", "arena", "the table again", 15000, async () => (await count(p, ".seat-row.mine .card")) > 0);
@@ -1023,7 +1029,7 @@ const CASES: Case[] = [
       };
       await twin.click();
       await until(p, "both first cards down", 10000, async () => (await count(p, '.trick[data-t="1"] .played')) === 2);
-      // The hybrid commits the last card and verdict together; their layout
+      // The mecha commits the last card and verdict together; their layout
       // settles on the browser's clock while the table's clock stays held.
       await until(p, "the tie", 10000, async () => (await attr(p, ".matcards", "data-v1")) === "tie");
       const tied = await laid(1);

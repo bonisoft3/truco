@@ -4,6 +4,7 @@ services:
     build:
       additional_contexts:
         truco-database: service:truco-database
+        truco-migrate: service:truco-migrate
         truco-timer-check: service:truco-timer-check
       context: ..
       dockerfile: .bayt/Dockerfile.electric
@@ -19,9 +20,12 @@ services:
       truco-database:
         condition: service_healthy
         restart: true
+      truco-migrate:
+        condition: service_completed_successfully
       truco-timer-check:
         condition: service_completed_successfully
     environment:
+      PORT: "3000"
       DATABASE_URL: >-
         postgresql://electric:${ELECTRIC_PASSWORD:-dev-electric-password}@database:5432/${POSTGRES_DB:-truco}?sslmode=disable
       ELECTRIC_SECRET: ${ELECTRIC_SECRET:-dev-electric-secret}
@@ -47,6 +51,7 @@ services:
     build:
       additional_contexts:
         truco-database_bayt: service:truco-database_bayt
+        truco-migrate_bayt: service:truco-migrate_bayt
         truco-timer-check_bayt: service:truco-timer-check_bayt
       context: ..
       dockerfile: .bayt/Dockerfile.electric

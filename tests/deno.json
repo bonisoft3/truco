@@ -1,8 +1,0 @@
-{
-  "imports": {
-    "http://app.test/": "../"
-  },
-  "compilerOptions": {
-    "lib": ["deno.window", "dom", "dom.iterable"]
-  }
-}

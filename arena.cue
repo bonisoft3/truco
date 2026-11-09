@@ -11,7 +11,7 @@ import (
 	omni "github.com/bonisoft3/omnishell/components"
 )
 
-// A rules pick resets the score before the hybrid fold deals its first view.
+// A rules pick resets the score before the mecha fold deals its first view.
 _reset: {
 	us_score:     "0"
 	them_score:   "0"
@@ -214,7 +214,7 @@ _pickerCountry: #"""
 	    }
 	    [data-picker="country"] .picker-list a[aria-current="page"]::after { content: "✓"; margin-inline-start: auto; }
 	  </style>
-	  <button type="button" id="picker-open-country" commandfor="picker-pop-country" command="toggle-popover" aria-haspopup="menu">
+	  <button type="button" id="picker-open-country" commandfor="picker-pop-country" command="toggle-popover" aria-controls="picker-pop-country">
 	    <span class="sr" data-text="{msg.picker_country}">País</span>
 	    <span class="pick-label" aria-hidden="true"><i data-t="br">🇧🇷 <span data-text="{msg.country_br}">Brasil</span></i><i data-t="ar">🇦🇷 <span data-text="{msg.country_ar}">Argentina</span></i><i data-t="uy">🇺🇾 <span data-text="{msg.country_uy}">Uruguay</span></i><i data-t="py">🇵🇾 <span data-text="{msg.country_py}">Paraguay</span></i><i data-t="es">🇪🇸 <span data-text="{msg.country_es}">Espanya</span></i></span>
 	  </button>
@@ -351,6 +351,8 @@ _arenaMarkup: #"""
             <span class="tentos" aria-hidden="true" data-n="{others_score}"><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento"></i><i class="tento" data-last></i></span>
           </div>
         </div>
+
+        <button type="button" class="app-resign" id="btn-resign" data-on-click="arena"><span class="app-resign-icon" aria-hidden="true">↪</span><span data-text="{msg.resign}">Abandonar</span></button>
 
       </div>
 
@@ -591,7 +593,7 @@ _arenaMarkup: #"""
           <button type="button" class="act" id="btn-brink-play" data-on-click="arena" data-text="{msg.brink_play}">Jogar a mão</button>
           <button type="button" class="act risk" id="btn-brink-run" data-on-click="arena" data-text="{msg.brink_run}">Correr</button>
           <button type="button" class="act ghost" id="btn-next" data-on-click="arena" data-text="{msg.next_hand}">Próxima mão</button>
-          <button type="button" class="act ghost risk" id="btn-resign" data-on-click="arena" data-text="{msg.resign}">Abandonar</button>
+          <button type="button" class="act ghost risk" id="btn-fold" data-on-click="arena" data-text="{msg.brink_run}">Correr</button>
           <!-- In with the other things the table can be asked for, because a
                control has to sit inside a region to be one. -->
           <button type="button" class="act" id="btn-again" data-on-click="arena" data-text="{msg.play_again}">Outra partida</button>

@@ -1,10 +1,10 @@
 import { assertEquals } from "jsr:@std/assert@1.0.11";
-import { executeHybrid } from "./platform.ts";
-import { hybridFixture, uuid } from "./online-fixture.ts";
+import { executeMecha } from "./platform.ts";
+import { mechaFixture, uuid } from "./online-fixture.ts";
 
 async function fixture<T>(name: string) {
-  const {spec, compiled} = await hybridFixture(name);
-  return async (state: T, kind: string, payload = {}, now = 1000, actor = "owner") => await executeHybrid(compiled.source, spec.fuel, {
+  const {spec, source} = await mechaFixture(name);
+  return async (state: T, kind: string, payload = {}, now = 1000, actor = "owner") => await executeMecha(source, spec.fuel, {
     state, event: {kind, payload}, context: {now, actor, tier: ["touch", "leave", "expire"].includes(kind) ? "mecha" : "omnishell"}, viewers: [actor],
   }) as {kind: string; reason: string; state: T; public?: unknown};
 }

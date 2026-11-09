@@ -6,8 +6,7 @@
 // passes at once, a draw comes from a list), and re-run the seated fold until
 // it writes nothing. The mounted cases run the real screen on the harness's
 // held clock.
-import { fileURLToPath } from "node:url";
-import { assert, mountApp, type Mounted, only, evaluateRole, parseMessage, readCheckInputs } from "./platform.ts";
+import { assert, mountApp, type Mounted, only, evaluateRole, parseMessage } from "./platform.ts";
 
 const APP = new URL("../", import.meta.url);
 
@@ -15,7 +14,10 @@ type Row = Record<string, string>;
 type Update = { op: string; entity: string; id: string; row?: Row };
 type Then = { type: string; delay?: number; seed?: boolean; with?: unknown };
 type Fold = (state: { rows: Record<string, Row[]> }, event: Record<string, unknown>) => { updates: Update[]; then?: Then };
-const arena = await evaluateRole(await Deno.readTextFile(new URL("shell/handlers/arena.js", APP)), "handler") as Fold;
+const manifest = JSON.parse(await Deno.readTextFile(new URL("shell/shell.json", APP)));
+const endowments: string[] = manifest.endowments["shell/handlers/arena.js"];
+assert(endowments.includes("Statechart"));
+const arena = await evaluateRole(await Deno.readTextFile(new URL("shell/handlers/arena.js", APP)), "handler", endowments) as Fold;
 
 /** A terminal for one handler: rows, draws, and the seat. */
 const terminal = (draws: number[], match: Row[] = []) => {
@@ -149,16 +151,20 @@ Deno.test("a click made twice is one intent, and one made on a stale table is dr
   assert(t.table().status === "playing" && t.rows.intent.length === 0, "a stale resign was applied or kept");
 });
 
-Deno.test("resigning hands the house the match, and another game starts afresh from a new draw", () => {
+Deno.test("folding a hand concedes only that hand, while resigning hands the house the match", () => {
   const t = terminal([4242, 777]);
   t.settle();
   const first = t.hand().id;
+  t.click("btn-fold");
+  assert(t.table().status === "playing" && t.table().them_score === "2" && t.hand().hand_no === "2", `folding hand 1 left status=${t.table().status}, them_score=${t.table().them_score}, hand_no=${t.hand().hand_no}`);
+  const second = t.hand().id;
+  assert(second !== first, "folding hand 1 did not deal hand 2");
   t.click("btn-resign");
   assert(t.table().status === "over" && t.table().winner === "them", `the match went to "${t.table().winner}"`);
   t.click("btn-again");
   assert(t.table().seed === "777" && t.hand().id.startsWith("g777/"), `the next game is ${t.hand().id}`);
   assert(t.table().us_score === "0" && t.table().them_score === "0" && t.table().us_games === "0" && t.table().them_games === "0" && t.table().status === "playing", "the new game kept the old score");
-  assert(t.rows.round.find((r) => r.id === first)?.current === "no", "the finished hand is still on the felt");
+  assert(t.rows.round.find((r) => r.id === second)?.current === "no", "the finished hand is still on the felt");
 });
 
 Deno.test("a rules pick deals a new game under the rule picked", () => {
@@ -281,7 +287,7 @@ Deno.test("every ladder the rules climb is drawn on the rules screen and voiced 
 // binds the empty handle: the line names nobody.
 Deno.test("every select over the opponent names each cast member as that catalogue's cast names them", async () => {
   type Field = { name: string; cel?: string };
-  const { entities } = await readCheckInputs<{ fields: Field[] }>(fileURLToPath(APP).replace(/[/\\]$/, ""));
+  const { entities } = JSON.parse(await Deno.readTextFile(new URL(".pronto/check-inputs.json", APP))) as { entities: Record<string, { fields: Field[] }> };
   const cel = entities.Match.fields.find((f) => f.name === "opponent")?.cel ?? "";
   const opponents = [...(cel.match(/^this in \[(.*)\]$/)?.[1] ?? "").matchAll(/'(\w+)'/g)].map(([, v]) => v);
   // An online opponent is named by the player's own handle, through `other`.

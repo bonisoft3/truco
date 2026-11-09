@@ -4,6 +4,14 @@ say:
     rulemap:
       builtin:
         stop: false
+      online_integration:
+        cmds:
+        - do: >-
+            use tools.nu [run-mise]; let omnishell = (run-mise where
+            github:bonisoft3/omnishell | str trim); deno test --config ($omnishell | path join test deno.json)
+            --lock ($omnishell | path join test deno.lock) --frozen --unstable-raw-imports
+            --allow-env --allow-read --allow-run=docker --allow-net=127.0.0.1
+            tests/online.integration.test.ts
       replay:
         cmds:
         - do: use integrate.nu; integrate --bake --no-up --with-buildx --target ci-replay
@@ -22,8 +30,12 @@ say:
             if not ('.certs/localhost.pem' | path exists) { mkdir .certs; mise exec --
             mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost
             127.0.0.1 ::1 }
-        - do: launch
-          use: ./launch.nu
+        - do: >-
+            use tools.nu [run-mise]; let pronto = (run-mise where github:bonisoft3/pronto |
+            str trim); run-mise exec -- deno run --config ($pronto | path join deno.json)
+            --allow-read --allow-write=. --allow-run --allow-env ($pronto | path join
+            launch-watch.ts)
+          use: ./tools.nu
   lint:
     rulemap:
       cue:
@@ -48,12 +60,19 @@ say:
             use tools.nu [run-mise]; let pronto = (run-mise where github:bonisoft3/pronto |
             str trim); run-mise exec -- deno run --config ($pronto | path join deno.json)
             --allow-read --allow-run --allow-env ($pronto | path join identity.ts) check .
-      hybrids:
+      outcomes:
         cmds:
         - do: >-
             use tools.nu [run-mise]; let pronto = (run-mise where github:bonisoft3/pronto |
             str trim); run-mise exec -- deno run --config ($pronto | path join deno.json)
-            --allow-read ($pronto | path join check-hybrids.ts) .
+            --allow-read ($pronto | path join check-verification.ts) . --omnishell (run-mise
+            where github:bonisoft3/omnishell | str trim)
+      mecha:
+        cmds:
+        - do: >-
+            use tools.nu [run-mise]; let pronto = (run-mise where github:bonisoft3/pronto |
+            str trim); run-mise exec -- deno run --config ($pronto | path join deno.json)
+            --allow-read ($pronto | path join check-mecha.ts) .
       caddy:
         cmds:
         - do: "with-env {ELECTRIC_SECRET: lint, ORIGIN: lint} { mise exec -- caddy adapt --config docker/Caddyfile --adapter caddyfile out> (if $nu.os-info.name == \"windows\" { \"NUL\" } else { \"/dev/null\" }) }"
@@ -74,9 +93,10 @@ say:
         - do: >-
             use tools.nu [run-mise]; let pronto = (run-mise where github:bonisoft3/pronto |
             str trim); let files = do { cd $pronto; [ ...(glob --no-dir --exclude [*_test.ts
-            *.test.ts hybrid-local.ts hybrid-battery.ts refresh-portable-types.ts] '*.ts')
-            ...(glob --no-dir 'scales/*.ts') ] }; run-mise exec -- deno check --config
-            ($pronto | path join deno.json) ...$files
+            *.test.ts mecha-fixtures.ts refresh-portable-types.ts mecha-xstate-entry.ts
+            mecha-xstate-bundle.ts cortex-conformance.ts access-test-fixture.ts
+            mecha-snapshot-fixture.ts bundle/mecha-edge-fixture.ts] '*.ts') ...(glob --no-dir 'scales/*.ts') ]
+            }; run-mise exec -- deno check --config ($pronto | path join deno.json) ...$files
       proto:
         cmds:
         - do: >-
@@ -138,7 +158,7 @@ say:
             use tools.nu [run-mise]; let pronto = (run-mise where github:bonisoft3/pronto |
             str trim); run-mise exec -- nu ($pronto | path join k8s release.nu)
   self:
-    version: v0.45.3
+    version: v0.48.0
   doctor:
     do: >-
       use tools.nu [run-mise]; run-mise exec -- cue version; run-mise exec -- deno
@@ -193,23 +213,34 @@ say:
       arena:
         cmds:
         - do: >-
-            deno test --config tests/deno.json --lock tests/deno.lock --frozen
-            --unstable-raw-imports --no-check --allow-env --allow-read tests/arena.test.ts
+            use tools.nu [run-mise]; let omnishell = (run-mise where
+            github:bonisoft3/omnishell | str trim); deno test --config ($omnishell | path join test deno.json)
+            --lock ($omnishell | path join test deno.lock) --frozen --unstable-raw-imports
+            --no-check --allow-env --allow-read tests/arena.test.ts
       fuel_mutations:
         cmds:
         - do: >-
-            deno test --config tests/deno.json --lock tests/deno.lock --frozen
-            --unstable-raw-imports --no-check --allow-env --allow-read
-            tests/fuel_mutations_storybook.test.ts
+            use tools.nu [run-mise]; let omnishell = (run-mise where
+            github:bonisoft3/omnishell | str trim); deno test --config ($omnishell | path join test deno.json)
+            --lock ($omnishell | path join test deno.lock) --frozen --unstable-raw-imports
+            --no-check --allow-env --allow-read tests/fuel_mutations_storybook.test.ts
       online_machine:
         cmds:
         - do: >-
-            deno test --config tests/deno.json --lock tests/deno.lock --frozen
-            --unstable-raw-imports --allow-env --allow-read tests/online-machine.test.ts
-            tests/lobby-machine.test.ts
+            use tools.nu [run-mise]; let omnishell = (run-mise where
+            github:bonisoft3/omnishell | str trim); deno test --config ($omnishell | path join test deno.json)
+            --lock ($omnishell | path join test deno.lock) --frozen --unstable-raw-imports
+            --allow-env --allow-read tests/online-machine.test.ts tests/lobby-machine.test.ts
         - do: >-
-            deno test --config tests/deno.json --lock tests/deno.lock --frozen
-            --unstable-raw-imports --no-check --allow-env --allow-read tests/online-screens.test.ts
+            use tools.nu [run-mise]; let mecha = (run-mise where github:bonisoft3/mecha |
+            str trim); deno test --no-config --import-map ($mecha | path join packages
+            mecha-browser cluster.deno.json) --lock ($mecha | path join packages mecha-browser
+            deno.lock) --frozen --allow-read --allow-env tests/retained-edge.test.ts
+        - do: >-
+            use tools.nu [run-mise]; let omnishell = (run-mise where
+            github:bonisoft3/omnishell | str trim); deno test --config ($omnishell | path join test deno.json)
+            --lock ($omnishell | path join test deno.lock) --frozen --unstable-raw-imports
+            --no-check --allow-env --allow-read tests/online-screens.test.ts
       machines:
         cmds:
         - do: use tools.nu [run-mise]; run-mise exec -- omnishell check machines .
@@ -227,13 +258,14 @@ say:
         - do: >-
             use tools.nu [run-mise]; let pronto = (run-mise where github:bonisoft3/pronto |
             str trim); run-mise exec -- deno run -A --config ($pronto | path join deno.json)
-            ($pronto | path join verify verify.ts) . --platform cloudflare --default-domain
-            truco.bonisoft3.com ...(if ($env.SAY_VERIFY_ARGS_TARGET? | is-empty) { [] } else
-            { ['--target', $env.SAY_VERIFY_ARGS_TARGET] }) ...(if ($env.SAY_VERIFY_ARGS_TIER?
-            | is-empty) { [] } else { ['--tier', $env.SAY_VERIFY_ARGS_TIER] }) ...(if
-            ($env.SAY_VERIFY_ARGS_HEADLESS? | is-empty) { [] } else { ['--headless',
-            $env.SAY_VERIFY_ARGS_HEADLESS] }) ...(if ($env.SAY_VERIFY_ARGS_SESSION? | is-empty) { [] } else
-            { ['--session', $env.SAY_VERIFY_ARGS_SESSION] })
+            ($pronto | path join verify verify.ts) . --platform cloudflare --mecha (run-mise
+            where github:bonisoft3/mecha | str trim) --default-domain truco.bonisoft3.com
+            ...(if ($env.SAY_VERIFY_ARGS_TARGET? | is-empty) { [] } else { ['--target',
+            $env.SAY_VERIFY_ARGS_TARGET] }) ...(if ($env.SAY_VERIFY_ARGS_TIER? | is-empty) { [] }
+            else { ['--tier', $env.SAY_VERIFY_ARGS_TIER] }) ...(if
+            ($env.SAY_VERIFY_ARGS_HEADLESS? | is-empty) { [] } else { ['--headless', $env.SAY_VERIFY_ARGS_HEADLESS] })
+            ...(if ($env.SAY_VERIFY_ARGS_SESSION? | is-empty) { [] } else { ['--session',
+            $env.SAY_VERIFY_ARGS_SESSION] })
       k8s:
         platform: k8s
         cmds:

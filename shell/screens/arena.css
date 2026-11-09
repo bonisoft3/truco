@@ -1784,13 +1784,14 @@ body:has([data-screen="arena"]) > nav a {
   & .play[data-phase="waiting"] .actions,
   & .play[data-phase="resolved"] .actions { display: flex; }
   & .play[data-phase="raised"] .actions { display: none; }
-  & .play[data-phase="waiting"] .actions .act:not(#btn-resign) { opacity: 0.5; pointer-events: none; }
-  & .play[data-phase="waiting"] .actions #btn-resign { opacity: 0.85; pointer-events: auto; }
+  & .play[data-phase="waiting"] .actions .act:not(#btn-fold) { opacity: 0.5; pointer-events: none; }
+  & .play[data-phase="waiting"] .actions #btn-fold { opacity: 0.85; pointer-events: auto; }
+  & .play[data-ran="us"] .actions #btn-fold { opacity: 0.4; pointer-events: none; }
   & .play[data-phase="your-turn"] #btn-next,
   & .play[data-phase="waiting"] #btn-next,
   & .play[data-phase="raised"] #btn-next { display: none; }
   & .play[data-phase="resolved"] #btn-truco,
-  & .play[data-phase="resolved"] #btn-resign,
+  & .play[data-phase="resolved"] #btn-fold,
   & .play[data-phase="raised"] #btn-truco { display: none; }
   & .play[data-phase="raised"] .answers { display: flex; }
   /* Animations, not declarations: the deal's fill holds the card where it
@@ -1922,8 +1923,12 @@ body:has([data-screen="arena"]) > nav a {
      asked for — a control has to sit inside a region to be one — so it is
      hidden until there is a partida to ask after. */
   & #btn-again, & #btn-start, & #link-rules { display: none; }
-  & .play[data-phase="over"] #btn-resign,
-  & .play[data-phase="idle"] #btn-resign { display: none; }
+  & .play[data-phase="over"] #btn-fold,
+  & .play[data-phase="idle"] #btn-fold { display: none; }
+  &:has(.play[data-phase="over"]) #btn-resign,
+  &:has(.matchbox[data-status="over"]) #btn-resign,
+  &:not(:has(.matchbox[data-status="playing"])):has(.play[data-phase="idle"]) #btn-resign { display: none; }
+  &:has(.matchbox[data-hand="0"]) #btn-fold { display: none; }
   & .play[data-phase="over"] .actions { display: flex; }
   & .play[data-phase="over"] #btn-truco,
   & .play[data-phase="over"] #btn-next { display: none; }
@@ -1956,10 +1961,11 @@ body:has([data-screen="arena"]) > nav a {
   &:has(.matchbox:is([data-status="playing"], [data-status="over"])) .play[data-phase="idle"] .matcards { display: flex; }
   &:has(.matchbox[data-status="playing"]) .play[data-phase="idle"] .nomatch { display: none; }
   &:has(.matchbox[data-status="playing"]) .play[data-phase="idle"] #btn-truco { display: inline-block; }
-  &:has(.matchbox[data-status="playing"]) .play[data-phase="idle"] #btn-resign { display: inline-block; }
+  &:has(.matchbox[data-status="playing"]) .play[data-phase="idle"] #btn-fold { display: inline-flex; }
   &:has(.matchbox[data-status="playing"]) .play[data-phase="idle"] #btn-start { display: none; }
   &:has(.matchbox[data-status="playing"]):has(.hand:not([data-result=""])) .play[data-phase="idle"] #btn-next { display: inline-block; }
-  &:has(.matchbox[data-status="playing"]):has(.hand:not([data-result=""])) .play[data-phase="idle"] #btn-truco { display: none; }
+  &:has(.matchbox[data-status="playing"]):has(.hand:not([data-result=""])) .play[data-phase="idle"] #btn-truco,
+  &:has(.matchbox[data-status="playing"]):has(.hand:not([data-result=""])) .play[data-phase="idle"] #btn-fold { display: none; }
   &:has(.matchbox[data-status="playing"]):has(.hand:not([data-result=""])) .play[data-phase="idle"] .matcards { filter: saturate(0.85); }
   &:has(.matchbox[data-status="playing"]):has(.hand:not([data-asked=""])) .play[data-phase="idle"] #btn-truco { display: none; }
   &:has(.matchbox[data-status="playing"]):has(.hand[data-brink]:not([data-brink=""])) .play[data-phase="idle"] #btn-truco,
@@ -1977,10 +1983,10 @@ body:has([data-screen="arena"]) > nav a {
     &:has(.matchbox:not([data-my-seat="eles1"], [data-my-seat="eles2"])):has(.hand:is([data-asked^="eles"])) .play[data-phase="idle"] #btn-next,
     &:has(.matchbox:is([data-my-seat="eles1"], [data-my-seat="eles2"])):has(.hand:is([data-asked="you"], [data-asked="parca"])) .play[data-phase="idle"] #btn-next { display: none; }
   }
-  &:has(.matchbox:not([data-my-seat="eles1"], [data-my-seat="eles2"], [data-my-seat="parca"])):has(.hand:not([data-turn-seat="you"]):not([data-result=""]):not([data-asked^="eles"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules),
-  &:has(.matchbox[data-my-seat="parca"]):has(.hand:not([data-turn-seat="parca"]):not([data-result=""]):not([data-asked^="eles"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules),
-  &:has(.matchbox[data-my-seat="eles1"]):has(.hand:not([data-turn-seat="eles1"]):not([data-result=""]):not([data-asked="you"]):not([data-asked="parca"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules),
-  &:has(.matchbox[data-my-seat="eles2"]):has(.hand:not([data-turn-seat="eles2"]):not([data-result=""]):not([data-asked="you"]):not([data-asked="parca"])) .play[data-phase="idle"] .actions .act:not(#btn-resign):not(#btn-again):not(#btn-start):not(#link-rules) {
+  &:has(.matchbox:not([data-my-seat="eles1"], [data-my-seat="eles2"], [data-my-seat="parca"])):has(.hand:not([data-turn-seat="you"]):not([data-result=""]):not([data-asked^="eles"])) .play[data-phase="idle"] .actions .act:not(#btn-fold):not(#btn-again):not(#btn-start):not(#link-rules),
+  &:has(.matchbox[data-my-seat="parca"]):has(.hand:not([data-turn-seat="parca"]):not([data-result=""]):not([data-asked^="eles"])) .play[data-phase="idle"] .actions .act:not(#btn-fold):not(#btn-again):not(#btn-start):not(#link-rules),
+  &:has(.matchbox[data-my-seat="eles1"]):has(.hand:not([data-turn-seat="eles1"]):not([data-result=""]):not([data-asked="you"]):not([data-asked="parca"])) .play[data-phase="idle"] .actions .act:not(#btn-fold):not(#btn-again):not(#btn-start):not(#link-rules),
+  &:has(.matchbox[data-my-seat="eles2"]):has(.hand:not([data-turn-seat="eles2"]):not([data-result=""]):not([data-asked="you"]):not([data-asked="parca"])) .play[data-phase="idle"] .actions .act:not(#btn-fold):not(#btn-again):not(#btn-start):not(#link-rules) {
     opacity: 0.5;
     pointer-events: none;
   }
@@ -2058,8 +2064,51 @@ body:has([data-screen="arena"]) > nav a {
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #link-rules { display: inline-block; opacity: 1 !important; pointer-events: auto !important; }
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-truco,
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-next,
-  &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-resign,
+  &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-fold,
   &:has(.matchbox[data-status="over"]) .play[data-phase="idle"] #btn-start { display: none; }
+
+  & .app-resign {
+    grid-area: seat;
+    align-self: start;
+    justify-self: end;
+    margin-block-start: 25px;
+    margin-inline-end: clamp(6px, 1.5vw, 10px);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-inline-size: 24px;
+    min-block-size: 24px;
+    block-size: 24px;
+    padding: 0 8px;
+    background: color-mix(in oklch, var(--pad-ink) 6%, transparent);
+    border: 1px solid color-mix(in oklch, var(--pad-ink) 22%, transparent);
+    border-radius: var(--r-full);
+    color: var(--pad-dim);
+    font: 600 0.625rem/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--motion-ease),
+                color var(--motion-fast) var(--motion-ease),
+                border-color var(--motion-fast) var(--motion-ease);
+  }
+  & .app-resign-icon {
+    font-size: 0.9em;
+    line-height: 1;
+    opacity: 0.85;
+  }
+  & .app-resign:hover {
+    background: color-mix(in oklch, var(--pad-ink) 12%, transparent);
+    color: var(--pad-ink);
+    border-color: color-mix(in oklch, var(--pad-ink) 40%, transparent);
+  }
+  & .app-resign:focus-visible {
+    outline: 2px solid var(--rim-hi);
+    outline-offset: 2px;
+  }
 
   /* The screen's own machine states. The terminal drives loading and empty.
      validation-error is said by the refused form's own .invalid paragraph,
@@ -2087,13 +2136,36 @@ body:has([data-screen="arena"]) > nav a {
     & .mat {
       block-size: 100%;
       grid-template-columns: clamp(10rem, 18vw, 13rem) minmax(0, 1fr) clamp(11rem, 20vw, 15rem);
-      grid-template-rows: auto auto auto minmax(0, 1fr);
+      grid-template-rows: auto auto auto minmax(0, 1fr) auto;
       grid-template-areas:
         "seat    seat  seat"
         "scores  play  line"
         "scores  play  spine"
-        "scores  play  log";
+        "scores  play  log"
+        "resign  play  log";
       column-gap: clamp(10px, 1.6vw, 20px);
+    }
+    & .app-resign {
+      grid-area: resign;
+      align-self: end;
+      justify-self: stretch;
+      margin: 0;
+      inline-size: 100%;
+      min-block-size: 36px;
+      block-size: 36px;
+      padding: 0 12px;
+      background: linear-gradient(180deg, #241812 0%, #160f0b 100%);
+      border: 1px solid #4a3424;
+      border-radius: var(--r-sm);
+      color: #b8a48e;
+      font: 700 0.6875rem/1 ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: 0.08em;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+    }
+    & .app-resign:hover {
+      background: #35231a;
+      color: #f5ebe0;
+      border-color: #6b4d36;
     }
 
     /* Stacked: nós above, the stake between, eles below. */
@@ -2177,6 +2249,14 @@ body:has([data-screen="arena"]) > nav a {
       gap: 4px;
       padding: clamp(2px, 0.5dvh, 4px) clamp(3px, 1vw, 6px);
     }
+    & .seatbar .tavern-header-title {
+      flex-basis: 100%;
+      block-size: 18px;
+    }
+    & .seatbar .who {
+      min-block-size: 26px;
+      align-content: center;
+    }
     & .seatbar .avatar {
       inline-size: 22px;
       block-size: 22px;
@@ -2190,6 +2270,8 @@ body:has([data-screen="arena"]) > nav a {
     & .online-label-full { display: none; }
     & .online-label-short { display: inline; }
     & .seatbar-links {
+      flex-basis: 100%;
+      margin-inline-start: 0;
       gap: 4px;
     }
     & .rules-link {
@@ -2519,7 +2601,7 @@ body:has([data-screen="arena"]) > nav a {
   filter: brightness(0.95);
 }
 
-.screen #btn-resign {
+.screen #btn-fold {
   inline-size: clamp(96px, 24vw, 116px);
   min-inline-size: clamp(96px, 24vw, 116px);
   max-inline-size: clamp(96px, 24vw, 116px);
@@ -2544,13 +2626,13 @@ body:has([data-screen="arena"]) > nav a {
   text-overflow: ellipsis;
   transition: all var(--motion-fast) var(--motion-ease);
 }
-.screen #btn-resign:hover {
+.screen #btn-fold:hover {
   background: #35231a;
   color: #e2d3c1;
   border-color: #6b4d36;
   translate: 0 -2px;
 }
-.screen #btn-resign:active {
+.screen #btn-fold:active {
   translate: 0 1px;
 }
 .screen .suspended {
@@ -2589,6 +2671,7 @@ body:has([data-screen="arena"]) > nav a {
 
 /* When answering envido, truco is suspended (el envido va primero) */
 .screen:has(.hand[data-calls~="answer"]) #btn-truco,
+.screen:has(.hand[data-calls~="answer"]) #btn-fold,
 .screen:has(.hand[data-calls~="answer"]) #btn-envido { display: none !important; }
 
 /* The rail names the wager it is asking you about, so it speaks only when it
@@ -2652,6 +2735,7 @@ body:has([data-screen="arena"]) > nav a {
 .screen #btn-brink-run { display: none; }
 .screen:has(.hand[data-calls~="brink"]) #btn-brink-play,
 .screen:has(.hand[data-calls~="brink"]) #btn-brink-run { display: revert; }
+.screen:has(.hand[data-calls~="brink"]) #btn-fold,
 .screen:has(.hand[data-brink]:not([data-brink=""])) #btn-truco,
 .screen:has(.hand[data-brink]:not([data-brink=""])) #btn-raise { display: none !important; }
 
@@ -2692,14 +2776,44 @@ body:has([data-screen="arena"]) > nav a {
     grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
     grid-template-areas: "seat" "scores" "line" "spine" "play" "log";
   }
+  & .seatbar .tavern-header-title {
+    flex-basis: 100%;
+    block-size: 18px;
+  }
+  & .seatbar .who {
+    min-block-size: 26px;
+    align-content: center;
+  }
+  & .seatbar-links {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+  }
+  & .app-resign {
+    grid-area: seat;
+    align-self: start;
+    justify-self: end;
+    inline-size: auto;
+    min-block-size: 24px;
+    block-size: 24px;
+    margin-block-start: 25px;
+    margin-inline-end: 8px;
+    padding: 0 8px;
+    background: color-mix(in oklch, var(--pad-ink) 6%, transparent);
+    border: 1px solid color-mix(in oklch, var(--pad-ink) 22%, transparent);
+    border-radius: var(--r-full);
+    color: var(--pad-dim);
+    box-shadow: none;
+    font: 600 0.625rem/1 ui-sans-serif, system-ui, sans-serif;
+  }
+  &:is([data-state="match-over"], [data-state="empty"]) #btn-resign { display: none; }
   & .play :is(.actions, .answers, .over, .nomatch) { display: none; }
   &:is([data-state="populated"], [data-state="populated-dark"], [data-state="picking"], [data-state="resolved"], [data-state="match-over"]) .play .actions { display: flex; }
   & .play .actions :is(#btn-start, #btn-next, #btn-again) { display: none; }
   &:is([data-state="raised"], [data-state="raised-dark"]) .play .answers { display: flex; }
   &[data-state="resolved"] .play #btn-next,
   &[data-state="match-over"] .play #btn-again { display: inline-flex; }
-  &[data-state="resolved"] .play :is(#btn-truco, #btn-resign),
-  &[data-state="match-over"] .play :is(#btn-truco, #btn-resign) { display: none; }
+  &[data-state="resolved"] .play :is(#btn-truco, #btn-fold),
+  &[data-state="match-over"] .play :is(#btn-truco, #btn-fold) { display: none; }
   &[data-state="match-over"] .play .over,
   &[data-state="empty"] .play .nomatch { display: block; }
   &[data-state="picking"] [data-picker="theme"] { position: relative; }

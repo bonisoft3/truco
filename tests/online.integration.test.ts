@@ -1,14 +1,12 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1.0.11";
-// Pronto's own fixtures, which run it from the monorepo's root.
-import { DATABASE, ROOT, run, uuid } from "../../../plugins/pronto/testdata/hybrid-fixtures.ts";
-import { type Catalog, CATALOG_SQL, unrecorded } from "../../../plugins/pronto/sql-recorded.ts";
-import { matchFixture, type View } from "./online-fixture.ts";
+import { DATABASE, run, uuid } from "./mecha-database.ts";
+import { engine, matchFixture, sha256, type View } from "./online-fixture.ts";
 
 // Truco's machines through their surface, as the browser reaches them: every
 // request a row a reader inserts under the generated policies, every answer a
 // row the machine writes. The ticker is played by inserting the tick it would.
 Deno.test({name: "Truco rooms, presence and challenges complete through their surface rows in PostgreSQL", sanitizeOps: false, sanitizeResources: false, fn: async t => {
-  const {compiled, spec} = await matchFixture();
+  const {spec} = await matchFixture();
   const container = `truco-online-${crypto.randomUUID().slice(0, 8)}`;
   const started = await run("docker", ["run", "-d", "--rm", "--name", container, "-p", "127.0.0.1::3000", "-e", "POSTGRES_PASSWORD=proof", DATABASE]);
   if (!started.ok) throw new Error(started.err);
@@ -76,14 +74,26 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       if (i >= 60) throw new Error("PostgreSQL did not start");
       await new Promise(resolve => setTimeout(resolve, 250));
     }
-    const migrations = new URL("apps/truco/services/database/migrations/", ROOT);
-    const generated = await Deno.readTextFile(new URL("016_mecha_actors.sql", migrations));
-    assertStringIncludes(generated, compiled.sql.split("CREATE OR REPLACE FUNCTION hybrid_truco_match.settle")[0]);
+    const migrations = new URL("../services/database/migrations/", import.meta.url);
+    const upgrade = await Deno.readTextFile(new URL("../services/database/sql/018_xstate_engines.sql", import.meta.url));
+    const installed = upgrade.match(/CREATE OR REPLACE FUNCTION hybrid_truco_match\.engine\(input jsonb\) RETURNS jsonb LANGUAGE plv8 AS \$mecha\$[\s\S]*?\$mecha\$;/)?.[0];
+    assert(installed);
+    assertEquals(await sha256(installed), await engine("match"));
     const files: string[] = [];
     for await (const entry of Deno.readDir(migrations)) if (entry.name.endsWith(".sql")) files.push(entry.name);
     for (const name of files.sort()) await sql(await Deno.readTextFile(new URL(name, migrations)));
-    // Truco's machines read time and randomness only through their clocks and draws.
-    assertEquals(await unrecorded(generated, JSON.parse(await sql(CATALOG_SQL)) as Catalog), []);
+    const beforeUpgrade = await create(96, 960);
+    assertEquals(beforeUpgrade.kind, "accepted");
+    const snapshot = () => sql(`SELECT jsonb_build_object(
+      'instance', (SELECT to_jsonb(i) FROM hybrid_truco_match.instance i WHERE id = '${uuid(960)}'),
+      'members', (SELECT jsonb_agg(to_jsonb(m) ORDER BY m.actor) FROM hybrid_truco_match.member m WHERE instance_id = '${uuid(960)}'),
+      'receipts', (SELECT jsonb_agg(to_jsonb(r) ORDER BY r.command_id) FROM hybrid_truco_match.receipt r WHERE instance_id = '${uuid(960)}'),
+      'schedules', (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.name) FROM schedule s WHERE s.emits_entity = 'machine_timer_tick' AND s.emits_values @> jsonb_build_object('machine', 'truco_match', 'row', jsonb_build_object('id', '${uuid(960)}')))
+    )::text`);
+    const retained = await snapshot();
+    await sql(upgrade);
+    assertEquals(await snapshot(), retained);
+    assertEquals((await join(97, 960)).kind, "accepted");
     // The deployment's step: the roles migration leaves the login's password to it.
     await sql("ALTER ROLE authenticator PASSWORD 'proof';");
 

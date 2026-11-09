@@ -6,21 +6,25 @@
     "build": {
       "additional_contexts": {
         "workspaceroot-pronto-sources_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:workspaceroot-pronto-sources_srcs}",
-        "libraries_mecha-airlock-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-airlock-image_bayt}",
+        "libraries_mecha-database-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image_bayt}",
+        "libraries_mecha-extensions-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-extensions-image_bayt}",
+        "libraries_mecha-mesh-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-mesh-image_bayt}",
+        "libraries_mecha-conduit-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-conduit-image_bayt}",
         "libraries_mecha-auth-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-auth-image_bayt}",
+        "libraries_mecha-ticker-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-ticker-image_bayt}",
         "libraries_mecha-clock-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-clock-image_bayt}",
         "libraries_mecha-compute-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-compute-image_bayt}",
-        "libraries_mecha-conduit-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-conduit-image_bayt}",
-        "libraries_mecha-database-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image_bayt}",
-        "libraries_mecha-mesh-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-mesh-image_bayt}",
-        "libraries_mecha-ticker-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-ticker-image_bayt}",
+        "libraries_mecha-airlock-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-airlock-image_bayt}",
+        "libraries_mecha-activepieces-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-activepieces-image_bayt}",
         "libraries_mecha-database-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image_srcs}",
+        "libraries_mecha-extensions-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-extensions-image_srcs}",
         "libraries_mecha-mesh-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-mesh-image_srcs}",
         "libraries_mecha-auth-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-auth-image_srcs}",
         "libraries_mecha-ticker-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-ticker-image_srcs}",
         "libraries_mecha-clock-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-clock-image_srcs}",
         "libraries_mecha-compute-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-compute-image_srcs}",
         "libraries_mecha-airlock-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-airlock-image_srcs}",
+        "libraries_mecha-activepieces-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-activepieces-image_srcs}",
         "plugins_omnishell-runtime-image_srcs": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image_srcs}",
         "plugins_omnishell-runtime-image_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image_bayt}",
         "workspaceroot-pronto-sources_bayt": "${MONOREPO_COMPOSE_MODE:-docker-image://busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223}${MONOREPO_COMPOSE_MODE:+:workspaceroot-pronto-sources_bayt}"
@@ -49,12 +53,13 @@
       "ARG MONOREPO_COMPOSE_MODE",
       "ENV MONOREPO_COMPOSE_MODE=$MONOREPO_COMPOSE_MODE",
       "ARG BAYT_RUNTIME",
-      "ENV BAYT_RUNTIME=$BAYT_RUNTIME"
+      "ENV BAYT_RUNTIME=$BAYT_RUNTIME",
+      "ENV FELDERA_COMPILATION_PROFILE=unoptimized"
     ],
     "preambleCopyContexts": [
       {
         "name": "bayt",
-        "image": "bonitao/bayt-runtime:1.2.2@sha256:a2e08b0fd123349e30e28843665ab2a2fde9fe25fddf82919fe499f3f01f1b8f"
+        "image": "bonitao/bayt-runtime:1.3.0@sha256:c33b9187787fcbd5fa80f1f2f52c661d6e7c38a4822c269b8daff83e70dce22e"
       },
       {
         "name": "alpine/socat:1.8.0.0@sha256:a6be4c0262b339c53ddad723cdd178a1a13271e1137c65e27f90a08c16de02b8"
@@ -133,6 +138,30 @@
     "extra_hosts": [],
     "epilogue": [],
     "copy": [
+      {
+        "from": {
+          "name": "libraries_mecha-activepieces-image_bayt"
+        },
+        "srcs": [
+          "/monorep[o]"
+        ],
+        "dst": "/monorepo/",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "name": "libraries_mecha-activepieces-image_srcs"
+        },
+        "srcs": [
+          "/monorep[o]"
+        ],
+        "dst": "/monorepo/",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
       {
         "from": {
           "name": "libraries_mecha-airlock-image_bayt"
@@ -256,6 +285,30 @@
       {
         "from": {
           "name": "libraries_mecha-database-image_srcs"
+        },
+        "srcs": [
+          "/monorep[o]"
+        ],
+        "dst": "/monorepo/",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "name": "libraries_mecha-extensions-image_bayt"
+        },
+        "srcs": [
+          "/monorep[o]"
+        ],
+        "dst": "/monorepo/",
+        "link": true,
+        "parents": false,
+        "exclude": []
+      },
+      {
+        "from": {
+          "name": "libraries_mecha-extensions-image_srcs"
         },
         "srcs": [
           "/monorep[o]"
@@ -437,9 +490,13 @@
         "./.bayt/compose.ci-visual.yaml",
         "./.bayt/compose.integrate.yaml",
         "./.bayt/compose.launch.yaml",
+        "./.bayt/compose.build.yaml",
+        "./.bayt/compose.generate.yaml",
+        "./.bayt/compose.setup.yaml",
         "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.crud.yaml",
         "./.bayt/compose.database.yaml",
+        "./.bayt/compose.migrate.yaml",
         "./.bayt/compose.timer-check.yaml",
         "./.bayt/compose.served.yaml",
         "./.bayt/compose.electric.yaml",
@@ -448,7 +505,6 @@
         "./.bayt/compose.ticker.yaml",
         "./.bayt/compose.served-release.yaml",
         "./.bayt/compose.ci-replay.yaml",
-        "./.bayt/compose.setup.yaml",
         "./.bayt/compose.ci-acceptance.yaml",
         "./.bayt/compose.check-acceptance.yaml",
         "./.bayt/compose.browser.yaml"
@@ -483,9 +539,13 @@
         "./.bayt/compose.ci-visual.yaml",
         "./.bayt/compose.integrate.yaml",
         "./.bayt/compose.launch.yaml",
+        "./.bayt/compose.build.yaml",
+        "./.bayt/compose.generate.yaml",
+        "./.bayt/compose.setup.yaml",
         "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.crud.yaml",
         "./.bayt/compose.database.yaml",
+        "./.bayt/compose.migrate.yaml",
         "./.bayt/compose.timer-check.yaml",
         "./.bayt/compose.served.yaml",
         "./.bayt/compose.electric.yaml",
@@ -494,7 +554,6 @@
         "./.bayt/compose.ticker.yaml",
         "./.bayt/compose.served-release.yaml",
         "./.bayt/compose.ci-replay.yaml",
-        "./.bayt/compose.setup.yaml",
         "./.bayt/compose.ci-acceptance.yaml",
         "./.bayt/compose.check-acceptance.yaml",
         "./.bayt/compose.browser.yaml"
@@ -519,28 +578,275 @@
       "visibility": "internal",
       "deps": [],
       "transitiveDeps": [
-        "ci-visual_srcs_srcs",
-        "ci-visual_bayt_srcs",
-        "ci-replay_srcs_srcs",
-        "ci-replay_bayt_srcs",
-        "ci-acceptance_srcs_srcs",
-        "ci-acceptance_bayt_srcs",
-        "integrate_srcs_srcs_srcs",
-        "integrate_bayt_srcs_srcs",
-        "database_srcs_srcs_srcs",
-        "caddy_srcs_srcs_srcs",
-        "served_srcs_srcs_srcs",
-        "served-release_srcs_srcs_srcs",
-        "launch_outs_srcs_srcs_srcs",
-        "crud_outs_srcs_srcs_srcs",
-        "served_outs_srcs_srcs_srcs",
-        "database_srcs_srcs",
-        "setup_srcs_srcs",
-        "check-acceptance_srcs_srcs_srcs",
-        "check-acceptance_bayt_srcs_srcs",
-        "browser_srcs_srcs_srcs"
+        "ci-visual_srcs",
+        "ci-replay_srcs",
+        "ci-acceptance_srcs",
+        "integrate_srcs",
+        "database_srcs",
+        "caddy_srcs",
+        "served_srcs",
+        "served-release_srcs",
+        "migrate_srcs",
+        "setup_srcs",
+        "check-acceptance_srcs",
+        "browser_srcs"
       ],
-      "transitiveCrossDeps": [],
+      "transitiveCrossDeps": [
+        {
+          "project": "truco",
+          "name": "ci-replay_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              ".bayt/process-compose.yaml",
+              ".pronto/cluster.json",
+              "services/database/migrations/**",
+              "tests/[r]eplay.json",
+              "tests/[r]eplay/**"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "integrate_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "shell/shell.yaml",
+              "shell/screens/arena.html",
+              "shell/screens/arena.css",
+              "shell/screens/regras.html",
+              "shell/screens/regras.css"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "database_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "services/database/migrations/000_extensions.sql",
+              "services/database/migrations/001_roles.sql",
+              "services/database/migrations/002_grants.sql",
+              "services/database/migrations/004_types.sql",
+              "services/database/migrations/005_create_tables.sql",
+              "services/database/migrations/006_policies.sql",
+              "services/database/migrations/007_txid.sql",
+              "services/database/migrations/008_publication.sql",
+              "services/database/migrations/003_rls.sql",
+              "services/database/migrations/016_mecha_actors.sql",
+              "services/database/migrations/012_lobby.sql",
+              "services/database/migrations/013_networked_shouts.sql",
+              "services/database/migrations/014_retire_online_writes.sql",
+              "services/database/migrations/017_table_indexes.sql"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "caddy_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "docker/Caddyfile"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "served_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "shell/index.html",
+              "shell/shell.css",
+              "shell/boot.js",
+              "offline-first-sw.js",
+              "shell/shell.yaml",
+              "shell/shell.json",
+              "shell/design.css",
+              "shell/screens/arena.html",
+              "shell/screens/arena.css",
+              "shell/screens/regras.html",
+              "shell/screens/regras.css",
+              "shell/handlers/arena.js",
+              "shell/handlers/country.js",
+              "shell/handlers/lease.js",
+              "shell/handlers/lobby.js",
+              "shell/handlers/seats2.js",
+              "shell/handlers/variant2.js",
+              "shell/handlers/variant3.js",
+              "shell/renderers/initial.js",
+              "shell/renderers/uppercase.js",
+              "shell/shared/lobby.css",
+              "shell/shared/table.css",
+              "messages/pt-BR.json",
+              "messages/es-AR.json",
+              "messages/es-UY.json",
+              "messages/es-PY.json",
+              "messages/ca-ES.json",
+              "documents/ar/reglas/index.html",
+              "documents/ca/regles/index.html",
+              "documents/py/reglas/index.html",
+              "documents/regras/index.html",
+              "documents/uy/reglas/index.html",
+              "shell/assets/bigode.png",
+              "shell/assets/cida.png",
+              "shell/assets/jordi.png",
+              "shell/assets/nezinho.png",
+              "shell/assets/osvaldo.png",
+              "shell/assets/tabare.png",
+              "shell/assets/tiao.png",
+              "shell/assets/tiao_queijo.png",
+              "shell/assets/xiru.png",
+              "brief.md",
+              "brief.html",
+              "journal.html",
+              "ir.html",
+              "ir/card.css",
+              "acceptance.md",
+              "DESIGN.md",
+              "ir/neighbourhood-app.svg",
+              "ir/neighbourhood-arena.svg",
+              "ir/neighbourhood-regras.svg",
+              "journal/2026-10-19-hatch-free-argentina.png",
+              "journal/2026-10-19-hatch-free-desktop.png",
+              "journal/2026-10-19-hatch-free-mobile.png",
+              "journal/2026-10-19-hatch-free-quick-shout.png",
+              "journal/2026-10-19-shout-expiry-after.png",
+              "journal/2026-10-19-shout-expiry-before.png",
+              "robots.txt",
+              "sitemap.xml"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "served-release_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "shell/index.html",
+              "shell/shell.css",
+              "shell/boot.js",
+              "offline-first-sw.js",
+              "shell/shell.yaml",
+              "shell/shell.json",
+              "shell/design.css",
+              "shell/screens/arena.html",
+              "shell/screens/arena.css",
+              "shell/screens/regras.html",
+              "shell/screens/regras.css",
+              "shell/handlers/arena.js",
+              "shell/handlers/country.js",
+              "shell/handlers/lease.js",
+              "shell/handlers/lobby.js",
+              "shell/handlers/seats2.js",
+              "shell/handlers/variant2.js",
+              "shell/handlers/variant3.js",
+              "shell/renderers/initial.js",
+              "shell/renderers/uppercase.js",
+              "shell/shared/lobby.css",
+              "shell/shared/table.css",
+              "messages/pt-BR.json",
+              "messages/es-AR.json",
+              "messages/es-UY.json",
+              "messages/es-PY.json",
+              "messages/ca-ES.json",
+              "documents/ar/reglas/index.html",
+              "documents/ca/regles/index.html",
+              "documents/py/reglas/index.html",
+              "documents/regras/index.html",
+              "documents/uy/reglas/index.html",
+              "shell/assets/bigode.png",
+              "shell/assets/cida.png",
+              "shell/assets/jordi.png",
+              "shell/assets/nezinho.png",
+              "shell/assets/osvaldo.png",
+              "shell/assets/tabare.png",
+              "shell/assets/tiao.png",
+              "shell/assets/tiao_queijo.png",
+              "shell/assets/xiru.png",
+              "brief.md",
+              "brief.html",
+              "journal.html",
+              "ir.html",
+              "ir/card.css",
+              "acceptance.md",
+              "DESIGN.md",
+              "ir/neighbourhood-app.svg",
+              "ir/neighbourhood-arena.svg",
+              "ir/neighbourhood-regras.svg",
+              "journal/2026-10-19-hatch-free-argentina.png",
+              "journal/2026-10-19-hatch-free-desktop.png",
+              "journal/2026-10-19-hatch-free-mobile.png",
+              "journal/2026-10-19-hatch-free-quick-shout.png",
+              "journal/2026-10-19-shout-expiry-after.png",
+              "journal/2026-10-19-shout-expiry-before.png",
+              "robots.txt",
+              "sitemap.xml"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "migrate_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "services/database/pgroll/018_xstate_engines.json",
+              "services/database/pgroll/019_mecha_engines.json"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "setup_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "check-acceptance_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "tests/**"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
+          "name": "browser_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "[m]ise.toml",
+              "[.]mise.toml",
+              "[m]ise.lock",
+              "[.]tool-versions"
+            ],
+            "exclude": []
+          }
+        }
+      ],
       "chainedDeps": [],
       "cmds": [],
       "cache": {
@@ -552,9 +858,13 @@
         "./.bayt/compose.ci-visual.yaml",
         "./.bayt/compose.integrate.yaml",
         "./.bayt/compose.launch.yaml",
+        "./.bayt/compose.build.yaml",
+        "./.bayt/compose.generate.yaml",
+        "./.bayt/compose.setup.yaml",
         "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.crud.yaml",
         "./.bayt/compose.database.yaml",
+        "./.bayt/compose.migrate.yaml",
         "./.bayt/compose.timer-check.yaml",
         "./.bayt/compose.served.yaml",
         "./.bayt/compose.electric.yaml",
@@ -563,7 +873,6 @@
         "./.bayt/compose.ticker.yaml",
         "./.bayt/compose.served-release.yaml",
         "./.bayt/compose.ci-replay.yaml",
-        "./.bayt/compose.setup.yaml",
         "./.bayt/compose.ci-acceptance.yaml",
         "./.bayt/compose.check-acceptance.yaml",
         "./.bayt/compose.browser.yaml"
@@ -600,20 +909,15 @@
     "ci-replay_bayt",
     "ci-acceptance_srcs",
     "ci-acceptance_bayt",
-    "integrate_srcs_srcs",
-    "integrate_bayt_srcs",
-    "database_srcs_srcs",
-    "caddy_srcs_srcs",
-    "served_srcs_srcs",
-    "served-release_srcs_srcs",
-    "launch_outs_srcs_srcs",
-    "crud_outs_srcs_srcs",
-    "served_outs_srcs_srcs",
+    "integrate_srcs",
     "database_srcs",
+    "caddy_srcs",
+    "served_srcs",
+    "served-release_srcs",
+    "migrate_srcs",
     "setup_srcs",
-    "check-acceptance_srcs_srcs",
-    "check-acceptance_bayt_srcs",
-    "browser_srcs_srcs"
+    "check-acceptance_srcs",
+    "browser_srcs"
   ],
   "transitiveCrossDeps": [],
   "upClosure": [
@@ -621,9 +925,13 @@
     "./.bayt/compose.ci-visual.yaml",
     "./.bayt/compose.integrate.yaml",
     "./.bayt/compose.launch.yaml",
+    "./.bayt/compose.build.yaml",
+    "./.bayt/compose.generate.yaml",
+    "./.bayt/compose.setup.yaml",
     "./.bayt/compose.caddy.yaml",
     "./.bayt/compose.crud.yaml",
     "./.bayt/compose.database.yaml",
+    "./.bayt/compose.migrate.yaml",
     "./.bayt/compose.timer-check.yaml",
     "./.bayt/compose.served.yaml",
     "./.bayt/compose.electric.yaml",
@@ -632,7 +940,6 @@
     "./.bayt/compose.ticker.yaml",
     "./.bayt/compose.served-release.yaml",
     "./.bayt/compose.ci-replay.yaml",
-    "./.bayt/compose.setup.yaml",
     "./.bayt/compose.ci-acceptance.yaml",
     "./.bayt/compose.check-acceptance.yaml",
     "./.bayt/compose.browser.yaml"
@@ -723,6 +1030,21 @@
       }
     },
     {
+      "name": "integrate_srcs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [
+          "shell/shell.yaml",
+          "shell/screens/arena.html",
+          "shell/screens/arena.css",
+          "shell/screens/regras.html",
+          "shell/screens/regras.css"
+        ],
+        "exclude": []
+      }
+    },
+    {
       "name": "database_srcs",
       "project": "truco",
       "dir": ".",
@@ -736,6 +1058,7 @@
           "services/database/migrations/006_policies.sql",
           "services/database/migrations/007_txid.sql",
           "services/database/migrations/008_publication.sql",
+          "services/database/migrations/003_rls.sql",
           "services/database/migrations/016_mecha_actors.sql",
           "services/database/migrations/012_lobby.sql",
           "services/database/migrations/013_networked_shouts.sql",
@@ -746,7 +1069,193 @@
       }
     },
     {
+      "name": "caddy_srcs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [
+          "docker/Caddyfile"
+        ],
+        "exclude": []
+      }
+    },
+    {
+      "name": "served_srcs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [
+          "shell/index.html",
+          "shell/shell.css",
+          "shell/boot.js",
+          "offline-first-sw.js",
+          "shell/shell.yaml",
+          "shell/shell.json",
+          "shell/design.css",
+          "shell/screens/arena.html",
+          "shell/screens/arena.css",
+          "shell/screens/regras.html",
+          "shell/screens/regras.css",
+          "shell/handlers/arena.js",
+          "shell/handlers/country.js",
+          "shell/handlers/lease.js",
+          "shell/handlers/lobby.js",
+          "shell/handlers/seats2.js",
+          "shell/handlers/variant2.js",
+          "shell/handlers/variant3.js",
+          "shell/renderers/initial.js",
+          "shell/renderers/uppercase.js",
+          "shell/shared/lobby.css",
+          "shell/shared/table.css",
+          "messages/pt-BR.json",
+          "messages/es-AR.json",
+          "messages/es-UY.json",
+          "messages/es-PY.json",
+          "messages/ca-ES.json",
+          "documents/ar/reglas/index.html",
+          "documents/ca/regles/index.html",
+          "documents/py/reglas/index.html",
+          "documents/regras/index.html",
+          "documents/uy/reglas/index.html",
+          "shell/assets/bigode.png",
+          "shell/assets/cida.png",
+          "shell/assets/jordi.png",
+          "shell/assets/nezinho.png",
+          "shell/assets/osvaldo.png",
+          "shell/assets/tabare.png",
+          "shell/assets/tiao.png",
+          "shell/assets/tiao_queijo.png",
+          "shell/assets/xiru.png",
+          "brief.md",
+          "brief.html",
+          "journal.html",
+          "ir.html",
+          "ir/card.css",
+          "acceptance.md",
+          "DESIGN.md",
+          "ir/neighbourhood-app.svg",
+          "ir/neighbourhood-arena.svg",
+          "ir/neighbourhood-regras.svg",
+          "journal/2026-10-19-hatch-free-argentina.png",
+          "journal/2026-10-19-hatch-free-desktop.png",
+          "journal/2026-10-19-hatch-free-mobile.png",
+          "journal/2026-10-19-hatch-free-quick-shout.png",
+          "journal/2026-10-19-shout-expiry-after.png",
+          "journal/2026-10-19-shout-expiry-before.png",
+          "robots.txt",
+          "sitemap.xml"
+        ],
+        "exclude": []
+      }
+    },
+    {
+      "name": "served-release_srcs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [
+          "shell/index.html",
+          "shell/shell.css",
+          "shell/boot.js",
+          "offline-first-sw.js",
+          "shell/shell.yaml",
+          "shell/shell.json",
+          "shell/design.css",
+          "shell/screens/arena.html",
+          "shell/screens/arena.css",
+          "shell/screens/regras.html",
+          "shell/screens/regras.css",
+          "shell/handlers/arena.js",
+          "shell/handlers/country.js",
+          "shell/handlers/lease.js",
+          "shell/handlers/lobby.js",
+          "shell/handlers/seats2.js",
+          "shell/handlers/variant2.js",
+          "shell/handlers/variant3.js",
+          "shell/renderers/initial.js",
+          "shell/renderers/uppercase.js",
+          "shell/shared/lobby.css",
+          "shell/shared/table.css",
+          "messages/pt-BR.json",
+          "messages/es-AR.json",
+          "messages/es-UY.json",
+          "messages/es-PY.json",
+          "messages/ca-ES.json",
+          "documents/ar/reglas/index.html",
+          "documents/ca/regles/index.html",
+          "documents/py/reglas/index.html",
+          "documents/regras/index.html",
+          "documents/uy/reglas/index.html",
+          "shell/assets/bigode.png",
+          "shell/assets/cida.png",
+          "shell/assets/jordi.png",
+          "shell/assets/nezinho.png",
+          "shell/assets/osvaldo.png",
+          "shell/assets/tabare.png",
+          "shell/assets/tiao.png",
+          "shell/assets/tiao_queijo.png",
+          "shell/assets/xiru.png",
+          "brief.md",
+          "brief.html",
+          "journal.html",
+          "ir.html",
+          "ir/card.css",
+          "acceptance.md",
+          "DESIGN.md",
+          "ir/neighbourhood-app.svg",
+          "ir/neighbourhood-arena.svg",
+          "ir/neighbourhood-regras.svg",
+          "journal/2026-10-19-hatch-free-argentina.png",
+          "journal/2026-10-19-hatch-free-desktop.png",
+          "journal/2026-10-19-hatch-free-mobile.png",
+          "journal/2026-10-19-hatch-free-quick-shout.png",
+          "journal/2026-10-19-shout-expiry-after.png",
+          "journal/2026-10-19-shout-expiry-before.png",
+          "robots.txt",
+          "sitemap.xml"
+        ],
+        "exclude": []
+      }
+    },
+    {
+      "name": "migrate_srcs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [
+          "services/database/pgroll/018_xstate_engines.json",
+          "services/database/pgroll/019_mecha_engines.json"
+        ],
+        "exclude": []
+      }
+    },
+    {
       "name": "setup_srcs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [
+          "[m]ise.toml",
+          "[.]mise.toml",
+          "[m]ise.lock",
+          "[.]tool-versions"
+        ],
+        "exclude": []
+      }
+    },
+    {
+      "name": "check-acceptance_srcs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [
+          "tests/**"
+        ],
+        "exclude": []
+      }
+    },
+    {
+      "name": "browser_srcs",
       "project": "truco",
       "dir": ".",
       "outs": {

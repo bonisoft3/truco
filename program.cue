@@ -22,18 +22,24 @@ _designMd: _ @embed(file="DESIGN.md", type=text)
 // written in, and the catalogues are the app's own. The emitter resolves each
 // localized route's slug against them and keeps only the resolved paths.
 _catalogues: _ @embed(glob="messages/*.json")
+_xstateEngines: _ @embed(file="services/database/sql/018_xstate_engines.sql", type=text)
+_mechaEngines: _ @embed(file="services/database/sql/019_mecha_engines.sql", type=text)
 
 code: pronto.#App & {
 	state: {
 		cortex: root: game.root
-		hybrids: {
+		mecha: reducers: {
 			truco_match: {machine: game.match, rules: "machines/match.js"}
 			truco_presence: {machine: game.presence, rules: "machines/presence.js"}
 			truco_challenge: {machine: game.challenge, rules: "machines/challenge.js"}
 			truco_voice: {machine: game.voice, rules: "machines/voice.js"}
 			truco_call: {machine: game.call, rules: "machines/call.js"}
 		}
+		migrations: "018_xstate_engines": {operations: [{sql: {up: _xstateEngines, onComplete: true}}]}
+		migrations: "019_mecha_engines": {operations: [{sql: {up: _mechaEngines, onComplete: true}}]}
 		rawMigrations: [
+			{name: "003_rls.sql", src: "services/database/baseline/003_rls.txt"},
+			{name: "016_mecha_actors.sql", src: "services/database/baseline/016_mecha_actors.sql"},
 			{name: "012_lobby.sql", src: "services/database/sql/012_lobby.sql"},
 			{name: "013_networked_shouts.sql", src: "services/database/sql/013_networked_shouts.sql"},
 			{name: "014_retire_online_writes.sql", src: "services/database/sql/014_retire_online_writes.sql"},
@@ -939,7 +945,7 @@ loop: (pronto.#DefaultLoop & {"code": code, "cluster": cluster, "terminal": term
 loop: surface: checks: "arena": {
 	verb: "test"
 	cmds: [
-		"deno test --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --no-check --allow-env --allow-read tests/arena.test.ts",
+		"\(pronto.#Harness.rule); deno test \(pronto.#Harness.flags) --unstable-raw-imports --no-check --allow-env --allow-read tests/arena.test.ts",
 	]
 	note: "the whole screen mounted against a stepped clock: one sitting, conserved score, a fresh epoch"
 }
@@ -947,7 +953,7 @@ loop: surface: checks: "arena": {
 loop: surface: checks: "fuel_mutations": {
 	verb: "test"
 	cmds: [
-		"deno test --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --no-check --allow-env --allow-read tests/fuel_mutations_storybook.test.ts",
+		"\(pronto.#Harness.rule); deno test \(pronto.#Harness.flags) --unstable-raw-imports --no-check --allow-env --allow-read tests/fuel_mutations_storybook.test.ts",
 	]
 	note: "deterministic fuel budget, outbox mutation lifecycle, and read-only storybook state injection"
 }
@@ -955,10 +961,11 @@ loop: surface: checks: "fuel_mutations": {
 loop: surface: checks: "online_machine": {
 	verb: "test"
 	cmds: [
-		"deno test --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --allow-env --allow-read tests/online-machine.test.ts tests/lobby-machine.test.ts",
-		"deno test --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --no-check --allow-env --allow-read tests/online-screens.test.ts",
+		"\(pronto.#Harness.rule); deno test \(pronto.#Harness.flags) --unstable-raw-imports --allow-env --allow-read tests/online-machine.test.ts tests/lobby-machine.test.ts",
+		"\((pronto.#Platform & {tree: "mecha"}).rule); deno test --no-config --import-map ($mecha | path join packages mecha-browser cluster.deno.json) --lock ($mecha | path join packages mecha-browser deno.lock) --frozen --allow-read --allow-env tests/retained-edge.test.ts",
+		"\(pronto.#Harness.rule); deno test \(pronto.#Harness.flags) --unstable-raw-imports --no-check --allow-env --allow-read tests/online-screens.test.ts",
 	]
-	note: "complete hybrid matches, wager authority, private hands, brink decisions and deadlines; the bar's and the table's folds mounted"
+	note: "complete mecha matches, wager authority, private hands, brink decisions and deadlines; the bar's and the table's folds mounted"
 }
 
 build: (pronto.#DefaultBuild & {"code": code, "loop": loop, "cluster": cluster, "terminal": terminal}).out
@@ -967,10 +974,21 @@ build: (pronto.#DefaultBuild & {"code": code, "loop": loop, "cluster": cluster, 
 // check no verb reaches does not exist: it needs the cluster up, so it lands
 // at integrate beside the visual battery. This is the build seat's declared
 // override seam — the app adds a check, it does not invent a verb.
+// The machines through their surface rows in PostgreSQL, under the generated
+// policies, with the ticker played by inserting its ticks: the cluster's
+// database image, run by docker, and PostgREST beside it for the readers.
+loop: surface: checks: "online_integration": {
+	verb: "integrate"
+	cmds: [
+		"\(pronto.#Harness.rule); deno test \(pronto.#Harness.flags) --unstable-raw-imports --allow-env --allow-read --allow-run=docker --allow-net=127.0.0.1 tests/online.integration.test.ts",
+	]
+	note: "leases, challenges, admissions, seat races, team matches, the ticker's timeouts and two readers through PostgREST, in the cluster's PostgreSQL"
+}
+
 build: checks: "acceptance": {
 	browser: true
 	cmds: [
-		"deno run --config tests/deno.json --lock tests/deno.lock --frozen --unstable-raw-imports --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/acceptance.ts .",
+		"\(pronto.#Harness.check); deno run \(pronto.#Harness.flags) --unstable-raw-imports --allow-read --allow-write --allow-net --allow-env --allow-run --allow-sys --unsafely-ignore-certificate-errors=caddy tests/acceptance.ts .",
 	]
 	note: "walks the brief's acceptance checklist against the running table: deal, play, raise, score, pickers, both screens"
 }

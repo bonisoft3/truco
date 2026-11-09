@@ -4,6 +4,7 @@ services:
     build:
       additional_contexts:
         truco-setup: service:truco-setup
+        truco-migrate: service:truco-migrate
         truco-database: service:truco-database
       context: ..
       dockerfile: .bayt/Dockerfile.ci-replay
@@ -22,6 +23,7 @@ services:
       additional_contexts:
         truco-setup_bayt: service:truco-setup_bayt
         truco-database_bayt: service:truco-database_bayt
+        truco-migrate_bayt: service:truco-migrate_bayt
       context: ..
       dockerfile: .bayt/Dockerfile.ci-replay
       target: ci-replay_bayt
@@ -36,6 +38,7 @@ services:
       additional_contexts:
         truco-setup_srcs: service:truco-setup_srcs
         truco-database_srcs: service:truco-database_srcs
+        truco-migrate_srcs: service:truco-migrate_srcs
       context: ..
       dockerfile: .bayt/Dockerfile.ci-replay
       target: ci-replay_srcs

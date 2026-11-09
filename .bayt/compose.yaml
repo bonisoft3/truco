@@ -84,19 +84,12 @@ services:
     profiles:
     - ci
     scale: 1
-  served:
+  caddy:
     extends:
-      file: ./compose.served.yaml
-      service: truco-served
+      file: ./compose.caddy.yaml
+      service: truco-caddy
     profiles:
-    - served
-    scale: 1
-  served-release:
-    extends:
-      file: ./compose.served-release.yaml
-      service: truco-served-release
-    profiles:
-    - served-release
+    - caddy
     scale: 1
   database:
     extends:
@@ -105,12 +98,26 @@ services:
     profiles:
     - database
     scale: 1
+  crud:
+    extends:
+      file: ./compose.crud.yaml
+      service: truco-crud
+    profiles:
+    - crud
+    scale: 1
   auth:
     extends:
       file: ./compose.auth.yaml
       service: truco-auth
     profiles:
     - auth
+    scale: 1
+  electric:
+    extends:
+      file: ./compose.electric.yaml
+      service: truco-electric
+    profiles:
+    - electric
     scale: 1
   ticker:
     extends:
@@ -125,6 +132,27 @@ services:
       service: truco-clock
     profiles:
     - clock
+    scale: 1
+  served:
+    extends:
+      file: ./compose.served.yaml
+      service: truco-served
+    profiles:
+    - served
+    scale: 1
+  served-release:
+    extends:
+      file: ./compose.served-release.yaml
+      service: truco-served-release
+    profiles:
+    - served-release
+    scale: 1
+  migrate:
+    extends:
+      file: ./compose.migrate.yaml
+      service: truco-migrate
+    profiles:
+    - migrate
     scale: 1
   timer-check:
     extends:
@@ -146,25 +174,4 @@ services:
       service: truco-ci-acceptance
     profiles:
     - ci-acceptance
-    scale: 1
-  caddy:
-    extends:
-      file: ./compose.caddy.yaml
-      service: truco-caddy
-    profiles:
-    - caddy
-    scale: 1
-  crud:
-    extends:
-      file: ./compose.crud.yaml
-      service: truco-crud
-    profiles:
-    - crud
-    scale: 1
-  electric:
-    extends:
-      file: ./compose.electric.yaml
-      service: truco-electric
-    profiles:
-    - electric
     scale: 1

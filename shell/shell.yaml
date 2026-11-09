@@ -51,12 +51,16 @@ access:
   truco_challenge_open:
     owner: actor
     scope: private
+actors: {}
 app: truco
 auth:
   required: false
   service: /auth
   promote: true
   mode: passkey
+endowments:
+  shell/handlers/arena.js:
+    - Statechart
 floors:
   touch: 24
 i18n:
@@ -303,8 +307,7 @@ routes:
       label: Mesa
       strip: false
     files:
-      html: shell/screens/arena.html
-      css: shell/screens/arena.css
+      adapters: []
       handlers:
         - shell/handlers/arena.js
         - shell/handlers/country.js
@@ -313,13 +316,14 @@ routes:
         - shell/handlers/seats2.js
         - shell/handlers/variant2.js
         - shell/handlers/variant3.js
-      adapters: []
       shared:
         - shell/shared/table.css
         - shell/shared/lobby.css
       renderers:
         - shell/renderers/initial.js
         - shell/renderers/uppercase.js
+      html: shell/screens/arena.html
+      css: shell/screens/arena.css
     ssr: spa
     states:
       - loading
@@ -333,25 +337,25 @@ routes:
       - raised-dark
       - network-error
   - path: /regras
-    prerender: true
-    screen: regras
-    nav:
-      label: Regras
-      strip: false
-    files:
-      html: shell/screens/regras.html
-      css: shell/screens/regras.css
-      handlers: []
-      adapters: []
-      shared:
-        - shell/shared/table.css
-    slug: route_rules
     paths:
       pt-BR: /regras
       es-AR: /reglas
       es-UY: /reglas
       es-PY: /reglas
       ca-ES: /regles
+    prerender: true
+    screen: regras
+    nav:
+      label: Regras
+      strip: false
+    files:
+      adapters: []
+      handlers: []
+      shared:
+        - shell/shared/table.css
+      html: shell/screens/regras.html
+      css: shell/screens/regras.css
+    slug: route_rules
     ssr: ssg
     states:
       - populated
@@ -3123,6 +3127,7 @@ migrations:
   - services/database/migrations/006_policies.sql
   - services/database/migrations/007_txid.sql
   - services/database/migrations/008_publication.sql
+  - services/database/migrations/003_rls.sql
   - services/database/migrations/016_mecha_actors.sql
   - services/database/migrations/012_lobby.sql
   - services/database/migrations/013_networked_shouts.sql

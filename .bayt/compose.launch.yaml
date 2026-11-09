@@ -52,6 +52,7 @@ services:
   truco-launch_bayt:
     build:
       additional_contexts:
+        truco-build_bayt: service:truco-build_bayt
         truco-caddy_bayt: service:truco-caddy_bayt
         truco-database_bayt: service:truco-database_bayt
         truco-crud_bayt: service:truco-crud_bayt

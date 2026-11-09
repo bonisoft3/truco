@@ -2,11 +2,11 @@ const allSeats = ["a", "b", "c", "d", "e", "f"];
 const config = variant => ({
   mineiro: {ladder: [2, 4, 8, 10, 12], goal: 12, games: 2, brink: 10, trumps: [3, 14, 29, 12]},
   paulista: {ladder: [1, 3, 6, 9, 12], goal: 12, games: 2, brink: 11},
-  gaucho: {ladder: [1, 2, 3, 4], goal: 18, games: 1, trumps: [29, 31, 13, 12], envido: true, flor: true, mazo: true},
-  truc: {ladder: [1, 2, 3], goal: 12, games: 2, trumps: [], mazo: true},
-  argentino: {ladder: [1, 2, 3, 4], goal: 30, games: 1, trumps: [29, 31, 13, 12], envido: true, mazo: true},
-  uruguayo: {ladder: [1, 2, 3, 4], goal: 30, games: 1, trumps: [29, 31, 13, 12], envido: true, flor: true, mazo: true},
-  paraguayo: {ladder: [1, 2, 3, 4], goal: 30, games: 1, trumps: [29, 31, 13, 12], envido: true, flor: true, mazo: true},
+  gaucho: {ladder: [1, 2, 3, 4], goal: 18, games: 1, trumps: [29, 31, 13, 12], envido: true, flor: true},
+  truc: {ladder: [1, 2, 3], goal: 12, games: 2, trumps: []},
+  argentino: {ladder: [1, 2, 3, 4], goal: 30, games: 1, trumps: [29, 31, 13, 12], envido: true},
+  uruguayo: {ladder: [1, 2, 3, 4], goal: 30, games: 1, trumps: [29, 31, 13, 12], envido: true, flor: true},
+  paraguayo: {ladder: [1, 2, 3, 4], goal: 30, games: 1, trumps: [29, 31, 13, 12], envido: true, flor: true},
   douradinha: {ladder: [2, 4, 8, 10, 12], goal: 12, games: 2, trumps: [16, 23, 35, 31, 7, 3, 14, 29, 12]},
   douradao: {ladder: [2, 4, 8, 10, 12], goal: 12, games: 2, trumps: [40, 24, 15, 28, 20, 16, 23, 31, 35, 7, 3, 39, 14]},
 })[variant];
@@ -62,7 +62,7 @@ const play = (state, event, context) => {
   return advance({...state, [state.turn]: hand, plays: [...state.plays, {seat: state.turn, card, covered: event.payload.covered, trick: state.tricks.length, slot: event.payload.slot}]}, context);
 };
 const mayAct = (state, _event, context) => !state.seats.includes(context.actor) || state.folded.includes(side(state, context.actor)) ? "not_active" : state.deadline && context.now >= state.deadline ? "expired" : true;
-const mayLeave = (state, event, context) => mayAct(state, event, context) !== true ? mayAct(state, event, context) : config(state.variant).mazo ? true : "fold_unavailable";
+const mayLeave = mayAct;
 const owes = (state, actor) => state.phase === "brink" ? side(state, actor) === state.brink : side(state, actor) !== state.caller && !state.answers.includes(side(state, actor));
 const mayAnswer = (state, event, context) => mayAct(state, event, context) !== true ? mayAct(state, event, context) : !owes(state, context.actor) ? "not_your_answer" : true;
 const settleBid = state => {
@@ -212,7 +212,7 @@ return {
     const actions = [];
     if (state.phase !== "finished" && mayResign(state, {}, context) === true) actions.push("resign");
     if (state.phase === "hand_over") actions.push("next");
-    if (state.phase === "playing" && mayAct(state, {}, context) === true) { if (mayLeave(state, {}, context) === true) actions.push("fold"); if (state.turn === viewer) actions.push("play"); }
+    if (state.phase === "playing" && mayAct(state, {}, context) === true) { actions.push("fold"); if (state.turn === viewer) actions.push("play"); }
     if (["playing", "wager"].includes(state.phase) && mayRaise(state, {}, context) === true) actions.push("raise");
     if (["wager", "brink"].includes(state.phase) && mayAnswer(state, {}, context) === true) actions.push("accept", "fold");
     if (["playing", "wager", "envido"].includes(state.phase)) {

@@ -1,12 +1,12 @@
 ---
 type: decision
-title: Hybrid machines for Truco online play
+title: Mecha machines for Truco online play
 status: partially-built
 ---
 
-# Hybrid machines for Truco online play
+# Mecha machines for Truco online play
 
-Make Truco the first executable contract for cross-tier hybrid machines, before
+Make Truco the first executable contract for cross-tier mecha machines, before
 DuckStream. Online games have one database authority; browsers submit commands
 and render authorized projections. Offline games execute the same domain chart
 and pure rules locally. A single authored composition defines both the domain
@@ -16,11 +16,11 @@ Success means complete online matches that survive concurrent actions, missing
 responses, disconnects and reloads. Moving the existing callbacks into chart
 syntax without changing who owns the game would preserve the current defects.
 
-The [[hybrid-machine-proof|execution proof]] implements the first isolated
+The [[mecha-machine-proof|execution proof]] implements the first isolated
 command/reducer slice. It records the tested behavior and the advisory PLV8
 timeout verification gap. Adoption proceeds under the assumed timeout contract;
 runtime verification does not block connecting the executor to the app.
-The [[online-hybrid|online table reference]] records the implemented online modes, presence and
+The [[online-mecha|online table reference]] records the implemented online modes, presence and
 challenge machines, and their limits. This decision remains partially built until the rest of the
 app adopts the composition.
 
@@ -39,12 +39,12 @@ These are source-level findings, not results from a running multiplayer stack.
 | The handler writes fixed September 2026 UI and backend deadlines (lines 1046–1047 and 1441–1442). | The documented authoritative turn clock is not implemented by these fields. |
 | [[../shell/hatches/dealer.js]] owns URL/session state, challenge writes, subscriptions, lobby presence and DOM-triggered game entry. `ensureChallengeSub` marks itself subscribed before checking whether the client exists. | Initialization order can lose a subscription; lifecycle and asynchronous answers must be represented explicitly. |
 | The handler disables envido/flor online through `!shared`; accepted challenges enter `1v1`; selectable player seats stop at four despite six-seat local variants. | “All Truco” includes more than the current online action vocabulary and two-player handshake. |
-| [[../tests/arena.test.ts]] runs with `mountHostDom: false`. At the inspected baseline, the now-retired `challenge_handshake.test.ts` checked a mocked update, and `verify-full-multiplayer-match.ts` stopped after the first trick with hard-coded developer paths. | Those checks did not establish full-stack, full-match correctness. The online suite now replaces the retired relay tests; see [[online-hybrid]]. |
+| [[../tests/arena.test.ts]] runs with `mountHostDom: false`. At the inspected baseline, the now-retired `challenge_handshake.test.ts` checked a mocked update, and `verify-full-multiplayer-match.ts` stopped after the first trick with hard-coded developer paths. | Those checks did not establish full-stack, full-match correctness. The online suite now replaces the retired relay tests; see [[online-mecha]]. |
 
-The [[../../../plugins/pronto/docs/decisions/2026-09-29-hybrid-machines.md|hybrid-machine decision]]
+The [[../../../plugins/pronto/docs/decisions/2026-09-29-cortex-machines.md|Cortex machine decision]]
 identifies Truco as the Cortex oracle. At the inspected baseline Truco declared
-no `state.machines` or `010_machines.sql`. The new app integration uses
-`state.hybrids` and emits `016_mecha_actors.sql`; it is not full Cortex
+no transactional row machines or `010_machines.sql`. The new app integration uses
+`state.mecha` and emits `016_mecha_actors.sql`; it is not full Cortex
 adoption. Implementation must also reconcile the stale brief with the supported
 variants.
 
@@ -109,7 +109,7 @@ Extract card strength, dealing from supplied entropy, legal actions, wager
 arithmetic, trick resolution, settlement and bot choices from `table.js`.
 Keep them as bounded pure functions referenced by chart transitions. The chart
 owns control flow; a single opaque call to the old 2,383-line handler is not
-hybrid-machine adoption.
+mecha-machine adoption.
 
 Use the same normalized chart and Jessie rules in the local interpreter and
 inside the database transaction. Pronto already emits PLV8 validation functions
@@ -314,11 +314,11 @@ lock time under concurrent matches before setting a release latency budget.
 ## Delivery sequence and decisions
 
 The online table now covers 1×1, 2×2 and 2×2×2 with the supported variant
-matrix in [[online-hybrid]], using existing Mecha ports and bounded Cortex
+matrix in [[online-mecha]], using existing Mecha ports and bounded Cortex
 compositions. The lobby offers explicit vacant seats and group challenges.
 The local arena plays the same rules in the terminal; arbitrary Cortex
 hierarchy remains outside this multiplayer delivery. The
-[[../../../plugins/pronto/docs/decisions/2026-09-29-hybrid-machines|hybrid machines decision]]
+[[../../../plugins/pronto/docs/decisions/2026-09-29-cortex-machines|Cortex machines decision]]
 records the XState invocation design and its cancellation boundary;
 [[../machines/root.cue]] hosts the arena, its bar and the online table. The sequence below
 retains the broader adoption plan, not a requirement to finish the whole
@@ -336,13 +336,13 @@ seat name or scoring rule.
    with the current variant rules and the authority above. Capture failing
    integration cases for unauthorized actions, deadline enforcement and secret
    exposure. Define command/result and player-view schemas before framework API.
-2. **Small framework proof.** Compile a tiny two-seat hybrid fixture with one
+2. **Small framework proof.** Compile a tiny two-seat mecha fixture with one
    legal move, refusal, retry, timeout and private view. Prove both executors,
    command idempotency, tier enforcement and view reconciliation. No DuckStream
    services may be needed to build or run it.
 3. **First complete online game.** Port Mineiro/Paulista 1v1 from guest entry
    through match completion and rematch. Pass real database races and transport
-   fault cases before expanding. This is the decisive hybrid-machine checkpoint.
+   fault cases before expanding. This is the decisive mecha-machine checkpoint.
 4. **Whole Truco.** Move bots/offline onto the shared core; add four/six-seat
    projections, the remaining variants and wagers; migrate lobby, resume,
    preferences and presentation lifecycles. Delete superseded handlers and raw
@@ -358,7 +358,7 @@ seat name or scoring rule.
 The main framework cost is the shared transactional executor and its generated
 cross-tier command protocol. Merely changing entity durability would be cheaper
 but would keep competing browser writers. A hand-written server game would
-centralize authority but would not validate hybrid machines or preserve one
+centralize authority but would not validate mecha machines or preserve one
 offline/online rule implementation. Moving all of `table.js` behind one opaque
 chart action would conceal the very interleavings this work is meant to expose.
 

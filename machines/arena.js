@@ -124,7 +124,7 @@
   };
   // What a click asks for; a card in your hand asks to be played.
   const INTENT = {
-    "btn-truco": "raise", "btn-raise": "raise", "btn-accept": "accept", "btn-run": "fold",
+    "btn-truco": "raise", "btn-raise": "raise", "btn-accept": "accept", "btn-run": "fold", "btn-fold": "fold",
     "btn-envido": "envido", "btn-envido-real": "envido_real", "btn-envido-falta": "envido_falta",
     "btn-envido-take": "envido_take", "btn-envido-run": "envido_run", "btn-flor": "flor",
     "btn-brink-play": "accept", "btn-brink-run": "fold", "btn-next": "next", "btn-resign": "resign",

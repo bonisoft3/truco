@@ -8,6 +8,11 @@ services:
         truco-caddy: service:truco-caddy
         truco-served-release: service:truco-served-release
         truco-auth: service:truco-auth
+        truco-migrate: service:truco-migrate
+        truco-timer-check: service:truco-timer-check
+        truco-ticker: service:truco-ticker
+        libraries_mecha-extensions-image: >-
+          ${MONOREPO_COMPOSE_MODE:-docker-image://unpublished.invalid/mecha-publishes-no-extensions-image-yet}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-extensions-image}
       context: ..
       dockerfile: .bayt/Dockerfile.release-docker
       target: release-docker
@@ -27,8 +32,10 @@ services:
         truco-database_bayt: service:truco-database_bayt
         truco-crud_bayt: service:truco-crud_bayt
         truco-caddy_bayt: service:truco-caddy_bayt
+        truco-migrate_bayt: service:truco-migrate_bayt
         truco-served-release_bayt: service:truco-served-release_bayt
         truco-auth_bayt: service:truco-auth_bayt
+        truco-ticker_bayt: service:truco-ticker_bayt
         truco-timer-check_bayt: service:truco-timer-check_bayt
         truco-served_bayt: service:truco-served_bayt
       context: ..
@@ -45,7 +52,6 @@ services:
       additional_contexts:
         truco-database_srcs: service:truco-database_srcs
         truco-caddy_srcs: service:truco-caddy_srcs
-        truco-served-release_srcs: service:truco-served-release_srcs
       context: ..
       dockerfile: .bayt/Dockerfile.release-docker
       target: release-docker_srcs

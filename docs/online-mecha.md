@@ -1,4 +1,4 @@
-# Online hybrid table
+# Online mecha table
 
 The arena's **Truco online** pill opens the bar, a modal over the table. Go
 online, challenge a player or create a table under the arena's own rule and
@@ -32,7 +32,7 @@ existing variants and bots; networked shouts are not part of this online table.
 
 ## Execution and authority
 
-[[../program.cue]] declares `state.hybrids.truco_match`, using
+[[../program.cue]] declares `state.mecha.truco_match`, using
 [[../machines/match.cue]] and [[../machines/match.js]]. Pronto's writer compiles
 the declaration into `016_mecha_actors.sql`. The bounded, pure rules run
 in the same SES executor locally and in PLV8. The local arena executes these same rules through its Cortex child.
@@ -151,18 +151,17 @@ refused. A tick for a deadline already met does nothing.
 Turns play the lowest-strength remaining card on timeout; wager/special-hand
 answers time out by folding; envido times out as a refusal. Moving to another hand requires a player command.
 
-The PLV8 [[hybrid-machine-proof|timeout verification gap]] remains advisory.
-This integration assumes enforcement and
-retains PostgreSQL timeouts and instrumented fuel; it does not claim to have
-verified native-operation interruption.
+PostgreSQL's statement timeout interrupts the database's pljs engine
+([[mecha-machine-proof#Execution timeout]]); this integration keeps it beside
+instrumented fuel.
 
 ## Verification and rollout
 
 From the repository root, with CUE, Deno and Docker:
 
 ```sh
-deno task --config plugins/pronto/deno.json test:truco-online
-deno task --config plugins/pronto/deno.json test:hybrid
+cd apps/truco && ../../plugins/sayt/saytw test && ../../plugins/sayt/saytw integrate
+deno task --config plugins/pronto/deno.json test:mecha
 ```
 
 The online suite starts isolated, digest-pinned PostgreSQL and PostgREST
@@ -199,17 +198,17 @@ before admission so an equal-revision server response can replace its old
 shape; pending commands and their identities are retained. This conversion does not import the older
 browser-authoritative room history.
 
-The remaining [[2026-10-13-hybrid-machine-adoption|adoption work]] includes
+The remaining [[2026-10-13-mecha-machine-adoption|adoption work]] includes
 save migration, the deployed upgrade above and full-shell browser acceptance.
 
-The worktree preview uses `compose.hybrid-preview.yaml` outside `.bayt`, so
+The worktree preview uses `compose.mecha-preview.yaml` outside `.bayt`, so
 Bayt generation does not remove the override. It publishes both loopback
 address families at `https://localhost:10374/`. Generate its proxy
 configuration after changing the emitted Caddyfile:
 
 ```sh
 python3 docker/preview-caddy.py
-docker compose -p truco-hybrid-preview -f .bayt/compose.launch.closure.yaml -f compose.hybrid-preview.yaml up -d --no-deps --no-build truco-caddy
+docker compose -p truco-mecha-preview -f .bayt/compose.launch.closure.yaml -f compose.mecha-preview.yaml up -d --no-deps --no-build truco-caddy
 ```
 
 Run these from `apps/truco` with the preview image and local certificates
