@@ -684,7 +684,7 @@ _irNotes: {
 _deriving: *false | bool @tag(derive,type=bool)
 
 if !_deriving {
-	code: meta: decisions: [Id=string]: note: _irNotes[Id]
+	code: meta: decisions: [string]~(Id,_): note: _irNotes[Id]
 }
 
 _irAccepts: {
@@ -734,7 +734,7 @@ _irAccepts: {
 }
 
 if !_deriving {
-	code: meta: tests: [Id=string]: accepts: _irAccepts[Id]
+	code: meta: tests: [string]~(Id,_): accepts: _irAccepts[Id]
 }
 
 code: meta: ladder: ["ir/neighbourhood-app.svg","ir/neighbourhood-arena.svg","ir/neighbourhood-regras.svg","journal/2026-10-19-hatch-free-argentina.png","journal/2026-10-19-hatch-free-desktop.png","journal/2026-10-19-hatch-free-mobile.png","journal/2026-10-19-hatch-free-quick-shout.png","journal/2026-10-19-shout-expiry-after.png","journal/2026-10-19-shout-expiry-before.png"]

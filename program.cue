@@ -24,6 +24,9 @@ _designMd: _ @embed(file="DESIGN.md", type=text)
 _catalogues: _ @embed(glob="messages/*.json")
 _xstateEngines: _ @embed(file="services/database/sql/018_xstate_engines.sql", type=text)
 _mechaEngines: _ @embed(file="services/database/sql/019_mecha_engines.sql", type=text)
+// The engines since a rule takes XState's one argument; 019 keeps the bytes a
+// database ran.
+_ruleArgumentEngines: _ @embed(file="services/database/sql/020_rule_argument_engines.sql", type=text)
 
 code: pronto.#App & {
 	state: {
@@ -37,6 +40,7 @@ code: pronto.#App & {
 		}
 		migrations: "018_xstate_engines": {operations: [{sql: {up: _xstateEngines, onComplete: true}}]}
 		migrations: "019_mecha_engines": {operations: [{sql: {up: _mechaEngines, onComplete: true}}]}
+		migrations: "020_rule_argument_engines": {operations: [{sql: {up: _ruleArgumentEngines, onComplete: true}}]}
 		rawMigrations: [
 			{name: "003_rls.sql", src: "services/database/baseline/003_rls.txt"},
 			{name: "016_mecha_actors.sql", src: "services/database/baseline/016_mecha_actors.sql"},

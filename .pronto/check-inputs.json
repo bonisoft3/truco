@@ -7606,7 +7606,7 @@
       "contracts": {
         "admit": {
           "reads": [
-            "payload.seats"
+            "seats"
           ],
           "writes": [
             "joined"
@@ -7614,7 +7614,7 @@
         },
         "stand": {
           "reads": [
-            "actor"
+            "_origin"
           ],
           "writes": [
             "joined"
@@ -7622,9 +7622,9 @@
         },
         "play": {
           "reads": [
-            "now",
-            "payload.slot",
-            "payload.covered"
+            "_time",
+            "slot",
+            "covered"
           ],
           "writes": [
             "score_a",
@@ -7650,8 +7650,8 @@
         },
         "fold": {
           "reads": [
-            "actor",
-            "now"
+            "_origin",
+            "_time"
           ],
           "writes": [
             "score_a",
@@ -7684,8 +7684,8 @@
         },
         "raise": {
           "reads": [
-            "actor",
-            "now"
+            "_origin",
+            "_time"
           ],
           "writes": [
             "stake",
@@ -7698,8 +7698,8 @@
         },
         "accept": {
           "reads": [
-            "actor",
-            "now"
+            "_origin",
+            "_time"
           ],
           "writes": [
             "score_a",
@@ -7731,8 +7731,8 @@
         },
         "acceptBrink": {
           "reads": [
-            "actor",
-            "now"
+            "_origin",
+            "_time"
           ],
           "writes": [
             "stake",
@@ -7742,8 +7742,8 @@
         },
         "callEnvido": {
           "reads": [
-            "actor",
-            "now"
+            "_origin",
+            "_time"
           ],
           "writes": [
             "envido_chain",
@@ -7754,8 +7754,8 @@
         },
         "takeEnvido": {
           "reads": [
-            "actor",
-            "now"
+            "_origin",
+            "_time"
           ],
           "writes": [
             "score_a",
@@ -7775,8 +7775,8 @@
         },
         "runEnvido": {
           "reads": [
-            "actor",
-            "now"
+            "_origin",
+            "_time"
           ],
           "writes": [
             "score_a",
@@ -7795,8 +7795,8 @@
         },
         "flor": {
           "reads": [
-            "actor",
-            "now"
+            "_origin",
+            "_time"
           ],
           "writes": [
             "score_a",
@@ -7815,7 +7815,7 @@
         },
         "resign": {
           "reads": [
-            "actor"
+            "_origin"
           ],
           "writes": [
             "winner",
@@ -7825,7 +7825,7 @@
         },
         "timeout": {
           "reads": [
-            "now"
+            "_time"
           ],
           "writes": [
             "score_a",
@@ -7869,8 +7869,8 @@
         },
         "deal": {
           "reads": [
-            "now",
-            "entropy"
+            "_time",
+            "_entropy"
           ],
           "writes": [
             "a",
@@ -7910,27 +7910,100 @@
             "envido_caller"
           ]
         },
-        "mayPlay": {
+        "isActive": {
           "reads": [
-            "actor",
-            "now",
-            "payload.slot"
-          ]
+            "_origin"
+          ],
+          "reason": "not_active"
         },
-        "mayStand": {
+        "inTime": {
           "reads": [
-            "actor"
-          ]
+            "_time"
+          ],
+          "reason": "expired"
         },
-        "mayResign": {
+        "owesAnswer": {
           "reads": [
-            "actor"
-          ]
+            "_origin"
+          ],
+          "reason": "not_your_answer"
+        },
+        "answersRaise": {
+          "reads": [
+            "_origin"
+          ],
+          "reason": "not_your_answer"
+        },
+        "answersEnvido": {
+          "reads": [
+            "_origin"
+          ],
+          "reason": "not_your_answer"
+        },
+        "envidoOpen": {
+          "reads": [],
+          "reason": "envido_closed"
+        },
+        "mayCallEnvido": {
+          "reads": [
+            "_origin"
+          ],
+          "reason": "not_your_call"
+        },
+        "envidoRises": {
+          "reads": [],
+          "reason": "invalid_envido_raise"
+        },
+        "florAvailable": {
+          "reads": [
+            "_origin"
+          ],
+          "reason": "flor_unavailable"
+        },
+        "noBrink": {
+          "reads": [],
+          "reason": "brink_no_raise"
+        },
+        "raisesInTurn": {
+          "reads": [
+            "_origin"
+          ],
+          "reason": "not_your_raise"
+        },
+        "belowMaximum": {
+          "reads": [],
+          "reason": "maximum_stake"
+        },
+        "inTurn": {
+          "reads": [
+            "_origin"
+          ],
+          "reason": "not_your_turn"
+        },
+        "holdsCard": {
+          "reads": [
+            "_origin",
+            "slot"
+          ],
+          "reason": "card_already_played"
+        },
+        "isGuest": {
+          "reads": [
+            "_origin"
+          ],
+          "reason": "not_a_guest"
+        },
+        "isOpener": {
+          "reads": [
+            "_origin"
+          ],
+          "reason": "not_the_opener"
         },
         "isDue": {
           "reads": [
-            "now"
-          ]
+            "_time"
+          ],
+          "reason": "not_due"
         },
         "full": {
           "reads": []
@@ -7946,42 +8019,6 @@
         },
         "hasWager": {
           "reads": []
-        },
-        "mayLeave": {
-          "reads": [
-            "actor",
-            "now"
-          ]
-        },
-        "mayAnswer": {
-          "reads": [
-            "actor",
-            "now"
-          ]
-        },
-        "mayRaise": {
-          "reads": [
-            "actor",
-            "now"
-          ]
-        },
-        "mayEnvido": {
-          "reads": [
-            "actor",
-            "now"
-          ]
-        },
-        "mayEnvidoAnswer": {
-          "reads": [
-            "actor",
-            "now"
-          ]
-        },
-        "mayFlor": {
-          "reads": [
-            "actor",
-            "now"
-          ]
         }
       },
       "events": {
@@ -8123,7 +8160,9 @@
           "always": [
             {
               "target": "dealing",
-              "guard": "full",
+              "guard": [
+                "full"
+              ],
               "reduce": "deal"
             }
           ],
@@ -8138,7 +8177,9 @@
               ]
             },
             "stand": {
-              "guard": "mayStand",
+              "guard": [
+                "isGuest"
+              ],
               "reduce": "stand",
               "actions": [
                 {
@@ -8161,7 +8202,9 @@
             },
             "resign": {
               "target": "finished",
-              "guard": "mayResign",
+              "guard": [
+                "isOpener"
+              ],
               "reduce": "resign"
             }
           }
@@ -8171,7 +8214,9 @@
           "always": [
             {
               "target": "brink",
-              "guard": "needsBrink"
+              "guard": [
+                "needsBrink"
+              ]
             },
             {
               "target": "playing"
@@ -8180,7 +8225,9 @@
           "on": {
             "resign": {
               "target": "finished",
-              "guard": "mayResign",
+              "guard": [
+                "isOpener"
+              ],
               "reduce": "resign"
             }
           }
@@ -8190,47 +8237,88 @@
           "on": {
             "play": {
               "target": "resolving",
-              "guard": "mayPlay",
+              "guard": [
+                "isActive",
+                "inTime",
+                "inTurn",
+                "holdsCard"
+              ],
               "reduce": "play"
             },
             "raise": {
               "target": "wager",
-              "guard": "mayRaise",
+              "guard": [
+                "isActive",
+                "inTime",
+                "answersRaise",
+                "noBrink",
+                "raisesInTurn",
+                "belowMaximum"
+              ],
               "reduce": "raise"
             },
             "fold": {
               "target": "resolving",
-              "guard": "mayLeave",
+              "guard": [
+                "isActive",
+                "inTime"
+              ],
               "reduce": "fold"
             },
             "flor": {
               "target": "resolving",
-              "guard": "mayFlor",
+              "guard": [
+                "isActive",
+                "inTime",
+                "florAvailable"
+              ],
               "reduce": "flor"
             },
             "timeout": {
               "target": "resolving",
-              "guard": "isDue",
+              "guard": [
+                "isDue"
+              ],
               "reduce": "timeout"
             },
             "envido": {
               "target": "envido",
-              "guard": "mayEnvido",
+              "guard": [
+                "isActive",
+                "inTime",
+                "envidoOpen",
+                "mayCallEnvido",
+                "envidoRises"
+              ],
               "reduce": "callEnvido"
             },
             "envido_real": {
               "target": "envido",
-              "guard": "mayEnvido",
+              "guard": [
+                "isActive",
+                "inTime",
+                "envidoOpen",
+                "mayCallEnvido",
+                "envidoRises"
+              ],
               "reduce": "callEnvido"
             },
             "envido_falta": {
               "target": "envido",
-              "guard": "mayEnvido",
+              "guard": [
+                "isActive",
+                "inTime",
+                "envidoOpen",
+                "mayCallEnvido",
+                "envidoRises"
+              ],
               "reduce": "callEnvido"
             },
             "resign": {
               "target": "finished",
-              "guard": "mayResign",
+              "guard": [
+                "isOpener"
+              ],
               "reduce": "resign"
             }
           }
@@ -8239,47 +8327,88 @@
           "final": false,
           "on": {
             "raise": {
-              "guard": "mayRaise",
+              "guard": [
+                "isActive",
+                "inTime",
+                "answersRaise",
+                "noBrink",
+                "raisesInTurn",
+                "belowMaximum"
+              ],
               "reduce": "raise"
             },
             "accept": {
               "target": "resolving",
-              "guard": "mayAnswer",
+              "guard": [
+                "isActive",
+                "inTime",
+                "owesAnswer"
+              ],
               "reduce": "accept"
             },
             "fold": {
               "target": "resolving",
-              "guard": "mayAnswer",
+              "guard": [
+                "isActive",
+                "inTime",
+                "owesAnswer"
+              ],
               "reduce": "fold"
             },
             "flor": {
               "target": "resolving",
-              "guard": "mayFlor",
+              "guard": [
+                "isActive",
+                "inTime",
+                "florAvailable"
+              ],
               "reduce": "flor"
             },
             "timeout": {
               "target": "resolving",
-              "guard": "isDue",
+              "guard": [
+                "isDue"
+              ],
               "reduce": "timeout"
             },
             "envido": {
               "target": "envido",
-              "guard": "mayEnvido",
+              "guard": [
+                "isActive",
+                "inTime",
+                "envidoOpen",
+                "mayCallEnvido",
+                "envidoRises"
+              ],
               "reduce": "callEnvido"
             },
             "envido_real": {
               "target": "envido",
-              "guard": "mayEnvido",
+              "guard": [
+                "isActive",
+                "inTime",
+                "envidoOpen",
+                "mayCallEnvido",
+                "envidoRises"
+              ],
               "reduce": "callEnvido"
             },
             "envido_falta": {
               "target": "envido",
-              "guard": "mayEnvido",
+              "guard": [
+                "isActive",
+                "inTime",
+                "envidoOpen",
+                "mayCallEnvido",
+                "envidoRises"
+              ],
               "reduce": "callEnvido"
             },
             "resign": {
               "target": "finished",
-              "guard": "mayResign",
+              "guard": [
+                "isOpener"
+              ],
               "reduce": "resign"
             }
           }
@@ -8289,22 +8418,34 @@
           "on": {
             "accept": {
               "target": "playing",
-              "guard": "mayAnswer",
+              "guard": [
+                "isActive",
+                "inTime",
+                "owesAnswer"
+              ],
               "reduce": "acceptBrink"
             },
             "fold": {
               "target": "resolving",
-              "guard": "mayAnswer",
+              "guard": [
+                "isActive",
+                "inTime",
+                "owesAnswer"
+              ],
               "reduce": "fold"
             },
             "timeout": {
               "target": "resolving",
-              "guard": "isDue",
+              "guard": [
+                "isDue"
+              ],
               "reduce": "timeout"
             },
             "resign": {
               "target": "finished",
-              "guard": "mayResign",
+              "guard": [
+                "isOpener"
+              ],
               "reduce": "resign"
             }
           }
@@ -8314,42 +8455,76 @@
           "on": {
             "envido_take": {
               "target": "resolving",
-              "guard": "mayEnvidoAnswer",
+              "guard": [
+                "isActive",
+                "inTime",
+                "answersEnvido"
+              ],
               "reduce": "takeEnvido"
             },
             "envido_run": {
               "target": "resolving",
-              "guard": "mayEnvidoAnswer",
+              "guard": [
+                "isActive",
+                "inTime",
+                "answersEnvido"
+              ],
               "reduce": "runEnvido"
             },
             "flor": {
               "target": "resolving",
-              "guard": "mayFlor",
+              "guard": [
+                "isActive",
+                "inTime",
+                "florAvailable"
+              ],
               "reduce": "flor"
             },
             "timeout": {
               "target": "resolving",
-              "guard": "isDue",
+              "guard": [
+                "isDue"
+              ],
               "reduce": "timeout"
             },
             "envido": {
               "target": "envido",
-              "guard": "mayEnvido",
+              "guard": [
+                "isActive",
+                "inTime",
+                "envidoOpen",
+                "mayCallEnvido",
+                "envidoRises"
+              ],
               "reduce": "callEnvido"
             },
             "envido_real": {
               "target": "envido",
-              "guard": "mayEnvido",
+              "guard": [
+                "isActive",
+                "inTime",
+                "envidoOpen",
+                "mayCallEnvido",
+                "envidoRises"
+              ],
               "reduce": "callEnvido"
             },
             "envido_falta": {
               "target": "envido",
-              "guard": "mayEnvido",
+              "guard": [
+                "isActive",
+                "inTime",
+                "envidoOpen",
+                "mayCallEnvido",
+                "envidoRises"
+              ],
               "reduce": "callEnvido"
             },
             "resign": {
               "target": "finished",
-              "guard": "mayResign",
+              "guard": [
+                "isOpener"
+              ],
               "reduce": "resign"
             }
           }
@@ -8359,15 +8534,21 @@
           "always": [
             {
               "target": "finished",
-              "guard": "matchOver"
+              "guard": [
+                "matchOver"
+              ]
             },
             {
               "target": "hand_over",
-              "guard": "handOver"
+              "guard": [
+                "handOver"
+              ]
             },
             {
               "target": "wager",
-              "guard": "hasWager"
+              "guard": [
+                "hasWager"
+              ]
             },
             {
               "target": "playing"
@@ -8376,7 +8557,9 @@
           "on": {
             "resign": {
               "target": "finished",
-              "guard": "mayResign",
+              "guard": [
+                "isOpener"
+              ],
               "reduce": "resign"
             }
           }
@@ -8390,7 +8573,9 @@
             },
             "resign": {
               "target": "finished",
-              "guard": "mayResign",
+              "guard": [
+                "isOpener"
+              ],
               "reduce": "resign"
             }
           }
@@ -8574,7 +8759,7 @@
       "contracts": {
         "show": {
           "reads": [
-            "payload.name"
+            "name"
           ],
           "writes": [
             "name"
@@ -8582,8 +8767,8 @@
         },
         "touch": {
           "reads": [
-            "now",
-            "payload.session"
+            "_time",
+            "session"
           ],
           "writes": [
             "leases",
@@ -8592,8 +8777,8 @@
         },
         "leave": {
           "reads": [
-            "now",
-            "payload.session"
+            "_time",
+            "session"
           ],
           "writes": [
             "leases",
@@ -8602,24 +8787,31 @@
         },
         "expire": {
           "reads": [
-            "now"
+            "_time"
           ],
           "writes": [
             "leases",
             "until"
           ]
         },
-        "mayShow": {
+        "named": {
           "reads": [
-            "now",
-            "payload.name"
-          ]
+            "name"
+          ],
+          "reason": "name_required"
+        },
+        "connected": {
+          "reads": [
+            "_time"
+          ],
+          "reason": "disconnected"
         },
         "hasCapacity": {
           "reads": [
-            "now",
-            "payload.session"
-          ]
+            "_time",
+            "session"
+          ],
+          "reason": "too_many_tabs"
         }
       },
       "events": {
@@ -8680,14 +8872,19 @@
           "on": {
             "show": {
               "target": "visible",
-              "guard": "mayShow",
+              "guard": [
+                "named",
+                "connected"
+              ],
               "reduce": "show"
             },
             "hide": {
               "target": "hidden"
             },
             "touch": {
-              "guard": "hasCapacity",
+              "guard": [
+                "hasCapacity"
+              ],
               "reduce": "touch"
             },
             "leave": {
@@ -8703,14 +8900,19 @@
           "on": {
             "show": {
               "target": "visible",
-              "guard": "mayShow",
+              "guard": [
+                "named",
+                "connected"
+              ],
               "reduce": "show"
             },
             "hide": {
               "target": "hidden"
             },
             "touch": {
-              "guard": "hasCapacity",
+              "guard": [
+                "hasCapacity"
+              ],
               "reduce": "touch"
             },
             "leave": {
@@ -9069,22 +9271,29 @@
         }
       },
       "contracts": {
-        "mayAnswer": {
+        "isTarget": {
           "reads": [
-            "actor",
-            "now"
-          ]
+            "_origin"
+          ],
+          "reason": "not_target"
         },
-        "mayCancel": {
+        "isInviter": {
           "reads": [
-            "actor",
-            "now"
-          ]
+            "_origin"
+          ],
+          "reason": "not_inviter"
+        },
+        "inTime": {
+          "reads": [
+            "_time"
+          ],
+          "reason": "expired"
         },
         "isDue": {
           "reads": [
-            "now"
-          ]
+            "_time"
+          ],
+          "reason": "not_due"
         }
       },
       "events": {
@@ -9123,7 +9332,10 @@
           "on": {
             "accept": {
               "target": "accepted",
-              "guard": "mayAnswer",
+              "guard": [
+                "isTarget",
+                "inTime"
+              ],
               "requires": [
                 {
                   "sql": "hybrid_truco_presence.available((game.state->>'inviter')::uuid) AND hybrid_truco_presence.available((game.state->>'target')::uuid)",
@@ -9179,15 +9391,23 @@
             },
             "decline": {
               "target": "declined",
-              "guard": "mayAnswer"
+              "guard": [
+                "isTarget",
+                "inTime"
+              ]
             },
             "cancel": {
               "target": "cancelled",
-              "guard": "mayCancel"
+              "guard": [
+                "isInviter",
+                "inTime"
+              ]
             },
             "expire": {
               "target": "expired",
-              "guard": "isDue"
+              "guard": [
+                "isDue"
+              ]
             }
           }
         },
@@ -9434,10 +9654,10 @@
       "contracts": {
         "sit": {
           "reads": [
-            "payload.room",
-            "payload.seat",
-            "payload.name",
-            "payload.talk"
+            "room",
+            "seat",
+            "name",
+            "talk"
           ],
           "writes": [
             "room",
@@ -9448,7 +9668,7 @@
         },
         "shout": {
           "reads": [
-            "payload.word"
+            "word"
           ],
           "writes": [
             "word",
@@ -9463,10 +9683,11 @@
             "talk"
           ]
         },
-        "mayShout": {
+        "hasWord": {
           "reads": [
-            "payload.word"
-          ]
+            "word"
+          ],
+          "reason": "no_word"
         }
       },
       "events": {
@@ -9561,7 +9782,9 @@
               ]
             },
             "shout": {
-              "guard": "mayShout",
+              "guard": [
+                "hasWord"
+              ],
               "reduce": "shout"
             },
             "rise": {
@@ -9941,22 +10164,29 @@
         }
       },
       "contracts": {
-        "mayAnswer": {
+        "isTarget": {
           "reads": [
-            "actor",
-            "now"
-          ]
+            "_origin"
+          ],
+          "reason": "not_target"
         },
-        "mayCancel": {
+        "isCaller": {
           "reads": [
-            "actor",
-            "now"
-          ]
+            "_origin"
+          ],
+          "reason": "not_caller"
+        },
+        "inTime": {
+          "reads": [
+            "_time"
+          ],
+          "reason": "expired"
         },
         "isDue": {
           "reads": [
-            "now"
-          ]
+            "_time"
+          ],
+          "reason": "not_due"
         }
       },
       "events": {
@@ -9995,19 +10225,30 @@
           "on": {
             "accept": {
               "target": "accepted",
-              "guard": "mayAnswer"
+              "guard": [
+                "isTarget",
+                "inTime"
+              ]
             },
             "decline": {
               "target": "declined",
-              "guard": "mayAnswer"
+              "guard": [
+                "isTarget",
+                "inTime"
+              ]
             },
             "cancel": {
               "target": "cancelled",
-              "guard": "mayCancel"
+              "guard": [
+                "isCaller",
+                "inTime"
+              ]
             },
             "expire": {
               "target": "expired",
-              "guard": "isDue"
+              "guard": [
+                "isDue"
+              ]
             }
           }
         },

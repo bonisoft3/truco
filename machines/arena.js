@@ -14,7 +14,7 @@
 // a player says there — the name the table knows them by, and their shouts —
 // is their truco_voice's, never the match's, so banter never moves the game
 // under a move.
-(state, event, machine, machines) => {
+({ context: state, event }, { machine, machines }) => {
   const rows = state.rows ?? {};
   const BEAT = 700;
 

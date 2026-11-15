@@ -9,7 +9,7 @@
 // tab that closes stops listing you when its lease lapses. A gesture becomes a command
 // or an open row; a new challenge or call is keyed by a draw, since an
 // instance's id is a uuid and a fold has no randomness but the terminal's.
-(state, event, machine, machines) => {
+({ context: state, event }, { machine, machines }) => {
   const rows = state.rows ?? {};
   const txt = value => String(value);
 

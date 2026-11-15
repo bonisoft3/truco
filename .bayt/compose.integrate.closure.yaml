@@ -8,19 +8,21 @@ include:
   required: false
 - path: .././.bayt/compose.crud.yaml
   required: false
-- path: .././.bayt/compose.migrate.yaml
-  required: false
-- path: .././.bayt/compose.timer-check.yaml
-  required: false
 - path: .././.bayt/compose.caddy.yaml
   required: false
-- path: .././.bayt/compose.served.yaml
+- path: .././.bayt/compose.electric.yaml
+  required: false
+- path: .././.bayt/compose.migrate.yaml
   required: false
 - path: .././.bayt/compose.served-release.yaml
   required: false
 - path: .././.bayt/compose.auth.yaml
   required: false
 - path: .././.bayt/compose.ticker.yaml
+  required: false
+- path: .././.bayt/compose.timer-check.yaml
+  required: false
+- path: .././.bayt/compose.served.yaml
   required: false
 - path: .././.bayt/compose.ci-replay.yaml
   required: false
@@ -35,8 +37,6 @@ include:
 - path: .././.bayt/compose.test.yaml
   required: false
 - path: .././.bayt/compose.launch.yaml
-  required: false
-- path: .././.bayt/compose.electric.yaml
   required: false
 - path: .././.bayt/compose.clock.yaml
   required: false

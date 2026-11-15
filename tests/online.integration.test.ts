@@ -75,8 +75,19 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       await new Promise(resolve => setTimeout(resolve, 250));
     }
     const migrations = new URL("../services/database/migrations/", import.meta.url);
-    const upgrade = await Deno.readTextFile(new URL("../services/database/sql/018_xstate_engines.sql", import.meta.url));
-    const installed = upgrade.match(/CREATE OR REPLACE FUNCTION hybrid_truco_match\.engine\(input jsonb\) RETURNS jsonb LANGUAGE plv8 AS \$mecha\$[\s\S]*?\$mecha\$;/)?.[0];
+    // A deployment applies every sql/ upgrade in order; the match engine it
+    // ends with is the last one an upgrade defines, under any dollar quote.
+    const engineSql = /CREATE OR REPLACE FUNCTION hybrid_truco_match\.engine\(input jsonb\) RETURNS jsonb LANGUAGE plv8 AS \$(\w*)\$[\s\S]*?\$\1\$;/;
+    const upgradeDir = new URL("../services/database/sql/", import.meta.url);
+    const names: string[] = [];
+    for await (const entry of Deno.readDir(upgradeDir)) if (entry.name.endsWith(".sql")) names.push(entry.name);
+    const upgrades: string[] = [];
+    let installed: string | undefined;
+    for (const name of names.sort()) {
+      const text = await Deno.readTextFile(new URL(name, upgradeDir));
+      upgrades.push(text);
+      installed = text.match(engineSql)?.[0] ?? installed;
+    }
     assert(installed);
     assertEquals(await sha256(installed), await engine("match"));
     const files: string[] = [];
@@ -91,7 +102,7 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       'schedules', (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.name) FROM schedule s WHERE s.emits_entity = 'machine_timer_tick' AND s.emits_values @> jsonb_build_object('machine', 'truco_match', 'row', jsonb_build_object('id', '${uuid(960)}')))
     )::text`);
     const retained = await snapshot();
-    await sql(upgrade);
+    for (const upgrade of upgrades) await sql(upgrade);
     assertEquals(await snapshot(), retained);
     assertEquals((await join(97, 960)).kind, "accepted");
     // The deployment's step: the roles migration leaves the login's password to it.

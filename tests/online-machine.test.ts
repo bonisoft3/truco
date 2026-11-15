@@ -293,7 +293,7 @@ Deno.test("Truco's machines hold under any input a step can be given", async () 
 });
 
 Deno.test("the retained runtime upgrade contains the current engine for every mecha", async () => {
-  const upgrade = await Deno.readTextFile(new URL("../services/database/sql/019_mecha_engines.sql", import.meta.url));
+  const upgrade = await Deno.readTextFile(new URL("../services/database/sql/020_rule_argument_engines.sql", import.meta.url));
   assert(upgrade.includes("-- tier: container\n"));
   assert(upgrade.endsWith("-- tier: any\n"));
   for (const name of ["call", "challenge", "match", "presence", "voice"]) {

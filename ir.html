@@ -3199,21 +3199,20 @@ police arbitrary code — cannot see it. That is the single largest gap in this
 compile.</li>
 <li><strong>Measured against its siblings.</strong> Counted from source, this
 app is the outlier in one dimension only: <strong>1,206 lines of assembly per
-screen</strong>, against 308 for xpense, 324 for realworld and 150 for
-thenote. That number is the dealer plus the table's materials — the price of an
+screen</strong>, against 324 for realworld. That number is the dealer plus the table's materials — the price of an
 app whose subject the declarative surface does not cover — and it is worth
 knowing that the price is concentrated rather than spread: the entity count (3)
-and the program (633 lines) are the smallest of the four. It is also the only
+and the program (633 lines) are small. It is also the only
 app that carries its own tests (627 lines) and the only one with ten declared
 checks; both follow from the same fact.<br>
 Measured at runtime, the tab path delivers what it promises: the table is
 playable <strong>~700ms</strong> after the request and makes
 <strong>zero requests and zero bytes</strong> sitting idle for ten seconds —
 no shape stream, no poll, nothing to keep alive. The comparison against a
-crud-path app could not be completed: xpense would not get past its sign-in
-gate in this harness.</li>
+crud-path app could not be completed because its sign-in gate blocked
+this harness.</li>
 <li><strong>The siblings do not boot.</strong> Trying to measure one turned up
-a repo-wide fact worth more than the benchmark: xpense's checked-in emission
+a repo-wide fact worth more than the benchmark: a checked-in emission
 predates <code>jessie.js</code> joining the interpreter's file list, so its
 baked image lacks the file, the shell 404s, and the app never mounts.
 Regenerating it (<code>write.ts</code>, one command, no source change) fixes it

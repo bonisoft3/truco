@@ -11,7 +11,7 @@ const config = variant => ({
   douradao: {ladder: [2, 4, 8, 10, 12], goal: 12, games: 2, trumps: [40, 24, 15, 28, 20, 16, 23, 31, 35, 7, 3, 39, 14]},
 })[variant];
 // A table without a clock (turn_ms 0) has no deadline to miss.
-const due = (state, context) => state.turn_ms ? context.now + state.turn_ms : 0;
+const due = (state, event) => state.turn_ms ? event._time + state.turn_ms : 0;
 const said = (state, seat, kind, count = 0) => [...state.log, {seat, kind, count, at: state.plays.length}];
 const sides = state => state.seating === "2v2v2" ? ["a", "b", "c"] : ["a", "b"];
 const side = (state, seat) => sides(state)[state.seats.indexOf(seat) % sides(state).length];
@@ -37,7 +37,7 @@ const pay = (state, winner, points) => {
   return {...state, [`score_${winner}`]: score, [`games_${winner}`]: games, result: winner, deadline: 0, ...(won ? {winner} : {})};
 };
 const award = (state, result, points) => ({...(result === "draw" ? state : pay(state, result, points)), result, offer: 0, deadline: 0});
-const advance = (state, context) => {
+const advance = (state, event) => {
   const seats = active(state);
   const trick = state.tricks.length;
   const laid = state.plays.filter(p => p.trick === trick && seats.includes(p.seat));
@@ -47,38 +47,41 @@ const advance = (state, context) => {
     const winners = [...new Set(best.map(p => side(state, p.seat)))];
     const result = winners.length === 1 ? winners[0] : "tie";
     const tricks = [...state.tricks, result];
-    const next = {...state, tricks, turn: result === "tie" ? laid[0].seat : best[0].seat, deadline: due(state, context)};
+    const next = {...state, tricks, turn: result === "tie" ? laid[0].seat : best[0].seat, deadline: due(state, event)};
     const winner = handWinner(tricks.map(team => state.folded.includes(team) ? "tie" : team));
     return winner ? award(next, winner, state.stake) : next;
   }
   const start = state.seats.indexOf(state.turn);
   const turn = state.seats.slice(start).concat(state.seats.slice(0, start)).find(seat => seats.includes(seat) && !laid.some(p => p.seat === seat));
-  return {...state, turn, deadline: due(state, context)};
+  return {...state, turn, deadline: due(state, event)};
 };
-const play = (state, event, context) => {
+const play = ({context: state, event}) => {
   const hand = state[state.turn].slice();
-  const card = hand[event.payload.slot];
-  hand[event.payload.slot] = -1;
-  return advance({...state, [state.turn]: hand, plays: [...state.plays, {seat: state.turn, card, covered: event.payload.covered, trick: state.tricks.length, slot: event.payload.slot}]}, context);
+  const card = hand[event.slot];
+  hand[event.slot] = -1;
+  return advance({...state, [state.turn]: hand, plays: [...state.plays, {seat: state.turn, card, covered: event.covered, trick: state.tricks.length, slot: event.slot}]}, event);
 };
-const mayAct = (state, _event, context) => !state.seats.includes(context.actor) || state.folded.includes(side(state, context.actor)) ? "not_active" : state.deadline && context.now >= state.deadline ? "expired" : true;
-const mayLeave = mayAct;
+// The guards, each a boolean as XState's is: match.cue names them on a
+// transition in the order they are tried, and states what a refusal by each
+// is called.
+const isActive = ({context: state, event}) => state.seats.includes(event._origin) && !state.folded.includes(side(state, event._origin));
+const inTime = ({context: state, event}) => !(state.deadline && event._time >= state.deadline);
 const owes = (state, actor) => state.phase === "brink" ? side(state, actor) === state.brink : side(state, actor) !== state.caller && !state.answers.includes(side(state, actor));
-const mayAnswer = (state, event, context) => mayAct(state, event, context) !== true ? mayAct(state, event, context) : !owes(state, context.actor) ? "not_your_answer" : true;
+const owesAnswer = ({context: state, event}) => owes(state, event._origin);
 const settleBid = state => {
   const remaining = sides(state).filter(s => !state.folded.includes(s));
   if (state.offer && remaining.every(s => s === state.caller || state.answers.includes(s))) return {...state, stake: state.offer, offer: 0, right: state.caller, caller: "", answers: []};
   return state;
 };
 // Leaving before the envido window shuts concedes the envido's point as well.
-const fold = (state, _event, context) => {
-  const folded = [...state.folded, side(state, context.actor)];
+const fold = ({context: state, event}) => {
+  const folded = [...state.folded, side(state, event._origin)];
   const remaining = sides(state).filter(s => !folded.includes(s));
   const owed = state.phase === "playing" && config(state.variant).envido && !state.tricks.length && !state.envido_done && !state.envido_chain.length;
-  const spoken = {...state, log: said(state, context.actor, "fold")};
+  const spoken = {...state, log: said(state, event._origin, "fold")};
   if (remaining.length === 1) return award({...(owed ? pay(spoken, remaining[0], 1) : spoken), folded}, remaining[0], state.stake);
-  const next = settleBid({...spoken, folded, deadline: due(state, context)});
-  return next.offer ? next : advance(next, context);
+  const next = settleBid({...spoken, folded, deadline: due(state, event)});
+  return next.offer ? next : advance(next, event);
 };
 const dealt = (state, seat) => state[seat].filter(c => c >= 0).concat(state.plays.filter(p => p.seat === seat).map(p => p.card));
 const pips = card => [4, 5, 6, 7, 0, 0, 0, 1, 2, 3][Math.floor(card / 4)];
@@ -88,27 +91,25 @@ const count = cards => {
   return best;
 };
 const envidoWorth = (state, chain) => chain.includes("envido_falta") ? state.goal - Math.max(state.score_a, state.score_b) : chain.reduce((sum, kind) => sum + (kind === "envido" ? 2 : 3), 0);
-const mayEnvidoAnswer = (state, event, context) => mayAct(state, event, context) !== true ? mayAct(state, event, context) : side(state, context.actor) === state.envido_caller ? "not_your_answer" : true;
-const mayEnvido = (state, event, context) => {
-  if (mayAct(state, event, context) !== true) return mayAct(state, event, context);
-  if (!config(state.variant).envido || state.tricks.length || state.envido_done) return "envido_closed";
-  if (state.phase === "envido" ? mayEnvidoAnswer(state, event, context) !== true : state.turn !== context.actor && !(state.phase === "wager" && owes(state, context.actor))) return "not_your_call";
-  // Envido, envido, real envido, falta envido: never downward, envido twice at most.
+const answersEnvido = ({context: state, event}) => side(state, event._origin) !== state.envido_caller;
+const envidoOpen = ({context: state}) => !(!config(state.variant).envido || state.tricks.length || state.envido_done);
+const mayCallEnvido = ({context: state, event}) => state.phase === "envido" ? answersEnvido({context: state, event}) : state.turn === event._origin || (state.phase === "wager" && owes(state, event._origin));
+// Envido, envido, real envido, falta envido: never downward, envido twice at most.
+const envidoRises = ({context: state, event}) => {
   const rank = ["envido", "envido_real", "envido_falta"];
   const last = state.envido_chain.at(-1);
-  if (last && (last === "envido_falta" || rank.indexOf(event.kind) < rank.indexOf(last))) return "invalid_envido_raise";
-  if (state.envido_chain.filter(kind => kind === event.kind).length >= (event.kind === "envido" ? 2 : 1)) return "invalid_envido_raise";
-  return true;
+  if (last && (last === "envido_falta" || rank.indexOf(event.type) < rank.indexOf(last))) return false;
+  return state.envido_chain.filter(kind => kind === event.type).length < (event.type === "envido" ? 2 : 1);
 };
-const mayFlor = (state, event, context) => mayAct(state, event, context) !== true ? mayAct(state, event, context) : !config(state.variant).flor || state.tricks.length || state.envido_done || new Set(dealt(state, context.actor).map(card => card % 4)).size !== 1 ? "flor_unavailable" : true;
-const runEnvido = (state, _event, context) => ({...pay({...state, deadline: due(state, context), log: said(state, context.actor, "envido_run")}, state.envido_caller, Math.max(1, envidoWorth(state, state.envido_chain.slice(0, -1)))), envido_done: "refused", envido_caller: ""});
+const florAvailable = ({context: state, event}) => !(!config(state.variant).flor || state.tricks.length || state.envido_done || new Set(dealt(state, event._origin).map(card => card % 4)).size !== 1);
+const runEnvido = ({context: state, event}) => ({...pay({...state, deadline: due(state, event), log: said(state, event._origin, "envido_run")}, state.envido_caller, Math.max(1, envidoWorth(state, state.envido_chain.slice(0, -1)))), envido_done: "refused", envido_caller: ""});
 // The mano's side states its count first; each side after it states its own
 // only to beat the best so far, and otherwise says "son buenas" and shows
 // nothing. A tie stays with whoever spoke first.
-const takeEnvido = (state, _event, context) => {
+const takeEnvido = ({context: state, event}) => {
   const from = state.seats.indexOf(state.leader);
   const round = state.seats.slice(from).concat(state.seats.slice(0, from));
-  let log = said(state, context.actor, "envido_take");
+  let log = said(state, event._origin, "envido_take");
   const scores = [];
   for (const team of sides(state).slice().sort((x, y) => round.findIndex(s => side(state, s) === x) - round.findIndex(s => side(state, s) === y))) {
     const speaker = round.find(seat => side(state, seat) === team);
@@ -118,22 +119,27 @@ const takeEnvido = (state, _event, context) => {
       log = [...log, {seat: speaker, kind: "envido_count", count: best, at: state.plays.length}];
     } else log = [...log, {seat: speaker, kind: "envido_good", count: 0, at: state.plays.length}];
   }
-  return {...pay({...state, deadline: due(state, context), log}, scores.at(-1).side, envidoWorth(state, state.envido_chain)), envido_done: "accepted", envido_caller: "", envido_scores: scores};
+  return {...pay({...state, deadline: due(state, event), log}, scores.at(-1).side, envidoWorth(state, state.envido_chain)), envido_done: "accepted", envido_caller: "", envido_scores: scores};
 };
-const mayRaise = (state, event, context) => {
-  const allowed = state.phase === "wager" ? mayAnswer(state, event, context) : mayAct(state, event, context);
-  if (allowed !== true) return allowed;
-  if (state.brink) return "brink_no_raise";
-  if (state.phase !== "wager" && (state.turn !== context.actor || state.right === side(state, context.actor))) return "not_your_raise";
-  if ((state.offer || state.stake) === config(state.variant).ladder.slice(-1)[0]) return "maximum_stake";
-  return true;
-};
-const mayPlay = (state, event, context) => mayAct(state, event, context) !== true ? mayAct(state, event, context) : state.turn !== context.actor ? "not_your_turn" : state[context.actor][event.payload.slot] < 0 ? "card_already_played" : true;
+// A raise while one stands is an answer to it.
+const answersRaise = ({context: state, event}) => state.phase !== "wager" || owes(state, event._origin);
+const noBrink = ({context: state}) => !state.brink;
+const raisesInTurn = ({context: state, event}) => state.phase === "wager" || (state.turn === event._origin && state.right !== side(state, event._origin));
+const belowMaximum = ({context: state}) => (state.offer || state.stake) !== config(state.variant).ladder.slice(-1)[0];
+const inTurn = ({context: state, event}) => state.turn === event._origin;
+const holdsCard = ({context: state, event}) => !(state[event._origin][event.slot] < 0);
 // A table still waiting is closed by its opener; a guest stands up from it.
-const mayResign = (state, _event, context) => state.phase !== "waiting" || context.actor === "a" ? true : "not_the_opener";
-const mayStand = (state, _event, context) => context.actor !== "a" && state.joined.includes(context.actor) ? true : "not_a_guest";
+const isOpener = ({context: state, event}) => state.phase !== "waiting" || event._origin === "a";
+const isGuest = ({context: state, event}) => event._origin !== "a" && state.joined.includes(event._origin);
+// What a transition's guards allow together, for the seat's view of its moves.
+const mayAct = given => isActive(given) && inTime(given);
+const mayAnswer = given => mayAct(given) && owesAnswer(given);
+const mayEnvidoAnswer = given => mayAct(given) && answersEnvido(given);
+const mayEnvido = given => mayAct(given) && envidoOpen(given) && mayCallEnvido(given) && envidoRises(given);
+const mayFlor = given => mayAct(given) && florAvailable(given);
+const mayRaise = given => mayAct(given) && answersRaise(given) && noBrink(given) && raisesInTurn(given) && belowMaximum(given);
 return {
-  initial: input => {
+  initial: ({input}) => {
     if ((input.seating === "2v2v2") !== ["douradinha", "douradao"].includes(input.variant)) throw new Error("variant does not support this seating");
     const seats = allSeats.slice(0, input.seating === "1v1" ? 2 : input.seating === "2v2" ? 4 : 6);
     return {phase: "waiting", variant: input.variant, seating: input.seating, reserved: input.reserved, talk: input.talk, seats, joined: ["a"],
@@ -148,49 +154,50 @@ return {
     const cards = state.seats.flatMap(s => state[s]).filter(c => c >= 0).concat(state.plays.map(p => p.card), state.vira < 0 ? [] : [state.vira]);
     return state.seats.every(s => state[s].length === 3) && cards.length === state.seats.length * 3 + (state.vira < 0 ? 0 : 1) && new Set(cards).size === cards.length && cards.every(c => c >= 0 && c < (state.variant === "douradao" ? 41 : 40));
   },
-  admit: (state, event) => ({...state, joined: event.payload.seats}),
-  mayResign,
-  mayStand,
-  stand: (state, _event, context) => ({...state, joined: state.joined.filter(seat => seat !== context.actor)}),
-  full: state => state.joined.length === state.seats.length,
-  needsBrink: state => ["a", "b"].includes(state.brink),
-  handOver: state => state.result !== "",
-  matchOver: state => state.winner !== "",
-  hasWager: state => state.offer > 0,
-  mayAct, mayLeave, mayAnswer, mayPlay, mayRaise, mayEnvido, mayEnvidoAnswer, mayFlor,
-  isDue: (state, _event, context) => state.deadline && context.now >= state.deadline ? true : "not_due",
+  admit: ({context: state, event}) => ({...state, joined: event.seats}),
+  isOpener,
+  isGuest,
+  stand: ({context: state, event}) => ({...state, joined: state.joined.filter(seat => seat !== event._origin)}),
+  full: ({context: state}) => state.joined.length === state.seats.length,
+  needsBrink: ({context: state}) => ["a", "b"].includes(state.brink),
+  handOver: ({context: state}) => state.result !== "",
+  matchOver: ({context: state}) => state.winner !== "",
+  hasWager: ({context: state}) => state.offer > 0,
+  isActive, inTime, owesAnswer, answersRaise, answersEnvido, envidoOpen, mayCallEnvido, envidoRises, florAvailable,
+  noBrink, raisesInTurn, belowMaximum, inTurn, holdsCard,
+  isDue: ({context: state, event}) => !inTime({context: state, event}),
   play, fold, takeEnvido, runEnvido,
-  callEnvido: (state, event, context) => ({...state, envido_chain: [...state.envido_chain, event.kind], envido_caller: side(state, context.actor), deadline: due(state, context), log: said(state, context.actor, event.kind)}),
-  flor: (state, _event, context) => ({...pay({...state, deadline: due(state, context), log: said(state, context.actor, "flor")}, side(state, context.actor), 3), envido_done: "flor", envido_caller: ""}),
-  raise: (state, _event, context) => {
+  callEnvido: ({context: state, event}) => ({...state, envido_chain: [...state.envido_chain, event.type], envido_caller: side(state, event._origin), deadline: due(state, event), log: said(state, event._origin, event.type)}),
+  flor: ({context: state, event}) => ({...pay({...state, deadline: due(state, event), log: said(state, event._origin, "flor")}, side(state, event._origin), 3), envido_done: "flor", envido_caller: ""}),
+  raise: ({context: state, event}) => {
     const stake = state.offer || state.stake;
     const ladder = config(state.variant).ladder;
-    return {...state, stake, offer: ladder[ladder.indexOf(stake) + 1], caller: side(state, context.actor), answers: [], deadline: due(state, context), log: said(state, context.actor, "raise")};
+    return {...state, stake, offer: ladder[ladder.indexOf(stake) + 1], caller: side(state, event._origin), answers: [], deadline: due(state, event), log: said(state, event._origin, "raise")};
   },
-  accept: (state, _event, context) => {
-    const next = settleBid({...state, answers: [...state.answers, side(state, context.actor)], deadline: due(state, context), log: said(state, context.actor, "accept")});
-    return next.offer ? next : advance(next, context);
+  accept: ({context: state, event}) => {
+    const next = settleBid({...state, answers: [...state.answers, side(state, event._origin)], deadline: due(state, event), log: said(state, event._origin, "accept")});
+    return next.offer ? next : advance(next, event);
   },
-  acceptBrink: (state, _event, context) => ({...state, stake: config(state.variant).ladder[1], deadline: due(state, context), log: said(state, context.actor, "accept")}),
-  resign: (state, _event, context) => {
-    const winner = sides(state).length === 3 ? "draw" : sides(state).find(s => s !== side(state, context.actor));
+  acceptBrink: ({context: state, event}) => ({...state, stake: config(state.variant).ladder[1], deadline: due(state, event), log: said(state, event._origin, "accept")}),
+  resign: ({context: state, event}) => {
+    const winner = sides(state).length === 3 ? "draw" : sides(state).find(s => s !== side(state, event._origin));
     return {...state, winner, result: winner, deadline: 0};
   },
-  timeout: (state, event, context) => {
+  timeout: ({context: state, event}) => {
     // The wake carries no seat; the refusal is the side's that owed it.
-    if (state.phase === "envido") return runEnvido(state, event, {...context, actor: active(state).find(s => side(state, s) !== state.envido_caller)});
-    if (state.phase !== "playing") return fold(state, event, {...context, actor: active(state).find(s => owes(state, s))});
+    if (state.phase === "envido") return runEnvido({context: state, event: {...event, _origin: active(state).find(s => side(state, s) !== state.envido_caller)}});
+    if (state.phase !== "playing") return fold({context: state, event: {...event, _origin: active(state).find(s => owes(state, s))}});
     const slot = state[state.turn].map((card, slot) => ({card, slot})).filter(c => c.card >= 0).sort((a, b) => power(state, a.card) - power(state, b.card))[0].slot;
-    return play(state, {payload: {slot, covered: false}}, context);
+    return play({context: state, event: {...event, slot, covered: false}});
   },
-  deal: (state, _event, context) => {
+  deal: ({context: state, event}) => {
     const deck = Array.from({length: state.variant === "douradao" ? 41 : 40}, (_, i) => i);
     let offset = 0;
     for (let i = deck.length - 1; i > 0; i--) {
       let byte;
       do {
-        if (offset + 2 > context.entropy.length) throw new Error("deal entropy exhausted");
-        byte = Number.parseInt(context.entropy.slice(offset, offset + 2), 16); offset += 2;
+        if (offset + 2 > event._entropy.length) throw new Error("deal entropy exhausted");
+        byte = Number.parseInt(event._entropy.slice(offset, offset + 2), 16); offset += 2;
       } while (byte >= 256 - 256 % (i + 1));
       const j = byte % (i + 1); [deck[i], deck[j]] = [deck[j], deck[i]];
     }
@@ -203,24 +210,24 @@ return {
     const brink = at === undefined ? "" : scores.score_a === at && scores.score_b === at ? "both" : scores.score_a === at ? "a" : scores.score_b === at ? "b" : "";
     return {...state, ...scores, ...hands, vira: state.variant === "paulista" ? deck[state.seats.length * 3] : -1, leader, turn: leader, brink,
       hand_no: state.hand_no + 1, stake: config(state.variant).ladder[0], offer: 0, caller: "", right: "", result: "", tricks: [], plays: [], folded: [], answers: [],
-      envido_chain: [], envido_caller: "", envido_done: "", envido_scores: [], log: [], deadline: due(state, context)};
+      envido_chain: [], envido_caller: "", envido_done: "", envido_scores: [], log: [], deadline: due(state, event)};
   },
   publish: state => state.phase === "waiting" && !state.reserved ? {variant: state.variant, seating: state.seating, talk: state.talk, seated: state.joined.length, places: state.seats.length} : null,
   project: (state, viewer) => {
     if (!state.seats.includes(viewer)) throw new Error("invalid viewer");
     const {a, b, c, d, e, f, ...visible} = state;
-    const own = state[viewer], team = side(state, viewer), context = {actor: viewer, now: 0};
+    const own = state[viewer], team = side(state, viewer), event = {_origin: viewer, _time: 0};
     const actions = [];
-    if (state.phase === "waiting" && mayStand(state, {}, context) === true) actions.push("stand");
-    if (state.phase !== "finished" && mayResign(state, {}, context) === true) actions.push("resign");
+    if (state.phase === "waiting" && isGuest({context: state, event})) actions.push("stand");
+    if (state.phase !== "finished" && isOpener({context: state, event})) actions.push("resign");
     if (state.phase === "hand_over") actions.push("next");
-    if (state.phase === "playing" && mayAct(state, {}, context) === true) { actions.push("fold"); if (state.turn === viewer) actions.push("play"); }
-    if (["playing", "wager"].includes(state.phase) && mayRaise(state, {}, context) === true) actions.push("raise");
-    if (["wager", "brink"].includes(state.phase) && mayAnswer(state, {}, context) === true) actions.push("accept", "fold");
+    if (state.phase === "playing" && mayAct({context: state, event})) { actions.push("fold"); if (state.turn === viewer) actions.push("play"); }
+    if (["playing", "wager"].includes(state.phase) && mayRaise({context: state, event})) actions.push("raise");
+    if (["wager", "brink"].includes(state.phase) && mayAnswer({context: state, event})) actions.push("accept", "fold");
     if (["playing", "wager", "envido"].includes(state.phase)) {
-      for (const kind of ["envido", "envido_real", "envido_falta"]) if (mayEnvido(state, {kind}, context) === true) actions.push(kind);
-      if (mayFlor(state, {}, context) === true) actions.push("flor");
-      if (state.phase === "envido" && mayEnvidoAnswer(state, {}, context) === true) actions.push("envido_take", "envido_run");
+      for (const kind of ["envido", "envido_real", "envido_falta"]) if (mayEnvido({context: state, event: {...event, type: kind}})) actions.push(kind);
+      if (mayFlor({context: state, event})) actions.push("flor");
+      if (state.phase === "envido" && mayEnvidoAnswer({context: state, event})) actions.push("envido_take", "envido_run");
     }
     return {...visible, seat: viewer, side: team, hand: own.map(card => state.brink === "both" ? -1 : card), actions,
       available: own.map((card, slot) => card >= 0 ? slot : -1).filter(slot => slot >= 0),

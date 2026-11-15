@@ -1,5 +1,4 @@
 ---
-preset: "press"
 colors:
   neutral: "#EDE1CB"
   surface: "#FBF5E8"
@@ -20,6 +19,8 @@ dark:
   accent: "#D4AF37"
   danger: "#E05548"
   attention: "#E8913A"
+shell:
+  nav: "custom"
 ---
 
 # Truco — Boteco da Esquina

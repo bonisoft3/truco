@@ -6,13 +6,14 @@ services:
         truco-database: service:truco-database
         truco-crud: service:truco-crud
         truco-caddy: service:truco-caddy
+        truco-electric: service:truco-electric
         truco-served-release: service:truco-served-release
         truco-auth: service:truco-auth
         truco-migrate: service:truco-migrate
         truco-timer-check: service:truco-timer-check
         truco-ticker: service:truco-ticker
         libraries_mecha-extensions-image: >-
-          ${MONOREPO_COMPOSE_MODE:-docker-image://unpublished.invalid/mecha-publishes-no-extensions-image-yet}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-extensions-image}
+          ${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-extensions:0.23.1@sha256:d3fe4b3869ded07a410579c2928f951bb42c3bdc14ada1122b5cf0a7d7c11c9f}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-extensions-image}
       context: ..
       dockerfile: .bayt/Dockerfile.release-docker
       target: release-docker
@@ -32,6 +33,7 @@ services:
         truco-database_bayt: service:truco-database_bayt
         truco-crud_bayt: service:truco-crud_bayt
         truco-caddy_bayt: service:truco-caddy_bayt
+        truco-electric_bayt: service:truco-electric_bayt
         truco-migrate_bayt: service:truco-migrate_bayt
         truco-served-release_bayt: service:truco-served-release_bayt
         truco-auth_bayt: service:truco-auth_bayt

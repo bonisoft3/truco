@@ -42,7 +42,7 @@
   },
   "dockerfile": {
     "preamble": [
-      "COPY --from=bonitao/lazybox:0.8.5@sha256:091a3b63ba222777000acc3bf8327faebfea4870e23ee07c6eb42431dadb2ac6 /lazybox/ /root/.local/share/lazybox/",
+      "COPY --from=bonitao/lazybox:0.8.6@sha256:0f30c48513fac757f844f02c864802991dec045f9c4189e3db2ae4ac297544df /lazybox/ /root/.local/share/lazybox/",
       "COPY --from=alpine/socat:1.8.0.0@sha256:a6be4c0262b339c53ddad723cdd178a1a13271e1137c65e27f90a08c16de02b8 /usr/bin/socat1 /usr/local/bin/socat",
       "COPY --from=alpine/socat:1.8.0.0@sha256:a6be4c0262b339c53ddad723cdd178a1a13271e1137c65e27f90a08c16de02b8 /usr/lib/libreadline.so.8 /usr/lib/libncursesw.so.6 /usr/lib/",
       "ENV PATH=$PATH:/root/.local/bin:/root/.local/share/lazybox/bin",
@@ -59,7 +59,7 @@
     "preambleCopyContexts": [
       {
         "name": "bayt",
-        "image": "bonitao/bayt-runtime:1.3.0@sha256:c33b9187787fcbd5fa80f1f2f52c661d6e7c38a4822c269b8daff83e70dce22e"
+        "image": "bonitao/bayt-runtime:1.5.1@sha256:21e3851bcc32a4e56460ef51724385b2ba80999ad73accbf6ae2af53975d9547"
       },
       {
         "name": "alpine/socat:1.8.0.0@sha256:a6be4c0262b339c53ddad723cdd178a1a13271e1137c65e27f90a08c16de02b8"
@@ -488,26 +488,26 @@
       "upClosure": [
         "./.bayt/compose.ci.yaml",
         "./.bayt/compose.ci-visual.yaml",
-        "./.bayt/compose.integrate.yaml",
-        "./.bayt/compose.launch.yaml",
-        "./.bayt/compose.build.yaml",
-        "./.bayt/compose.generate.yaml",
-        "./.bayt/compose.setup.yaml",
-        "./.bayt/compose.caddy.yaml",
-        "./.bayt/compose.crud.yaml",
-        "./.bayt/compose.database.yaml",
-        "./.bayt/compose.migrate.yaml",
-        "./.bayt/compose.timer-check.yaml",
-        "./.bayt/compose.served.yaml",
-        "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.auth.yaml",
-        "./.bayt/compose.clock.yaml",
-        "./.bayt/compose.ticker.yaml",
-        "./.bayt/compose.served-release.yaml",
         "./.bayt/compose.ci-replay.yaml",
         "./.bayt/compose.ci-acceptance.yaml",
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.browser.yaml",
+        "./.bayt/compose.build.yaml",
+        "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.check-acceptance.yaml",
-        "./.bayt/compose.browser.yaml"
+        "./.bayt/compose.clock.yaml",
+        "./.bayt/compose.crud.yaml",
+        "./.bayt/compose.database.yaml",
+        "./.bayt/compose.electric.yaml",
+        "./.bayt/compose.generate.yaml",
+        "./.bayt/compose.integrate.yaml",
+        "./.bayt/compose.launch.yaml",
+        "./.bayt/compose.migrate.yaml",
+        "./.bayt/compose.served.yaml",
+        "./.bayt/compose.served-release.yaml",
+        "./.bayt/compose.setup.yaml",
+        "./.bayt/compose.ticker.yaml",
+        "./.bayt/compose.timer-check.yaml"
       ]
     },
     "outs": {
@@ -537,26 +537,26 @@
       "upClosure": [
         "./.bayt/compose.ci.yaml",
         "./.bayt/compose.ci-visual.yaml",
-        "./.bayt/compose.integrate.yaml",
-        "./.bayt/compose.launch.yaml",
-        "./.bayt/compose.build.yaml",
-        "./.bayt/compose.generate.yaml",
-        "./.bayt/compose.setup.yaml",
-        "./.bayt/compose.caddy.yaml",
-        "./.bayt/compose.crud.yaml",
-        "./.bayt/compose.database.yaml",
-        "./.bayt/compose.migrate.yaml",
-        "./.bayt/compose.timer-check.yaml",
-        "./.bayt/compose.served.yaml",
-        "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.auth.yaml",
-        "./.bayt/compose.clock.yaml",
-        "./.bayt/compose.ticker.yaml",
-        "./.bayt/compose.served-release.yaml",
         "./.bayt/compose.ci-replay.yaml",
         "./.bayt/compose.ci-acceptance.yaml",
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.browser.yaml",
+        "./.bayt/compose.build.yaml",
+        "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.check-acceptance.yaml",
-        "./.bayt/compose.browser.yaml"
+        "./.bayt/compose.clock.yaml",
+        "./.bayt/compose.crud.yaml",
+        "./.bayt/compose.database.yaml",
+        "./.bayt/compose.electric.yaml",
+        "./.bayt/compose.generate.yaml",
+        "./.bayt/compose.integrate.yaml",
+        "./.bayt/compose.launch.yaml",
+        "./.bayt/compose.migrate.yaml",
+        "./.bayt/compose.served.yaml",
+        "./.bayt/compose.served-release.yaml",
+        "./.bayt/compose.setup.yaml",
+        "./.bayt/compose.ticker.yaml",
+        "./.bayt/compose.timer-check.yaml"
       ]
     },
     "srcs": {
@@ -582,10 +582,10 @@
         "ci-replay_srcs",
         "ci-acceptance_srcs",
         "integrate_srcs",
-        "database_srcs",
         "caddy_srcs",
         "served_srcs",
         "served-release_srcs",
+        "database_srcs",
         "migrate_srcs",
         "setup_srcs",
         "check-acceptance_srcs",
@@ -618,30 +618,6 @@
               "shell/screens/arena.css",
               "shell/screens/regras.html",
               "shell/screens/regras.css"
-            ],
-            "exclude": []
-          }
-        },
-        {
-          "project": "truco",
-          "name": "database_srcs",
-          "dir": ".",
-          "outs": {
-            "globs": [
-              "services/database/migrations/000_extensions.sql",
-              "services/database/migrations/001_roles.sql",
-              "services/database/migrations/002_grants.sql",
-              "services/database/migrations/004_types.sql",
-              "services/database/migrations/005_create_tables.sql",
-              "services/database/migrations/006_policies.sql",
-              "services/database/migrations/007_txid.sql",
-              "services/database/migrations/008_publication.sql",
-              "services/database/migrations/003_rls.sql",
-              "services/database/migrations/016_mecha_actors.sql",
-              "services/database/migrations/012_lobby.sql",
-              "services/database/migrations/013_networked_shouts.sql",
-              "services/database/migrations/014_retire_online_writes.sql",
-              "services/database/migrations/017_table_indexes.sql"
             ],
             "exclude": []
           }
@@ -797,12 +773,37 @@
         },
         {
           "project": "truco",
+          "name": "database_srcs",
+          "dir": ".",
+          "outs": {
+            "globs": [
+              "services/database/migrations/000_extensions.sql",
+              "services/database/migrations/001_roles.sql",
+              "services/database/migrations/002_grants.sql",
+              "services/database/migrations/004_types.sql",
+              "services/database/migrations/005_create_tables.sql",
+              "services/database/migrations/006_policies.sql",
+              "services/database/migrations/007_txid.sql",
+              "services/database/migrations/008_publication.sql",
+              "services/database/migrations/003_rls.sql",
+              "services/database/migrations/016_mecha_actors.sql",
+              "services/database/migrations/012_lobby.sql",
+              "services/database/migrations/013_networked_shouts.sql",
+              "services/database/migrations/014_retire_online_writes.sql",
+              "services/database/migrations/017_table_indexes.sql"
+            ],
+            "exclude": []
+          }
+        },
+        {
+          "project": "truco",
           "name": "migrate_srcs",
           "dir": ".",
           "outs": {
             "globs": [
               "services/database/pgroll/018_xstate_engines.json",
-              "services/database/pgroll/019_mecha_engines.json"
+              "services/database/pgroll/019_mecha_engines.json",
+              "services/database/pgroll/020_rule_argument_engines.json"
             ],
             "exclude": []
           }
@@ -816,7 +817,8 @@
               "[m]ise.toml",
               "[.]mise.toml",
               "[m]ise.lock",
-              "[.]tool-versions"
+              "[.]tool-versions",
+              "[m]ise.local.toml"
             ],
             "exclude": []
           }
@@ -841,7 +843,8 @@
               "[m]ise.toml",
               "[.]mise.toml",
               "[m]ise.lock",
-              "[.]tool-versions"
+              "[.]tool-versions",
+              "[m]ise.local.toml"
             ],
             "exclude": []
           }
@@ -856,26 +859,26 @@
       "upClosure": [
         "./.bayt/compose.ci.yaml",
         "./.bayt/compose.ci-visual.yaml",
-        "./.bayt/compose.integrate.yaml",
-        "./.bayt/compose.launch.yaml",
-        "./.bayt/compose.build.yaml",
-        "./.bayt/compose.generate.yaml",
-        "./.bayt/compose.setup.yaml",
-        "./.bayt/compose.caddy.yaml",
-        "./.bayt/compose.crud.yaml",
-        "./.bayt/compose.database.yaml",
-        "./.bayt/compose.migrate.yaml",
-        "./.bayt/compose.timer-check.yaml",
-        "./.bayt/compose.served.yaml",
-        "./.bayt/compose.electric.yaml",
-        "./.bayt/compose.auth.yaml",
-        "./.bayt/compose.clock.yaml",
-        "./.bayt/compose.ticker.yaml",
-        "./.bayt/compose.served-release.yaml",
         "./.bayt/compose.ci-replay.yaml",
         "./.bayt/compose.ci-acceptance.yaml",
+        "./.bayt/compose.auth.yaml",
+        "./.bayt/compose.browser.yaml",
+        "./.bayt/compose.build.yaml",
+        "./.bayt/compose.caddy.yaml",
         "./.bayt/compose.check-acceptance.yaml",
-        "./.bayt/compose.browser.yaml"
+        "./.bayt/compose.clock.yaml",
+        "./.bayt/compose.crud.yaml",
+        "./.bayt/compose.database.yaml",
+        "./.bayt/compose.electric.yaml",
+        "./.bayt/compose.generate.yaml",
+        "./.bayt/compose.integrate.yaml",
+        "./.bayt/compose.launch.yaml",
+        "./.bayt/compose.migrate.yaml",
+        "./.bayt/compose.served.yaml",
+        "./.bayt/compose.served-release.yaml",
+        "./.bayt/compose.setup.yaml",
+        "./.bayt/compose.ticker.yaml",
+        "./.bayt/compose.timer-check.yaml"
       ]
     }
   },
@@ -910,10 +913,10 @@
     "ci-acceptance_srcs",
     "ci-acceptance_bayt",
     "integrate_srcs",
-    "database_srcs",
     "caddy_srcs",
     "served_srcs",
     "served-release_srcs",
+    "database_srcs",
     "migrate_srcs",
     "setup_srcs",
     "check-acceptance_srcs",
@@ -923,26 +926,26 @@
   "upClosure": [
     "./.bayt/compose.ci.yaml",
     "./.bayt/compose.ci-visual.yaml",
-    "./.bayt/compose.integrate.yaml",
-    "./.bayt/compose.launch.yaml",
-    "./.bayt/compose.build.yaml",
-    "./.bayt/compose.generate.yaml",
-    "./.bayt/compose.setup.yaml",
-    "./.bayt/compose.caddy.yaml",
-    "./.bayt/compose.crud.yaml",
-    "./.bayt/compose.database.yaml",
-    "./.bayt/compose.migrate.yaml",
-    "./.bayt/compose.timer-check.yaml",
-    "./.bayt/compose.served.yaml",
-    "./.bayt/compose.electric.yaml",
-    "./.bayt/compose.auth.yaml",
-    "./.bayt/compose.clock.yaml",
-    "./.bayt/compose.ticker.yaml",
-    "./.bayt/compose.served-release.yaml",
     "./.bayt/compose.ci-replay.yaml",
     "./.bayt/compose.ci-acceptance.yaml",
+    "./.bayt/compose.auth.yaml",
+    "./.bayt/compose.browser.yaml",
+    "./.bayt/compose.build.yaml",
+    "./.bayt/compose.caddy.yaml",
     "./.bayt/compose.check-acceptance.yaml",
-    "./.bayt/compose.browser.yaml"
+    "./.bayt/compose.clock.yaml",
+    "./.bayt/compose.crud.yaml",
+    "./.bayt/compose.database.yaml",
+    "./.bayt/compose.electric.yaml",
+    "./.bayt/compose.generate.yaml",
+    "./.bayt/compose.integrate.yaml",
+    "./.bayt/compose.launch.yaml",
+    "./.bayt/compose.migrate.yaml",
+    "./.bayt/compose.served.yaml",
+    "./.bayt/compose.served-release.yaml",
+    "./.bayt/compose.setup.yaml",
+    "./.bayt/compose.ticker.yaml",
+    "./.bayt/compose.timer-check.yaml"
   ],
   "chainedDeps": [
     {
@@ -1040,30 +1043,6 @@
           "shell/screens/arena.css",
           "shell/screens/regras.html",
           "shell/screens/regras.css"
-        ],
-        "exclude": []
-      }
-    },
-    {
-      "name": "database_srcs",
-      "project": "truco",
-      "dir": ".",
-      "outs": {
-        "globs": [
-          "services/database/migrations/000_extensions.sql",
-          "services/database/migrations/001_roles.sql",
-          "services/database/migrations/002_grants.sql",
-          "services/database/migrations/004_types.sql",
-          "services/database/migrations/005_create_tables.sql",
-          "services/database/migrations/006_policies.sql",
-          "services/database/migrations/007_txid.sql",
-          "services/database/migrations/008_publication.sql",
-          "services/database/migrations/003_rls.sql",
-          "services/database/migrations/016_mecha_actors.sql",
-          "services/database/migrations/012_lobby.sql",
-          "services/database/migrations/013_networked_shouts.sql",
-          "services/database/migrations/014_retire_online_writes.sql",
-          "services/database/migrations/017_table_indexes.sql"
         ],
         "exclude": []
       }
@@ -1218,13 +1197,38 @@
       }
     },
     {
+      "name": "database_srcs",
+      "project": "truco",
+      "dir": ".",
+      "outs": {
+        "globs": [
+          "services/database/migrations/000_extensions.sql",
+          "services/database/migrations/001_roles.sql",
+          "services/database/migrations/002_grants.sql",
+          "services/database/migrations/004_types.sql",
+          "services/database/migrations/005_create_tables.sql",
+          "services/database/migrations/006_policies.sql",
+          "services/database/migrations/007_txid.sql",
+          "services/database/migrations/008_publication.sql",
+          "services/database/migrations/003_rls.sql",
+          "services/database/migrations/016_mecha_actors.sql",
+          "services/database/migrations/012_lobby.sql",
+          "services/database/migrations/013_networked_shouts.sql",
+          "services/database/migrations/014_retire_online_writes.sql",
+          "services/database/migrations/017_table_indexes.sql"
+        ],
+        "exclude": []
+      }
+    },
+    {
       "name": "migrate_srcs",
       "project": "truco",
       "dir": ".",
       "outs": {
         "globs": [
           "services/database/pgroll/018_xstate_engines.json",
-          "services/database/pgroll/019_mecha_engines.json"
+          "services/database/pgroll/019_mecha_engines.json",
+          "services/database/pgroll/020_rule_argument_engines.json"
         ],
         "exclude": []
       }
@@ -1238,7 +1242,8 @@
           "[m]ise.toml",
           "[.]mise.toml",
           "[m]ise.lock",
-          "[.]tool-versions"
+          "[.]tool-versions",
+          "[m]ise.local.toml"
         ],
         "exclude": []
       }
@@ -1263,7 +1268,8 @@
           "[m]ise.toml",
           "[.]mise.toml",
           "[m]ise.lock",
-          "[.]tool-versions"
+          "[.]tool-versions",
+          "[m]ise.local.toml"
         ],
         "exclude": []
       }
@@ -1279,6 +1285,7 @@
         "defaultGlobs": null,
         "defaultExclude": null
       },
+      "name": "builtin",
       "do": "set -eu\nexport DOCKER_HOST_TCP=\"$DOCKER_HOST\"\nexport DEPOT_DISABLE_OTEL=1\ndocker compose --profile '*' config -o /tmp/ci-compose.yaml\ndocker buildx bake --allow=fs.read=/ -f /tmp/ci-compose.yaml --print ci-visual ci-replay ci-acceptance > /tmp/ci-bake.json\nfor target in ci-visual ci-replay ci-acceptance; do\n docker buildx bake -f /tmp/ci-bake.json --progress plain --set '*.output=type=cacheonly' ${SAYT_NO_CACHE:+--no-cache --set \"*.cache-from=\" --set \"*.cache-to=\"} ${SAYT_NO_CACHE_FROM:+--set \"*.cache-from=\"} ${SAYT_NO_CACHE_TO:+--set \"*.cache-to=\"} \"$target\"\ndone",
       "shell": "sh",
       "dockerfile": {
@@ -1422,7 +1429,6 @@
           "steps": []
         }
       },
-      "name": "builtin",
       "stop": false
     }
   ],

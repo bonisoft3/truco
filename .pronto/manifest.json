@@ -42,6 +42,7 @@
     "services/database/migrations/017_table_indexes.sql",
     "services/database/pgroll/018_xstate_engines.json",
     "services/database/pgroll/019_mecha_engines.json",
+    "services/database/pgroll/020_rule_argument_engines.json",
     "shell/boot.js",
     "shell/design.css",
     "shell/handlers/arena.js",

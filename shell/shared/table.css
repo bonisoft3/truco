@@ -21,7 +21,7 @@
 
 /* Omnishell top chrome nav strip: suppressed in Truco so the Boteco seatbar sits flush to the viewport */
 body > nav, nav:has(.shell-me), nav:has(.shell-signout), nav.shell-strip, .shell-strip {
-  display: none !important;
+  display: none;
 }
 
 .screen {

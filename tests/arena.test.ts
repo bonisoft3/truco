@@ -8,6 +8,11 @@
 // held clock.
 import { assert, mountApp, type Mounted, only, evaluateRole, parseMessage } from "./platform.ts";
 
+// The assertions below state a leaf's world and its event side by side; the
+// leaf itself takes them as XState's one argument.
+// deno-lint-ignore no-explicit-any
+const positional = (leaf: any) => (state: any, event?: any, ...rest: any[]) => leaf({ context: state, event }, ...rest);
+
 const APP = new URL("../", import.meta.url);
 
 type Row = Record<string, string>;
@@ -17,7 +22,7 @@ type Fold = (state: { rows: Record<string, Row[]> }, event: Record<string, unkno
 const manifest = JSON.parse(await Deno.readTextFile(new URL("shell/shell.json", APP)));
 const endowments: string[] = manifest.endowments["shell/handlers/arena.js"];
 assert(endowments.includes("Statechart"));
-const arena = await evaluateRole(await Deno.readTextFile(new URL("shell/handlers/arena.js", APP)), "handler", endowments) as Fold;
+const arena = positional(await evaluateRole(await Deno.readTextFile(new URL("shell/handlers/arena.js", APP)), "handler", endowments)) as Fold;
 
 /** A terminal for one handler: rows, draws, and the seat. */
 const terminal = (draws: number[], match: Row[] = []) => {

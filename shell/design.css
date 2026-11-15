@@ -146,10 +146,18 @@
 }
 
 /* Design system values, from DESIGN.md's frontmatter, which the program
-   reads as its design block: the roles the preset publishes, each colour
-   carrying both appearances. A screen that redeclares one of these has
-   forked the system — the shared layer is the only declaration. */
+   reads as its design block: the roles #Design publishes and the palette
+   the app authors, each colour carrying both appearances. A screen that
+   redeclares one of these has forked the system — the shared layer is the
+   only declaration. */
 :root {
+  --shadow-ink-3: light-dark(hsl(220 3% 15% / 3%), hsl(220 40% 2% / 27%));
+  --shadow-ink-4: light-dark(hsl(220 3% 15% / 4%), hsl(220 40% 2% / 28%));
+  --shadow-ink-5: light-dark(hsl(220 3% 15% / 5%), hsl(220 40% 2% / 29%));
+  --shadow-ink-6: light-dark(hsl(220 3% 15% / 6%), hsl(220 40% 2% / 30%));
+  --shadow-ink-7: light-dark(hsl(220 3% 15% / 7%), hsl(220 40% 2% / 31%));
+  --shadow-ink-8: light-dark(hsl(220 3% 15% / 8%), hsl(220 40% 2% / 32%));
+  --shadow-ink-10: light-dark(hsl(220 3% 15% / 10%), hsl(220 40% 2% / 34%));
   --neutral: light-dark(#EDE1CB, #120E0A);
   --surface: light-dark(#FBF5E8, #1D1712);
   --surface-muted: light-dark(#DFD0B2, #2A2119);
@@ -159,13 +167,6 @@
   --accent: light-dark(#A8791C, #D4AF37);
   --danger: light-dark(#9E2B25, #E05548);
   --attention: light-dark(#C1651B, #E8913A);
-  --shadow-ink-3: light-dark(hsl(220 3% 15% / 3%), hsl(220 40% 2% / 27%));
-  --shadow-ink-4: light-dark(hsl(220 3% 15% / 4%), hsl(220 40% 2% / 28%));
-  --shadow-ink-5: light-dark(hsl(220 3% 15% / 5%), hsl(220 40% 2% / 29%));
-  --shadow-ink-6: light-dark(hsl(220 3% 15% / 6%), hsl(220 40% 2% / 30%));
-  --shadow-ink-7: light-dark(hsl(220 3% 15% / 7%), hsl(220 40% 2% / 31%));
-  --shadow-ink-8: light-dark(hsl(220 3% 15% / 8%), hsl(220 40% 2% / 32%));
-  --shadow-ink-10: light-dark(hsl(220 3% 15% / 10%), hsl(220 40% 2% / 34%));
   --r-sm: 4px;
   --r-md: 8px;
   --r-full: 999px;
@@ -206,7 +207,7 @@
 
 /* The terminal's chrome, styled here because the terminal ships no
    style: its markup carries stable classes and attributes, and this
-   emission — program-owned, preset-derived, app-overridable — is the
+   emission — program-owned, design-derived, app-overridable — is the
    only stylesheet they have. Aesthetic values stay behind --shell-*
    variables so an app can retheme without repeating structure. */
 /* The scrollbar's room is kept whether or not the page overflows: a
@@ -216,53 +217,32 @@
 html { scrollbar-gutter: stable; }
 body { margin: 0; font: var(--shell-font, 1rem/1.5 system-ui, sans-serif);
   background: var(--shell-bg); color: var(--shell-fg); }
-/* Sticky, because the navigation stack restores a screen's scroll
-   position on return — without it the way back to the primary
-   navigation is scrolling up. A sticky element is transparent, so it
-   needs its own background or content runs under it.
-
-   One line, always: a wrapped strip is as tall as its rows and pushes
-   the masthead below the fold, and any app with more routes than a
-   phone's width holds would wrap at its natural size. It scrolls
-   instead, and the scrollbar is hidden because a horizontal bar across
-   the chrome reads as a second rule under the strip. */
-body > nav { position: sticky; top: 0; z-index: 10;
-  background: var(--shell-bg);
-  display: flex; gap: var(--shell-nav-gap, 20px);
-  flex-wrap: nowrap; align-items: center;
-  overflow-x: auto; scrollbar-width: none;
-  padding: var(--shell-nav-pad, 14px 24px);
-  font-weight: var(--shell-nav-weight, 600);
-  border-bottom: 1px solid var(--shell-rule); }
-body > nav::-webkit-scrollbar { display: none; }
-body > nav a { color: inherit; text-decoration: none; }
-body > nav a:hover { text-decoration: var(--shell-nav-hover, underline); }
-/* The routes carry their own width — shrinking them is what would make
-   the strip fit by breaking words, which is the wrap this avoids. The
-   identity beside them keeps flex's default shrink, so it is the part
-   that gives and ellipsises. 24px is check-visual's touch-target floor:
-   nav labels are small type, so the box grows to the floor rather than
-   the type growing with it. */
-body > nav > a { white-space: nowrap; flex: none;
-  display: inline-flex; align-items: center; min-height: 24px; }
-/* The signed-in person at the strip's far end, name-then-handle as a
-   byline. All four ellipsis rules are load-bearing: nowrap alone
-   cannot shrink, and min-width: 0 is what lets a flex item shrink
-   below its content width at all. */
-body > nav .shell-me { margin-inline-start: auto; display: flex; align-items: center; gap: var(--shell-nav-gap, 20px); min-width: 0; }
-body > nav .shell-who { display: flex; align-items: center; gap: 5px; min-width: 0; min-height: 24px; }
-body > nav .shell-who .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-body > nav .shell-who .name:empty { display: none; }
-body > nav .shell-who .name:not(:empty)::after { content: " ·"; }
-body > nav .shell-who .handle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+:where(body > nav a) { color: inherit; text-decoration: none; }
+:where(body > nav a:hover) { text-decoration: var(--shell-nav-hover, underline); }
+:where(body > nav .shell-nav-icon) { flex: none; width: var(--shell-nav-icon-size, 1.125em); height: var(--shell-nav-icon-size, 1.125em); display: block; }
+:where(body > nav > a[data-display="icon-only"]) { min-width: var(--control-h-sm, 32px); min-height: var(--control-h-sm, 32px); }
+:where(body > nav > a[data-display="icon-only"] > .shell-nav-label) {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+:where(body > nav .shell-who) { display: flex; align-items: center; gap: 5px; min-width: 0; min-height: 24px; }
+:where(body > nav .shell-who .name) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:where(body > nav .shell-who .name:empty) { display: none; }
+:where(body > nav .shell-who .name:not(:empty))::after { content: " ·"; }
+:where(body > nav .shell-who .handle) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 /* De-emphasis comes from weight alone: layered opacity on --shell-fg
    lands below 4.5:1 contrast on both themes' nav ground. */
 /* A short word is still a target: "sair" sets 23px of text, under the
    24px minimum a finger needs, so the box keeps the floor the label
    does not. */
-body > nav .shell-signout { font-weight: 400;
+:where(body > nav :is(.shell-signout, .shell-signin, .shell-register, .shell-provider)) { font: inherit; font-weight: 400;
+  color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  flex: none; white-space: nowrap;
   display: inline-flex; align-items: center; justify-content: center;
   min-height: 24px; min-width: 24px; }
+/* Custom posture (`shell.nav: "custom"`): the app's own stylesheet owns
+   the container geometry; only the link, icon, and control resets apply. */
+:where(body > nav > a[data-display="icon-only"]) { padding-inline: var(--shell-nav-icon-pad-x, 6px); justify-content: center; gap: 0; }
+:where(body > nav[hidden]) { display: none; }
 
 /* Not a preference to weigh against the design: durations collapse
    and the interpreter's exit path, which waits on running animations,
