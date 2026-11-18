@@ -55,7 +55,7 @@ Reuse the existing [[../../../plugins/omnishell/docs/machines.md|browser machine
 [[../../../plugins/pronto/docs/access.md|access declarations]], guest tokens and
 Electric delivery. Add the cross-tier composition and command semantics that
 join them. Truco requires no external effect, airlock job, streaming join, lake,
-Feldera runtime or DuckDB-WASM engine.
+RisingWave runtime or DuckDB-WASM engine.
 
 An HTTP command to the application's own database is a replicated operation;
 it does not become a Level 4 external effect merely because a browser awaits it.

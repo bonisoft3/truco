@@ -43,6 +43,8 @@ code: pronto.#App & {
 		migrations: "020_rule_argument_engines": {operations: [{sql: {up: _ruleArgumentEngines, onComplete: true}}]}
 		rawMigrations: [
 			{name: "003_rls.sql", src: "services/database/baseline/003_rls.txt"},
+			// As deployed before atomic RLS DDL (#2444); live directories check its digest.
+			{name: "005_create_tables.sql", src: "services/database/baseline/005_create_tables.sql"},
 			{name: "016_mecha_actors.sql", src: "services/database/baseline/016_mecha_actors.sql"},
 			{name: "012_lobby.sql", src: "services/database/sql/012_lobby.sql"},
 			{name: "013_networked_shouts.sql", src: "services/database/sql/013_networked_shouts.sql"},

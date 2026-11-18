@@ -2113,7 +2113,7 @@
     {"path":"shell/shared/table.css","token":"--tilt"}
   ],
   "artifact": [
-    {"path":"program.cue","sha256":"955d6b147f091554e958a6266c1acae1eca1e8da711578bfd74bd1ad0d06b58d","derived":false},
+    {"path":"program.cue","sha256":"2cce062dcfd8450f807d8154c4d0afa3186583719745462b1185f3d4d17e7cdb","derived":false},
     {"path":"DESIGN.md","sha256":"4fcbd8d99af0d788613acf3be92aec3210590497aa62d0a440730812d4fb0e62","derived":false},
     {"path":"ir.html","sha256":"f50b3770e3cf56ccb9c570dfc0a8792dacc7331f4320815db51904a7b28dc2a9","derived":false},
     {"path":"acceptance.md","sha256":"ff85cb3adba6a7bf376c20680957bc692ca88350e60f797e2f08469e382b2a1f","derived":false},
