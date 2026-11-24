@@ -22,7 +22,6 @@ match: setup: {
    members: a: {raw: "current_actor"}
   }
   join: {seats: "seats", membersPayload: "seats", phases: ["waiting"], event: "start"}
-  wake: {phases: ["playing", "wager", "brink", "envido"], deadline: "deadline", event: "timeout"}
  }
 }
 challenge: setup: {
@@ -43,7 +42,7 @@ challenge: setup: {
     {sql: "talk ~ '^[0-9a-f]{16}$'", reason: "invalid table talk", mode: "error"},
     {sql: "NOT EXISTS (SELECT FROM hybrid_truco_match.instance g WHERE g.state->>'talk' = talk) AND NOT EXISTS (SELECT FROM hybrid_truco_challenge.instance c WHERE c.state->>'talk' = talk)", reason: "talk_taken", mode: "error"},
     {sql: "variant IN ('mineiro', 'paulista', 'gaucho', 'truc', 'argentino', 'uruguayo', 'paraguayo', 'douradinha', 'douradao') AND seating IN ('1v1', '2v2', '2v2v2') AND ((seating = '2v2v2') = (variant IN ('douradinha', 'douradao')))", reason: "unsupported online variant", mode: "error"},
-    {sql: "NOT EXISTS (SELECT FROM hybrid_truco_challenge.instance c WHERE c.state->>'phase' = 'offered' AND (c.state->>'deadline')::bigint > hybrid_truco_challenge.clock() AND c.state->>'inviter' = current_actor::text)", reason: "outgoing_challenge_pending"},
+    {sql: "NOT EXISTS (SELECT FROM hybrid_truco_challenge.instance c WHERE c.state->>'phase' = 'offered' AND c.state->>'inviter' = current_actor::text)", reason: "outgoing_challenge_pending"},
     {sql: "hybrid_truco_presence.available(current_actor) AND hybrid_truco_presence.available(target)", reason: "player_unavailable"},
    ]
    input: {
@@ -53,7 +52,6 @@ challenge: setup: {
    }
    members: {inviter: {raw: "current_actor"}, target: {raw: "target"}}
   }
-  wake: {phases: ["offered"], deadline: "deadline", event: "expire"}
  }
 }
 presence: setup: {
@@ -61,9 +59,6 @@ presence: setup: {
  types: input: {type: "object", fields: {}}
  ports: {
   admission: {name: "admit", params: [], id: "current_actor", input: {}, members: owner: {raw: "current_actor"}}
-  // A lapsed lease is dropped by the ticker, so the lobby stops listing a
-  // player whose tabs all went away without leaving.
-  wake: {phases: ["visible"], deadline: "until", event: "expire"}
   lease: {touch: "touch", leave: "leave", held: "leases"}
   reads: available: {
    params: [{name: "player", type: "uuid"}]
@@ -109,7 +104,7 @@ call: setup: {
     // The name the call carries is the one the caller's voice gives at the table.
     {sql: "EXISTS (SELECT FROM hybrid_truco_voice.instance v WHERE v.id = current_actor AND v.state->>'room' = room::text)", reason: "not_seated"},
     {sql: "EXISTS (SELECT FROM hybrid_truco_match.instance g WHERE g.id = room AND g.state->>'phase' = 'waiting' AND g.state->'seats' ? chair) AND NOT EXISTS (SELECT FROM hybrid_truco_match.member m WHERE m.instance_id = room AND m.seat = chair)", reason: "chair_taken"},
-    {sql: "NOT EXISTS (SELECT FROM hybrid_truco_call.instance c WHERE c.state->>'phase' = 'offered' AND (c.state->>'deadline')::bigint > hybrid_truco_call.clock() AND c.state->>'room' = room::text AND c.state->>'chair' = chair)", reason: "chair_called"},
+    {sql: "NOT EXISTS (SELECT FROM hybrid_truco_call.instance c WHERE c.state->>'phase' = 'offered' AND c.state->>'room' = room::text AND c.state->>'chair' = chair)", reason: "chair_called"},
     {sql: "hybrid_truco_presence.available(target)", reason: "player_unavailable"},
    ]
    input: {
@@ -123,6 +118,5 @@ call: setup: {
    }
    members: {caller: {raw: "current_actor"}, target: {raw: "target"}}
   }
-  wake: {phases: ["offered"], deadline: "deadline", event: "expire"}
  }
 }

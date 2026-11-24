@@ -9,7 +9,6 @@ import pronto "github.com/bonisoft3/pronto"
 	target_name:  {type: "string", maxLength: 32}
 	variant:      #Variant
 	seating:      #Seating
-	deadline:     #Number
 	room:         #Identity
 	// The talk of the table it deals: the inviter's draw, sent with the offer.
 	talk: {type: "string", maxLength: 36}
@@ -21,10 +20,11 @@ challenge: pronto.#Machine & {
 		states: {
 			offered: on: {
 				accept:  {guard: "mayAccept", target: "accepted", actions: "openRoom"}
-				decline: {guard: ["isTarget", "inTime"], target: "declined"}
-				cancel:  {guard: ["isInviter", "inTime"], target: "cancelled"}
-				expire:  {guard: "isDue", target: "expired"}
+				decline: {guard: "isTarget", target: "declined"}
+				cancel:  {guard: "isInviter", target: "cancelled"}
 			}
+			// An offer stands thirty seconds from when it was made.
+			offered: after: "30000": "expired"
 			for phase in ["accepted", "declined", "cancelled", "expired"] {
 				(phase): type: "final"
 			}
@@ -42,18 +42,15 @@ challenge: pronto.#Machine & {
 				for event in ["accept", "decline", "cancel"] {
 					(event): {tier: "omnishell", payload: {type: "object", fields: {}}}
 				}
-				expire: {tier: "mecha", payload: {type: "object", fields: {}}}
 			}
 		}
 		guards: {
 			isTarget:  {reads: ["_origin"], reason: "not_target"}
 			isInviter: {reads: ["_origin"], reason: "not_inviter"}
-			inTime:    {reads: ["_time"], reason: "expired"}
-			isDue:     {reads: ["_time"], reason: "not_due"}
 		}
 		// The target's answer, and both players still free when it is given.
 		guards: mayAccept: {
-			rules:  ["isTarget", "inTime"]
+			rules:  ["isTarget"]
 			sql:    "hybrid_truco_presence.available((game.state->>'inviter')::uuid) AND hybrid_truco_presence.available((game.state->>'target')::uuid)"
 			reason: "player_unavailable"
 		}

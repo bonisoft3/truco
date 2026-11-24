@@ -58,6 +58,9 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      OIDC_GOOGLE_CLIENT_ID: ${{ secrets.OIDC_GOOGLE_CLIENT_ID }}
+      OIDC_GOOGLE_CLIENT_SECRET: ${{ secrets.OIDC_GOOGLE_CLIENT_SECRET }}
+      OIDC_GOOGLE_ISSUER: ${{ secrets.OIDC_GOOGLE_ISSUER }}
     steps:
       - uses: actions/checkout@v7
       # The released sayt at the version the toolchain pins, its mise cached.

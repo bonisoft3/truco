@@ -11,7 +11,6 @@ import pronto "github.com/bonisoft3/pronto"
 	chair:       #Seat
 	variant:     #Variant
 	seating:     #Seating
-	deadline:    #Number
 }
 
 // A player at a table still waiting, calling someone from the roda to one of
@@ -24,11 +23,12 @@ call: pronto.#Machine & {
 		initial: "offered"
 		states: {
 			offered: on: {
-				accept:  {guard: ["isTarget", "inTime"], target: "accepted"}
-				decline: {guard: ["isTarget", "inTime"], target: "declined"}
-				cancel:  {guard: ["isCaller", "inTime"], target: "cancelled"}
-				expire:  {guard: "isDue", target: "expired"}
+				accept:  {guard: "isTarget", target: "accepted"}
+				decline: {guard: "isTarget", target: "declined"}
+				cancel:  {guard: "isCaller", target: "cancelled"}
 			}
+			// A call stands thirty seconds from when it was made.
+			offered: after: "30000": "expired"
 			for phase in ["accepted", "declined", "cancelled", "expired"] {
 				(phase): type: "final"
 			}
@@ -43,14 +43,11 @@ call: pronto.#Machine & {
 				for event in ["accept", "decline", "cancel"] {
 					(event): {tier: "omnishell", payload: {type: "object", fields: {}}}
 				}
-				expire: {tier: "mecha", payload: {type: "object", fields: {}}}
 			}
 		}
 		guards: {
 			isTarget: {reads: ["_origin"], reason: "not_target"}
 			isCaller: {reads: ["_origin"], reason: "not_caller"}
-			inTime:   {reads: ["_time"], reason: "expired"}
-			isDue:    {reads: ["_time"], reason: "not_due"}
 		}
 	}
 }

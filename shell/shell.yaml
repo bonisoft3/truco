@@ -56,7 +56,8 @@ app: truco
 auth:
   required: false
   service: /auth
-  promote: true
+  providers:
+    - google
   mode: passkey
 endowments:
   shell/handlers/arena.js:
@@ -1467,10 +1468,6 @@ schema:
                       - d
                       - e
                       - f
-            deadline:
-              kind: integer
-              intMin: 0
-              intMax: 9007199254740991
             envido:
               kind: integer
               intMin: 0
@@ -2036,10 +2033,6 @@ schema:
               enumValues:
                 - hidden
                 - visible
-            until:
-              kind: integer
-              intMin: 0
-              intMax: 9007199254740991
         name: view
         type: json
         required: true
@@ -2166,10 +2159,6 @@ schema:
       - bounds:
           kind: object
           fields:
-            deadline:
-              kind: integer
-              intMin: 0
-              intMax: 9007199254740991
             inviter:
               kind: string
               sizeMax: 36
@@ -2343,10 +2332,6 @@ schema:
                 - d
                 - e
                 - f
-            deadline:
-              kind: integer
-              intMin: 0
-              intMax: 9007199254740991
             phase:
               kind: string
               enumValues:

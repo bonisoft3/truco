@@ -27,6 +27,12 @@ _mechaEngines: _ @embed(file="services/database/sql/019_mecha_engines.sql", type
 // The engines since a rule takes XState's one argument; 019 keeps the bytes a
 // database ran.
 _ruleArgumentEngines: _ @embed(file="services/database/sql/020_rule_argument_engines.sql", type=text)
+// The engines over the XState bundle that also exports transition() and
+// raise(); 020 keeps the bytes a database ran.
+_transitionEngines: _ @embed(file="services/database/sql/021_transition_engines.sql", type=text)
+// The machines timed by XState's after, and their instances moved off the
+// deadlines the ticker followed; 016 and 021 keep the bytes a database ran.
+_afterTimers: _ @embed(file="services/database/sql/022_after_timers.sql", type=text)
 
 code: pronto.#App & {
 	state: {
@@ -41,6 +47,8 @@ code: pronto.#App & {
 		migrations: "018_xstate_engines": {operations: [{sql: {up: _xstateEngines, onComplete: true}}]}
 		migrations: "019_mecha_engines": {operations: [{sql: {up: _mechaEngines, onComplete: true}}]}
 		migrations: "020_rule_argument_engines": {operations: [{sql: {up: _ruleArgumentEngines, onComplete: true}}]}
+		migrations: "021_transition_engines": {operations: [{sql: {up: _transitionEngines, onComplete: true}}]}
+		migrations: "022_after_timers": {operations: [{sql: {up: _afterTimers, onComplete: true}}]}
 		rawMigrations: [
 			{name: "003_rls.sql", src: "services/database/baseline/003_rls.txt"},
 			// As deployed before atomic RLS DDL (#2444); live directories check its digest.
@@ -461,7 +469,6 @@ code: pronto.#App & {
 		auth: {
 			required: false
 			service:  "/auth"
-			promote:  true
 		}
 		blobs: false
 		hatches: {}

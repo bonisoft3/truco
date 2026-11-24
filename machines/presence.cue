@@ -6,8 +6,6 @@ import pronto "github.com/bonisoft3/pronto"
 #Presence: {
 	name:   {type: "string", maxLength: 32}
 	leases: {type: "array", maxItems: 16, items: {type: "object", fields: {id: #Identity, until: #Number}}}
-	// When the earliest lease lapses, or 0 with none: the ticker's deadline.
-	until: #Number
 }
 presence: pronto.#Machine & {
 	config: {
@@ -15,12 +13,18 @@ presence: pronto.#Machine & {
 		initial: "hidden"
 		on: {
 			show:   {guard: ["named", "connected"], target: "visible", actions: "show"}
-			hide:   {target: "hidden"}
-			touch:  {guard: "hasCapacity", actions: "touch"}
-			leave:  {actions: "leave"}
-			expire: {actions: "expire"}
+			hide:  {target: "hidden"}
+			leave: {actions: "leave"}
 		}
-		states: {hidden: {}, visible: {}}
+		states: {
+			hidden: on: touch: {guard: "hasCapacity", actions: "touch"}
+			// A tab's touch renews its lease and starts the visible timer again;
+			// a player whose every lease has lapsed is dropped when it fires.
+			visible: {
+				on: touch: {guard: "hasCapacity", target: "visible", reenter: true, actions: "touch"}
+				after: "30000": {actions: "expire"}
+			}
+		}
 	}
 	setup: {
 		guards: {
@@ -30,9 +34,9 @@ presence: pronto.#Machine & {
 		}
 		actions: {
 			show:   {reads: ["name"], writes: ["name"]}
-			touch:  {reads: ["_time", "session"], writes: ["leases", "until"]}
-			leave:  {reads: ["_time", "session"], writes: ["leases", "until"]}
-			expire: {reads: ["_time"], writes: ["leases", "until"]}
+			touch:  {reads: ["_time", "session"], writes: ["leases"]}
+			leave:  {reads: ["_time", "session"], writes: ["leases"]}
+			expire: {reads: ["_time"], writes: ["leases"]}
 		}
 		version: 2
 		types: {
@@ -45,7 +49,6 @@ presence: pronto.#Machine & {
 				hide:   {tier: "omnishell", payload: {type: "object", fields: {}}}
 				touch:  {tier: "mecha", payload: {type: "object", fields: {session: #Identity}}}
 				leave:  {tier: "mecha", payload: {type: "object", fields: {session: #Identity}}}
-				expire: {tier: "mecha", payload: {type: "object", fields: {}}}
 			}
 		}
 	}

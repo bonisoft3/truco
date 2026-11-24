@@ -67,7 +67,6 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
   const retick = (machine: string, instance: string) => sql(`INSERT INTO machine_timer_tick (id, schedule, tick_at, late, machine, "row", state, delay)
     SELECT gen_random_uuid(), t.schedule, t.tick_at, t.late, t.machine, t."row", t.state, t.delay FROM machine_timer_tick t
     WHERE t.machine = '${machine}' AND t."row" = jsonb_build_object('id', '${instance}') ORDER BY t.tick_at DESC LIMIT 1;`);
-  const overdue = (schema: string, instance: string, field = "deadline") => sql(`UPDATE ${schema}.instance SET state = jsonb_set(state, '{${field}}', '1') WHERE id = '${instance}';`);
   try {
     for (let i = 0; ; i++) {
       if ((await run("docker", ["exec", container, "pg_isready", "-h", "127.0.0.1", "-qU", "postgres"])).ok) break;
@@ -95,8 +94,10 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
     for (const name of files.sort()) await sql(await Deno.readTextFile(new URL(name, migrations)));
     const beforeUpgrade = await create(96, 960);
     assertEquals(beforeUpgrade.kind, "accepted");
+    // The upgrades keep a retained instance as it was, but for the deadline
+    // field the turn's timer replaced.
     const snapshot = () => sql(`SELECT jsonb_build_object(
-      'instance', (SELECT to_jsonb(i) FROM hybrid_truco_match.instance i WHERE id = '${uuid(960)}'),
+      'instance', (SELECT to_jsonb(i) #- '{state,deadline}' FROM hybrid_truco_match.instance i WHERE id = '${uuid(960)}'),
       'members', (SELECT jsonb_agg(to_jsonb(m) ORDER BY m.actor) FROM hybrid_truco_match.member m WHERE instance_id = '${uuid(960)}'),
       'receipts', (SELECT jsonb_agg(to_jsonb(r) ORDER BY r.command_id) FROM hybrid_truco_match.receipt r WHERE instance_id = '${uuid(960)}'),
       'schedules', (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.name) FROM schedule s WHERE s.emits_entity = 'machine_timer_tick' AND s.emits_values @> jsonb_build_object('machine', 'truco_match', 'row', jsonb_build_object('id', '${uuid(960)}')))
@@ -119,8 +120,7 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       assertEquals(await listed(41, 40), false);
       await presence(40, "show", {name: "Player 40"});
       // Both tabs went away without leaving: the lease lapses, and the ticker drops it.
-      await sql(`UPDATE hybrid_truco_presence.instance SET state = jsonb_set(jsonb_set(state, '{leases}', '[{"id":"${uuid(240)}","until":1}]'), '{until}', '1') WHERE id = '${uuid(40)}';`);
-      await sql(`SELECT hybrid_truco_presence.arm(i) FROM hybrid_truco_presence.instance i WHERE i.id = '${uuid(40)}';`);
+      await sql(`UPDATE hybrid_truco_presence.instance SET state = jsonb_set(state, '{leases}', '[{"id":"${uuid(240)}","until":1}]') WHERE id = '${uuid(40)}';`);
       await tick("truco_presence", uuid(40));
       assertEquals(await listed(41, 40), false, "a lapsed lease is unlisted without its owner's cooperation");
       await lease(40);
@@ -163,8 +163,6 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       const room = (await challenge(45, 301))!.room;
       assert((await rooms(45)).includes(room), "a busy player resumes their room from the bar");
       assertEquals((await answer(45, 302, "accept")).reason, "player_unavailable");
-      await overdue("hybrid_truco_challenge", uuid(302));
-      await sql(`SELECT hybrid_truco_challenge.arm(i) FROM hybrid_truco_challenge.instance i WHERE i.id = '${uuid(302)}';`);
       await tick("truco_challenge", uuid(302));
       assertEquals((await challenge(46, 302))!.phase, "expired", "the ticker expires an unanswered offer");
       const unavailable = await offer(40, 45, 303);
@@ -214,7 +212,7 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       assertEquals((await psql(as(70, `INSERT INTO truco_match_open (id, instance_id, kind, input) VALUES ('again/370', '${uuid(370)}', 'create', '{"variant":"paulista"}');`))).ok, false, "nor its owner with other rules");
       for (const query of [
         `SELECT hybrid_truco_match.spawn('${uuid(371)}', '{"variant":"mineiro"}', '{"a":"${uuid(70)}"}');`,
-        `SELECT hybrid_truco_match.wake('${uuid(370)}');`,
+        `SELECT hybrid_truco_match.arm('${uuid(370)}', 0, '[]', 0);`,
         `SELECT * FROM hybrid_truco_match.admission_receipt;`,
         `UPDATE truco_match_open SET outcome = 'accepted';`,
         `INSERT INTO truco_match_seat (id, instance_id, actor, seat, revision, phase, view) VALUES ('x', '${uuid(370)}', '${uuid(70)}', 'b', 0, 'waiting', '{}');`,
@@ -381,31 +379,32 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       assertEquals([current.value.plays.length, current.revision], [1, "2"]);
     });
 
-    await t.step("the ticker times a turn out once and a late play is refused", async () => {
+    // The instant a schedule is due, in milliseconds.
+    const dueOf = async (machine: string, instance: string) => Number(await sql(`SELECT round(extract(epoch FROM due_at) * 1000)::bigint FROM schedule
+      WHERE emits_values @> jsonb_build_object('machine', '${machine}', 'row', jsonb_build_object('id', '${instance}'));`));
+
+    await t.step("the ticker times a turn out once", async () => {
       await create(1, 12);
       await join(2, 12);
-      assert(await sql(`SELECT count(*) FROM schedule WHERE emits_values @> '{"machine": "truco_match", "row": {"id": "${uuid(12)}"}}';`) === "1", "entering a timed phase arms the ticker");
-      await overdue("hybrid_truco_match", uuid(12));
-      assertEquals((await command(12, 1, "1", "play", {slot: 0, covered: false})).reason, "expired");
-      await sql(`SELECT hybrid_truco_match.arm(i) FROM hybrid_truco_match.instance i WHERE i.id = '${uuid(12)}';`);
+      assert(await sql(`SELECT count(*) FROM schedule WHERE emits_values @> '{"machine": "truco_match", "row": {"id": "${uuid(12)}"}}';`) === "1", "entering a timed state arms the ticker");
       await tick("truco_match", uuid(12));
       const snapshots = await Promise.all([view(12, 1), view(12, 2)]);
       assertEquals(snapshots.map(v => v!.revision), ["2", "2"]);
       assertEquals(snapshots[0]!.value.plays.length, 1);
       await retick("truco_match", uuid(12));
-      assertEquals((await view(12, 1))!.revision, "2", "a tick for a deadline already met does nothing");
+      assertEquals((await view(12, 1))!.revision, "2", "a tick for a timer already spent does nothing");
     });
 
     // The ticker fired a deadline by its clock and the database, behind it,
     // read the deadline as not yet met and armed it again.
-    await t.step("a deadline is met at the tick's time, whatever the database's clock reads", async () => {
+    await t.step("a timer is met at the tick's time, whatever the database's clock reads", async () => {
       await create(1, 13);
       await join(2, 13);
-      const deadline = await sql(`SELECT state->>'deadline' FROM hybrid_truco_match.instance WHERE id = '${uuid(13)}';`);
-      assert(Number(deadline) > Date.now(), "the turn is still running by every clock but the tick's");
+      const due = await dueOf("truco_match", uuid(13));
+      assert(due > Date.now(), "the turn is still running by every clock but the tick's");
       await tick("truco_match", uuid(13));
       assertEquals((await view(13, 1))!.revision, "2");
-      assertEquals(await sql(`SELECT now FROM hybrid_truco_match.receipt WHERE instance_id = '${uuid(13)}' AND command_id = 'mecha/1';`), deadline,
+      assertEquals(Number(await sql(`SELECT now FROM hybrid_truco_match.receipt WHERE instance_id = '${uuid(13)}' AND command_id = 'mecha/1';`)), due,
         "the timeout's step ran at the tick's time, and its receipt says so");
     });
 
@@ -416,21 +415,19 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       await create(1, 14);
       await join(2, 14);
       const late = Date.now() - 60_000;
-      await sql(`UPDATE hybrid_truco_match.instance SET state = jsonb_set(state, '{deadline}', '${late}') WHERE id = '${uuid(14)}';
-        SELECT hybrid_truco_match.arm(i) FROM hybrid_truco_match.instance i WHERE i.id = '${uuid(14)}';`);
+      await sql(`UPDATE schedule SET due_at = to_timestamp(${late} / 1000.0) WHERE emits_values @> '{"machine": "truco_match", "row": {"id": "${uuid(14)}"}}';`);
       await tick("truco_match", uuid(14));
       assertEquals((await view(14, 1))!.revision, "2");
       const ran = Number(await sql(`SELECT now FROM hybrid_truco_match.receipt WHERE instance_id = '${uuid(14)}' AND command_id = 'mecha/1';`));
-      const next = Number(await sql(`SELECT state->>'deadline' FROM hybrid_truco_match.instance WHERE id = '${uuid(14)}';`));
-      assert(ran >= late + 50_000, `the step ran at ${ran}, near the tick's transaction, not at the deadline ${late}`);
-      assert(next > Date.now(), "the next turn's deadline is still ahead");
+      assert(ran >= late + 50_000, `the step ran at ${ran}, near the tick's transaction, not at the instant ${late} it was due`);
+      assertEquals(await dueOf("truco_match", uuid(14)), ran + 20_000, "the next turn's timer runs from the step that entered it");
     });
 
     // A tick met an instance whose deadline was gone, read the deadline 0 as
     // due, and its delivery was refused: the tick's transaction aborted, and
-    // so did every retry of it. A tick at any time, in any timed phase, times
-    // the instance out or arms it again, and never aborts.
-    await t.step("a tick at any time, with any deadline, times out or arms again, and never aborts", async () => {
+    // so did every retry of it. A tick for a timer since cancelled delivers
+    // nothing, the standing one times the instance out, and none aborts.
+    await t.step("a tick for a cancelled timer moves nothing, the standing one times out, and none aborts", async () => {
       await create(1, 15);
       await join(2, 15);
       await show(45);
@@ -438,33 +435,23 @@ Deno.test({name: "Truco rooms, presence and challenges complete through their su
       await show(47);
       assertEquals((await offer(46, 47, 370)).kind, "accepted");
       const timed = [
-        {machine: "truco_match", schema: "hybrid_truco_match", instance: uuid(15), field: "deadline"},
-        {machine: "truco_presence", schema: "hybrid_truco_presence", instance: uuid(45), field: "until"},
-        {machine: "truco_challenge", schema: "hybrid_truco_challenge", instance: uuid(370), field: "deadline"},
+        {machine: "truco_match", schema: "hybrid_truco_match", instance: uuid(15)},
+        {machine: "truco_presence", schema: "hybrid_truco_presence", instance: uuid(45)},
+        {machine: "truco_challenge", schema: "hybrid_truco_challenge", instance: uuid(370)},
       ];
-      for (const {machine, schema, instance, field} of timed) {
-        const read = async () => JSON.parse(await sql(`SELECT jsonb_build_object('revision', revision::text, 'due', (state->>'${field}')::bigint) FROM ${schema}.instance WHERE id = '${instance}';`)) as {revision: string; due: number};
-        // The tick the ticker would send at `at`, for the schedule standing or one since replaced.
-        const tickAt = (at: number) => psql(`INSERT INTO machine_timer_tick (id, schedule, tick_at, late, machine, "row", state, delay)
-          SELECT gen_random_uuid(), coalesce((SELECT s.name FROM schedule s WHERE s.emits_values @> jsonb_build_object('machine', '${machine}', 'row', jsonb_build_object('id', '${instance}'))), 'replaced'),
-            to_timestamp(${at} / 1000.0), false, '${machine}', jsonb_build_object('id', '${instance}'), i.state->>'phase', '0'
-          FROM ${schema}.instance i WHERE i.id = '${instance}';`);
-        const armed = async () => Number(await sql(`SELECT count(*) FROM schedule WHERE emits_values @> jsonb_build_object('machine', '${machine}', 'row', jsonb_build_object('id', '${instance}'));`));
-        const before = await read();
-        assert(before.due > 0, `${machine} waits on a deadline`);
-        const early = await tickAt(before.due - 5000);
-        assertEquals(early.ok, true, `${machine}, early: ${early.err}`);
-        assertEquals((await read()).revision, before.revision, `${machine}: an early tick moves nothing`);
-        assertEquals(await armed(), 1, `${machine}: an early tick arms the deadline again`);
-        await sql(`UPDATE ${schema}.instance SET state = jsonb_set(state, '{${field}}', '0') WHERE id = '${instance}';`);
-        const gone = await tickAt(before.due);
-        assertEquals(gone.ok, true, `${machine}, no deadline: ${gone.err}`);
-        assertEquals((await read()).revision, before.revision, `${machine}: a tick with no deadline moves nothing`);
-        await sql(`UPDATE ${schema}.instance SET state = jsonb_set(state, '{${field}}', '${before.due}') WHERE id = '${instance}';
-          SELECT ${schema}.arm(i) FROM ${schema}.instance i WHERE i.id = '${instance}';`);
-        const due = await tickAt(before.due);
+      for (const {machine, schema, instance} of timed) {
+        const revision = async () => await sql(`SELECT revision::text FROM ${schema}.instance WHERE id = '${instance}';`);
+        // The tick the ticker would send for the schedule standing, or for one since cancelled.
+        const tickOf = (schedule: string) => psql(`INSERT INTO machine_timer_tick (id, schedule, tick_at, late, machine, "row", state, delay)
+          SELECT gen_random_uuid(), coalesce(${schedule}, 'cancelled'), s.due_at, false, '${machine}', jsonb_build_object('id', '${instance}'), s.emits_values->>'state', s.emits_values->>'delay'
+          FROM schedule s WHERE s.emits_values @> jsonb_build_object('machine', '${machine}', 'row', jsonb_build_object('id', '${instance}'));`);
+        const before = await revision();
+        const cancelled = await tickOf("NULL");
+        assertEquals(cancelled.ok, true, `${machine}, cancelled: ${cancelled.err}`);
+        assertEquals(await revision(), before, `${machine}: a tick for a cancelled timer moves nothing`);
+        const due = await tickOf("s.name");
         assertEquals(due.ok, true, `${machine}, due: ${due.err}`);
-        assertEquals(Number((await read()).revision), Number(before.revision) + 1, `${machine}: a tick at the deadline times it out`);
+        assertEquals(Number(await revision()), Number(before) + 1, `${machine}: the standing timer's tick times it out`);
       }
     });
 

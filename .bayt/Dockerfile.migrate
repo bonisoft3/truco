@@ -5,10 +5,25 @@ WORKDIR /monorepo/${BAYT_DIR}
 COPY services/database/pgroll/018_xstate_engines.json /pgroll/018_xstate_engines.json
 COPY services/database/pgroll/019_mecha_engines.json /pgroll/019_mecha_engines.json
 COPY services/database/pgroll/020_rule_argument_engines.json /pgroll/020_rule_argument_engines.json
-COPY --parents services/database/pgroll/018_xstate_engines.json services/database/pgroll/019_mecha_engines.json services/database/pgroll/020_rule_argument_engines.json ./
+COPY services/database/pgroll/021_transition_engines.json /pgroll/021_transition_engines.json
+COPY services/database/pgroll/022_after_timers.json /pgroll/022_after_timers.json
+COPY --parents services/database/pgroll/018_xstate_engines.json services/database/pgroll/019_mecha_engines.json services/database/pgroll/020_rule_argument_engines.json services/database/pgroll/021_transition_engines.json services/database/pgroll/022_after_timers.json ./
 COPY .bayt/Taskfile.yml .bayt/Taskfile.bayt.yml .bayt/bayt.migrate.json ./.bayt/
 ENTRYPOINT ["/migrate.sh"]
 CMD ["/pgroll", "00_initdb"]
+COPY <<'RECONCILE' /pgroll/field_behavior.sql
+DO $$
+DECLARE
+  t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['app_user', 'lobby', 'challenge', 'room_action', 'truco_match_seat', 'truco_match_command', 'truco_match_open', 'truco_match_public', 'truco_presence_seat', 'truco_presence_command', 'truco_presence_public', 'truco_presence_lease', 'truco_challenge_seat', 'truco_challenge_command', 'truco_call_seat', 'truco_call_command', 'truco_call_open', 'truco_voice_seat', 'truco_voice_command', 'truco_voice_open', 'truco_voice_public', 'truco_challenge_open']::text[] LOOP
+    IF EXISTS (SELECT FROM pg_trigger WHERE tgrelid = to_regclass(format('public.%I', t)) AND tgname = '0_' || t || '_field_behavior') THEN
+      EXECUTE format('DROP TRIGGER %I ON public.%I', '0_' || t || '_field_behavior', t);
+    END IF;
+    EXECUTE format('DROP FUNCTION IF EXISTS public.%I()', 'trg_' || t || '_field_behavior');
+  END LOOP;
+END $$;
+RECONCILE
 COPY <<'RECONCILE' /pgroll/roles.sql
 DO $mecha_floor$ BEGIN
   IF to_regclass('mecha.token_role') IS NULL THEN RETURN; END IF;
@@ -540,10 +555,10 @@ RECONCILE
 FROM busybox:musl@sha256:03db190ed4c1ceb1c55d179a0940e2d71d42130636a780272629735893292223 AS migrate_ctxs
 ARG BAYT_DIR
 WORKDIR /monorepo/${BAYT_DIR}
-COPY --parents services/database/pgroll/018_xstate_engines.json services/database/pgroll/019_mecha_engines.json services/database/pgroll/020_rule_argument_engines.json ./
+COPY --parents services/database/pgroll/018_xstate_engines.json services/database/pgroll/019_mecha_engines.json services/database/pgroll/020_rule_argument_engines.json services/database/pgroll/021_transition_engines.json services/database/pgroll/022_after_timers.json ./
 ARG SOURCE_DATE_EPOCH
 ARG BAYT_CLAMP=1
-RUN if [ "${BAYT_CLAMP:-1}" != 0 ]; then find /monorepo/${BAYT_DIR} -exec touch -hd @${SOURCE_DATE_EPOCH:-0} {} + && { d=$(dirname /monorepo/${BAYT_DIR}); while [ "$d" != / ]; do touch -hd @${SOURCE_DATE_EPOCH:-0} "$d" || exit; d=$(dirname "$d"); done; }; fi
+RUN if [ "${BAYT_CLAMP:-1}" != 0 ]; then { w=$(pwd); mkdir -p /.bayt-clamp && find "$w" -exec getfattr -dh {} + > /.bayt-clamp/x && if [ ! -s /.bayt-clamp/x ]; then cd / && cp -a "$w" /.bayt-clamp/w && rm -rf "$w" && mv /.bayt-clamp/w "$w"; fi && rm -rf /.bayt-clamp; } && find /monorepo/${BAYT_DIR} -exec touch -hd @${SOURCE_DATE_EPOCH:-0} {} + && { d=$(dirname /monorepo/${BAYT_DIR}); while [ "$d" != / ]; do touch -hd @${SOURCE_DATE_EPOCH:-0} "$d" || exit; d=$(dirname "$d"); done; }; fi
 FROM scratch AS migrate_srcs
 COPY --from=migrate_ctxs /monorepo /monorepo
 
@@ -554,6 +569,6 @@ COPY --parents .bayt/compose.migrate.yaml .bayt/Dockerfile.migrate .bayt/bayt.mi
 COPY --from=truco-database_bayt /monorepo /monorepo
 ARG SOURCE_DATE_EPOCH
 ARG BAYT_CLAMP=1
-RUN if [ "${BAYT_CLAMP:-1}" != 0 ]; then find /monorepo/${BAYT_DIR} -exec touch -hd @${SOURCE_DATE_EPOCH:-0} {} + && { d=$(dirname /monorepo/${BAYT_DIR}); while [ "$d" != / ]; do touch -hd @${SOURCE_DATE_EPOCH:-0} "$d" || exit; d=$(dirname "$d"); done; }; fi
+RUN if [ "${BAYT_CLAMP:-1}" != 0 ]; then { w=$(pwd); mkdir -p /.bayt-clamp && find "$w" -exec getfattr -dh {} + > /.bayt-clamp/x && if [ ! -s /.bayt-clamp/x ]; then cd / && cp -a "$w" /.bayt-clamp/w && rm -rf "$w" && mv /.bayt-clamp/w "$w"; fi && rm -rf /.bayt-clamp; } && find /monorepo/${BAYT_DIR} -exec touch -hd @${SOURCE_DATE_EPOCH:-0} {} + && { d=$(dirname /monorepo/${BAYT_DIR}); while [ "$d" != / ]; do touch -hd @${SOURCE_DATE_EPOCH:-0} "$d" || exit; d=$(dirname "$d"); done; }; fi
 FROM scratch AS migrate_bayt
 COPY --from=migrate_bayt_ctxs /monorepo /monorepo

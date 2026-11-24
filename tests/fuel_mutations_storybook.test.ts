@@ -180,6 +180,7 @@ function bootHarness(html: string, initialRow: Record<string, unknown> = {}) {
   const rows = [{ id: "r1", current: "yes", ...initialRow }];
   const subs = new Set<() => void>();
   const baseStore = {
+    answer: () => rows,
     query: async () => rows,
     subscribe: (_table: string, cb: () => void) => {
       subs.add(cb);

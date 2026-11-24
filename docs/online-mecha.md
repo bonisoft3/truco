@@ -116,8 +116,8 @@ busy player. Each account also sees its unfinished rooms and can resume or
 resign an abandoned waiting table instead of being stuck unavailable.
 Accepted challenges show **Entrar na mesa** to both participants.
 
-[[../machines/admission.cue]] also declares offer admission, the presence lease
-and expired-invitation deadlines. Mecha generates the surface's triggers,
+[[../machines/admission.cue]] also declares offer admission and the presence
+lease; an invitation's thirty seconds is its `offered` state's `after`. Mecha generates the surface's triggers,
 durable admission receipts, locking, memberships and private projections.
 Seeds run through the bounded executor's input, state and invariant checks.
 The challenge's `spawn` and `send` actions create and start the match within
@@ -144,10 +144,15 @@ constitute a proof of end-to-end liveness or exactly-once network delivery.
 
 ## Time and delivery
 
-Seats, listings and receipts are live rows; nothing polls. Entering a timed
-phase arms the ticker's one-shot schedule, so a deadline fires on the server
-whether or not anyone is at the table, and a play at or after the deadline is
-refused. A tick for a deadline already met does nothing.
+Seats, listings and receipts are live rows; nothing polls. A turn's clock is
+XState's `after`: entering a state that owes a move starts its `turn` timer,
+`turn_ms` from the step, as a one-shot schedule on the ticker, so it fires on
+the server whether or not anyone is at the table. Leaving the state cancels
+it, and only re-entering starts it again: a card laid passes through
+`resolving`, and a raise answering a raise or an envido raising the envido
+re-enters its state. The ticker alone decides the timeout: a move the
+database takes before the tick is a move. A tick for a timer since cancelled
+does nothing.
 Turns play the lowest-strength remaining card on timeout; wager/special-hand
 answers time out by folding; envido times out as a refusal. Moving to another hand requires a player command.
 
@@ -182,8 +187,8 @@ not establish visual quality or full-shell behavior in a real browser.
 
 The emitted migrations initialize a fresh database. They do not upgrade an
 already deployed database: one running the RPC ports needs its views moved into
-the seat tables, presence states given their `until`, and running deadlines
-armed on the ticker before the timer check passes. They do not convert old
+the seat tables, and running timers armed on the ticker before the timer
+check passes. They do not convert old
 browser-authoritative rooms. The new
 migration revokes client writes to the old lobby, challenge and room-action tables;
 their historical rows are retained. The local preview runs this implementation;

@@ -3413,7 +3413,7 @@
           "type": "json",
           "pk": false,
           "required": true,
-          "cel": "type(this) == map && size(this) == 46 && has(this.actions) && type(this.actions) == list && size(this.actions) <= 14 && this.actions.all(e1, type(e1) == string && e1.size() <= 12) && has(this.answers) && type(this.answers) == list && size(this.answers) <= 3 && this.answers.all(e1, type(e1) == string && e1 in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]) && has(this.available) && type(this.available) == list && size(this.available) <= 3 && this.available.all(e1, e1 == int(e1) && e1 >= 0 && e1 <= 2) && has(this.brink) && type(this.brink) == string && this.brink in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.caller) && type(this.caller) == string && this.caller in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.counts) && type(this.counts) == list && size(this.counts) <= 6 && this.counts.all(e1, type(e1) == map && size(e1) == 2 && has(e1.count) && e1.count == int(e1.count) && e1.count >= 0 && e1.count <= 3 && has(e1.seat) && type(e1.seat) == string && e1.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.deadline) && this.deadline == int(this.deadline) && this.deadline >= 0 && this.deadline <= 9007199254740991 && has(this.envido) && this.envido == int(this.envido) && this.envido >= 0 && this.envido <= 33 && has(this.envido_caller) && type(this.envido_caller) == string && this.envido_caller in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.envido_chain) && type(this.envido_chain) == list && size(this.envido_chain) <= 4 && this.envido_chain.all(e1, type(e1) == string && e1 in [\"envido\", \"envido_real\", \"envido_falta\"]) && has(this.envido_done) && type(this.envido_done) == string && this.envido_done in [\"\", \"accepted\", \"refused\", \"flor\"] && has(this.envido_scores) && type(this.envido_scores) == list && size(this.envido_scores) <= 3 && this.envido_scores.all(e1, type(e1) == map && size(e1) == 2 && has(e1.count) && e1.count == int(e1.count) && e1.count >= 0 && e1.count <= 33 && has(e1.side) && type(e1.side) == string && e1.side in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]) && has(this.folded) && type(this.folded) == list && size(this.folded) <= 3 && this.folded.all(e1, type(e1) == string && e1 in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]) && has(this.games_a) && this.games_a == int(this.games_a) && this.games_a >= 0 && this.games_a <= 2 && has(this.games_b) && this.games_b == int(this.games_b) && this.games_b >= 0 && this.games_b <= 2 && has(this.games_c) && this.games_c == int(this.games_c) && this.games_c >= 0 && this.games_c <= 2 && has(this.goal) && this.goal == int(this.goal) && this.goal >= 0 && this.goal <= 30 && has(this.hand) && type(this.hand) == list && size(this.hand) <= 3 && this.hand.all(e1, e1 == int(e1) && e1 >= -1 && e1 <= 40) && has(this.hand_no) && this.hand_no == int(this.hand_no) && this.hand_no >= 0 && this.hand_no <= 9007199254740991 && has(this.joined) && type(this.joined) == list && size(this.joined) <= 6 && this.joined.all(e1, type(e1) == string && e1 in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.leader) && type(this.leader) == string && this.leader in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(this.log) && type(this.log) == list && size(this.log) <= 40 && this.log.all(e1, type(e1) == map && size(e1) == 4 && has(e1.at) && e1.at == int(e1.at) && e1.at >= 0 && e1.at <= 18 && has(e1.count) && e1.count == int(e1.count) && e1.count >= 0 && e1.count <= 41 && has(e1.kind) && type(e1.kind) == string && e1.kind in [\"raise\", \"accept\", \"fold\", \"envido\", \"envido_real\", \"envido_falta\", \"envido_take\", \"envido_run\", \"envido_count\", \"envido_good\", \"flor\"] && has(e1.seat) && type(e1.seat) == string && e1.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.offer) && this.offer == int(this.offer) && this.offer >= 0 && this.offer <= 30 && has(this.opponent_count) && this.opponent_count == int(this.opponent_count) && this.opponent_count >= 0 && this.opponent_count <= 12 && has(this.partners) && type(this.partners) == list && size(this.partners) <= 1 && this.partners.all(e1, type(e1) == map && size(e1) == 2 && has(e1.hand) && type(e1.hand) == list && size(e1.hand) <= 3 && e1.hand.all(e2, e2 == int(e2) && e2 >= -1 && e2 <= 40) && has(e1.seat) && type(e1.seat) == string && e1.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.phase) && type(this.phase) == string && this.phase in [\"waiting\", \"dealing\", \"brink\", \"playing\", \"wager\", \"envido\", \"resolving\", \"hand_over\", \"finished\"] && has(this.plays) && type(this.plays) == list && size(this.plays) <= 18 && this.plays.all(e1, type(e1) == map && size(e1) == 7 && has(e1.card) && e1.card == int(e1.card) && e1.card >= -1 && e1.card <= 40 && has(e1.covered) && type(e1.covered) == bool && has(e1.power) && e1.power == int(e1.power) && e1.power >= -1 && e1.power <= 103 && has(e1.seat) && type(e1.seat) == string && e1.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(e1.slot) && e1.slot == int(e1.slot) && e1.slot >= 0 && e1.slot <= 2 && has(e1.trick) && e1.trick == int(e1.trick) && e1.trick >= 0 && e1.trick <= 2 && has(e1.win) && type(e1.win) == bool) && has(this.powers) && type(this.powers) == list && size(this.powers) <= 3 && this.powers.all(e1, e1 == int(e1) && e1 >= -1 && e1 <= 103) && has(this.reserved) && type(this.reserved) == bool && has(this.result) && type(this.result) == string && this.result in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.right) && type(this.right) == string && this.right in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.score_a) && this.score_a == int(this.score_a) && this.score_a >= 0 && this.score_a <= 30 && has(this.score_b) && this.score_b == int(this.score_b) && this.score_b >= 0 && this.score_b <= 30 && has(this.score_c) && this.score_c == int(this.score_c) && this.score_c >= 0 && this.score_c <= 30 && has(this.seat) && type(this.seat) == string && this.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(this.seating) && type(this.seating) == string && this.seating in [\"1v1\", \"2v2\", \"2v2v2\"] && has(this.seats) && type(this.seats) == list && size(this.seats) <= 6 && this.seats.all(e1, type(e1) == string && e1 in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.side) && type(this.side) == string && this.side in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.stake) && this.stake == int(this.stake) && this.stake >= 0 && this.stake <= 30 && has(this.talk) && type(this.talk) == string && this.talk.size() <= 36 && has(this.tricks) && type(this.tricks) == list && size(this.tricks) <= 3 && this.tricks.all(e1, type(e1) == string && e1 in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]) && has(this.turn) && type(this.turn) == string && this.turn in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(this.turn_ms) && this.turn_ms == int(this.turn_ms) && this.turn_ms >= 0 && this.turn_ms <= 600000 && has(this.variant) && type(this.variant) == string && this.variant in [\"mineiro\", \"paulista\", \"gaucho\", \"truc\", \"argentino\", \"uruguayo\", \"paraguayo\", \"douradinha\", \"douradao\"] && has(this.vira) && this.vira == int(this.vira) && this.vira >= -1 && this.vira <= 40 && has(this.winner) && type(this.winner) == string && this.winner in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]"
+          "cel": "type(this) == map && size(this) == 45 && has(this.actions) && type(this.actions) == list && size(this.actions) <= 14 && this.actions.all(e1, type(e1) == string && e1.size() <= 12) && has(this.answers) && type(this.answers) == list && size(this.answers) <= 3 && this.answers.all(e1, type(e1) == string && e1 in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]) && has(this.available) && type(this.available) == list && size(this.available) <= 3 && this.available.all(e1, e1 == int(e1) && e1 >= 0 && e1 <= 2) && has(this.brink) && type(this.brink) == string && this.brink in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.caller) && type(this.caller) == string && this.caller in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.counts) && type(this.counts) == list && size(this.counts) <= 6 && this.counts.all(e1, type(e1) == map && size(e1) == 2 && has(e1.count) && e1.count == int(e1.count) && e1.count >= 0 && e1.count <= 3 && has(e1.seat) && type(e1.seat) == string && e1.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.envido) && this.envido == int(this.envido) && this.envido >= 0 && this.envido <= 33 && has(this.envido_caller) && type(this.envido_caller) == string && this.envido_caller in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.envido_chain) && type(this.envido_chain) == list && size(this.envido_chain) <= 4 && this.envido_chain.all(e1, type(e1) == string && e1 in [\"envido\", \"envido_real\", \"envido_falta\"]) && has(this.envido_done) && type(this.envido_done) == string && this.envido_done in [\"\", \"accepted\", \"refused\", \"flor\"] && has(this.envido_scores) && type(this.envido_scores) == list && size(this.envido_scores) <= 3 && this.envido_scores.all(e1, type(e1) == map && size(e1) == 2 && has(e1.count) && e1.count == int(e1.count) && e1.count >= 0 && e1.count <= 33 && has(e1.side) && type(e1.side) == string && e1.side in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]) && has(this.folded) && type(this.folded) == list && size(this.folded) <= 3 && this.folded.all(e1, type(e1) == string && e1 in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]) && has(this.games_a) && this.games_a == int(this.games_a) && this.games_a >= 0 && this.games_a <= 2 && has(this.games_b) && this.games_b == int(this.games_b) && this.games_b >= 0 && this.games_b <= 2 && has(this.games_c) && this.games_c == int(this.games_c) && this.games_c >= 0 && this.games_c <= 2 && has(this.goal) && this.goal == int(this.goal) && this.goal >= 0 && this.goal <= 30 && has(this.hand) && type(this.hand) == list && size(this.hand) <= 3 && this.hand.all(e1, e1 == int(e1) && e1 >= -1 && e1 <= 40) && has(this.hand_no) && this.hand_no == int(this.hand_no) && this.hand_no >= 0 && this.hand_no <= 9007199254740991 && has(this.joined) && type(this.joined) == list && size(this.joined) <= 6 && this.joined.all(e1, type(e1) == string && e1 in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.leader) && type(this.leader) == string && this.leader in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(this.log) && type(this.log) == list && size(this.log) <= 40 && this.log.all(e1, type(e1) == map && size(e1) == 4 && has(e1.at) && e1.at == int(e1.at) && e1.at >= 0 && e1.at <= 18 && has(e1.count) && e1.count == int(e1.count) && e1.count >= 0 && e1.count <= 41 && has(e1.kind) && type(e1.kind) == string && e1.kind in [\"raise\", \"accept\", \"fold\", \"envido\", \"envido_real\", \"envido_falta\", \"envido_take\", \"envido_run\", \"envido_count\", \"envido_good\", \"flor\"] && has(e1.seat) && type(e1.seat) == string && e1.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.offer) && this.offer == int(this.offer) && this.offer >= 0 && this.offer <= 30 && has(this.opponent_count) && this.opponent_count == int(this.opponent_count) && this.opponent_count >= 0 && this.opponent_count <= 12 && has(this.partners) && type(this.partners) == list && size(this.partners) <= 1 && this.partners.all(e1, type(e1) == map && size(e1) == 2 && has(e1.hand) && type(e1.hand) == list && size(e1.hand) <= 3 && e1.hand.all(e2, e2 == int(e2) && e2 >= -1 && e2 <= 40) && has(e1.seat) && type(e1.seat) == string && e1.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.phase) && type(this.phase) == string && this.phase in [\"waiting\", \"dealing\", \"brink\", \"playing\", \"wager\", \"envido\", \"resolving\", \"hand_over\", \"finished\"] && has(this.plays) && type(this.plays) == list && size(this.plays) <= 18 && this.plays.all(e1, type(e1) == map && size(e1) == 7 && has(e1.card) && e1.card == int(e1.card) && e1.card >= -1 && e1.card <= 40 && has(e1.covered) && type(e1.covered) == bool && has(e1.power) && e1.power == int(e1.power) && e1.power >= -1 && e1.power <= 103 && has(e1.seat) && type(e1.seat) == string && e1.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(e1.slot) && e1.slot == int(e1.slot) && e1.slot >= 0 && e1.slot <= 2 && has(e1.trick) && e1.trick == int(e1.trick) && e1.trick >= 0 && e1.trick <= 2 && has(e1.win) && type(e1.win) == bool) && has(this.powers) && type(this.powers) == list && size(this.powers) <= 3 && this.powers.all(e1, e1 == int(e1) && e1 >= -1 && e1 <= 103) && has(this.reserved) && type(this.reserved) == bool && has(this.result) && type(this.result) == string && this.result in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.right) && type(this.right) == string && this.right in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.score_a) && this.score_a == int(this.score_a) && this.score_a >= 0 && this.score_a <= 30 && has(this.score_b) && this.score_b == int(this.score_b) && this.score_b >= 0 && this.score_b <= 30 && has(this.score_c) && this.score_c == int(this.score_c) && this.score_c >= 0 && this.score_c <= 30 && has(this.seat) && type(this.seat) == string && this.seat in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(this.seating) && type(this.seating) == string && this.seating in [\"1v1\", \"2v2\", \"2v2v2\"] && has(this.seats) && type(this.seats) == list && size(this.seats) <= 6 && this.seats.all(e1, type(e1) == string && e1 in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]) && has(this.side) && type(this.side) == string && this.side in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"] && has(this.stake) && this.stake == int(this.stake) && this.stake >= 0 && this.stake <= 30 && has(this.talk) && type(this.talk) == string && this.talk.size() <= 36 && has(this.tricks) && type(this.tricks) == list && size(this.tricks) <= 3 && this.tricks.all(e1, type(e1) == string && e1 in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]) && has(this.turn) && type(this.turn) == string && this.turn in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(this.turn_ms) && this.turn_ms == int(this.turn_ms) && this.turn_ms >= 0 && this.turn_ms <= 600000 && has(this.variant) && type(this.variant) == string && this.variant in [\"mineiro\", \"paulista\", \"gaucho\", \"truc\", \"argentino\", \"uruguayo\", \"paraguayo\", \"douradinha\", \"douradao\"] && has(this.vira) && this.vira == int(this.vira) && this.vira >= -1 && this.vira <= 40 && has(this.winner) && type(this.winner) == string && this.winner in [\"\", \"a\", \"b\", \"c\", \"tie\", \"draw\", \"both\"]"
         },
         {
           "name": "variant",
@@ -3457,7 +3457,7 @@
           "id": "char_length(id) <= 64",
           "seat": "char_length(seat) <= 16",
           "phase": "char_length(phase) <= 16",
-          "view": "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"actions\":{\"kind\":\"array\",\"maxItems\":14,\"items\":{\"kind\":\"string\",\"sizeMax\":12}},\"answers\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}},\"available\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2}},\"brink\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"caller\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"counts\":{\"kind\":\"array\",\"maxItems\":6,\"items\":{\"kind\":\"object\",\"fields\":{\"count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":3},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}},\"deadline\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"envido\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":33},\"envido_caller\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"envido_chain\":{\"kind\":\"array\",\"maxItems\":4,\"items\":{\"kind\":\"string\",\"enumValues\":[\"envido\",\"envido_real\",\"envido_falta\"]}},\"envido_done\":{\"kind\":\"string\",\"enumValues\":[\"\",\"accepted\",\"refused\",\"flor\"]},\"envido_scores\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"object\",\"fields\":{\"count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":33},\"side\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}}}},\"folded\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}},\"games_a\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"games_b\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"games_c\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"goal\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"hand\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40}},\"hand_no\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"joined\":{\"kind\":\"array\",\"maxItems\":6,\"items\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}},\"leader\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"log\":{\"kind\":\"array\",\"maxItems\":40,\"items\":{\"kind\":\"object\",\"fields\":{\"at\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":18},\"count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":41},\"kind\":{\"kind\":\"string\",\"enumValues\":[\"raise\",\"accept\",\"fold\",\"envido\",\"envido_real\",\"envido_falta\",\"envido_take\",\"envido_run\",\"envido_count\",\"envido_good\",\"flor\"]},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}},\"offer\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"opponent_count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":12},\"partners\":{\"kind\":\"array\",\"maxItems\":1,\"items\":{\"kind\":\"object\",\"fields\":{\"hand\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40}},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"waiting\",\"dealing\",\"brink\",\"playing\",\"wager\",\"envido\",\"resolving\",\"hand_over\",\"finished\"]},\"plays\":{\"kind\":\"array\",\"maxItems\":18,\"items\":{\"kind\":\"object\",\"fields\":{\"card\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40},\"covered\":{\"kind\":\"boolean\"},\"power\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":103},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"slot\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"trick\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"win\":{\"kind\":\"boolean\"}}}},\"powers\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":103}},\"reserved\":{\"kind\":\"boolean\"},\"result\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"right\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"score_a\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"score_b\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"score_c\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"seating\":{\"kind\":\"string\",\"enumValues\":[\"1v1\",\"2v2\",\"2v2v2\"]},\"seats\":{\"kind\":\"array\",\"maxItems\":6,\"items\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}},\"side\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"stake\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"talk\":{\"kind\":\"string\",\"sizeMax\":36},\"tricks\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}},\"turn\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"turn_ms\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":600000},\"variant\":{\"kind\":\"string\",\"enumValues\":[\"mineiro\",\"paulista\",\"gaucho\",\"truc\",\"argentino\",\"uruguayo\",\"paraguayo\",\"douradinha\",\"douradao\"]},\"vira\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40},\"winner\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}}}'::jsonb)",
+          "view": "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"actions\":{\"kind\":\"array\",\"maxItems\":14,\"items\":{\"kind\":\"string\",\"sizeMax\":12}},\"answers\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}},\"available\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2}},\"brink\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"caller\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"counts\":{\"kind\":\"array\",\"maxItems\":6,\"items\":{\"kind\":\"object\",\"fields\":{\"count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":3},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}},\"envido\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":33},\"envido_caller\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"envido_chain\":{\"kind\":\"array\",\"maxItems\":4,\"items\":{\"kind\":\"string\",\"enumValues\":[\"envido\",\"envido_real\",\"envido_falta\"]}},\"envido_done\":{\"kind\":\"string\",\"enumValues\":[\"\",\"accepted\",\"refused\",\"flor\"]},\"envido_scores\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"object\",\"fields\":{\"count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":33},\"side\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}}}},\"folded\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}},\"games_a\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"games_b\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"games_c\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"goal\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"hand\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40}},\"hand_no\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"joined\":{\"kind\":\"array\",\"maxItems\":6,\"items\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}},\"leader\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"log\":{\"kind\":\"array\",\"maxItems\":40,\"items\":{\"kind\":\"object\",\"fields\":{\"at\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":18},\"count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":41},\"kind\":{\"kind\":\"string\",\"enumValues\":[\"raise\",\"accept\",\"fold\",\"envido\",\"envido_real\",\"envido_falta\",\"envido_take\",\"envido_run\",\"envido_count\",\"envido_good\",\"flor\"]},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}},\"offer\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"opponent_count\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":12},\"partners\":{\"kind\":\"array\",\"maxItems\":1,\"items\":{\"kind\":\"object\",\"fields\":{\"hand\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40}},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"waiting\",\"dealing\",\"brink\",\"playing\",\"wager\",\"envido\",\"resolving\",\"hand_over\",\"finished\"]},\"plays\":{\"kind\":\"array\",\"maxItems\":18,\"items\":{\"kind\":\"object\",\"fields\":{\"card\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40},\"covered\":{\"kind\":\"boolean\"},\"power\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":103},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"slot\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"trick\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":2},\"win\":{\"kind\":\"boolean\"}}}},\"powers\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":103}},\"reserved\":{\"kind\":\"boolean\"},\"result\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"right\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"score_a\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"score_b\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"score_c\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"seat\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"seating\":{\"kind\":\"string\",\"enumValues\":[\"1v1\",\"2v2\",\"2v2v2\"]},\"seats\":{\"kind\":\"array\",\"maxItems\":6,\"items\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}},\"side\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]},\"stake\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":30},\"talk\":{\"kind\":\"string\",\"sizeMax\":36},\"tricks\":{\"kind\":\"array\",\"maxItems\":3,\"items\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}},\"turn\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"turn_ms\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":600000},\"variant\":{\"kind\":\"string\",\"enumValues\":[\"mineiro\",\"paulista\",\"gaucho\",\"truc\",\"argentino\",\"uruguayo\",\"paraguayo\",\"douradinha\",\"douradao\"]},\"vira\":{\"kind\":\"integer\",\"intMin\":-1,\"intMax\":40},\"winner\":{\"kind\":\"string\",\"enumValues\":[\"\",\"a\",\"b\",\"c\",\"tie\",\"draw\",\"both\"]}}}'::jsonb)",
           "variant": "char_length(variant) <= 10",
           "seating": "char_length(seating) <= 6"
         },
@@ -3556,11 +3556,6 @@
                     }
                   }
                 }
-              },
-              "deadline": {
-                "kind": "integer",
-                "intMin": 0,
-                "intMax": 9007199254740991
               },
               "envido": {
                 "kind": "integer",
@@ -4475,7 +4470,7 @@
           "type": "json",
           "pk": false,
           "required": true,
-          "cel": "type(this) == map && size(this) == 4 && has(this.leases) && type(this.leases) == list && size(this.leases) <= 16 && this.leases.all(e1, type(e1) == map && size(e1) == 2 && has(e1.id) && type(e1.id) == string && e1.id.size() <= 36 && has(e1.until) && e1.until == int(e1.until) && e1.until >= 0 && e1.until <= 9007199254740991) && has(this.name) && type(this.name) == string && this.name.size() <= 32 && has(this.phase) && type(this.phase) == string && this.phase in [\"hidden\", \"visible\"] && has(this.until) && this.until == int(this.until) && this.until >= 0 && this.until <= 9007199254740991"
+          "cel": "type(this) == map && size(this) == 3 && has(this.leases) && type(this.leases) == list && size(this.leases) <= 16 && this.leases.all(e1, type(e1) == map && size(e1) == 2 && has(e1.id) && type(e1.id) == string && e1.id.size() <= 36 && has(e1.until) && e1.until == int(e1.until) && e1.until >= 0 && e1.until <= 9007199254740991) && has(this.name) && type(this.name) == string && this.name.size() <= 32 && has(this.phase) && type(this.phase) == string && this.phase in [\"hidden\", \"visible\"]"
         },
         {
           "name": "name",
@@ -4510,7 +4505,7 @@
           "id": "char_length(id) <= 64",
           "seat": "char_length(seat) <= 16",
           "phase": "char_length(phase) <= 16",
-          "view": "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"leases\":{\"kind\":\"array\",\"maxItems\":16,\"items\":{\"kind\":\"object\",\"fields\":{\"id\":{\"kind\":\"string\",\"sizeMax\":36},\"until\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991}}}},\"name\":{\"kind\":\"string\",\"sizeMax\":32},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"hidden\",\"visible\"]},\"until\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991}}}'::jsonb)",
+          "view": "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"leases\":{\"kind\":\"array\",\"maxItems\":16,\"items\":{\"kind\":\"object\",\"fields\":{\"id\":{\"kind\":\"string\",\"sizeMax\":36},\"until\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991}}}},\"name\":{\"kind\":\"string\",\"sizeMax\":32},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"hidden\",\"visible\"]}}}'::jsonb)",
           "name": "char_length(name) <= 32"
         },
         "enums": {},
@@ -4555,11 +4550,6 @@
                   "hidden",
                   "visible"
                 ]
-              },
-              "until": {
-                "kind": "integer",
-                "intMin": 0,
-                "intMax": 9007199254740991
               }
             }
           },
@@ -4913,7 +4903,7 @@
           "type": "json",
           "pk": false,
           "required": true,
-          "cel": "type(this) == map && size(this) == 10 && has(this.deadline) && this.deadline == int(this.deadline) && this.deadline >= 0 && this.deadline <= 9007199254740991 && has(this.inviter) && type(this.inviter) == string && this.inviter.size() <= 36 && has(this.inviter_name) && type(this.inviter_name) == string && this.inviter_name.size() <= 32 && has(this.phase) && type(this.phase) == string && this.phase in [\"offered\", \"accepted\", \"declined\", \"cancelled\", \"expired\"] && has(this.room) && type(this.room) == string && this.room.size() <= 36 && has(this.seating) && type(this.seating) == string && this.seating in [\"1v1\", \"2v2\", \"2v2v2\"] && has(this.talk) && type(this.talk) == string && this.talk.size() <= 36 && has(this.target) && type(this.target) == string && this.target.size() <= 36 && has(this.target_name) && type(this.target_name) == string && this.target_name.size() <= 32 && has(this.variant) && type(this.variant) == string && this.variant in [\"mineiro\", \"paulista\", \"gaucho\", \"truc\", \"argentino\", \"uruguayo\", \"paraguayo\", \"douradinha\", \"douradao\"]"
+          "cel": "type(this) == map && size(this) == 9 && has(this.inviter) && type(this.inviter) == string && this.inviter.size() <= 36 && has(this.inviter_name) && type(this.inviter_name) == string && this.inviter_name.size() <= 32 && has(this.phase) && type(this.phase) == string && this.phase in [\"offered\", \"accepted\", \"declined\", \"cancelled\", \"expired\"] && has(this.room) && type(this.room) == string && this.room.size() <= 36 && has(this.seating) && type(this.seating) == string && this.seating in [\"1v1\", \"2v2\", \"2v2v2\"] && has(this.talk) && type(this.talk) == string && this.talk.size() <= 36 && has(this.target) && type(this.target) == string && this.target.size() <= 36 && has(this.target_name) && type(this.target_name) == string && this.target_name.size() <= 32 && has(this.variant) && type(this.variant) == string && this.variant in [\"mineiro\", \"paulista\", \"gaucho\", \"truc\", \"argentino\", \"uruguayo\", \"paraguayo\", \"douradinha\", \"douradao\"]"
         },
         {
           "name": "inviter_name",
@@ -4984,7 +4974,7 @@
           "id": "char_length(id) <= 64",
           "seat": "char_length(seat) <= 16",
           "phase": "char_length(phase) <= 16",
-          "view": "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"deadline\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"inviter\":{\"kind\":\"string\",\"sizeMax\":36},\"inviter_name\":{\"kind\":\"string\",\"sizeMax\":32},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"offered\",\"accepted\",\"declined\",\"cancelled\",\"expired\"]},\"room\":{\"kind\":\"string\",\"sizeMax\":36},\"seating\":{\"kind\":\"string\",\"enumValues\":[\"1v1\",\"2v2\",\"2v2v2\"]},\"talk\":{\"kind\":\"string\",\"sizeMax\":36},\"target\":{\"kind\":\"string\",\"sizeMax\":36},\"target_name\":{\"kind\":\"string\",\"sizeMax\":32},\"variant\":{\"kind\":\"string\",\"enumValues\":[\"mineiro\",\"paulista\",\"gaucho\",\"truc\",\"argentino\",\"uruguayo\",\"paraguayo\",\"douradinha\",\"douradao\"]}}}'::jsonb)",
+          "view": "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"inviter\":{\"kind\":\"string\",\"sizeMax\":36},\"inviter_name\":{\"kind\":\"string\",\"sizeMax\":32},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"offered\",\"accepted\",\"declined\",\"cancelled\",\"expired\"]},\"room\":{\"kind\":\"string\",\"sizeMax\":36},\"seating\":{\"kind\":\"string\",\"enumValues\":[\"1v1\",\"2v2\",\"2v2v2\"]},\"talk\":{\"kind\":\"string\",\"sizeMax\":36},\"target\":{\"kind\":\"string\",\"sizeMax\":36},\"target_name\":{\"kind\":\"string\",\"sizeMax\":32},\"variant\":{\"kind\":\"string\",\"enumValues\":[\"mineiro\",\"paulista\",\"gaucho\",\"truc\",\"argentino\",\"uruguayo\",\"paraguayo\",\"douradinha\",\"douradao\"]}}}'::jsonb)",
           "inviter_name": "char_length(inviter_name) <= 32",
           "target_name": "char_length(target_name) <= 32",
           "variant": "char_length(variant) <= 10",
@@ -5005,11 +4995,6 @@
           "view": {
             "kind": "object",
             "fields": {
-              "deadline": {
-                "kind": "integer",
-                "intMin": 0,
-                "intMax": 9007199254740991
-              },
               "inviter": {
                 "kind": "string",
                 "sizeMax": 36
@@ -5286,7 +5271,7 @@
           "type": "json",
           "pk": false,
           "required": true,
-          "cel": "type(this) == map && size(this) == 10 && has(this.caller) && type(this.caller) == string && this.caller.size() <= 36 && has(this.caller_name) && type(this.caller_name) == string && this.caller_name.size() <= 32 && has(this.chair) && type(this.chair) == string && this.chair in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(this.deadline) && this.deadline == int(this.deadline) && this.deadline >= 0 && this.deadline <= 9007199254740991 && has(this.phase) && type(this.phase) == string && this.phase in [\"offered\", \"accepted\", \"declined\", \"cancelled\", \"expired\"] && has(this.room) && type(this.room) == string && this.room.size() <= 36 && has(this.seating) && type(this.seating) == string && this.seating in [\"1v1\", \"2v2\", \"2v2v2\"] && has(this.target) && type(this.target) == string && this.target.size() <= 36 && has(this.target_name) && type(this.target_name) == string && this.target_name.size() <= 32 && has(this.variant) && type(this.variant) == string && this.variant in [\"mineiro\", \"paulista\", \"gaucho\", \"truc\", \"argentino\", \"uruguayo\", \"paraguayo\", \"douradinha\", \"douradao\"]"
+          "cel": "type(this) == map && size(this) == 9 && has(this.caller) && type(this.caller) == string && this.caller.size() <= 36 && has(this.caller_name) && type(this.caller_name) == string && this.caller_name.size() <= 32 && has(this.chair) && type(this.chair) == string && this.chair in [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"] && has(this.phase) && type(this.phase) == string && this.phase in [\"offered\", \"accepted\", \"declined\", \"cancelled\", \"expired\"] && has(this.room) && type(this.room) == string && this.room.size() <= 36 && has(this.seating) && type(this.seating) == string && this.seating in [\"1v1\", \"2v2\", \"2v2v2\"] && has(this.target) && type(this.target) == string && this.target.size() <= 36 && has(this.target_name) && type(this.target_name) == string && this.target_name.size() <= 32 && has(this.variant) && type(this.variant) == string && this.variant in [\"mineiro\", \"paulista\", \"gaucho\", \"truc\", \"argentino\", \"uruguayo\", \"paraguayo\", \"douradinha\", \"douradao\"]"
         },
         {
           "name": "caller_name",
@@ -5357,7 +5342,7 @@
           "id": "char_length(id) <= 64",
           "seat": "char_length(seat) <= 16",
           "phase": "char_length(phase) <= 16",
-          "view": "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"caller\":{\"kind\":\"string\",\"sizeMax\":36},\"caller_name\":{\"kind\":\"string\",\"sizeMax\":32},\"chair\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"deadline\":{\"kind\":\"integer\",\"intMin\":0,\"intMax\":9007199254740991},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"offered\",\"accepted\",\"declined\",\"cancelled\",\"expired\"]},\"room\":{\"kind\":\"string\",\"sizeMax\":36},\"seating\":{\"kind\":\"string\",\"enumValues\":[\"1v1\",\"2v2\",\"2v2v2\"]},\"target\":{\"kind\":\"string\",\"sizeMax\":36},\"target_name\":{\"kind\":\"string\",\"sizeMax\":32},\"variant\":{\"kind\":\"string\",\"enumValues\":[\"mineiro\",\"paulista\",\"gaucho\",\"truc\",\"argentino\",\"uruguayo\",\"paraguayo\",\"douradinha\",\"douradao\"]}}}'::jsonb)",
+          "view": "public.portable_shape_valid(view, '{\"kind\":\"object\",\"fields\":{\"caller\":{\"kind\":\"string\",\"sizeMax\":36},\"caller_name\":{\"kind\":\"string\",\"sizeMax\":32},\"chair\":{\"kind\":\"string\",\"enumValues\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"phase\":{\"kind\":\"string\",\"enumValues\":[\"offered\",\"accepted\",\"declined\",\"cancelled\",\"expired\"]},\"room\":{\"kind\":\"string\",\"sizeMax\":36},\"seating\":{\"kind\":\"string\",\"enumValues\":[\"1v1\",\"2v2\",\"2v2v2\"]},\"target\":{\"kind\":\"string\",\"sizeMax\":36},\"target_name\":{\"kind\":\"string\",\"sizeMax\":32},\"variant\":{\"kind\":\"string\",\"enumValues\":[\"mineiro\",\"paulista\",\"gaucho\",\"truc\",\"argentino\",\"uruguayo\",\"paraguayo\",\"douradinha\",\"douradao\"]}}}'::jsonb)",
           "caller_name": "char_length(caller_name) <= 32",
           "room": "char_length(room) <= 36",
           "chair": "char_length(chair) <= 1",
@@ -5396,11 +5381,6 @@
                   "e",
                   "f"
                 ]
-              },
-              "deadline": {
-                "kind": "integer",
-                "intMin": 0,
-                "intMax": 9007199254740991
               },
               "phase": {
                 "kind": "string",
@@ -6484,16 +6464,6 @@
             "waiting"
           ],
           "event": "start"
-        },
-        "wake": {
-          "phases": [
-            "playing",
-            "wager",
-            "brink",
-            "envido"
-          ],
-          "deadline": "deadline",
-          "event": "timeout"
         }
       },
       "state": {
@@ -6767,11 +6737,6 @@
             "type": "integer",
             "min": -1,
             "max": 40
-          },
-          "deadline": {
-            "type": "integer",
-            "min": 0,
-            "max": 9007199254740991
           },
           "turn_ms": {
             "type": "integer",
@@ -7206,11 +7171,6 @@
             "min": -1,
             "max": 40
           },
-          "deadline": {
-            "type": "integer",
-            "min": 0,
-            "max": 9007199254740991
-          },
           "turn_ms": {
             "type": "integer",
             "min": 0,
@@ -7622,7 +7582,6 @@
         },
         "play": {
           "reads": [
-            "_time",
             "slot",
             "covered"
           ],
@@ -7635,7 +7594,6 @@
             "games_c",
             "winner",
             "result",
-            "deadline",
             "a",
             "b",
             "c",
@@ -7650,8 +7608,7 @@
         },
         "fold": {
           "reads": [
-            "_origin",
-            "_time"
+            "_origin"
           ],
           "writes": [
             "score_a",
@@ -7662,7 +7619,6 @@
             "games_c",
             "winner",
             "result",
-            "deadline",
             "a",
             "b",
             "c",
@@ -7684,22 +7640,19 @@
         },
         "raise": {
           "reads": [
-            "_origin",
-            "_time"
+            "_origin"
           ],
           "writes": [
             "stake",
             "offer",
             "caller",
             "answers",
-            "deadline",
             "log"
           ]
         },
         "accept": {
           "reads": [
-            "_origin",
-            "_time"
+            "_origin"
           ],
           "writes": [
             "score_a",
@@ -7710,7 +7663,6 @@
             "games_c",
             "winner",
             "result",
-            "deadline",
             "a",
             "b",
             "c",
@@ -7731,31 +7683,26 @@
         },
         "acceptBrink": {
           "reads": [
-            "_origin",
-            "_time"
+            "_origin"
           ],
           "writes": [
             "stake",
-            "deadline",
             "log"
           ]
         },
         "callEnvido": {
           "reads": [
-            "_origin",
-            "_time"
+            "_origin"
           ],
           "writes": [
             "envido_chain",
             "envido_caller",
-            "deadline",
             "log"
           ]
         },
         "takeEnvido": {
           "reads": [
-            "_origin",
-            "_time"
+            "_origin"
           ],
           "writes": [
             "score_a",
@@ -7766,7 +7713,6 @@
             "games_c",
             "winner",
             "result",
-            "deadline",
             "log",
             "envido_done",
             "envido_caller",
@@ -7775,8 +7721,7 @@
         },
         "runEnvido": {
           "reads": [
-            "_origin",
-            "_time"
+            "_origin"
           ],
           "writes": [
             "score_a",
@@ -7787,7 +7732,6 @@
             "games_c",
             "winner",
             "result",
-            "deadline",
             "log",
             "envido_done",
             "envido_caller"
@@ -7795,8 +7739,7 @@
         },
         "flor": {
           "reads": [
-            "_origin",
-            "_time"
+            "_origin"
           ],
           "writes": [
             "score_a",
@@ -7807,7 +7750,6 @@
             "games_c",
             "winner",
             "result",
-            "deadline",
             "log",
             "envido_done",
             "envido_caller"
@@ -7819,14 +7761,11 @@
           ],
           "writes": [
             "winner",
-            "result",
-            "deadline"
+            "result"
           ]
         },
         "timeout": {
-          "reads": [
-            "_time"
-          ],
+          "reads": [],
           "writes": [
             "score_a",
             "score_b",
@@ -7836,7 +7775,6 @@
             "games_c",
             "winner",
             "result",
-            "deadline",
             "a",
             "b",
             "c",
@@ -7860,7 +7798,6 @@
             "games_c",
             "winner",
             "result",
-            "deadline",
             "log",
             "envido_done",
             "envido_caller",
@@ -7869,7 +7806,6 @@
         },
         "deal": {
           "reads": [
-            "_time",
             "_entropy"
           ],
           "writes": [
@@ -7904,7 +7840,6 @@
             "games_c",
             "winner",
             "result",
-            "deadline",
             "log",
             "envido_done",
             "envido_caller"
@@ -7915,12 +7850,6 @@
             "_origin"
           ],
           "reason": "not_active"
-        },
-        "inTime": {
-          "reads": [
-            "_time"
-          ],
-          "reason": "expired"
         },
         "owesAnswer": {
           "reads": [
@@ -7999,12 +7928,6 @@
           ],
           "reason": "not_the_opener"
         },
-        "isDue": {
-          "reads": [
-            "_time"
-          ],
-          "reason": "not_due"
-        },
         "full": {
           "reads": []
         },
@@ -8018,6 +7941,9 @@
           "reads": []
         },
         "hasWager": {
+          "reads": []
+        },
+        "clocked": {
           "reads": []
         }
       },
@@ -8060,13 +7986,6 @@
                 }
               }
             }
-          }
-        },
-        "timeout": {
-          "tier": "mecha",
-          "payload": {
-            "type": "object",
-            "fields": {}
           }
         },
         "raise": {
@@ -8154,6 +8073,9 @@
           }
         }
       },
+      "delays": {
+        "turn": "turn_ms"
+      },
       "states": {
         "waiting": {
           "final": false,
@@ -8234,12 +8156,22 @@
         },
         "playing": {
           "final": false,
+          "after": {
+            "turn": [
+              {
+                "target": "resolving",
+                "guard": [
+                  "clocked"
+                ],
+                "reduce": "timeout"
+              }
+            ]
+          },
           "on": {
             "play": {
               "target": "resolving",
               "guard": [
                 "isActive",
-                "inTime",
                 "inTurn",
                 "holdsCard"
               ],
@@ -8249,7 +8181,6 @@
               "target": "wager",
               "guard": [
                 "isActive",
-                "inTime",
                 "answersRaise",
                 "noBrink",
                 "raisesInTurn",
@@ -8260,8 +8191,7 @@
             "fold": {
               "target": "resolving",
               "guard": [
-                "isActive",
-                "inTime"
+                "isActive"
               ],
               "reduce": "fold"
             },
@@ -8269,23 +8199,14 @@
               "target": "resolving",
               "guard": [
                 "isActive",
-                "inTime",
                 "florAvailable"
               ],
               "reduce": "flor"
-            },
-            "timeout": {
-              "target": "resolving",
-              "guard": [
-                "isDue"
-              ],
-              "reduce": "timeout"
             },
             "envido": {
               "target": "envido",
               "guard": [
                 "isActive",
-                "inTime",
                 "envidoOpen",
                 "mayCallEnvido",
                 "envidoRises"
@@ -8296,7 +8217,6 @@
               "target": "envido",
               "guard": [
                 "isActive",
-                "inTime",
                 "envidoOpen",
                 "mayCallEnvido",
                 "envidoRises"
@@ -8307,7 +8227,6 @@
               "target": "envido",
               "guard": [
                 "isActive",
-                "inTime",
                 "envidoOpen",
                 "mayCallEnvido",
                 "envidoRises"
@@ -8325,11 +8244,23 @@
         },
         "wager": {
           "final": false,
+          "after": {
+            "turn": [
+              {
+                "target": "resolving",
+                "guard": [
+                  "clocked"
+                ],
+                "reduce": "timeout"
+              }
+            ]
+          },
           "on": {
             "raise": {
+              "target": "wager",
+              "reenter": true,
               "guard": [
                 "isActive",
-                "inTime",
                 "answersRaise",
                 "noBrink",
                 "raisesInTurn",
@@ -8341,7 +8272,6 @@
               "target": "resolving",
               "guard": [
                 "isActive",
-                "inTime",
                 "owesAnswer"
               ],
               "reduce": "accept"
@@ -8350,7 +8280,6 @@
               "target": "resolving",
               "guard": [
                 "isActive",
-                "inTime",
                 "owesAnswer"
               ],
               "reduce": "fold"
@@ -8359,23 +8288,14 @@
               "target": "resolving",
               "guard": [
                 "isActive",
-                "inTime",
                 "florAvailable"
               ],
               "reduce": "flor"
-            },
-            "timeout": {
-              "target": "resolving",
-              "guard": [
-                "isDue"
-              ],
-              "reduce": "timeout"
             },
             "envido": {
               "target": "envido",
               "guard": [
                 "isActive",
-                "inTime",
                 "envidoOpen",
                 "mayCallEnvido",
                 "envidoRises"
@@ -8386,7 +8306,6 @@
               "target": "envido",
               "guard": [
                 "isActive",
-                "inTime",
                 "envidoOpen",
                 "mayCallEnvido",
                 "envidoRises"
@@ -8397,7 +8316,6 @@
               "target": "envido",
               "guard": [
                 "isActive",
-                "inTime",
                 "envidoOpen",
                 "mayCallEnvido",
                 "envidoRises"
@@ -8415,12 +8333,22 @@
         },
         "brink": {
           "final": false,
+          "after": {
+            "turn": [
+              {
+                "target": "resolving",
+                "guard": [
+                  "clocked"
+                ],
+                "reduce": "timeout"
+              }
+            ]
+          },
           "on": {
             "accept": {
               "target": "playing",
               "guard": [
                 "isActive",
-                "inTime",
                 "owesAnswer"
               ],
               "reduce": "acceptBrink"
@@ -8429,17 +8357,9 @@
               "target": "resolving",
               "guard": [
                 "isActive",
-                "inTime",
                 "owesAnswer"
               ],
               "reduce": "fold"
-            },
-            "timeout": {
-              "target": "resolving",
-              "guard": [
-                "isDue"
-              ],
-              "reduce": "timeout"
             },
             "resign": {
               "target": "finished",
@@ -8452,12 +8372,22 @@
         },
         "envido": {
           "final": false,
+          "after": {
+            "turn": [
+              {
+                "target": "resolving",
+                "guard": [
+                  "clocked"
+                ],
+                "reduce": "timeout"
+              }
+            ]
+          },
           "on": {
             "envido_take": {
               "target": "resolving",
               "guard": [
                 "isActive",
-                "inTime",
                 "answersEnvido"
               ],
               "reduce": "takeEnvido"
@@ -8466,7 +8396,6 @@
               "target": "resolving",
               "guard": [
                 "isActive",
-                "inTime",
                 "answersEnvido"
               ],
               "reduce": "runEnvido"
@@ -8475,23 +8404,15 @@
               "target": "resolving",
               "guard": [
                 "isActive",
-                "inTime",
                 "florAvailable"
               ],
               "reduce": "flor"
             },
-            "timeout": {
-              "target": "resolving",
-              "guard": [
-                "isDue"
-              ],
-              "reduce": "timeout"
-            },
             "envido": {
               "target": "envido",
+              "reenter": true,
               "guard": [
                 "isActive",
-                "inTime",
                 "envidoOpen",
                 "mayCallEnvido",
                 "envidoRises"
@@ -8500,9 +8421,9 @@
             },
             "envido_real": {
               "target": "envido",
+              "reenter": true,
               "guard": [
                 "isActive",
-                "inTime",
                 "envidoOpen",
                 "mayCallEnvido",
                 "envidoRises"
@@ -8511,9 +8432,9 @@
             },
             "envido_falta": {
               "target": "envido",
+              "reenter": true,
               "guard": [
                 "isActive",
-                "inTime",
                 "envidoOpen",
                 "mayCallEnvido",
                 "envidoRises"
@@ -8642,13 +8563,6 @@
           "locks": [],
           "checks": []
         },
-        "wake": {
-          "phases": [
-            "visible"
-          ],
-          "deadline": "until",
-          "event": "expire"
-        },
         "lease": {
           "touch": "touch",
           "leave": "leave",
@@ -8699,11 +8613,6 @@
                 }
               }
             }
-          },
-          "until": {
-            "type": "integer",
-            "min": 0,
-            "max": 9007199254740991
           }
         }
       },
@@ -8739,11 +8648,6 @@
               "hidden",
               "visible"
             ]
-          },
-          "until": {
-            "type": "integer",
-            "min": 0,
-            "max": 9007199254740991
           }
         }
       },
@@ -8771,8 +8675,7 @@
             "session"
           ],
           "writes": [
-            "leases",
-            "until"
+            "leases"
           ]
         },
         "leave": {
@@ -8781,8 +8684,7 @@
             "session"
           ],
           "writes": [
-            "leases",
-            "until"
+            "leases"
           ]
         },
         "expire": {
@@ -8790,8 +8692,7 @@
             "_time"
           ],
           "writes": [
-            "leases",
-            "until"
+            "leases"
           ]
         },
         "named": {
@@ -8857,19 +8758,18 @@
               }
             }
           }
-        },
-        "expire": {
-          "tier": "mecha",
-          "payload": {
-            "type": "object",
-            "fields": {}
-          }
         }
       },
       "states": {
         "hidden": {
           "final": false,
           "on": {
+            "touch": {
+              "guard": [
+                "hasCapacity"
+              ],
+              "reduce": "touch"
+            },
             "show": {
               "target": "visible",
               "guard": [
@@ -8881,23 +8781,29 @@
             "hide": {
               "target": "hidden"
             },
-            "touch": {
-              "guard": [
-                "hasCapacity"
-              ],
-              "reduce": "touch"
-            },
             "leave": {
               "reduce": "leave"
-            },
-            "expire": {
-              "reduce": "expire"
             }
           }
         },
         "visible": {
           "final": false,
+          "after": {
+            "30000": [
+              {
+                "reduce": "expire"
+              }
+            ]
+          },
           "on": {
+            "touch": {
+              "target": "visible",
+              "reenter": true,
+              "guard": [
+                "hasCapacity"
+              ],
+              "reduce": "touch"
+            },
             "show": {
               "target": "visible",
               "guard": [
@@ -8909,17 +8815,8 @@
             "hide": {
               "target": "hidden"
             },
-            "touch": {
-              "guard": [
-                "hasCapacity"
-              ],
-              "reduce": "touch"
-            },
             "leave": {
               "reduce": "leave"
-            },
-            "expire": {
-              "reduce": "expire"
             }
           }
         }
@@ -9064,7 +8961,7 @@
               "mode": "error"
             },
             {
-              "sql": "NOT EXISTS (SELECT FROM hybrid_truco_challenge.instance c WHERE c.state->>'phase' = 'offered' AND (c.state->>'deadline')::bigint > hybrid_truco_challenge.clock() AND c.state->>'inviter' = current_actor::text)",
+              "sql": "NOT EXISTS (SELECT FROM hybrid_truco_challenge.instance c WHERE c.state->>'phase' = 'offered' AND c.state->>'inviter' = current_actor::text)",
               "reason": "outgoing_challenge_pending",
               "mode": "reject"
             },
@@ -9123,13 +9020,6 @@
               "raw": "target"
             }
           }
-        },
-        "wake": {
-          "phases": [
-            "offered"
-          ],
-          "deadline": "deadline",
-          "event": "expire"
         }
       },
       "state": {
@@ -9185,11 +9075,6 @@
               "2v2",
               "2v2v2"
             ]
-          },
-          "deadline": {
-            "type": "integer",
-            "min": 0,
-            "max": 9007199254740991
           },
           "room": {
             "type": "string",
@@ -9255,11 +9140,6 @@
               "2v2v2"
             ]
           },
-          "deadline": {
-            "type": "integer",
-            "min": 0,
-            "max": 9007199254740991
-          },
           "room": {
             "type": "string",
             "maxLength": 36
@@ -9282,28 +9162,9 @@
             "_origin"
           ],
           "reason": "not_inviter"
-        },
-        "inTime": {
-          "reads": [
-            "_time"
-          ],
-          "reason": "expired"
-        },
-        "isDue": {
-          "reads": [
-            "_time"
-          ],
-          "reason": "not_due"
         }
       },
       "events": {
-        "expire": {
-          "tier": "mecha",
-          "payload": {
-            "type": "object",
-            "fields": {}
-          }
-        },
         "accept": {
           "tier": "omnishell",
           "payload": {
@@ -9329,12 +9190,18 @@
       "states": {
         "offered": {
           "final": false,
+          "after": {
+            "30000": [
+              {
+                "target": "expired"
+              }
+            ]
+          },
           "on": {
             "accept": {
               "target": "accepted",
               "guard": [
-                "isTarget",
-                "inTime"
+                "isTarget"
               ],
               "requires": [
                 {
@@ -9392,21 +9259,13 @@
             "decline": {
               "target": "declined",
               "guard": [
-                "isTarget",
-                "inTime"
+                "isTarget"
               ]
             },
             "cancel": {
               "target": "cancelled",
               "guard": [
-                "isInviter",
-                "inTime"
-              ]
-            },
-            "expire": {
-              "target": "expired",
-              "guard": [
-                "isDue"
+                "isInviter"
               ]
             }
           }
@@ -9944,7 +9803,7 @@
               "mode": "reject"
             },
             {
-              "sql": "NOT EXISTS (SELECT FROM hybrid_truco_call.instance c WHERE c.state->>'phase' = 'offered' AND (c.state->>'deadline')::bigint > hybrid_truco_call.clock() AND c.state->>'room' = room::text AND c.state->>'chair' = chair)",
+              "sql": "NOT EXISTS (SELECT FROM hybrid_truco_call.instance c WHERE c.state->>'phase' = 'offered' AND c.state->>'room' = room::text AND c.state->>'chair' = chair)",
               "reason": "chair_called",
               "mode": "reject"
             },
@@ -10000,13 +9859,6 @@
               "raw": "target"
             }
           }
-        },
-        "wake": {
-          "phases": [
-            "offered"
-          ],
-          "deadline": "deadline",
-          "event": "expire"
         }
       },
       "state": {
@@ -10078,11 +9930,6 @@
               "2v2",
               "2v2v2"
             ]
-          },
-          "deadline": {
-            "type": "integer",
-            "min": 0,
-            "max": 9007199254740991
           }
         }
       },
@@ -10155,11 +10002,6 @@
               "2v2",
               "2v2v2"
             ]
-          },
-          "deadline": {
-            "type": "integer",
-            "min": 0,
-            "max": 9007199254740991
           }
         }
       },
@@ -10175,28 +10017,9 @@
             "_origin"
           ],
           "reason": "not_caller"
-        },
-        "inTime": {
-          "reads": [
-            "_time"
-          ],
-          "reason": "expired"
-        },
-        "isDue": {
-          "reads": [
-            "_time"
-          ],
-          "reason": "not_due"
         }
       },
       "events": {
-        "expire": {
-          "tier": "mecha",
-          "payload": {
-            "type": "object",
-            "fields": {}
-          }
-        },
         "accept": {
           "tier": "omnishell",
           "payload": {
@@ -10222,32 +10045,30 @@
       "states": {
         "offered": {
           "final": false,
+          "after": {
+            "30000": [
+              {
+                "target": "expired"
+              }
+            ]
+          },
           "on": {
             "accept": {
               "target": "accepted",
               "guard": [
-                "isTarget",
-                "inTime"
+                "isTarget"
               ]
             },
             "decline": {
               "target": "declined",
               "guard": [
-                "isTarget",
-                "inTime"
+                "isTarget"
               ]
             },
             "cancel": {
               "target": "cancelled",
               "guard": [
-                "isCaller",
-                "inTime"
-              ]
-            },
-            "expire": {
-              "target": "expired",
-              "guard": [
-                "isDue"
+                "isCaller"
               ]
             }
           }

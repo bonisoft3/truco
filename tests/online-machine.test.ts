@@ -75,8 +75,8 @@ Deno.test("wagers preserve raise authority and refusal pays the last accepted st
   assertEquals((await step(state, "raise", "a")).reason, "not_your_raise");
 });
 
-Deno.test("brink decisions, blind cards, covered cards and deadlines preserve privacy", async () => {
-  const {step} = await matchFixture();
+Deno.test("brink decisions, blind cards, covered cards and timeouts preserve privacy", async () => {
+  const {step, timeout} = await matchFixture();
   const choice = await step({...initialMatch(), score_a: 10}, "start");
   assertEquals(choice.state.phase, "brink");
   assertEquals((await step(choice.state, "accept", "b")).reason, "not_your_answer");
@@ -90,8 +90,7 @@ Deno.test("brink decisions, blind cards, covered cards and deadlines preserve pr
   const covered = await step(playing, "play", "a", {slot: 0, covered: true});
   assertEquals(covered.views[1].value.plays[0].card, -1);
   assert(covered.state.plays[0].card >= 0);
-  assertEquals((await step(playing, "play", "a", {slot: 0, covered: false}, playing.deadline)).reason, "expired");
-  const timed = await step(choice.state, "timeout", "", {}, choice.state.deadline);
+  const timed = await timeout(choice.state);
   assertEquals([timed.state.phase, timed.state.score_b], ["hand_over", 2]);
   // Winning the first jogo of a queda (12 tentos) advances games_b to 1 and deals jogo 2 at 0-0 tentos.
   const firstGame = await step({...choice.state, score_b: 10}, "fold", "a");
@@ -193,7 +192,7 @@ Deno.test("flor uses the original deal and cancels an outstanding envido", async
 });
 
 Deno.test("settling a three-team wager skips the folded caller for plays and timeouts", async () => {
-  const {step} = await matchFixture();
+  const {step, timeout} = await matchFixture();
   for (const variant of ["douradinha", "douradao"]) {
     let state = (await step(initialMatch(variant, "2v2v2"), "start")).state;
     for (const [kind, actor] of [["raise", "a"], ["raise", "b"], ["fold", "a"], ["accept", "c"]]) {
@@ -205,7 +204,7 @@ Deno.test("settling a three-team wager skips the folded caller for plays and tim
     const played = await step(state, "play", "b", {slot: 0, covered: false});
     assertEquals(played.kind, "accepted");
     assertEquals(played.state.plays.at(-1)!.seat, "b");
-    const timed = await step(state, "timeout", "", {}, state.deadline);
+    const timed = await timeout(state);
     assertEquals(timed.kind, "accepted");
     assertEquals(timed.state.plays.at(-1)!.seat, "b");
   }
@@ -226,13 +225,13 @@ Deno.test("the envido climbs envido, envido, real envido, falta envido and never
 });
 
 Deno.test("an envido nobody answers in time is refused for the side that owed it", async () => {
-  // The wake delivers the timeout with no seat, and the refusal was logged
+  // The timer delivers the timeout with no seat, and the refusal was logged
   // under that seat: an invalid log, so every tick failed and the match stayed
   // in the envido for good.
-  const {step} = await matchFixture();
+  const {step, timeout} = await matchFixture();
   let state = (await step(initialMatch("argentino"), "start")).state;
   state = (await step(state, "envido", "a")).state;
-  const timed = await step(state, "timeout", null as unknown as string, {}, state.deadline);
+  const timed = await timeout(state);
   assertEquals(timed.kind, "accepted", timed.reason);
   assertEquals([timed.state.envido_done, timed.state.log.at(-1)], ["refused", {seat: "b", kind: "envido_run", count: 0, at: 0}]);
   assertEquals(timed.state.score_a, 1);
@@ -253,12 +252,36 @@ Deno.test("every table allows leaving a hand unasked, and an early exit on an en
   assertEquals((await step(truc, "fold", "a")).state.score_b, 1, "a table without envido owes only the hand");
 });
 
-Deno.test("a table without a clock has no deadline and nothing to time out", async () => {
-  const {step} = await matchFixture();
+Deno.test("a table without a clock has nothing to time out", async () => {
+  const {step, timeout} = await matchFixture();
   const state = (await step({...initialMatch("paulista"), turn_ms: 0}, "start")).state;
-  assertEquals(state.deadline, 0);
   assertEquals((await step(state, "play", "a", {slot: 0, covered: false}, 10 ** 12)).kind, "accepted");
-  assertEquals((await step(state, "timeout", "", {}, 10 ** 12)).reason, "not_due");
+  // Its timer is due at once, and its guard holds the turn where it was.
+  const spent = await timeout(state);
+  assertEquals([spent.kind, spent.state], ["accepted", state]);
+});
+
+// The turn's clock is XState's after: entering a state that owes a move
+// starts it, a step that stays leaves it running, and re-entering starts it
+// again. The ticker alone decides when it runs out.
+Deno.test("the turn's timer starts at each entry and only there", async () => {
+  const {step} = await matchFixture();
+  const started = await step(initialMatch("argentino"), "start");
+  const raise = (state: string) => ({type: "xstate.raise", params: {event: {type: `xstate.after.turn.${state}`}, id: `xstate.after.turn.${state}`, delay: 20000}});
+  const cancel = (state: string) => ({type: "xstate.cancel", params: {sendId: `xstate.after.turn.${state}`}});
+  const actions = (answer: unknown) => (answer as {actions?: unknown[]}).actions ?? [];
+  assertEquals(actions(started), [raise("playing")]);
+  const played = await step(started.state, "play", "a", {slot: 0, covered: false});
+  assertEquals(actions(played), [cancel("playing"), raise("playing")], "a card passes the turn, and its clock starts again");
+  const wager = await step(started.state, "raise", "a");
+  assertEquals(actions(wager), [cancel("playing"), raise("wager")]);
+  assertEquals(actions(await step(wager.state, "raise", "b")), [cancel("wager"), raise("wager")], "a raise answering a raise re-enters the wager");
+  const envido = await step(started.state, "envido", "a");
+  assertEquals(actions(await step(envido.state, "envido", "b")), [cancel("envido"), raise("envido")], "raising the envido re-enters it");
+  const refused = await step(started.state, "play", "b", {slot: 0, covered: false});
+  assertEquals([refused.reason, actions(refused)], ["not_your_turn", []], "a refused move moves no clock");
+  // A move made before the ticker delivers the timeout is taken: the ticker alone decides it.
+  assertEquals((await step(started.state, "play", "a", {slot: 0, covered: false}, 10 ** 12)).kind, "accepted");
 });
 
 // Truco's machines, walked from fresh instances by seeded draws of every event
@@ -293,7 +316,7 @@ Deno.test("Truco's machines hold under any input a step can be given", async () 
 });
 
 Deno.test("the retained runtime upgrade contains the current engine for every mecha", async () => {
-  const upgrade = await Deno.readTextFile(new URL("../services/database/sql/020_rule_argument_engines.sql", import.meta.url));
+  const upgrade = await Deno.readTextFile(new URL("../services/database/sql/022_after_timers.sql", import.meta.url));
   assert(upgrade.includes("-- tier: container\n"));
   assert(upgrade.endsWith("-- tier: any\n"));
   for (const name of ["call", "challenge", "match", "presence", "voice"]) {

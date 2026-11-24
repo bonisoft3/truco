@@ -7,7 +7,7 @@ services:
         truco-migrate: service:truco-migrate
         truco-timer-check: service:truco-timer-check
         libraries_mecha-auth-image: >-
-          ${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-auth:0.26.0@sha256:2e628fe945498c2be941d26e19087084e9ee8e7660c425859d30520a2c77c80f}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-auth-image}
+          ${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-auth:0.34.0@sha256:51403dda03dbaf341eb2eee779d7b293eebca3cab186b0a22420f53e8fca4d18}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-auth-image}
       context: ..
       dockerfile: .bayt/Dockerfile.auth
       target: auth
@@ -34,7 +34,16 @@ services:
       PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:-mecha-dev-secret-please-override-32ch}
       WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-localhost}
       WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-https://localhost:*}
-      OIDC_PROVIDERS: ""
+      ANDROID_APK_KEY_HASHES: ${ANDROID_APK_KEY_HASHES:-}
+      NATIVE_SCHEMES: ${NATIVE_SCHEMES:-}
+      OIDC_PROVIDERS: ${OIDC_PROVIDERS:-}
+      OIDC_GOOGLE_CREDENTIAL: ${OIDC_GOOGLE_CREDENTIAL:-}
+      OIDC_GOOGLE_AUTHORIZE_PARAMS: ${OIDC_GOOGLE_AUTHORIZE_PARAMS:-provider=google}
+      OIDC_GOOGLE_SCOPE: ${OIDC_GOOGLE_SCOPE:-openid profile email}
+      OIDC_GOOGLE_CLIENT_SECRET: ${OIDC_GOOGLE_CLIENT_SECRET:-}
+      OIDC_GOOGLE_INTERNAL: ${OIDC_GOOGLE_INTERNAL:-}
+      OIDC_GOOGLE_ISSUER: ${OIDC_GOOGLE_ISSUER:-https://id.bonisoft3.com}
+      OIDC_GOOGLE_CLIENT_ID: ${OIDC_GOOGLE_CLIENT_ID:-origin}
     image: bayt-truco-auth:${BAYT_IMAGE_TAG:-${COMPOSE_PROJECT_NAME}}
     networks:
       default:

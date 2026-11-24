@@ -75,7 +75,9 @@
   "auth": {
     "required": false,
     "service": "/auth",
-    "promote": true,
+    "providers": [
+      "google"
+    ],
     "mode": "passkey"
   },
   "endowments": {
@@ -2204,11 +2206,6 @@
                   }
                 }
               },
-              "deadline": {
-                "kind": "integer",
-                "intMin": 0,
-                "intMax": 9007199254740991
-              },
               "envido": {
                 "kind": "integer",
                 "intMin": 0,
@@ -2968,11 +2965,6 @@
                   "hidden",
                   "visible"
                 ]
-              },
-              "until": {
-                "kind": "integer",
-                "intMin": 0,
-                "intMax": 9007199254740991
               }
             }
           },
@@ -3170,11 +3162,6 @@
           "bounds": {
             "kind": "object",
             "fields": {
-              "deadline": {
-                "kind": "integer",
-                "intMin": 0,
-                "intMax": 9007199254740991
-              },
               "inviter": {
                 "kind": "string",
                 "sizeMax": 36
@@ -3427,11 +3414,6 @@
                   "e",
                   "f"
                 ]
-              },
-              "deadline": {
-                "kind": "integer",
-                "intMin": 0,
-                "intMax": 9007199254740991
               },
               "phase": {
                 "kind": "string",

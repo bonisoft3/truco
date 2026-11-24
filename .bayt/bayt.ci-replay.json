@@ -209,7 +209,9 @@
           "[m]ise.local.toml",
           "services/database/pgroll/018_xstate_engines.json",
           "services/database/pgroll/019_mecha_engines.json",
-          "services/database/pgroll/020_rule_argument_engines.json"
+          "services/database/pgroll/020_rule_argument_engines.json",
+          "services/database/pgroll/021_transition_engines.json",
+          "services/database/pgroll/022_after_timers.json"
         ],
         "exclude": []
       },
@@ -269,7 +271,9 @@
             "globs": [
               "services/database/pgroll/018_xstate_engines.json",
               "services/database/pgroll/019_mecha_engines.json",
-              "services/database/pgroll/020_rule_argument_engines.json"
+              "services/database/pgroll/020_rule_argument_engines.json",
+              "services/database/pgroll/021_transition_engines.json",
+              "services/database/pgroll/022_after_timers.json"
             ],
             "exclude": []
           }

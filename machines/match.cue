@@ -54,7 +54,6 @@ import (
 	result:   #Side
 	winner:   #Side
 	vira:     #Card
-	deadline: #Number
 	turn_ms:  #TurnMs
 	tricks:   #Sides
 	plays:    #Plays
@@ -71,9 +70,9 @@ import (
 	envido_done:   {type: "string", maxLength: 8, values: ["", "accepted", "refused", "flor"]}
 	envido_scores: {type: "array", maxItems: 3, items: {type: "object", fields: {side: #Side, count: {type: "integer", min: 0, max: 33}}}}
 }
-// A move is a seated side's that has not folded, made before the clock runs
-// out; an answer is owed by its side; a raise is an answer while one stands.
-_acts:    ["isActive", "inTime"]
+// A move is a seated side's that has not folded; an answer is owed by its
+// side; a raise is an answer while one stands. The clock is the turn's timer.
+_acts:    ["isActive"]
 _answers: list.Concat([_acts, ["owesAnswer"]])
 _raises:  list.Concat([_acts, ["answersRaise", "noBrink", "raisesInTurn", "belowMaximum"]])
 match: pronto.#Machine & {
@@ -97,8 +96,9 @@ match: pronto.#Machine & {
 				raise: {guard: _raises, target: "wager", actions: "raise"}
 				fold:  {guard: _acts, target: "resolving", actions: "fold"}
 			}
+			// A raise answering a raise starts the turn's clock again.
 			wager: on: {
-				raise:  {guard: _raises, actions: "raise"}
+				raise:  {guard: _raises, target: "wager", reenter: true, actions: "raise"}
 				accept: {guard: _answers, target: "resolving", actions: "accept"}
 				fold:   {guard: _answers, target: "resolving", actions: "fold"}
 			}
@@ -112,12 +112,18 @@ match: pronto.#Machine & {
 			}
 			for phase in ["playing", "wager", "envido"] {
 				(phase): on: {
-					for kind in ["envido", "envido_real", "envido_falta"] {(kind): {guard: list.Concat([_acts, ["envidoOpen", "mayCallEnvido", "envidoRises"]]), target: "envido", actions: "callEnvido"}}
+					for kind in ["envido", "envido_real", "envido_falta"] {(kind): {
+						guard: list.Concat([_acts, ["envidoOpen", "mayCallEnvido", "envidoRises"]]), target: "envido", actions: "callEnvido"
+						// Raising the envido starts its answer's clock again.
+						if phase == "envido" {reenter: true}
+					}}
 					flor: {guard: list.Concat([_acts, ["florAvailable"]]), target: "resolving", actions: "flor"}
 				}
 			}
+			// The seat that owes a move has the turn's time from when the state
+			// was entered; a table without a clock waits for it.
 			for phase in ["playing", "wager", "brink", "envido"] {
-				(phase): on: timeout: {guard: "isDue", target: "resolving", actions: "timeout"}
+				(phase): after: turn: {guard: "clocked", target: "resolving", actions: "timeout"}
 			}
 			resolving: always: [
 				{guard: "matchOver", target: "finished"},
@@ -133,11 +139,11 @@ match: pronto.#Machine & {
 		version: 8
 		fuel:    100000
 		entropy: 128
+		delays: turn: "turn_ms"
 		guards: {
-			for g in ["full", "needsBrink", "handOver", "matchOver", "hasWager"] {(g): reads: []}
+			for g in ["full", "needsBrink", "handOver", "matchOver", "hasWager", "clocked"] {(g): reads: []}
 			// Each is a boolean, and its reason is what a refusal by it is called.
 			isActive:      {reads: ["_origin"], reason: "not_active"}
-			inTime:        {reads: ["_time"], reason: "expired"}
 			owesAnswer:    {reads: ["_origin"], reason: "not_your_answer"}
 			answersRaise:  {reads: ["_origin"], reason: "not_your_answer"}
 			answersEnvido: {reads: ["_origin"], reason: "not_your_answer"}
@@ -158,10 +164,9 @@ match: pronto.#Machine & {
 				sql:    "NOT EXISTS (SELECT FROM hybrid_truco_match.member m JOIN hybrid_truco_match.member o ON o.actor = m.actor AND o.instance_id <> m.instance_id JOIN hybrid_truco_match.instance g ON g.id = o.instance_id WHERE m.instance_id = game.id AND g.state->>'phase' = 'waiting')"
 				reason: "seated_elsewhere"
 			}
-			isDue: {reads: ["_time"], reason: "not_due"}
 		}
 		// What a hand's end pays: the score, and the result that closes it.
-		let _paid = ["score_a", "score_b", "score_c", "games_a", "games_b", "games_c", "winner", "result", "deadline"]
+		let _paid = ["score_a", "score_b", "score_c", "games_a", "games_b", "games_c", "winner", "result"]
 
 		// A card laid, and the trick it may close.
 		let _laid = list.Concat([_paid, ["a", "b", "c", "d", "e", "f", "plays", "tricks", "turn", "offer"]])
@@ -178,19 +183,19 @@ match: pronto.#Machine & {
 					{op: "delete", schema: "public", table: "truco_match_seat", rawWhere: "truco_match_seat.instance_id = game.id AND truco_match_seat.actor = dispatch.actor"},
 				]
 			}]
-			play:        {reads: ["_time", "slot", "covered"], writes: _laid}
-			fold:        {reads: ["_origin", "_time"], writes: list.Concat([_laid, _bid, ["folded", "log"]])}
-			raise:       {reads: ["_origin", "_time"], writes: ["stake", "offer", "caller", "answers", "deadline", "log"]}
-			accept:      {reads: ["_origin", "_time"], writes: list.Concat([_laid, _bid, ["log"]])}
-			acceptBrink: {reads: ["_origin", "_time"], writes: ["stake", "deadline", "log"]}
-			callEnvido:  {reads: ["_origin", "_time"], writes: ["envido_chain", "envido_caller", "deadline", "log"]}
-			takeEnvido:  {reads: ["_origin", "_time"], writes: list.Concat([_envido, ["envido_scores"]])}
-			runEnvido:   {reads: ["_origin", "_time"], writes: _envido}
-			flor:        {reads: ["_origin", "_time"], writes: _envido}
-			resign:      {reads: ["_origin"], writes: ["winner", "result", "deadline"]}
-			// The wake carries no sender: the seat that owed the move is the state's.
-			timeout: {reads: ["_time"], writes: list.Concat([_laid, _bid, _envido, ["folded"]])}
-			deal:    {reads: ["_time", "_entropy"], writes: list.Concat([["a", "b", "c", "d", "e", "f", "vira", "leader", "turn", "brink", "hand_no", "result", "tricks", "plays", "folded", "envido_chain", "envido_scores", "log"], _bid, _envido])}
+			play:        {reads: ["slot", "covered"], writes: _laid}
+			fold:        {reads: ["_origin"], writes: list.Concat([_laid, _bid, ["folded", "log"]])}
+			raise:       {reads: ["_origin"], writes: ["stake", "offer", "caller", "answers", "log"]}
+			accept:      {reads: ["_origin"], writes: list.Concat([_laid, _bid, ["log"]])}
+			acceptBrink: {reads: ["_origin"], writes: ["stake", "log"]}
+			callEnvido:  {reads: ["_origin"], writes: ["envido_chain", "envido_caller", "log"]}
+			takeEnvido:  {reads: ["_origin"], writes: list.Concat([_envido, ["envido_scores"]])}
+			runEnvido:   {reads: ["_origin"], writes: _envido}
+			flor:        {reads: ["_origin"], writes: _envido}
+			resign:      {reads: ["_origin"], writes: ["winner", "result"]}
+			// A timer's event carries no sender: the seat that owed the move is the state's.
+			timeout: {reads: [], writes: list.Concat([_laid, _bid, _envido, ["folded"]])}
+			deal:    {reads: ["_entropy"], writes: list.Concat([["a", "b", "c", "d", "e", "f", "vira", "leader", "turn", "brink", "hand_no", "result", "tricks", "plays", "folded", "envido_chain", "envido_scores", "log"], _bid, _envido])}
 		}
 		types: {
 			context: {type: "object", fields: {#Game..., a: #Cards, b: #Cards, c: #Cards, d: #Cards, e: #Cards, f: #Cards}}
@@ -215,8 +220,7 @@ match: pronto.#Machine & {
 			events: {
 				play: {tier: "omnishell", payload: {type: "object", fields: {slot: {type: "integer", min: 0, max: 2}, covered: {type: "boolean"}}}}
 				for event in ["raise", "accept", "fold", "next", "resign", "stand", "envido", "envido_real", "envido_falta", "envido_take", "envido_run", "flor"] {(event): {tier: "omnishell", payload: {type: "object", fields: {}}}}
-				start:   {tier: "mecha", payload: {type: "object", fields: seats: #Seats}}
-				timeout: {tier: "mecha", payload: {type: "object", fields: {}}}
+				start: {tier: "mecha", payload: {type: "object", fields: seats: #Seats}}
 			}
 		}
 	}
