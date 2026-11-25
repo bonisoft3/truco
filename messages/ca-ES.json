@@ -54,6 +54,7 @@
   "chrome_delete_account": "Elimina el compte",
   "chrome_delete_confirm": "Elimina-ho per sempre",
   "chrome_signin_google": "Continua amb Google",
+  "chrome_signin_email": "Continua amb correu electrònic",
   "chrome_ways": "Maneres d'iniciar la sessió",
   "chrome_way_add": "Afegeix una manera",
   "chrome_way_remove": "Elimina",

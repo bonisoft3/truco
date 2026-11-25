@@ -5,7 +5,7 @@
     "manual": false,
     "build": {
       "additional_contexts": {
-        "libraries_mecha-auth-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-auth:0.34.0@sha256:51403dda03dbaf341eb2eee779d7b293eebca3cab186b0a22420f53e8fca4d18}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-auth-image}"
+        "libraries_mecha-auth-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-auth:0.35.0@sha256:ffbef2572dae57f22159216d6dea97840dfdf8bc2127cd4644083307e0fb12e8}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-auth-image}"
       },
       "secrets": [],
       "args": {}
@@ -19,6 +19,13 @@
       "ANDROID_APK_KEY_HASHES": "${ANDROID_APK_KEY_HASHES:-}",
       "NATIVE_SCHEMES": "${NATIVE_SCHEMES:-}",
       "OIDC_PROVIDERS": "${OIDC_PROVIDERS:-}",
+      "OIDC_EMAIL_CREDENTIAL": "${OIDC_EMAIL_CREDENTIAL:-}",
+      "OIDC_EMAIL_AUTHORIZE_PARAMS": "${OIDC_EMAIL_AUTHORIZE_PARAMS:-provider=email}",
+      "OIDC_EMAIL_SCOPE": "${OIDC_EMAIL_SCOPE:-openid profile email}",
+      "OIDC_EMAIL_CLIENT_SECRET": "${OIDC_EMAIL_CLIENT_SECRET:-}",
+      "OIDC_EMAIL_INTERNAL": "${OIDC_EMAIL_INTERNAL:-}",
+      "OIDC_EMAIL_ISSUER": "${OIDC_EMAIL_ISSUER:-https://id.bonisoft3.com}",
+      "OIDC_EMAIL_CLIENT_ID": "${OIDC_EMAIL_CLIENT_ID:-origin}",
       "OIDC_GOOGLE_CREDENTIAL": "${OIDC_GOOGLE_CREDENTIAL:-}",
       "OIDC_GOOGLE_AUTHORIZE_PARAMS": "${OIDC_GOOGLE_AUTHORIZE_PARAMS:-provider=google}",
       "OIDC_GOOGLE_SCOPE": "${OIDC_GOOGLE_SCOPE:-openid profile email}",
@@ -95,6 +102,13 @@
       "ANDROID_APK_KEY_HASHES": "${ANDROID_APK_KEY_HASHES:-}",
       "NATIVE_SCHEMES": "${NATIVE_SCHEMES:-}",
       "OIDC_PROVIDERS": "${OIDC_PROVIDERS:-}",
+      "OIDC_EMAIL_CREDENTIAL": "${OIDC_EMAIL_CREDENTIAL:-}",
+      "OIDC_EMAIL_AUTHORIZE_PARAMS": "${OIDC_EMAIL_AUTHORIZE_PARAMS:-provider=email}",
+      "OIDC_EMAIL_SCOPE": "${OIDC_EMAIL_SCOPE:-openid profile email}",
+      "OIDC_EMAIL_CLIENT_SECRET": "${OIDC_EMAIL_CLIENT_SECRET:-}",
+      "OIDC_EMAIL_INTERNAL": "${OIDC_EMAIL_INTERNAL:-}",
+      "OIDC_EMAIL_ISSUER": "${OIDC_EMAIL_ISSUER:-https://id.bonisoft3.com}",
+      "OIDC_EMAIL_CLIENT_ID": "${OIDC_EMAIL_CLIENT_ID:-origin}",
       "OIDC_GOOGLE_CREDENTIAL": "${OIDC_GOOGLE_CREDENTIAL:-}",
       "OIDC_GOOGLE_AUTHORIZE_PARAMS": "${OIDC_GOOGLE_AUTHORIZE_PARAMS:-provider=google}",
       "OIDC_GOOGLE_SCOPE": "${OIDC_GOOGLE_SCOPE:-openid profile email}",

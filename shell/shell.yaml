@@ -58,6 +58,7 @@ auth:
   service: /auth
   providers:
     - google
+    - email
   mode: passkey
 endowments:
   shell/handlers/arena.js:

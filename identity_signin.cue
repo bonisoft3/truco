@@ -8,6 +8,6 @@ import "github.com/bonisoft3/pronto/identity"
 identity.#Signin & {
 	signin: {
 		broker:    "https://id.bonisoft3.com"
-		providers: ["google"]
+		providers: ["google", "email"]
 	}
 }

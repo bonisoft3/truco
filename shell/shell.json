@@ -76,7 +76,8 @@
     "required": false,
     "service": "/auth",
     "providers": [
-      "google"
+      "google",
+      "email"
     ],
     "mode": "passkey"
   },

@@ -208,7 +208,7 @@
           }
         },
         "self": {
-          "version": "v0.49.1"
+          "version": "v0.49.2"
         },
         "doctor": {
           "do": "use tools.nu [run-mise]; run-mise exec -- cue version; run-mise exec -- deno --version; run-mise where github:bonisoft3/pronto"
@@ -841,7 +841,7 @@
         "manual": true,
         "build": {
           "additional_contexts": {
-            "libraries_mecha-extensions-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-extensions:0.34.0@sha256:d3fe4b3869ded07a410579c2928f951bb42c3bdc14ada1122b5cf0a7d7c11c9f}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-extensions-image}"
+            "libraries_mecha-extensions-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-extensions:0.35.0@sha256:d3fe4b3869ded07a410579c2928f951bb42c3bdc14ada1122b5cf0a7d7c11c9f}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-extensions-image}"
           },
           "secrets": [],
           "args": {}
@@ -1262,12 +1262,13 @@
           "RUN printf '%s\\n' '#!/bin/sh' 'set -e' 'for n in crud database auth ticker; do' '  grep -Eq \"^[^#]*[[:space:]]$n([[:space:]]|$)\" /etc/hosts || echo \"127.0.0.1 $n\" >> /etc/hosts || { echo \"appliance: cannot name $n in /etc/hosts\" >&2; exit 1; }' 'done' 'export PORT=\"${PORT:-8080}\"' 'export CADDY_HTTP_PORT=\"${PORT}\"' 'export CADDY_TLS_HOST_PORT=\"${PORT}\"' 'if [ -n \"$ORIGIN\" ]; then' '  if [ -z \"$WEBAUTHN_RP_ID\" ]; then' '    h=\"${ORIGIN#*://}\"' '    h=\"${h%%/*}\"' '    h=\"${h%%:*}\"' '    if [ -n \"$h\" ] && [ \"$h\" != \"localhost\" ]; then export WEBAUTHN_RP_ID=\"$h\"; fi' '  fi' '  if [ -z \"$WEBAUTHN_ORIGIN\" ] && [ -n \"$WEBAUTHN_RP_ID\" ] && [ \"$WEBAUTHN_RP_ID\" != \"localhost\" ]; then export WEBAUTHN_ORIGIN=\"$ORIGIN\"; fi' 'fi' 'exec \"$@\"' > /usr/local/bin/appliance-entrypoint.sh && chmod 755 /usr/local/bin/appliance-entrypoint.sh",
           "RUN sed -Ei 's|http://127\\.0\\.0\\.1:\\$\\{CADDY_HTTP_PORT:-[0-9]+\\}/health|http://127.0.0.1:${PORT:-8080}/health|g' /.bayt/process-compose.yaml",
           "RUN awk 'skip { d += gsub(/\\{/, \"{\") - gsub(/\\}/, \"}\"); if (d <= 0) skip = 0; next } /handle @rendered \\{/ { skip = 1; d = 1; next } { print }' /etc/caddy/Caddyfile > /tmp/Caddyfile && mv /tmp/Caddyfile /etc/caddy/Caddyfile",
+          "RUN nu -c 'let f = \"/.bayt/process-compose.yaml\"; open $f | update processes.auth.environment {|p| $p.processes.auth.environment | where {|x| not ($x | str starts-with \"OIDC_PROVIDERS=\") } | append \"OIDC_PROVIDERS=${OIDC_PROVIDERS:-google,email}\" } | to yaml | save -f $f'",
           "RUN ELECTRIC_SECRET=validation-only caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile"
         ],
         "extra_hosts": [],
         "mounts": [],
         "preamble": [
-          "COPY <<'APPLIANCE' /.bayt/process-compose.appliance.yaml\nversion: \"0.5\"\nprocesses:\n  auth:\n    environment:\n      - OIDC_PROVIDERS=${OIDC_PROVIDERS:-google}\n  database:\n    command: '''docker-entrypoint.sh'' ''postgres'' ''-c'' ''session_preload_libraries=pg_ivm'' ''-c'' ''wal_level=logical'' ''-c'' ''max_replication_slots=128'' ''-c'' ''max_wal_senders=128'' ''-c'' ''fsync=off'' ''-c'' ''synchronous_commit=off'' ''-c'' ''full_page_writes=off'' ''-c'' ''shared_buffers=32MB'' ''-c'' ''max_connections=200'' ''-c'' ''fsync=on'' ''-c'' ''synchronous_commit=on'' ''-c'' ''full_page_writes=on'' ''-c'' ''shared_buffers=512MB'''\n  electric:\n    availability:\n      exit_on_end: true\n    command: '''env'' ''DATABASE_URL=postgresql://electric:${ELECTRIC_PASSWORD:-dev-electric-password}@127.0.0.1:5432/${POSTGRES_DB:-truco}?sslmode=disable'' ''ELECTRIC_SECRET=${ELECTRIC_SECRET:-dev-electric-secret}'' ''ELECTRIC_MANUAL_TABLE_PUBLISHING=true'' ''ELECTRIC_PORT=3002'' ''ELECTRIC_STORAGE_DIR=${PGDATA:-/var/lib/pgsql/data}/electric'' ''LD_LIBRARY_PATH=/electric-libs'' ''ELIXIR_ERL_OPTIONS=+fnu'' ''/electric-app/bin/entrypoint'' ''start'''\n  ticker:\n    command: '''ticker-deno'' ''run'' ''--frozen'' ''--allow-net'' ''--allow-env'' ''main.ts'''\n    working_dir: /ticker-app\n    environment:\n      - CRUD_URL=http://crud:3000\n      - CALL_TIMEOUT_MS=35000\n      - SERVICE_JWT=${SERVICE_JWT:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtZWNoYTpzdGFjayIsInJvbGUiOiJzZXJ2aWNlIiwic3ViIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiZXhwIjoxOTg4MTUwNDAwfQ.K4ZX9EDs-BwPIh3r_ZOKmO9XfrQrEx18rwlw3siXcxs}\n      - DENO_DIR=/ticker-deno-dir\n      - PORT=9998\n      - WAKE_URLS=\n    depends_on:\n      crud:\n        condition: process_healthy\n    readiness_probe:\n      exec:\n        command: portcheck --port 9998\n      period_seconds: 1\n      timeout_seconds: 5\n      failure_threshold: 120\n    availability:\n      restart: on_failure\n      exit_on_end: true\n  clock:\n    command: '''/usr/local/bin/appliance-clock.sh'''\n    environment:\n      - SERVICE_JWT=${SERVICE_JWT:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtZWNoYTpzdGFjayIsInJvbGUiOiJzZXJ2aWNlIiwic3ViIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiZXhwIjoxOTg4MTUwNDAwfQ.K4ZX9EDs-BwPIh3r_ZOKmO9XfrQrEx18rwlw3siXcxs}\n    depends_on:\n      ticker:\n        condition: process_healthy\n    availability:\n      restart: on_failure\n      exit_on_end: true\n  timer-check:\n    command: '''psql'' ''-X'' ''--set=ON_ERROR_STOP=1'' ''--single-transaction'' ''--file=/timer-check.sql'''\nAPPLIANCE",
+          "COPY <<'APPLIANCE' /.bayt/process-compose.appliance.yaml\nversion: \"0.5\"\nprocesses:\n  database:\n    command: '''docker-entrypoint.sh'' ''postgres'' ''-c'' ''session_preload_libraries=pg_ivm'' ''-c'' ''wal_level=logical'' ''-c'' ''max_replication_slots=128'' ''-c'' ''max_wal_senders=128'' ''-c'' ''max_slot_wal_keep_size=1GB'' ''-c'' ''fsync=off'' ''-c'' ''synchronous_commit=off'' ''-c'' ''full_page_writes=off'' ''-c'' ''shared_buffers=32MB'' ''-c'' ''max_connections=200'' ''-c'' ''fsync=on'' ''-c'' ''synchronous_commit=on'' ''-c'' ''full_page_writes=on'' ''-c'' ''shared_buffers=512MB'' ''-c'' ''max_slot_wal_keep_size=${PG_MAX_SLOT_WAL_KEEP_SIZE:-1GB}'''\n  electric:\n    availability:\n      exit_on_end: true\n    command: '''sh'' ''-c'' ''set -eu; lost=$$(psql \"postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-truco}\" -XAt -v ON_ERROR_STOP=1 -c \"SELECT 1 FROM pg_replication_slots WHERE slot_name = ''\\''''electric_slot_default''\\'''' AND wal_status = ''\\''''lost''\\'''';\"); if [ \"$$lost\" = \"1\" ]; then echo ''\\''''electric: slot electric_slot_default was lost; dropping it and clearing shape storage to rebuild''\\'''' >&2; psql \"postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-truco}\" -X -v ON_ERROR_STOP=1 -c \"SELECT pg_drop_replication_slot(''\\''''electric_slot_default''\\'''');\"; rm -rf \"${PGDATA:-/var/lib/pgsql/data}/electric\"; fi; exec env \"DATABASE_URL=postgresql://electric:${ELECTRIC_PASSWORD:-dev-electric-password}@127.0.0.1:5432/${POSTGRES_DB:-truco}?sslmode=disable\" \"ELECTRIC_SECRET=${ELECTRIC_SECRET:-dev-electric-secret}\" ELECTRIC_MANUAL_TABLE_PUBLISHING=true ELECTRIC_PORT=3002 \"ELECTRIC_STORAGE_DIR=${PGDATA:-/var/lib/pgsql/data}/electric\" LD_LIBRARY_PATH=/electric-libs ELIXIR_ERL_OPTIONS=+fnu /electric-app/bin/entrypoint start'''\n  ticker:\n    command: '''ticker-deno'' ''run'' ''--frozen'' ''--allow-net'' ''--allow-env'' ''main.ts'''\n    working_dir: /ticker-app\n    environment:\n      - CRUD_URL=http://crud:3000\n      - CALL_TIMEOUT_MS=35000\n      - SERVICE_JWT=${SERVICE_JWT:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtZWNoYTpzdGFjayIsInJvbGUiOiJzZXJ2aWNlIiwic3ViIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiZXhwIjoxOTg4MTUwNDAwfQ.K4ZX9EDs-BwPIh3r_ZOKmO9XfrQrEx18rwlw3siXcxs}\n      - DENO_DIR=/ticker-deno-dir\n      - PORT=9998\n      - WAKE_URLS=\n    depends_on:\n      crud:\n        condition: process_healthy\n    readiness_probe:\n      exec:\n        command: portcheck --port 9998\n      period_seconds: 1\n      timeout_seconds: 5\n      failure_threshold: 120\n    availability:\n      restart: on_failure\n      exit_on_end: true\n  clock:\n    command: '''/usr/local/bin/appliance-clock.sh'''\n    environment:\n      - SERVICE_JWT=${SERVICE_JWT:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtZWNoYTpzdGFjayIsInJvbGUiOiJzZXJ2aWNlIiwic3ViIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiZXhwIjoxOTg4MTUwNDAwfQ.K4ZX9EDs-BwPIh3r_ZOKmO9XfrQrEx18rwlw3siXcxs}\n    depends_on:\n      ticker:\n        condition: process_healthy\n    availability:\n      restart: on_failure\n      exit_on_end: true\n  timer-check:\n    command: '''psql'' ''-X'' ''--set=ON_ERROR_STOP=1'' ''--single-transaction'' ''--file=/timer-check.sql'''\nAPPLIANCE",
           "RUN printf '%s\\n' '#!/bin/sh' 'set -e' 'while sleep \"${POKE_INTERVAL_SECONDS:-60}\"; do' '  curl -fsS -X POST -H \"Authorization: Bearer ${SERVICE_JWT}\" \"http://ticker:9998/poke?caller=appliance\" >/dev/null || { echo \"clock: the ticker refused its poke\" >&2; exit 1; }' 'done' > /usr/local/bin/appliance-clock.sh && chmod 755 /usr/local/bin/appliance-clock.sh",
           "ENV PATH=/usr/lib/postgresql/18/bin:/usr/local/bin:$PATH",
           "ENV PGDATA=/var/lib/pgsql/data",
@@ -2630,7 +2631,7 @@
         "manual": true,
         "build": {
           "additional_contexts": {
-            "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.34.0@sha256:cd4cd6fc4b2b8eec05a1f3628c00d9c06eb943b0e6abb1b9bc900250680e5c01}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
+            "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.35.0@sha256:a91ae9b6b96eb354197725f50a727a0f36faa5772c284adc0852d32e189d6440}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
           },
           "secrets": [],
           "args": {}
@@ -3001,7 +3002,7 @@
             "copy": {
               "from": {
                 "name": "bayt",
-                "image": "bonitao/bayt-runtime:1.5.3@sha256:9560b4a6d6e40fe15a951ef14b5d10dcd613c3efa73ef1847072add962d60760"
+                "image": "bonitao/bayt-runtime:1.5.4@sha256:5bda4d9d7a43bdeca9ccaa0597eaf542f1a14d7f55c84e8cd79cbf19a40cffdd"
               },
               "srcs": [
                 "."
@@ -3851,7 +3852,7 @@
             "copy": {
               "from": {
                 "name": "bayt",
-                "image": "bonitao/bayt-runtime:1.5.3@sha256:9560b4a6d6e40fe15a951ef14b5d10dcd613c3efa73ef1847072add962d60760"
+                "image": "bonitao/bayt-runtime:1.5.4@sha256:5bda4d9d7a43bdeca9ccaa0597eaf542f1a14d7f55c84e8cd79cbf19a40cffdd"
               },
               "srcs": [
                 "."
@@ -4610,7 +4611,7 @@
         "manual": false,
         "build": {
           "additional_contexts": {
-            "libraries_mecha-database-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-database:0.34.0@sha256:1e65261fd9507f7c935a939c43916fb3a61f335cf50002478b31a8d643a103df}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image}"
+            "libraries_mecha-database-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-database:0.35.0@sha256:848b00d3e43564b2c17a535a2afbf8699ee0221a5f4cc8f92a1a265cd57a2a55}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image}"
           },
           "secrets": [],
           "args": {}
@@ -4751,7 +4752,7 @@
       },
       "entrypoint": {
         "name": "entrypoint",
-        "do": "if ('/docker-entrypoint-initdb.d' | path exists) { exec docker-entrypoint.sh postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200 }\nlet mecha = (if (($env.PRONTO_INITDB_SRC_DIR? | default '') != '') { $env.PRONTO_INITDB_SRC_DIR } else if ('services/database/rls/rls.sql' | path exists) { $env.PWD } else { (^mise where github:bonisoft3/mecha | str trim) })\nlet initdb = (($env.BAYT_LOCAL_WORK_DIR? | default $nu.temp-dir) | path join 'initdb.d')\nrm -rf $initdb; mkdir $initdb\ncp -f ($mecha | path join 'services/database/rls/rls.sql') ($initdb | path join '003_rls.sql')\ncp -f ($mecha | path join 'services/database/role_passwords.sh') ($initdb | path join '899_role_passwords.sh')\nopen .bayt/bayt.database.json | get dockerfile.copy.0.srcs | each {|s| cp -f $s ($initdb | path join ($s | path basename)) } | ignore\nexec nu ($mecha | path join 'services/database/entrypoint.nu') $initdb postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200",
+        "do": "if ('/docker-entrypoint-initdb.d' | path exists) { exec docker-entrypoint.sh postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c max_slot_wal_keep_size=1GB -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200 }\nlet mecha = (if (($env.PRONTO_INITDB_SRC_DIR? | default '') != '') { $env.PRONTO_INITDB_SRC_DIR } else if ('services/database/rls/rls.sql' | path exists) { $env.PWD } else { (^mise where github:bonisoft3/mecha | str trim) })\nlet initdb = (($env.BAYT_LOCAL_WORK_DIR? | default $nu.temp-dir) | path join 'initdb.d')\nrm -rf $initdb; mkdir $initdb\ncp -f ($mecha | path join 'services/database/rls/rls.sql') ($initdb | path join '003_rls.sql')\ncp -f ($mecha | path join 'services/database/role_passwords.sh') ($initdb | path join '899_role_passwords.sh')\nopen .bayt/bayt.database.json | get dockerfile.copy.0.srcs | each {|s| cp -f $s ($initdb | path join ($s | path basename)) } | ignore\nexec nu ($mecha | path join 'services/database/entrypoint.nu') $initdb postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c max_slot_wal_keep_size=1GB -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200",
         "priority": 0,
         "shell": "nu",
         "stop": false,
@@ -4773,7 +4774,7 @@
         "after": {},
         "host": true,
         "dockerfile": {
-          "do": "docker-entrypoint.sh postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200",
+          "do": "docker-entrypoint.sh postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c max_slot_wal_keep_size=1GB -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200",
           "shell": "exec"
         }
       },
@@ -4904,7 +4905,7 @@
         "manual": false,
         "build": {
           "additional_contexts": {
-            "libraries_mecha-database-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-database:0.34.0@sha256:1e65261fd9507f7c935a939c43916fb3a61f335cf50002478b31a8d643a103df}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image}"
+            "libraries_mecha-database-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-database:0.35.0@sha256:848b00d3e43564b2c17a535a2afbf8699ee0221a5f4cc8f92a1a265cd57a2a55}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image}"
           },
           "secrets": [],
           "args": {}
@@ -5026,7 +5027,7 @@
         "manual": false,
         "build": {
           "additional_contexts": {
-            "libraries_mecha-database-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-database:0.34.0@sha256:1e65261fd9507f7c935a939c43916fb3a61f335cf50002478b31a8d643a103df}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image}"
+            "libraries_mecha-database-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-database:0.35.0@sha256:848b00d3e43564b2c17a535a2afbf8699ee0221a5f4cc8f92a1a265cd57a2a55}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-database-image}"
           },
           "secrets": [],
           "args": {}
@@ -5158,7 +5159,7 @@
         "manual": false,
         "build": {
           "additional_contexts": {
-            "libraries_mecha-auth-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-auth:0.34.0@sha256:51403dda03dbaf341eb2eee779d7b293eebca3cab186b0a22420f53e8fca4d18}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-auth-image}"
+            "libraries_mecha-auth-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-auth:0.35.0@sha256:ffbef2572dae57f22159216d6dea97840dfdf8bc2127cd4644083307e0fb12e8}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-auth-image}"
           },
           "secrets": [],
           "args": {}
@@ -5172,6 +5173,13 @@
           "ANDROID_APK_KEY_HASHES": "${ANDROID_APK_KEY_HASHES:-}",
           "NATIVE_SCHEMES": "${NATIVE_SCHEMES:-}",
           "OIDC_PROVIDERS": "${OIDC_PROVIDERS:-}",
+          "OIDC_EMAIL_CREDENTIAL": "${OIDC_EMAIL_CREDENTIAL:-}",
+          "OIDC_EMAIL_AUTHORIZE_PARAMS": "${OIDC_EMAIL_AUTHORIZE_PARAMS:-provider=email}",
+          "OIDC_EMAIL_SCOPE": "${OIDC_EMAIL_SCOPE:-openid profile email}",
+          "OIDC_EMAIL_CLIENT_SECRET": "${OIDC_EMAIL_CLIENT_SECRET:-}",
+          "OIDC_EMAIL_INTERNAL": "${OIDC_EMAIL_INTERNAL:-}",
+          "OIDC_EMAIL_ISSUER": "${OIDC_EMAIL_ISSUER:-https://id.bonisoft3.com}",
+          "OIDC_EMAIL_CLIENT_ID": "${OIDC_EMAIL_CLIENT_ID:-origin}",
           "OIDC_GOOGLE_CREDENTIAL": "${OIDC_GOOGLE_CREDENTIAL:-}",
           "OIDC_GOOGLE_AUTHORIZE_PARAMS": "${OIDC_GOOGLE_AUTHORIZE_PARAMS:-provider=google}",
           "OIDC_GOOGLE_SCOPE": "${OIDC_GOOGLE_SCOPE:-openid profile email}",
@@ -5235,6 +5243,13 @@
           "ANDROID_APK_KEY_HASHES": "${ANDROID_APK_KEY_HASHES:-}",
           "NATIVE_SCHEMES": "${NATIVE_SCHEMES:-}",
           "OIDC_PROVIDERS": "${OIDC_PROVIDERS:-}",
+          "OIDC_EMAIL_CREDENTIAL": "${OIDC_EMAIL_CREDENTIAL:-}",
+          "OIDC_EMAIL_AUTHORIZE_PARAMS": "${OIDC_EMAIL_AUTHORIZE_PARAMS:-provider=email}",
+          "OIDC_EMAIL_SCOPE": "${OIDC_EMAIL_SCOPE:-openid profile email}",
+          "OIDC_EMAIL_CLIENT_SECRET": "${OIDC_EMAIL_CLIENT_SECRET:-}",
+          "OIDC_EMAIL_INTERNAL": "${OIDC_EMAIL_INTERNAL:-}",
+          "OIDC_EMAIL_ISSUER": "${OIDC_EMAIL_ISSUER:-https://id.bonisoft3.com}",
+          "OIDC_EMAIL_CLIENT_ID": "${OIDC_EMAIL_CLIENT_ID:-origin}",
           "OIDC_GOOGLE_CREDENTIAL": "${OIDC_GOOGLE_CREDENTIAL:-}",
           "OIDC_GOOGLE_AUTHORIZE_PARAMS": "${OIDC_GOOGLE_AUTHORIZE_PARAMS:-provider=google}",
           "OIDC_GOOGLE_SCOPE": "${OIDC_GOOGLE_SCOPE:-openid profile email}",
@@ -5317,7 +5332,7 @@
         "manual": false,
         "build": {
           "additional_contexts": {
-            "libraries_mecha-ticker-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-ticker:0.34.0@sha256:100a724353cca8e88f6f6e0839195f10e1287f010a8729f82bfd8c85cefcdfb6}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-ticker-image}"
+            "libraries_mecha-ticker-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-ticker:0.35.0@sha256:69f8dca787537bbf2d08a7b6ab42be6b786bebf744725f0b900c952d4991d71d}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-ticker-image}"
           },
           "secrets": [],
           "args": {}
@@ -5444,7 +5459,7 @@
         "manual": false,
         "build": {
           "additional_contexts": {
-            "libraries_mecha-clock-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-clock:0.34.0@sha256:9d8cdaca612d880a4de4ab3176f80a1e7acdb38b10295f9aa5990217dcb3317f}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-clock-image}"
+            "libraries_mecha-clock-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/mecha-clock:0.35.0@sha256:9d8cdaca612d880a4de4ab3176f80a1e7acdb38b10295f9aa5990217dcb3317f}${MONOREPO_COMPOSE_MODE:+:libraries_mecha-clock-image}"
           },
           "secrets": [],
           "args": {}
@@ -5527,7 +5542,7 @@
         "manual": true,
         "build": {
           "additional_contexts": {
-            "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.34.0@sha256:cd4cd6fc4b2b8eec05a1f3628c00d9c06eb943b0e6abb1b9bc900250680e5c01}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
+            "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.35.0@sha256:a91ae9b6b96eb354197725f50a727a0f36faa5772c284adc0852d32e189d6440}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
           },
           "secrets": [],
           "args": {}
@@ -5905,7 +5920,7 @@
             "copy": {
               "from": {
                 "name": "bayt",
-                "image": "bonitao/bayt-runtime:1.5.3@sha256:9560b4a6d6e40fe15a951ef14b5d10dcd613c3efa73ef1847072add962d60760"
+                "image": "bonitao/bayt-runtime:1.5.4@sha256:5bda4d9d7a43bdeca9ccaa0597eaf542f1a14d7f55c84e8cd79cbf19a40cffdd"
               },
               "srcs": [
                 "."
@@ -7395,7 +7410,7 @@
         "manual": false,
         "build": {
           "additional_contexts": {
-            "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.34.0@sha256:cd4cd6fc4b2b8eec05a1f3628c00d9c06eb943b0e6abb1b9bc900250680e5c01}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
+            "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.35.0@sha256:a91ae9b6b96eb354197725f50a727a0f36faa5772c284adc0852d32e189d6440}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
           },
           "secrets": [],
           "args": {}
@@ -7546,7 +7561,7 @@
         "manual": true,
         "build": {
           "additional_contexts": {
-            "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.34.0@sha256:cd4cd6fc4b2b8eec05a1f3628c00d9c06eb943b0e6abb1b9bc900250680e5c01}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
+            "plugins_omnishell-runtime-image": "${MONOREPO_COMPOSE_MODE:-docker-image://bonitao/omnishell:0.35.0@sha256:a91ae9b6b96eb354197725f50a727a0f36faa5772c284adc0852d32e189d6440}${MONOREPO_COMPOSE_MODE:+:plugins_omnishell-runtime-image}"
           },
           "secrets": [],
           "args": {}

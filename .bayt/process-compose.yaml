@@ -101,14 +101,14 @@ processes:
     - nu
     - -c
     - |-
-      if ('/docker-entrypoint-initdb.d' | path exists) { exec docker-entrypoint.sh postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200 }
+      if ('/docker-entrypoint-initdb.d' | path exists) { exec docker-entrypoint.sh postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c max_slot_wal_keep_size=1GB -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200 }
       let mecha = (if (($$env.PRONTO_INITDB_SRC_DIR? | default '') != '') { $$env.PRONTO_INITDB_SRC_DIR } else if ('services/database/rls/rls.sql' | path exists) { $$env.PWD } else { (^mise where github:bonisoft3/mecha | str trim) })
       let initdb = (($$env.BAYT_LOCAL_WORK_DIR? | default $$nu.temp-dir) | path join 'initdb.d')
       rm -rf $$initdb; mkdir $$initdb
       cp -f ($$mecha | path join 'services/database/rls/rls.sql') ($$initdb | path join '003_rls.sql')
       cp -f ($$mecha | path join 'services/database/role_passwords.sh') ($$initdb | path join '899_role_passwords.sh')
       open .bayt/bayt.database.json | get dockerfile.copy.0.srcs | each {|s| cp -f $$s ($$initdb | path join ($$s | path basename)) } | ignore
-      exec nu ($$mecha | path join 'services/database/entrypoint.nu') $$initdb postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200
+      exec nu ($$mecha | path join 'services/database/entrypoint.nu') $$initdb postgres -c session_preload_libraries=pg_ivm -c wal_level=logical -c max_replication_slots=128 -c max_wal_senders=128 -c max_slot_wal_keep_size=1GB -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c shared_buffers=32MB -c max_connections=200
     availability:
       exit_on_skipped: true
     environment:
@@ -223,6 +223,13 @@ processes:
     - >-
       DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@127.0.0.1:${DATABASE_PG_PORT:-29225}/${POSTGRES_DB:-truco}
     - NATIVE_SCHEMES=${NATIVE_SCHEMES:-}
+    - OIDC_EMAIL_AUTHORIZE_PARAMS=${OIDC_EMAIL_AUTHORIZE_PARAMS:-provider=email}
+    - OIDC_EMAIL_CLIENT_ID=${OIDC_EMAIL_CLIENT_ID:-origin}
+    - OIDC_EMAIL_CLIENT_SECRET=${OIDC_EMAIL_CLIENT_SECRET:-}
+    - OIDC_EMAIL_CREDENTIAL=${OIDC_EMAIL_CREDENTIAL:-}
+    - OIDC_EMAIL_INTERNAL=${OIDC_EMAIL_INTERNAL:-}
+    - OIDC_EMAIL_ISSUER=${OIDC_EMAIL_ISSUER:-https://id.bonisoft3.com}
+    - OIDC_EMAIL_SCOPE=${OIDC_EMAIL_SCOPE:-openid profile email}
     - OIDC_GOOGLE_AUTHORIZE_PARAMS=${OIDC_GOOGLE_AUTHORIZE_PARAMS:-provider=google}
     - OIDC_GOOGLE_CLIENT_ID=${OIDC_GOOGLE_CLIENT_ID:-origin}
     - OIDC_GOOGLE_CLIENT_SECRET=${OIDC_GOOGLE_CLIENT_SECRET:-}
