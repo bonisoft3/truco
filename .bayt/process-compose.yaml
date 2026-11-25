@@ -70,6 +70,8 @@ processes:
       period_seconds: 1
       timeout_seconds: 5
       failure_threshold: 10
+    shutdown:
+      timeout_seconds: 10
   visual:
     depends_on:
       launch:
@@ -350,6 +352,8 @@ processes:
       period_seconds: 5
       timeout_seconds: 5
       failure_threshold: 32
+    shutdown:
+      timeout_seconds: 10
   crud:
     depends_on:
       database:
@@ -386,6 +390,8 @@ processes:
       period_seconds: 5
       timeout_seconds: 5
       failure_threshold: 36
+    shutdown:
+      timeout_seconds: 10
   electric:
     depends_on:
       database:
@@ -432,3 +438,5 @@ processes:
       period_seconds: 1
       timeout_seconds: 5
       failure_threshold: 60
+    shutdown:
+      timeout_seconds: 10

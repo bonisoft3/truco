@@ -123,7 +123,7 @@ const openTrickCards = async (p: Page) => {
     unstyled card reads with newlines a styled one does not, and two identical
     deals can compare unequal. `data-card` is the card. */
 const hand = (p: Page) =>
-  p.locator(".seat-row.mine .card").evaluateAll((els) =>
+  p.locator(".seat-row.mine .card").evaluateAll((els: Element[]) =>
     els.map((e) => (e as HTMLElement).dataset.card ?? "").join("|")
   );
 
@@ -1642,7 +1642,7 @@ const CASES: Case[] = [
       const sha = async (text: string) => `'sha256-${btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)))))}'`;
       const now = JSON.parse(MAP.exec(await p.evaluate(() => fetch("/", { cache: "no-store" }).then((r) => r.text())))![2]) as { imports: Record<string, string> };
       const chrome = now.imports["/omnishell/interpreter/chrome.js"];
-      const marked = await p.evaluate((url) => fetch(url).then((r) => r.text()), chrome) + "\nglobalThis.__earlierDeployment = true;\n";
+      const marked = await p.evaluate((url: string) => fetch(url).then((r) => r.text()), chrome) + "\nglobalThis.__earlierDeployment = true;\n";
       const markedAt = chrome.replace(/_immutable-[0-9a-f]{64}-/, `_immutable-${"e".repeat(64)}-`);
       // A browser whose first visit was the earlier deployment.
       const context = await newContext(p.context().browser());
@@ -1669,7 +1669,7 @@ const CASES: Case[] = [
           const [was, is] = [await sha(map), await sha(then)];
           const headers = { ...served.headers() };
           headers["content-security-policy"] = headers["content-security-policy"].replace(was, is);
-          await route.fulfill({ response: served, headers, body: html.replace(MAP, (_, open, _map, close) => open + then + close).replace(was, is) });
+          await route.fulfill({ response: served, headers, body: html.replace(MAP, (_: string, open: string, _map: string, close: string) => open + then + close).replace(was, is) });
         };
         const interpreter = (route: Route) => route.fulfill({ contentType: "text/javascript", body: marked });
         await context.route(isEntry, entry);
@@ -1931,7 +1931,7 @@ async function main(): Promise<number> {
     failed++;
     console.log(`FAIL  the console stayed clean\n      ${errors.slice(0, 5).join("\n      ")}`);
   }
-  console.log(failed === 0 ? `\nacceptance: ${CASES.length}/${CASES.length} PASS` : `\nacceptance: ${failed} failing`);
+  console.log(failed === 0 ? `\nacceptance: ${cases.length}/${cases.length} PASS` : `\nacceptance: ${failed} failing`);
   return failed === 0 ? 0 : 1;
 }
 
